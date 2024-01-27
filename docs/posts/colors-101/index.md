@@ -1,0 +1,62 @@
+# Colors 101
+Antonio Montano
+2024-01-27
+
+The evolution of color spaces is a testament to the intersection of art,
+science, and technology. Each color space has been developed to meet
+specific needs - from artistic expression and print media to digital
+interfaces and scientific research. Understanding these spaces is
+crucial for professionals in fields like photography, design, and
+digital media, where color accuracy and consistency are paramount.
+
+## Color spaces
+
+Let’s break down the concept of a color space into simple terms first,
+and then delve into the technical aspects.
+
+### Layman terms
+
+Imagine you have a huge box of crayons with every color you can think
+of. A color space is like picking a smaller box from this huge
+collection. This smaller box contains a specific range of colors that
+you can use for a particular purpose, like drawing a picture or printing
+a photograph.
+
+Just like you can’t use the colors outside your chosen crayon box, a
+color space defines the range of colors (or ‘gamut’) that can be
+represented or reproduced in a medium, whether it’s a computer screen, a
+camera, or a printed page. Different color spaces are like different
+sets of crayons, each suited for different tasks or equipment.
+
+### Technically speaking
+
+A color space is a specific organization of colors, which in a more
+formal setting can be described by the mathematics of color models. It’s
+a three-dimensional model where each color is represented by a unique
+point within a coordinate system.
+
+Technically, a color space maps out a range of colors in terms of
+intensity values across different channels (like red, green, blue in RGB
+color space). It provides a standard by which we can define and
+reproduce colors across different devices and mediums.
+
+Components of a color space are: \* Primary Colors: These are the
+reference colors used in a color model. For example, RGB uses red,
+green, and blue as primary colors. \* Gamut: This is the complete subset
+of colors that can be accurately represented within a given color space.
+\* Color model: The underlying mathematical model describing the way
+colors can be represented as tuples of numbers (e.g., RGB, CMYK, HSL).
+\* Perceptual uniformity: Some color spaces (like CIELAB) are designed
+to be perceptually uniform. This means that a change of the same amount
+in a color value should produce a change of about the same visual
+importance. \* Device-dependent vs device-independent: Color spaces can
+be device-dependent (like Adobe RGB, specific to monitors and printers)
+or device-independent (like CIELAB), which abstracts color definitions
+from specific devices, allowing for consistent color reproduction across
+different devices. \* Standardization: Standards such as sRGB are
+established to ensure uniform color representation across different
+digital devices and platforms, crucial in digital media and web content.
+
+In essence, a color space is a framework that allows for consistent and
+precise color representation, ensuring that the colors you see and use
+are the same across various devices and mediums.
