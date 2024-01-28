@@ -182,13 +182,13 @@ Decimal color notation is another way to describe RGB colors, similar to HEX but
 
 The International Commission on Illumination, known as CIE (Commission Internationale de l'Éclairage), is a significant organization in the field of color and lighting standards. CIE has introduced several critical color spaces, including XYZ, CIELab, and CIELCh, each serving unique purposes in color science.
 
-### CIEXYZ
+### XYZ
 
 The CIE XYZ color space, established in 1931, is foundational in the field of colorimetry. It's a device-independent model representing color perceptions of a standard observer. In XYZ, 'X' represents a mix of cone response curves, 'Y' denotes luminance, and 'Z' corresponds to blue stimulation. This color space serves as a reference, allowing for the translation of colors between different systems and devices. The gamut of XYZ encompasses all perceivable colors, making it a comprehensive standard for color representation.
 
 ### CIELab
 
-The CIELab color space, introduced in 1976, with its broad gamut and perceptually uniform characteristics, is designed to encompass the entire range of colors visible to the human eye. This extensive gamut means it can represent colors that are outside the range of many display systems and printers.
+The CIELab (or Lab) color space, introduced in 1976, with its broad gamut and perceptually uniform characteristics, is designed to encompass the entire range of colors visible to the human eye. This extensive gamut means it can represent colors that are outside the range of many display systems and printers.
 
 In CIELab:
 
@@ -244,6 +244,20 @@ When comparing CIELUV to CIELab, the key difference lies in their treatment of c
 
 Both color spaces derive from the XYZ model and share the lightness dimension (L\*). However, their approach to chromaticity makes them suitable for different applications and types of color processing. CIELUV's emphasis on chromaticity makes it a valuable tool in industries dealing with light sources, displays, and environments where the light's color itself is the primary concern.
 
+### LCH(ab)
+
+The LCH(ab) color space, often simply referred to as LCH, is a color model derived from the CIELab color space. It represents colors in a more intuitive way compared to the Cartesian coordinates (a\* and b\*) used in CIELab. The LCH color model is based on cylindrical coordinates rather than Cartesian coordinates and consists of three components:
+
+1.  Lightness (L): Similar to the L\* in CIELab, it represents the lightness of the color, where 0 is black, 100 is white, and values in between represent various shades of gray.
+
+2.  Chroma (C): Chroma in LCH is analogous to saturation in other color models. It represents the intensity or purity of the color. Higher chroma values indicate more vibrant colors, while lower values result in more muted tones.
+
+3.  Hue (H): Hue is represented as an angle (in degrees) around a color wheel. It defines the type of color (such as red, blue, green, yellow, etc.). In LCH, hue starts at 0 degrees for red and moves through the spectrum, with green at 120 degrees, blue at 240 degrees, and so forth.
+
+The LCH color space is particularly useful in applications where understanding and manipulating the color relationships and harmonies are important. It's often used in graphic design, painting, and digital media for this reason. By separating the color components in this way, LCH allows designers to adjust hue and chroma independently of lightness, which can be more intuitive than working with the a\* and b\* coordinates in CIELab.
+
+In essence, LCH(ab) offers a perceptually-based approach to color representation, aligning closely with how humans perceive and interpret color differences, making it a valuable tool in color-sensitive work.
+
 ## Color Space as a Mathematical Space Subset
 
 The concept of whether color spaces are subsets of integer or real mathematical spaces can be understood in terms of how they represent color values and the precision with which they operate.
@@ -282,24 +296,38 @@ In summary, while practical implementations of these color spaces in digital dev
 
 To convert a color from sRGB to CIELab using the Python `colormath` library, you first need to ensure that `colormath` is installed in your Python environment. You can install it using pip:
 
-```bash
+``` bash
 pip install colormath
 ```
 
 Once `colormath` is installed, you can use it to perform the conversion. Here's a simple example:
 
-```python
-from colormath.color_objects import sRGBColor, LabColor
+``` python
+from colormath.color_objects import sRGBColor, LabColor, XYZColor, \
+                                    LCHabColor, LCHuvColor, HSVColor, \
+                                    CMYColor, CMYKColor
 from colormath.color_conversions import convert_color
 
-# Define an sRGB color (values range from 0 to 1 for each channel)
-rgb = sRGBColor(0.5, 0.2, 0.8, is_upscaled=True)  # is_upscaled=True if you're using 0-255 range
+# Define an sRGB color
+rgb = sRGBColor(128., 0., 128., is_upscaled=True)  # is_upscaled=True if you're using 0-255 range
 
-# Convert the sRGB color to Lab color space
-lab = convert_color(rgb, LabColor)
+# Convert the sRGB color to other color spaces
+lab = convert_color(rgb, LabColor)      # CIELab
+xyz = convert_color(rgb, XYZColor)      # XYZ
+lch_ab = convert_color(rgb, LCHabColor) # LCH(ab)
+lch_uv = convert_color(rgb, LCHuvColor) # LCH(uv)
+hsv = convert_color(rgb, HSVColor)      # HSV
+cmy = convert_color(rgb, CMYColor)      # CMY
+cmyk = convert_color(rgb, CMYKColor)    # CMYK
 
-# Print the Lab color
-print(lab)
+# Print the colors in different color spaces
+print("CIELab: ", lab)      # CIELab:  LabColor (lab_l:29.7843 lab_a:58.9285 lab_b:-36.4932)
+print("XYZ: ", xyz)         # XYZ:  XYZColor (xyz_x:0.1280 xyz_y:0.0615 xyz_z:0.2093)
+print("LCH(ab): ", lch_ab)  # LCH(ab):  LCHabColor (lch_l:29.7843 lch_c:69.3132 lch_h:328.2310)
+print("LCH(uv): ", lch_uv)  # LCH(uv):  LCHuvColor (lch_l:29.7843 lch_c:67.8446 lch_h:307.7154)
+print("HSV: ", hsv)         # HSV:  HSVColor (hsv_h:300.0000 hsv_s:1.0000 hsv_v:0.5020)
+print("CMY: ", cmy)         # CMY:  CMYColor (cmy_c:0.4980 cmy_m:1.0000 cmy_y:0.4980)
+print("CMYK: ", cmyk)       # CMYK:  CMYKColor (cmyk_c:0.0000 cmyk_m:1.0000 cmyk_y:0.0000 cmyk_k:0.4980)
 ```
 
 In this example:
