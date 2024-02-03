@@ -1,6 +1,6 @@
 ---
 title: "Colors 101"
-subtitle: "All you ever wanted to know about colors"
+subtitle: "How to uniformly sample the color space?"
 format:
   html:
     toc: true
@@ -377,7 +377,49 @@ There are several other libraries in Python and other programming languages that
 
 Each of these libraries has its own set of features and strengths, and the choice of library can depend on the specific requirements of your project, such as the programming language you're using, the color spaces you need to work with, and the level of precision or control you need over the color conversion process.
 
-## Code
+## Python Script for CIELab Color Sampling and Conversion
+
+The Python script is designed to uniformly sample the CIELab color space and convert these samples to RGB. It also finds the nearest CIELab color to a given target color, either in CIELab or RGB space, and saves comparison charts. The script contains several key functions:
+
+```python         
+generate_uniform_lab_samples(n_samples)
+```
+
+This function generates uniformly distributed samples in the CIELab color space. It calculates the number of points per dimension based on the cubic root of the total number of desired samples, creating a grid of points in the CIELab space. If more points are generated than needed, it randomly samples from these points to get the desired number.
+
+```python         
+lab_to_rgb(lab_arr)
+```
+
+This function converts a batch of CIELab values to RGB and marks any colors that are approximated due to out-of-gamut issues. It uses the `skimage` library for the CIELab to RGB conversion and checks for any warnings during the conversion process, specifically looking for "negative Z values" which indicate an approximation.
+
+```python         
+rgb_to_lab(rgb)
+```
+
+This function converts an RGB color to the CIELab color space. It normalizes the RGB values (assuming they are in the 0-255 range) and uses the `colormath` library to perform the conversion.
+
+```python         
+create_color_chart_with_spacing(lab_samples, rgb_samples, approx_flags, square_size_cm, spacing_cm, label_font_size, text_spacing_cm, save_path)
+```
+
+This function creates a square image containing color squares with spacing between them. Each square represents a color sample. It calculates the total image size considering the spacing and text space and then uses `matplotlib` to create and save the image.
+
+```python         
+find_nearest_color_lab(target_lab, generated_lab_samples)
+```
+
+This function finds the nearest CIELab color to a given target color among generated samples using Delta E. It compares the target color with each generated sample using the `delta_e_cie2000` function from the `colormath` library.
+
+```python         
+save_comparison_chart(target_lab, nearest_lab, square_size, spacing, save_path)
+```
+
+This function saves an image with two squares: one for the target color and one for the nearest CIELab color. It draws the squares and saves the image using `matplotlib`.
+
+The script also includes a section at the end for generating samples, converting them, and saving comparison charts.
+
+This code is a comprehensive tool for exploring and visualizing the CIELab color space, its conversion to RGB, and the assessment of color proximity within this space.
 
 Download the [Jupyter notebook](https://github.com/antomon/antomon.github.io/blob/b6d9822757db56d5906f1b3f8e6bb6e3040e7c3a/_static/posts/colors-101/cielab_sampler.ipynb) or open it in Colab (click on the badge below) to sample the CIELab space and get the nearest sample of a given color.
 
