@@ -1,2 +1,753 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"></html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.56">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2024-08-10">
+
+<title>The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell – Random Bits of Knowledge">
+<meta property="og:description" content="The Power of Compositionality">
+<meta property="og:image" content="https://antomon.github.io/posts/category-theory-functional-programming/monad_diagram.webp">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell – Random Bits of Knowledge">
+<meta name="twitter:description" content="The Power of Compositionality">
+<meta name="twitter:image" content="https://antomon.github.io/posts/category-theory-functional-programming/monad_diagram.webp">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://4m4.it/corso-python/"> 
+<span class="menu-text">Corso Python</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell</h1>
+            <p class="subtitle lead">The Power of Compositionality</p>
+                                <div class="quarto-categories">
+                <div class="quarto-category">haskell</div>
+                <div class="quarto-category">programming language</div>
+                <div class="quarto-category">theory</div>
+                <div class="quarto-category">tutorial</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 10, 2024</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">August 10, 2024</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#lambda-calculus-the-foundation-of-functional-programming" id="toc-lambda-calculus-the-foundation-of-functional-programming" class="nav-link" data-scroll-target="#lambda-calculus-the-foundation-of-functional-programming">Lambda calculus: the foundation of functional programming</a></li>
+  <li><a href="#category-theory-a-higher-level-abstraction" id="toc-category-theory-a-higher-level-abstraction" class="nav-link" data-scroll-target="#category-theory-a-higher-level-abstraction">Category Theory: a Higher-Level Abstraction</a>
+  <ul class="collapse">
+  <li><a href="#lambda-calculus-meets-category-theory-in-haskell" id="toc-lambda-calculus-meets-category-theory-in-haskell" class="nav-link" data-scroll-target="#lambda-calculus-meets-category-theory-in-haskell">Lambda Calculus Meets Category Theory in Haskell</a></li>
+  <li><a href="#the-power-of-compositionality" id="toc-the-power-of-compositionality" class="nav-link" data-scroll-target="#the-power-of-compositionality">The Power of Compositionality</a></li>
+  <li><a href="#conclusion-composition-as-the-bridge-between-theory-and-practice" id="toc-conclusion-composition-as-the-bridge-between-theory-and-practice" class="nav-link" data-scroll-target="#conclusion-composition-as-the-bridge-between-theory-and-practice">Conclusion: Composition as the Bridge Between Theory and Practice</a></li>
+  </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<section id="introduction" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Functional programming is often praised for its mathematical purity, elegance, and compositional nature. Among the languages that embody these principles, <strong>Haskell</strong> stands out for its deep roots in <strong>lambda calculus</strong> and <strong>category theory</strong>. These mathematical frameworks not only shape how Haskell programs are structured but also enable powerful abstractions like <strong>higher-order functions</strong>, <strong>monads</strong>, and <strong>type systems</strong>. Central to this relationship is the concept of <strong>composition</strong>, which serves as the fundamental glue connecting these ideas and facilitating the construction of complex systems from simple components.</p>
+<p>This essay explores the relationship between category theory, lambda calculus, and Haskell, emphasizing how the principle of compositionality underlies both the theoretical and practical aspects of functional programming. We will also draw upon insights from <strong>Brendan Fong and David I. Spivak’s</strong> work<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, to illustrate the importance of compositional thinking.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;Fong, Brendan, and David I. Spivak. “Seven sketches in compositionality: An invitation to applied category theory.” arXiv preprint arXiv:1803.05316 (2018). <a href="https://arxiv.org/abs/1803.05316">Arxiv</a></p></div></div></section>
+<section id="lambda-calculus-the-foundation-of-functional-programming" class="level2">
+<h2 class="anchored" data-anchor-id="lambda-calculus-the-foundation-of-functional-programming">Lambda calculus: the foundation of functional programming</h2>
+<p>At its core, <strong>lambda calculus</strong> is a formal system developed by Alonzo Church in the 1930s to study functions and their applications. It serves as a theoretical foundation for <strong>functional programming</strong> because it captures the essence of computation through the manipulation of <strong>functions</strong>. In lambda calculus, everything is a function: functions can be defined anonymously, passed as arguments, returned as values, and composed to form new functions.</p>
+<p>This core idea of treating functions as first-class citizens translates directly into the design of Haskell. In Haskell, functions are the building blocks of programs. The language’s syntax and semantics are deeply influenced by lambda calculus, allowing developers to write code that closely mirrors the formal operations of the lambda calculus itself. For example, a lambda expression in Haskell, such as <code>\x -&gt; x + 1</code>, directly corresponds to a lambda abstraction in the formal system.</p>
+<p>The <strong>composition of functions</strong>, a key operation in lambda calculus, allows us to build complex behavior by chaining simple functions together. For instance, given two functions <code>f :: B -&gt; C</code> and <code>g :: A -&gt; B</code>, we can compose them into a new function <code>f . g :: A -&gt; C</code>. This operation reflects the foundational idea in lambda calculus that computation can be expressed by applying and composing functions. The power of this approach lies in its simplicity and its ability to abstract away details, focusing instead on how data flows through functions.</p>
+</section>
+<section id="category-theory-a-higher-level-abstraction" class="level2">
+<h2 class="anchored" data-anchor-id="category-theory-a-higher-level-abstraction">Category Theory: a Higher-Level Abstraction</h2>
+<p><strong>Category theory</strong> elevates the ideas of lambda calculus by providing a more abstract framework for reasoning about functions and their relationships. In category theory, we think in terms of <strong>objects</strong> and <strong>morphisms</strong> (arrows) that represent transformations between objects. The key insight is that the <strong>composition</strong> of morphisms is associative, and every object has an identity morphism that acts as a neutral element for composition.</p>
+<p>In the context of Haskell, <strong>types</strong> can be thought of as objects, and <strong>functions</strong> as morphisms between these types. The composition of functions in Haskell mirrors the composition of morphisms in category theory. This abstract perspective allows us to reason about programs not just in terms of specific functions and types, but in terms of general structures and relationships between them.</p>
+<p>One important type of category, the <strong>cartesian closed category (CCC)</strong>, is especially relevant to lambda calculus and functional programming. In a CCC, we can form <strong>product types</strong> (e.g., tuples in Haskell) and <strong>function types</strong> (e.g., <code>A -&gt; B</code> in Haskell). These constructions correspond to the categorical notions of <strong>products</strong> and <strong>exponentials</strong>, respectively. The lambda calculus can be interpreted within any CCC, providing a deep connection between the mathematical theory and the functional programming paradigm.</p>
+<section id="lambda-calculus-meets-category-theory-in-haskell" class="level3">
+<h3 class="anchored" data-anchor-id="lambda-calculus-meets-category-theory-in-haskell">Lambda Calculus Meets Category Theory in Haskell</h3>
+<p>Haskell, as a language inspired by both lambda calculus and category theory, seamlessly integrates these two mathematical ideas. <strong>Lambda calculus</strong> provides the core mechanism for defining and applying functions, while <strong>category theory</strong> offers a framework for understanding how these functions compose and interact at a higher level of abstraction.</p>
+<p>For example, the lambda calculus underpins Haskell’s treatment of <strong>pure functions</strong> and <strong>higher-order functions</strong>. When you define a lambda expression in Haskell, you’re using a construct directly borrowed from lambda calculus. But when you start composing functions and leveraging monads, you’re stepping into the realm of <strong>category theory</strong>, where the structure and relationships between functions and types take center stage.</p>
+<p>A particularly powerful concept in Haskell that bridges lambda calculus and category theory is the <strong>monad</strong>. Monads encapsulate computations with additional structure—such as state, I/O, or exceptions—while preserving the purity of functions. In categorical terms, a monad is a <strong>functor</strong> with additional operations (commonly called <code>return</code> and <code>&gt;&gt;=</code> in Haskell) that satisfy certain laws. This allows Haskell developers to chain computations together in a compositional way, managing effects like state changes without breaking the functional paradigm.</p>
+<p>Monads are a beautiful example of how lambda calculus and category theory come together in Haskell. From the lambda calculus perspective, a monad is just another function that we can compose with other functions. But from the category theory perspective, monads provide a structured way of chaining these computations, following precise algebraic rules.</p>
+</section>
+<section id="the-power-of-compositionality" class="level3">
+<h3 class="anchored" data-anchor-id="the-power-of-compositionality">The Power of Compositionality</h3>
+<p>The principle of <strong>compositionality</strong> is at the heart of both category theory and functional programming. As emphasized by <strong>Fong and Spivak</strong> in <em>Seven Sketches in Compositionality</em> , compositionality is a powerful tool for understanding and building complex systems by combining simpler parts. This idea is central to category theory, where objects and morphisms are combined through composition to form new structures.</p>
+<p>In Haskell, compositionality allows us to write modular, reusable code. By composing small, pure functions, we can build larger, more complex programs. The composition operator <code>(.)</code> in Haskell embodies this principle, enabling the combination of functions to create new functions without modifying the underlying logic. This allows developers to reason about the behavior of their programs in terms of how functions are composed, rather than getting lost in the details of implementation.</p>
+<p>Compositionality also underpins the design of <strong>monads</strong> and <strong>functors</strong> in Haskell. When working with monads, for example, we can think of computations as being composed in sequence, with each step building on the previous one. This compositional approach not only simplifies reasoning about code but also makes it easier to manage complexity in large programs.</p>
+<p>By embracing compositionality, we unlock the ability to scale from simple, isolated functions to entire systems of interconnected components. This is the essence of functional programming in Haskell: building complexity from simplicity through the careful and principled use of composition.</p>
+</section>
+<section id="conclusion-composition-as-the-bridge-between-theory-and-practice" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-composition-as-the-bridge-between-theory-and-practice">Conclusion: Composition as the Bridge Between Theory and Practice</h3>
+<p>The relationship between category theory, lambda calculus, and functional programming in Haskell highlights the profound influence of mathematical thinking on the practice of programming. At the core of this relationship is the concept of <strong>composition</strong>, which acts as a bridge between the abstract world of mathematics and the concrete world of programming.</p>
+<p>In lambda calculus, composition is the fundamental operation that allows us to build complex computations from simple functions. In category theory, composition is the operation that defines how morphisms interact, and it is central to the structure of every category. In Haskell, composition is the key to constructing modular, reusable programs that scale in complexity.</p>
+<p>As <strong>Fong and Spivak</strong> remind us, compositionality is not just a theoretical tool but a practical one. By thinking compositionally, we can break down complex problems into manageable parts and build robust, maintainable systems. Whether we are composing simple functions, chaining monadic operations, or reasoning about types and transformations, compositionality allows us to harness the full power of lambda calculus and category theory in our everyday programming.</p>
+<p>Through composition, we can create elegant solutions to complex problems, bridging the gap between theory and practice in the world of functional programming.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Bradley, Tai-Danae, John Terilla, and Yiannis Vlassopoulos. “An enriched category theory of language: from syntax to semantics.” La Matematica 1, no. 2 (2022): 551-580. https://arxiv.org/abs/2106.07890</p>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+          // target, if specified
+          link.setAttribute("target", "_blank");
+          if (link.getAttribute("rel") === null) {
+            link.setAttribute("rel", "noopener");
+          }
+          // default icon
+          link.classList.add("external");
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s personal blog</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2024
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">
+<p><img src="https://raw.githubusercontent.com/antomon/antomon.github.io/cd7dbf5f81371c6eb1c3c7e8a32ac35f44b3bbce/by-nc-nd.svg" class="img-fluid"></p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
