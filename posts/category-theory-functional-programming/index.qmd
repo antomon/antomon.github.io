@@ -92,9 +92,7 @@ In **Haskell**, **types** can be seen as objects, and **functions** as morphisms
 
 Before diving into more complex categories, it’s essential to understand **functors**, which are a fundamental concept in category theory and play a crucial role in functional programming. Informally, a functor can be thought of as a structure-preserving map between two categories. It transforms objects and morphisms (arrows) from one category into objects and morphisms in another category while preserving the relationships between them. In simpler terms, if you have a set of objects and arrows that represent relationships in one category, a functor maps those objects and arrows into another category in a way that maintains the same structure.
 
-In the context of functional programming, functors allow you to apply a function to values inside a container (e.g., lists, `Maybe`, `Either`) without modifying the structure of the container itself. This operation is often described as "lifting" a function to operate on values within a functorial context. For example, if you have a function that operates on integers, and you have a list of integers, a functor allows you to apply that function to every element in the list without altering the list's overall structure.
-
-Formally, in category theory a functor `F` is a mapping between two categories, say `C` and `D`, that assigns to each object `A` in category `C` an object `F(A)` in category `D`, and to each morphism `f: A -> B` in `C`, a morphism `F(f): F(A) -> F(B)` in `D`.
+In category theory, a functor `F` is a mapping between two categories, say `C` and `D`, that assigns to each object `A` in category `C` an object `F(A)` in category `D`, and to each morphism `f: A -> B` in `C`, a morphism `F(f): F(A) -> F(B)` in `D`. The functor must also preserve two critical properties: **composition** and **identity**. This means that if you have two composed morphisms `f` and `g` in the original category, then `F(f . g) = F(f) . F(g)` must hold in the target category, and if `id_A` is the identity morphism for object `A`, then `F(id_A)` must be the identity morphism for the object `F(A)` in the target category.
 
 ```{mermaid}
 %%| fig-align: center
@@ -110,27 +108,37 @@ graph TD
   FA -->|"F(f)"| FB
 ```
 
-The key requirement is that this mapping must preserve two critical properties: **composition** and **identity**. This means that if you have two composed morphisms `f` and `g` in the original category, then `F(f . g) = F(f) . F(g)` must hold in the target category, and if `id_A` is the identity morphism for object `A`, then `F(id_A)` must be the identity morphism for the object `F(A)` in the target category.
+In Haskell, the **Functor** type class captures this concept, but with an important distinction: Haskell functors are **endofunctors**. An endofunctor is a functor that maps a category to itself. In the case of Haskell, this category is **Hask**, the category of Haskell types and functions. This means that in Haskell, functors map between objects (types) and morphisms (functions) within the same category, i.e., from one Haskell type to another Haskell type, and from one Haskell function to another Haskell function.
 
 ```{mermaid}
 %%| fig-align: center
-%%| fig-cap: "The functor `F` preserves identity morphisms by mapping the identity morphism `id_A` in category `C` to the identity morphism `F(id_A)` in category `D` "
+%%| fig-cap: "The functor `F` maps objects and morphisms within the same category `Hask` (the category of Haskell types and functions)"
 
 graph TD
   classDef default fill:#ffffff,stroke:#0000ff,stroke-width:2px,color:#000000,font-weight:bold
   linkStyle default stroke:#0000ff,stroke-width:2px,fill:none
 
-  A["A"] -->|"id_A"| A
-  FA["F(A)"] -->|"F(id_A)"| FA
+  A["Haskell Type A"] -->|"Haskell Function f"| B["Haskell Type B"]
+  A -->|"Functor F"| FA["F(A)"]
+  B -->|"Functor F"| FB["F(B)"]
+  FA -->|"Functor F(f)"| FB
 ```
 
-These properties ensure that the functor respects the categorical structure of the original category and that the transformations it performs are consistent.
+In Haskell, functors allow you to apply a function to values inside a structure (e.g., lists, `Maybe`, `Either`) without modifying the structure itself. This operation is often described as "lifting" a function to operate on values within a functorial context. For example, if you have a function that operates on integers, and you have a list of integers, a functor allows you to apply that function to every element in the list without altering the list's overall structure. This concept is formalized in Haskell with the `fmap` function, which applies a function to the contents of a functor while preserving the functor’s structure.
 
-In Haskell, the concept of a functor is captured by the **Functor** type class. This type class provides the `fmap` function, which applies a function to the contents of a functor while preserving the structure of the functor itself. For example, in the case of a `Maybe` functor, `fmap` applies a function to the value inside a `Just` without changing the `Maybe` structure, and it leaves `Nothing` unchanged. This ability to apply functions to values in a context while preserving that context is a cornerstone of compositional programming in Haskell.
+```{mermaid}
+%%| fig-align: center
+%%| fig-cap: "The functor `fmap` applies a function to values inside a functor, preserving the structure (e.g., a list or `Maybe`)"
 
-Understanding functors is a pivotal step in mastering both category theory and functional programming, as they provide the foundation for more advanced concepts like **monads** and **applicative functors**, all of which rely on the preservation of structure to ensure that complex transformations remain composable and manageable.
+graph TD
+  classDef default fill:#ffffff,stroke:#0000ff,stroke-width:2px,color:#000000,font-weight:bold
+  linkStyle default stroke:#0000ff,stroke-width:2px,fill:none
 
-For example, consider the **`Either`** functor, which represents computations that might fail with an error:
+  A["List [1,2,3]"] -->|"fmap (+1)"| B["List [2,3,4]"]
+  A -->|"Functor Structure"| A
+```
+
+For instance, consider the **`Either`** functor, which represents computations that might fail:
 
 ```haskell
 instance Functor (Either e) where
@@ -144,7 +152,7 @@ result = fmap (+1) (compute 10)  -- <4>
 result2 = fmap (+1) (compute (-10))  -- <5>
 ```
 1. When the value is a `Left` constructor (indicating an error or failure), `fmap` preserves the structure and returns the `Left` unchanged. This ensures that no function is applied to the error value.
-2. When the value is a `Right` constructor (indicating success), `fmap` applies the provided function `f` to the value inside the `Right` and wraps the result back in the `Right` constructor. This is how `fmap` transforms the successful value without altering the `Either` structure.
+2. When the value is a `Right` constructor (indicating success), `fmap` applies the provided function `f` to the value inside the `Right` and wraps the result back in the `Right` constructor, thereby transforming the successful value without altering the `Either` structure.
 3. The `compute` function demonstrates a simple usage of `Either`. If the input `x` is positive, it returns `Right (x * 2)`; otherwise, it returns `Left "Negative number"`.
 4. `fmap (+1)` is applied to the result of `compute 10`, which produces `Right 20`. The function `(+1)` is applied to `20`, yielding `Right 21`.
 5. `fmap (+1)` is applied to the result of `compute (-10)`, which produces `Left "Negative number"`. Since the value is a `Left`, `fmap` does not apply the function, and the result remains `Left "Negative number"`.
@@ -165,7 +173,7 @@ graph TD
   E -->|"Left 'Negative number'"| F["result2"]
 ```
 
-This example illustrates how functors (like the `Functor` instance for `Either`) allow us to apply functions to values inside a structure (like `Either`), while preserving the structure itself (`Left` and `Right`). It demonstrates the compositional nature of functors (`fmap`), which is a key concept in both category theory and functional programming in Haskell.
+This example illustrates how functors (like the `Functor` instance for `Either`) allow us to apply functions to values inside a structure, while preserving the structure itself (`Left` and `Right`). It demonstrates the compositional nature of functors (`fmap`), which is a key concept in both category theory and functional programming in Haskell.
 
 ### Monads
 
@@ -428,7 +436,7 @@ Moreover, **future software development practices** are likely to be increasingl
 
 In essence, formal composability is transforming the future of software engineering, enabling the industry to cope with the growing complexity of systems while leveraging advanced tools to enhance productivity and maintain high standards of quality.
 
-## Haskell 101
+## Haskell
 
 After exploring the theoretical foundations of lambda calculus and category theory, it's time to see how these concepts are practically applied in a programming language that embodies them: [**Haskell**](https://www.haskell.org/)[^10-category-theory-functional-programming]. Haskell's design is deeply influenced by these mathematical principles, making it an ideal language for demonstrating how functional programming can be both elegant and powerful. In this section, we'll guide you through the basics of Haskell, showing how the theory we've discussed comes to life in code. Whether you're new to functional programming or looking to strengthen your understanding, these examples will help you get started with Haskell, step by step.
 
