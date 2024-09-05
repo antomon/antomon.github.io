@@ -23,6 +23,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -128,7 +162,7 @@ window.Quarto = {
 <meta name="twitter:card" content="summary_large_image">
 </head>
 
-<body class="nav-sidebar docked nav-fixed">
+<body class="nav-sidebar docked nav-fixed slimcontent">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -342,12 +376,22 @@ window.Quarto = {
   <li><a href="#complexity" id="toc-complexity" class="nav-link" data-scroll-target="#complexity">Complexity</a></li>
   <li><a href="#why-smt-is-powerful" id="toc-why-smt-is-powerful" class="nav-link" data-scroll-target="#why-smt-is-powerful">Why SMT is powerful</a></li>
   <li><a href="#real-world-applications-1" id="toc-real-world-applications-1" class="nav-link" data-scroll-target="#real-world-applications-1">Real-world applications</a></li>
+  <li><a href="#efficiency-and-scalability-of-smt-solvers" id="toc-efficiency-and-scalability-of-smt-solvers" class="nav-link" data-scroll-target="#efficiency-and-scalability-of-smt-solvers">Efficiency and scalability of SMT solvers</a></li>
+  <li><a href="#combining-multiple-theories" id="toc-combining-multiple-theories" class="nav-link" data-scroll-target="#combining-multiple-theories">Combining multiple theories</a></li>
+  <li><a href="#verifying-software-with-mixed-data-types" id="toc-verifying-software-with-mixed-data-types" class="nav-link" data-scroll-target="#verifying-software-with-mixed-data-types">Verifying software with mixed data types</a></li>
+  <li><a href="#a-coordinated-process" id="toc-a-coordinated-process" class="nav-link" data-scroll-target="#a-coordinated-process">A coordinated process</a></li>
+  <li><a href="#flexibility-across-domains" id="toc-flexibility-across-domains" class="nav-link" data-scroll-target="#flexibility-across-domains">Flexibility across domains</a></li>
   </ul></li>
+  <li><a href="#z3" id="toc-z3" class="nav-link" data-scroll-target="#z3">Z3</a>
+  <ul class="collapse">
+  <li><a href="#key-features" id="toc-key-features" class="nav-link" data-scroll-target="#key-features">Key features</a></li>
+  </ul></li>
+  <li><a href="#sudoku-time" id="toc-sudoku-time" class="nav-link" data-scroll-target="#sudoku-time">Sudoku time!</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
-<main class="content quarto-banner-title-block" id="quarto-document-content">
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
 
 
 
@@ -540,24 +584,324 @@ window.Quarto = {
 <li><p>A processor handles all operations within its performance constraints.</p></li>
 </ul>
 <p>In addition, SMT solvers can <strong>optimize designs</strong> by ensuring that the chip uses the least amount of resources (such as power or space) while still functioning correctly. This makes them indispensable in the <strong>semiconductor industry</strong>, where efficient design is key to building faster, smaller, and more energy-efficient devices.</p></li>
-<li><p><strong>Efficiency and scalability</strong>: SMT solvers are designed to handle incredibly complex problems efficiently. Modern SMT solvers, like <strong>Z3</strong> (developed by Microsoft), can deal with problems involving thousands or even millions of variables and constraints. This scalability makes SMT solvers incredibly powerful for:</p></li>
-<li><p><strong>Large-scale software verification</strong>: Ensuring that huge codebases (like operating systems or flight control software) work as intended.</p></li>
-<li><p><strong>Optimizing systems</strong>: Designing more efficient networks, circuits, or schedules, even for very large projects.</p></li>
 </ul>
-<p>Even though SMT is <strong>NP-hard</strong>, meaning that solving these problems can take a long time in the worst cases, the development of advanced algorithms and heuristics has made SMT solvers practical for many real-world applications. They use techniques like <strong>backtracking</strong>, <strong>conflict-driven clause learning</strong>, and <strong>theory propagation</strong> to narrow down the search space and find solutions faster.</p>
+</section>
+<section id="efficiency-and-scalability-of-smt-solvers" class="level3">
+<h3 class="anchored" data-anchor-id="efficiency-and-scalability-of-smt-solvers">Efficiency and scalability of SMT solvers</h3>
+<p><strong>SMT solvers</strong> are designed to handle highly complex problems, often involving thousands or even millions of variables and constraints. This capability to scale and manage complexity efficiently is one of the key reasons why SMT solvers have become indispensable in many fields. Unlike simpler solvers that can only handle basic logical formulas, modern SMT solvers—such as Z3 (developed by Microsoft)—can work on incredibly large and intricate problems that require the integration of both logic and mathematics.</p>
+<section id="large-scale-software-verification" class="level4">
+<h4 class="anchored" data-anchor-id="large-scale-software-verification">Large-Scale software verification</h4>
+<p>Software verification is a critical application of SMT solvers. Large and complex codebases, like those used in operating systems or flight control software, require guarantees that they behave correctly in every possible situation. This is especially important for <strong>safety-critical systems</strong>, where even a small bug could lead to catastrophic consequences (such as an airplane malfunctioning or a medical device failing). SMT solvers are used to <strong>automatically verify</strong> that a program adheres to its specifications by checking all possible inputs and paths the software might take.</p>
+<p>For example, verifying that a piece of software does not crash when it processes certain inputs might require checking billions of different combinations of inputs and internal states. An SMT solver can analyze these possibilities using logical and mathematical models, ensuring that the software behaves as expected across all cases. This process, known as <strong>formal verification</strong>, is a step beyond typical software testing because it proves the absence of errors rather than simply checking for errors that are found during testing.</p>
+</section>
+<section id="optimizing-systems" class="level4">
+<h4 class="anchored" data-anchor-id="optimizing-systems">Optimizing systems</h4>
+<p>Another area where SMT solvers excel is <strong>system optimization</strong>. Many real-world systems—such as networks, electronic circuits, or transportation schedules—are incredibly complex, involving a large number of interacting components that must work together efficiently. SMT solvers help <strong>optimize</strong> these systems by finding the best possible configuration that meets all the necessary constraints.</p>
+<p>For instance, in <strong>network design</strong>, you might need to ensure that data flows through the network as efficiently as possible while minimizing costs and avoiding congestion. SMT solvers can handle the complexity of these requirements, modeling both the logical rules that govern the network’s behavior and the mathematical constraints, such as bandwidth limits or latency requirements.</p>
+<p>In <strong>circuit design</strong>, SMT solvers are used to minimize the power consumption, size, and heat production of electronic circuits while ensuring they perform their intended functions correctly. As circuits become more advanced and compact, this optimization process becomes critical for the performance of modern electronics, including smartphones and computer processors.</p>
+<p>In large-scale <strong>scheduling</strong> problems—such as assigning shifts to employees or scheduling jobs on machines—SMT solvers help find optimal solutions that balance competing demands, such as time constraints, available resources, and efficiency goals. Because SMT solvers can scale to handle thousands of tasks or constraints, they are a powerful tool for solving these optimization problems in real-world industrial settings.</p>
+</section>
+<section id="advanced-techniques" class="level4">
+<h4 class="anchored" data-anchor-id="advanced-techniques">Advanced techniques</h4>
+<p>Even though SMT is <strong>NP-hard</strong>, meaning that, in the worst cases, solving these problems can take an enormous amount of time—the development of <strong>advanced algorithms</strong> and <strong>heuristics</strong> has made SMT solvers much faster and more practical for real-world applications. SMT solvers use several techniques to reduce the time and resources required to find a solution, including:</p>
 <ul>
-<li><p><strong>Combining multiple theories</strong>: One of the most powerful aspects of SMT is its ability to <strong>combine multiple theories</strong> within a single problem. For example, you might have a problem that involves both:</p>
-<ul>
-<li><p><strong>Arithmetic</strong> (finding numbers that satisfy equations).</p></li>
-<li><p><strong>Arrays</strong> (managing lists of data).</p></li>
-<li><p><strong>Bit-vectors</strong> (handling binary data).</p></li>
-</ul></li>
+<li><p><strong>Backtracking</strong>: The solver explores possible solutions and, if it hits a dead end (where a solution doesn’t work), it backtracks to an earlier decision point and tries a different path. This helps the solver avoid wasting time on unworkable solutions.</p></li>
+<li><p><strong>Conflict-Driven Clause Learning (CDCL)</strong>: When the solver encounters a conflict (a situation where no solution can satisfy the current set of constraints), it learns from this conflict to avoid making similar mistakes in the future. This dramatically speeds up the solving process by preventing the solver from revisiting paths that are known to be dead ends.</p></li>
+<li><p><strong>Theory Propagation</strong>: Theories in SMT (such as arithmetic or arrays) have their own specific rules. SMT solvers use <strong>theory propagation</strong> to narrow down the possible values for variables based on the rules of these theories. For example, if a variable must satisfy a certain arithmetic equation, the solver can limit the range of possible values for that variable, which reduces the complexity of the search.</p></li>
 </ul>
-<p>An SMT solver can integrate these theories, solving a problem that involves many different types of constraints at once. This flexibility is what makes SMT such a versatile tool for solving problems that span both <strong>logic</strong> and <strong>mathematics</strong>.</p>
+<p>By combining these techniques, SMT solvers are able to handle problems that would be intractable for simpler solvers, allowing them to efficiently solve highly complex and large-scale problems.</p>
+</section>
+</section>
+<section id="combining-multiple-theories" class="level3">
+<h3 class="anchored" data-anchor-id="combining-multiple-theories">Combining multiple theories</h3>
+<p>One of the key strengths of <strong>SMT solvers</strong> is their ability to handle multiple theories simultaneously, allowing them to solve problems that involve not just simple logic but a mixture of complex mathematical domains. This combination of theories allows SMT solvers to model real-world systems with a higher degree of accuracy and sophistication. By integrating diverse theories, SMT solvers can solve problems that span multiple <strong>domains of mathematics and logic</strong> in a seamless way. Let’s take a closer look at how multiple theories work together in SMT, and why this makes SMT solvers exceptionally powerful.</p>
+<p>When we talk about SMT solvers “combining multiple theories,” what we really mean is that the solver is capable of reasoning about different kinds of constraints that apply to different types of data—all at the same time.</p>
+<p>Each theory brings its own set of <strong>rules and constraints</strong>. For example:</p>
+<ul>
+<li><p>Arithmetic theory deals with equations and inequalities.</p></li>
+<li><p>Array theory includes operations like indexing and updating.</p></li>
+<li><p>Bit-vector theory includes binary manipulations like bit-shifting or bitwise AND/OR operations.</p></li>
+</ul>
+<p>In real-world applications, it’s rare for a problem to belong to just one theory. Often, multiple theories are at play. SMT solvers shine in such scenarios by integrating these different theories and <strong>coordinating the solving process</strong> so that constraints from all applicable theories are satisfied simultaneously.</p>
+<p>Let’s now explore some concrete examples where multiple theories interact in SMT.</p>
+</section>
+<section id="verifying-software-with-mixed-data-types" class="level3">
+<h3 class="anchored" data-anchor-id="verifying-software-with-mixed-data-types">Verifying software with mixed data types</h3>
+<p>Consider a software verification problem in which a program performs both arithmetic computations and manipulates arrays. Suppose the program performs operations like:</p>
+<ol type="1">
+<li><p><strong>Arithmetic</strong>: <span class="math inline">x = a + b</span>.</p></li>
+<li><p><strong>Array access</strong>: Reading an element from an array <span class="math inline">arr[i]</span>.</p></li>
+<li><p><strong>Bitwise operations</strong>: <span class="math inline">z = x \&amp; y</span>, where <span class="math inline">\&amp;</span> is the bitwise AND operation.</p></li>
+</ol>
+<p>To ensure the correctness of this program, we need to check if the program will behave correctly for any given inputs. Here’s how <strong>multiple theories</strong> would be combined by the SMT solver:</p>
+<ol type="1">
+<li><p><strong>Arithmetic theory</strong> will handle the equation <span class="math inline">x = a + b</span>, ensuring that the sum is computed correctly according to arithmetic rules. The solver will also check that variables like <span class="math inline">x</span>, <span class="math inline">a</span>, and <span class="math inline">b</span> are appropriately constrained (e.g., <span class="math inline">x</span> must be an integer).</p></li>
+<li><p><strong>Array theory</strong> will handle the operation <span class="math inline">arr[i]</span>, ensuring that the index <span class="math inline">i</span> is valid (i.e., it lies within the bounds of the array). It will also ensure that the right value is retrieved from the array and assigned to the right variable. The solver checks that accessing <span class="math inline">arr[i]</span> doesn’t lead to an out-of-bounds error.</p></li>
+<li><p><strong>Bit-vector theory</strong> will manage the bitwise operation <span class="math inline">z = x \&amp; y</span>, ensuring that the binary representation of <span class="math inline">x</span> and <span class="math inline">y</span> is correctly manipulated at the bit level. This is crucial for many low-level computing tasks, such as encoding or encryption, where binary data is processed.</p></li>
+</ol>
+<p>By combining these theories, the SMT solver verifies that the program will execute correctly, no matter what values are assigned to the variables. The solver considers all possible inputs and execution paths to prove that there are no runtime errors, incorrect calculations, or invalid memory accesses.</p>
+</section>
+<section id="a-coordinated-process" class="level3">
+<h3 class="anchored" data-anchor-id="a-coordinated-process">A coordinated process</h3>
+<p>The magic of SMT solvers lies in their ability to coordinate between these multiple theories while solving a problem. Theories often interact in complex ways, so SMT solvers must <strong>communicate between theories</strong> to resolve constraints effectively. This involves a process known as <strong>theory combination</strong> or <strong>theory propagation</strong>.</p>
+<ol type="1">
+<li><p><strong>Theory propagation</strong>: Each theory can propagate constraints based on its specific rules. For example, if the arithmetic theory deduces that <span class="math inline">x &gt; 10</span>, then this information is passed to the array theory to check if accessing <span class="math inline">arr[x]</span> is still valid, ensuring <span class="math inline">x</span> doesn’t exceed the array bounds.</p></li>
+<li><p><strong>Conflict resolution</strong>: If a conflict arises—such as the arithmetic theory concluding <span class="math inline">x = 5</span>, while the bit-vector theory requires <span class="math inline">x</span> to have a binary value that would make <span class="math inline">x = 3</span>, the solver identifies this conflict and attempts to resolve it by exploring alternative solutions. This iterative process is essential for finding a solution that satisfies all constraints across different theories.</p></li>
+<li><p><strong>Theory interpolation</strong>: When two different theories interact, SMT solvers use techniques like <strong>theory interpolation</strong> to reconcile their different views of the problem. For instance, arithmetic may dictate that <span class="math inline">x = 4</span>, while array theory may require that <span class="math inline">x</span> be within certain index limits. The solver navigates these competing constraints by narrowing down possible values for <span class="math inline">x</span> that satisfy both theories.</p></li>
+</ol>
+<p>These interactions make SMT solvers <strong>more efficient</strong> at solving problems that would be too difficult for simpler solvers that only handle one theory at a time.</p>
+</section>
+<section id="flexibility-across-domains" class="level3">
+<h3 class="anchored" data-anchor-id="flexibility-across-domains">Flexibility across domains</h3>
+<p>The flexibility of SMT solvers to combine multiple theories makes them incredibly versatile. Here are a few real-world examples that highlight their power across different domains:</p>
+<ul>
+<li><p><strong>Cryptographic verification</strong>: SMT solvers are used to verify cryptographic algorithms, such as those used for data encryption and digital signatures. Cryptographic operations often involve both <strong>arithmetic</strong> (modular arithmetic over large numbers) and <strong>bitwise manipulations</strong> (such as shifting bits or performing XOR operations).</p>
+<p>For instance, verifying the correctness of a <strong>RSA encryption algorithm</strong> requires an SMT solver to:</p>
+<ul>
+<li><p>Check the <strong>modular arithmetic</strong> involved in key generation and encryption.</p></li>
+<li><p>Ensure the <strong>bitwise operations</strong> used to encode and decode messages are performed correctly.</p></li>
+</ul>
+<p>By integrating arithmetic and bit-vector theories, an SMT solver can ensure that the algorithm is mathematically secure and functions as expected for all inputs.</p></li>
+<li><p><strong>Optimizing robotic movements</strong>: In modern factories, robots are often programmed to perform complex tasks that involve both <strong>decision-making</strong> (logic) and <strong>precise control of movement</strong> (arithmetic). SMT solvers are used to <strong>optimize robotic movements</strong>, ensuring that they follow the most efficient path while respecting physical constraints like speed, distance, and safety.</p>
+<p>An SMT solver may combine:</p>
+<ul>
+<li><p><strong>Linear arithmetic</strong> to model the robot’s physical movements.</p></li>
+<li><p><strong>Logic</strong> to represent decision-making rules, such as “if an obstacle is detected, stop the robot.”</p></li>
+<li><p><strong>Array theory</strong> to manage data about the robot’s environment and task status.</p></li>
+</ul>
+<p>By solving these constraints together, the SMT solver finds an optimal plan for the robot that minimizes movement time, avoids obstacles, and completes tasks in the most efficient way possible.</p></li>
+<li><p><strong>Artificial Intelligence: Planning and Scheduling</strong>: AI systems often need to make decisions that involve both logic and time-based scheduling. For example, an AI planning system might need to schedule tasks for multiple robots working in parallel, ensuring that each robot finishes its task without clashing with others.</p>
+<p>SMT solvers can:</p>
+<ul>
+<li><p>Use <strong>arithmetic theory</strong> to track time constraints, such as ensuring that task A is completed before task B starts.</p></li>
+<li><p>Use <strong>array theory</strong> to keep track of which robot is performing which task.</p></li>
+<li><p>Use <strong>logical reasoning</strong> to decide the best sequence of actions.</p></li>
+</ul>
+<p>By combining these theories, SMT solvers can efficiently plan out the most effective way for robots to complete tasks without delays or conflicts, making AI systems smarter and more reliable.</p></li>
+</ul>
+</section>
+</section>
+<section id="z3" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="z3">Z3</h2>
+<p><a href="https://www.microsoft.com/en-us/research/project/z3-3/"><strong>Z3</strong></a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> is one of the most widely-used and powerful SMT solvers, developed by <strong>Microsoft Research</strong>. It is designed to solve logical and mathematical problems that involve both Boolean logic (True/False values) and a variety of mathematical structures, such as integers, real numbers, arrays, bit-vectors, and more. Z3 has become the go-to tool for a wide range of applications, from verifying software correctness to optimizing systems in industrial engineering. Its ability to handle large and complex problems efficiently, while combining different mathematical theories, sets it apart from other solvers.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;de Moura, L., &amp; Bjørner, N. (2008). <strong>Z3: An Efficient SMT Solver</strong>. <em>Tools and Algorithms for the Construction and Analysis of Systems (TACAS)</em>. <a href="https://www.microsoft.com/en-us/research/publication/z3-an-efficient-smt-solver/">Link to paper</a></p></div></div><section id="key-features" class="level3">
+<h3 class="anchored" data-anchor-id="key-features">Key features</h3>
+<ul>
+<li><p><strong>Multi-theory solver</strong>: Z3 can handle problems that involve multiple theories simultaneously, such as <strong>arithmetic</strong>, <strong>bit-vectors</strong>, <strong>arrays</strong>, and <strong>functions</strong>. This makes it versatile enough to solve complex real-world problems that span multiple domains of logic and mathematics. Whether you are working with numerical constraints, manipulating data structures like arrays, or verifying hardware circuits that operate at the bit level, Z3 can manage these interactions seamlessly.</p></li>
+<li><p><strong>High efficiency</strong>: Z3 is designed to solve extremely large problems with millions of variables and constraints. It employs advanced techniques, such as <strong>conflict-driven clause learning (CDCL)</strong>, <strong>backtracking</strong>, and <strong>theory propagation</strong>, to explore the search space efficiently. These techniques enable Z3 to quickly find solutions or prove that no solution exists, even for problems that are computationally intensive.</p></li>
+<li><p><strong>Combining logical and mathematical constraints</strong>: One of Z3’s most powerful features is its ability to combine <strong>logical constraints</strong> (such as those used in SAT solving) with <strong>mathematical constraints</strong> (such as equations and inequalities). For example, in software verification, Z3 can check both the logical flow of the program and the correctness of its arithmetic operations, ensuring that a program behaves as expected in all possible scenarios.</p></li>
+<li><p><strong>Modularity and extensibility</strong>: Z3 is highly modular, which means that users can extend its capabilities to suit specific applications. It allows developers to define custom theories and tailor the solver’s behavior to fit the particular needs of their problem domain. This flexibility makes Z3 suitable for a wide range of industries, including aerospace, finance, cybersecurity, and hardware design.</p></li>
+<li><p><strong>Rich API support</strong>: Z3 provides rich API support for various programming languages, including Python, C++, and Java. This means that users can integrate Z3 into their existing software tools and workflows easily. For instance, developers can use Z3 within a Python environment to model complex optimization problems, check for software bugs, or verify hardware designs. Its user-friendly interface and robust API make Z3 accessible to both researchers and engineers.</p></li>
+<li><p><strong>Proving and model generation</strong>: In addition to solving for satisfiability, Z3 can also be used to <strong>prove the correctness</strong> of formulas or <strong>generate models</strong> that demonstrate specific properties. For example, in verifying a software system, Z3 can either provide a counterexample where the program fails or prove that no such failure exists under any circumstances. This capability is essential in formal methods for software and hardware verification.</p></li>
+</ul>
+</section>
+</section>
+<section id="sudoku-time" class="level2">
+<h2 class="anchored" data-anchor-id="sudoku-time">Sudoku time!</h2>
+<p>Here is the Python code for solving a Sudoku puzzle using Z3, including a function that takes the puzzle as input and returns the solved puzzle, along with a main function that demonstrates its use.</p>
+<p>Let’s solve the following:</p>
+<div class="line-block">5 | 3 | 0 | 0 | 7 | 0 | 0 | 0 | 0 |<br>
+6 | 0 | 0 | 1 | 9 | 5 | 0 | 0 | 0 |<br>
+0 | 9 | 8 | 0 | 0 | 0 | 0 | 6 | 0 |<br>
+8 | 0 | 0 | 0 | 6 | 0 | 0 | 0 | 3 |<br>
+4 | 0 | 0 | 8 | 0 | 3 | 0 | 0 | 1 |<br>
+7 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 6 |<br>
+0 | 6 | 0 | 0 | 0 | 0 | 2 | 8 | 0 |<br>
+0 | 0 | 0 | 4 | 1 | 9 | 0 | 0 | 5 |<br>
+0 | 0 | 0 | 0 | 8 | 0 | 0 | 7 | 9 |</div>
+<div class="sourceCode" id="annotated-cell-1"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-1-1" class="code-annotation-target"><a href="#annotated-cell-1-1"></a><span class="im">from</span> z3 <span class="im">import</span> Int, Solver, And, Distinct, sat</span>
+<span id="annotated-cell-1-2"><a href="#annotated-cell-1-2"></a></span>
+<span id="annotated-cell-1-3"><a href="#annotated-cell-1-3"></a><span class="co"># Function to check if the solved Sudoku is correct</span></span>
+<span id="annotated-cell-1-4"><a href="#annotated-cell-1-4"></a><span class="kw">def</span> is_valid_sudoku(board):</span>
+<span id="annotated-cell-1-5"><a href="#annotated-cell-1-5"></a>  <span class="co"># Combined row and column checks in a single loop</span></span>
+<span id="annotated-cell-1-6"><a href="#annotated-cell-1-6"></a>  <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>):</span>
+<span id="annotated-cell-1-7"><a href="#annotated-cell-1-7"></a>    <span class="co"># Check distinct values in row</span></span>
+<span id="annotated-cell-1-8"><a href="#annotated-cell-1-8"></a>    <span class="cf">if</span> <span class="bu">len</span>(<span class="bu">set</span>(board[i])) <span class="op">!=</span> <span class="dv">9</span>:  </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-1-9" class="code-annotation-target"><a href="#annotated-cell-1-9"></a>      <span class="cf">return</span> <span class="va">False</span></span>
+<span id="annotated-cell-1-10"><a href="#annotated-cell-1-10"></a>    </span>
+<span id="annotated-cell-1-11"><a href="#annotated-cell-1-11"></a>    <span class="co"># Check distinct values in column</span></span>
+<span id="annotated-cell-1-12"><a href="#annotated-cell-1-12"></a>    col <span class="op">=</span> [board[j][i] <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)]</span>
+<span id="annotated-cell-1-13"><a href="#annotated-cell-1-13"></a></span>
+<span id="annotated-cell-1-14"><a href="#annotated-cell-1-14"></a>    <span class="cf">if</span> <span class="bu">len</span>(<span class="bu">set</span>(col)) <span class="op">!=</span> <span class="dv">9</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-1-15" class="code-annotation-target"><a href="#annotated-cell-1-15"></a>      <span class="cf">return</span> <span class="va">False</span></span>
+<span id="annotated-cell-1-16"><a href="#annotated-cell-1-16"></a></span>
+<span id="annotated-cell-1-17"><a href="#annotated-cell-1-17"></a>  <span class="co"># Check 3x3 subgrids</span></span>
+<span id="annotated-cell-1-18"><a href="#annotated-cell-1-18"></a>  <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">3</span>):</span>
+<span id="annotated-cell-1-19"><a href="#annotated-cell-1-19"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">3</span>):</span>
+<span id="annotated-cell-1-20"><a href="#annotated-cell-1-20"></a>      subgrid <span class="op">=</span> [board[i <span class="op">+</span> di][j <span class="op">+</span> dj] <span class="cf">for</span> di <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>) <span class="cf">for</span> dj <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)]</span>
+<span id="annotated-cell-1-21"><a href="#annotated-cell-1-21"></a></span>
+<span id="annotated-cell-1-22"><a href="#annotated-cell-1-22"></a>      <span class="cf">if</span> <span class="bu">len</span>(<span class="bu">set</span>(subgrid)) <span class="op">!=</span> <span class="dv">9</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-1-23" class="code-annotation-target"><a href="#annotated-cell-1-23"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="annotated-cell-1-24"><a href="#annotated-cell-1-24"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-1-25" class="code-annotation-target"><a href="#annotated-cell-1-25"></a>  <span class="cf">return</span> <span class="va">True</span></span>
+<span id="annotated-cell-1-26"><a href="#annotated-cell-1-26"></a></span>
+<span id="annotated-cell-1-27"><a href="#annotated-cell-1-27"></a><span class="co"># Function to solve a Sudoku puzzle using Z3</span></span>
+<span id="annotated-cell-1-28"><a href="#annotated-cell-1-28"></a><span class="kw">def</span> solve_sudoku(puzzle):</span>
+<span id="annotated-cell-1-29"><a href="#annotated-cell-1-29"></a>  <span class="co"># Create a 9x9 matrix of integer variables</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-1-30" class="code-annotation-target"><a href="#annotated-cell-1-30"></a>  X <span class="op">=</span> [[Int(<span class="ss">f"x_</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>j<span class="sc">}</span><span class="ss">"</span>) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)]</span>
+<span id="annotated-cell-1-31"><a href="#annotated-cell-1-31"></a>  </span>
+<span id="annotated-cell-1-32"><a href="#annotated-cell-1-32"></a>  <span class="co"># Define the solver</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-1-33" class="code-annotation-target"><a href="#annotated-cell-1-33"></a>  solver <span class="op">=</span> Solver()</span>
+<span id="annotated-cell-1-34"><a href="#annotated-cell-1-34"></a>  </span>
+<span id="annotated-cell-1-35"><a href="#annotated-cell-1-35"></a>  <span class="co"># Add constraints for cell values between 1 and 9</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-1-36" class="code-annotation-target"><a href="#annotated-cell-1-36"></a>  solver.add([And(X[i][j] <span class="op">&gt;=</span> <span class="dv">1</span>, X[i][j] <span class="op">&lt;=</span> <span class="dv">9</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)])</span>
+<span id="annotated-cell-1-37"><a href="#annotated-cell-1-37"></a>  </span>
+<span id="annotated-cell-1-38"><a href="#annotated-cell-1-38"></a>  <span class="co"># Add constraints for the pre-filled cells</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-1-39" class="code-annotation-target"><a href="#annotated-cell-1-39"></a>  solver.add([X[i][j] <span class="op">==</span> puzzle[i][j] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>) <span class="cf">if</span> puzzle[i][j] <span class="op">!=</span> <span class="dv">0</span>])</span>
+<span id="annotated-cell-1-40"><a href="#annotated-cell-1-40"></a>  </span>
+<span id="annotated-cell-1-41"><a href="#annotated-cell-1-41"></a>  <span class="co"># Add constraints for rows, columns, and subgrids to contain distinct values</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-1-42" class="code-annotation-target"><a href="#annotated-cell-1-42"></a>  solver.add([Distinct(X[i]) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)])  <span class="co"># Row distinct</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-1-43" class="code-annotation-target"><a href="#annotated-cell-1-43"></a>  solver.add([Distinct([X[i][j] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)]) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)])  <span class="co"># Column distinct</span></span>
+<span id="annotated-cell-1-44"><a href="#annotated-cell-1-44"></a>  solver.add([Distinct([X[i <span class="op">+</span> di][j <span class="op">+</span> dj] <span class="cf">for</span> di <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>) <span class="cf">for</span> dj <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)])</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-1-45" class="code-annotation-target"><a href="#annotated-cell-1-45"></a>              <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">3</span>) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">3</span>)])  <span class="co"># Subgrid distinct</span></span>
+<span id="annotated-cell-1-46"><a href="#annotated-cell-1-46"></a>  </span>
+<span id="annotated-cell-1-47"><a href="#annotated-cell-1-47"></a>  <span class="co"># Check if the Sudoku puzzle is solvable</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-1-48" class="code-annotation-target"><a href="#annotated-cell-1-48"></a>  <span class="cf">if</span> solver.check() <span class="op">==</span> sat:</span>
+<span id="annotated-cell-1-49"><a href="#annotated-cell-1-49"></a>    model <span class="op">=</span> solver.model()</span>
+<span id="annotated-cell-1-50"><a href="#annotated-cell-1-50"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-1-51" class="code-annotation-target"><a href="#annotated-cell-1-51"></a>    result <span class="op">=</span> [[model.evaluate(X[i][j]).as_long() <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">9</span>)]</span>
+<span id="annotated-cell-1-52"><a href="#annotated-cell-1-52"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-1-53" class="code-annotation-target"><a href="#annotated-cell-1-53"></a>    <span class="cf">return</span> result</span>
+<span id="annotated-cell-1-54"><a href="#annotated-cell-1-54"></a></span>
+<span id="annotated-cell-1-55"><a href="#annotated-cell-1-55"></a>  <span class="cf">else</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-1-56" class="code-annotation-target"><a href="#annotated-cell-1-56"></a>    <span class="cf">return</span> <span class="va">None</span></span>
+<span id="annotated-cell-1-57"><a href="#annotated-cell-1-57"></a></span>
+<span id="annotated-cell-1-58"><a href="#annotated-cell-1-58"></a><span class="co"># Example of solving and checking a Sudoku puzzle</span></span>
+<span id="annotated-cell-1-59"><a href="#annotated-cell-1-59"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="annotated-cell-1-60"><a href="#annotated-cell-1-60"></a>  <span class="co"># Input Sudoku puzzle (0 represents empty cells)</span></span>
+<span id="annotated-cell-1-61"><a href="#annotated-cell-1-61"></a>  puzzle <span class="op">=</span> [</span>
+<span id="annotated-cell-1-62"><a href="#annotated-cell-1-62"></a>    [<span class="dv">5</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">7</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>],</span>
+<span id="annotated-cell-1-63"><a href="#annotated-cell-1-63"></a>    [<span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">9</span>, <span class="dv">5</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>],</span>
+<span id="annotated-cell-1-64"><a href="#annotated-cell-1-64"></a>    [<span class="dv">0</span>, <span class="dv">9</span>, <span class="dv">8</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">6</span>, <span class="dv">0</span>],</span>
+<span id="annotated-cell-1-65"><a href="#annotated-cell-1-65"></a>    [<span class="dv">8</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">3</span>],</span>
+<span id="annotated-cell-1-66"><a href="#annotated-cell-1-66"></a>    [<span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">8</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>],</span>
+<span id="annotated-cell-1-67"><a href="#annotated-cell-1-67"></a>    [<span class="dv">7</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">6</span>],</span>
+<span id="annotated-cell-1-68"><a href="#annotated-cell-1-68"></a>    [<span class="dv">0</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">8</span>, <span class="dv">0</span>],</span>
+<span id="annotated-cell-1-69"><a href="#annotated-cell-1-69"></a>    [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">9</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">5</span>],</span>
+<span id="annotated-cell-1-70"><a href="#annotated-cell-1-70"></a>    [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">8</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">7</span>, <span class="dv">9</span>]</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-1-71" class="code-annotation-target"><a href="#annotated-cell-1-71"></a>  ]</span>
+<span id="annotated-cell-1-72"><a href="#annotated-cell-1-72"></a></span>
+<span id="annotated-cell-1-73"><a href="#annotated-cell-1-73"></a>  <span class="co"># Solve the Sudoku puzzle</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-1-74" class="code-annotation-target"><a href="#annotated-cell-1-74"></a>  solved <span class="op">=</span> solve_sudoku(puzzle)</span>
+<span id="annotated-cell-1-75"><a href="#annotated-cell-1-75"></a></span>
+<span id="annotated-cell-1-76"><a href="#annotated-cell-1-76"></a>  <span class="co"># Print the solved Sudoku puzzle and check if it's valid</span></span>
+<span id="annotated-cell-1-77"><a href="#annotated-cell-1-77"></a>  <span class="cf">if</span> solved:</span>
+<span id="annotated-cell-1-78"><a href="#annotated-cell-1-78"></a>    <span class="cf">for</span> row <span class="kw">in</span> solved:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-1-79" class="code-annotation-target"><a href="#annotated-cell-1-79"></a>      <span class="bu">print</span>(row)</span>
+<span id="annotated-cell-1-80"><a href="#annotated-cell-1-80"></a></span>
+<span id="annotated-cell-1-81"><a href="#annotated-cell-1-81"></a>    <span class="co"># Check if the solution is valid</span></span>
+<span id="annotated-cell-1-82"><a href="#annotated-cell-1-82"></a>    <span class="cf">if</span> is_valid_sudoku(solved):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-1-83" class="code-annotation-target"><a href="#annotated-cell-1-83"></a>      <span class="bu">print</span>(<span class="st">"The solution is valid!"</span>)</span>
+<span id="annotated-cell-1-84"><a href="#annotated-cell-1-84"></a></span>
+<span id="annotated-cell-1-85"><a href="#annotated-cell-1-85"></a>    <span class="cf">else</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-1-86" class="code-annotation-target"><a href="#annotated-cell-1-86"></a>      <span class="bu">print</span>(<span class="st">"The solution is not valid!"</span>)</span>
+<span id="annotated-cell-1-87"><a href="#annotated-cell-1-87"></a></span>
+<span id="annotated-cell-1-88"><a href="#annotated-cell-1-88"></a>  <span class="cf">else</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-1-89" class="code-annotation-target"><a href="#annotated-cell-1-89"></a>    <span class="bu">print</span>(<span class="st">"No solution found."</span>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="1" data-code-annotation="1">Import required components from the Z3 solver library.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="9" data-code-annotation="2">Check distinct values in row: Ensures each row contains distinct values (1 to 9).</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="15" data-code-annotation="3">Check distinct values in column: Ensures each column contains distinct values (1 to 9).</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="23" data-code-annotation="4">Check 3x3 subgrids: Ensures each 3x3 subgrid contains distinct values.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="25" data-code-annotation="5">Return <code>True</code> if the board is valid, otherwise return <code>False</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="30" data-code-annotation="6">Create a 9x9 matrix of integer variables using Z3’s <code>Int</code> to represent each cell.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="33" data-code-annotation="7">Initialize the Z3 solver to begin solving the problem.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="8">8</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="36" data-code-annotation="8">Add constraints to ensure that each cell value is between 1 and 9.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="9">9</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="39" data-code-annotation="9">Add constraints for the pre-filled cells (the given values from the puzzle) to keep them unchanged.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="10">10</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="42" data-code-annotation="10">Add row constraints: Each row must contain distinct values.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="11">11</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="43" data-code-annotation="11">Add column constraints: Each column must contain distinct values.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="12">12</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="45" data-code-annotation="12">Add subgrid constraints: Each 3x3 subgrid must contain distinct values.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="13">13</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="48" data-code-annotation="13">Check if the Sudoku is solvable using the Z3 solver.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="14">14</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="51" data-code-annotation="14">Extract the solution: If a solution is found, extract it from the model.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="15">15</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="53" data-code-annotation="15">Return the solved puzzle.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="16">16</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="56" data-code-annotation="16">Return <code>None</code> if no solution is found.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="17">17</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="71" data-code-annotation="17">Input Sudoku puzzle: A 9x9 grid where <code>0</code> represents empty cells.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="18">18</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="74" data-code-annotation="18">Solve the puzzle: Call the <code>solve_sudoku()</code> function.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="19">19</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="79" data-code-annotation="19">Print the solved puzzle.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="20">20</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="83" data-code-annotation="20">Check if the solution is valid using the <code>is_valid_sudoku()</code> function.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="21">21</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="86" data-code-annotation="21">Print an error message if the solution is not valid.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="22">22</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="89" data-code-annotation="22">Print “No solution found” if no solution can be found by the solver.</span>
+</dd>
+</dl>
+<p>and Z3 gives us:</p>
+<div class="line-block">5 | 3 | 4 | 6 | 7 | 8 | 9 | 1 | 2 |<br>
+6 | 7 | 2 | 1 | 9 | 5 | 3 | 4 | 8 |<br>
+1 | 9 | 8 | 3 | 4 | 2 | 5 | 6 | 7 |<br>
+8 | 5 | 9 | 7 | 6 | 1 | 4 | 2 | 3 |<br>
+4 | 2 | 6 | 8 | 5 | 3 | 7 | 9 | 1 |<br>
+7 | 1 | 3 | 9 | 2 | 4 | 8 | 5 | 6 |<br>
+9 | 6 | 1 | 5 | 3 | 7 | 2 | 8 | 4 |<br>
+2 | 8 | 7 | 4 | 1 | 9 | 6 | 3 | 5 |<br>
+3 | 4 | 5 | 2 | 8 | 6 | 1 | 7 | 9 |</div>
 
 
 </section>
-</section>
+
 
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
