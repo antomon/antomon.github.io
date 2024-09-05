@@ -10,7 +10,163 @@
 <atom:link href="https://antomon.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description>Antonio Montano&#39;s personal blog</description>
 <generator>quarto-1.5.57</generator>
-<lastBuildDate>Fri, 09 Aug 2024 22:00:00 GMT</lastBuildDate>
+<lastBuildDate>Wed, 04 Sep 2024 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>Sudoku and Satisfiability Modulo Theories</title>
+  <dc:creator>Antonio Montano</dc:creator>
+  <link>https://antomon.github.io/posts/satisfiability-modulo-theories-sudoku/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Imagine you’re trying to solve a puzzle where you have to figure out whether certain statements can all be true at the same time. This might sound simple, but what if those statements involve complex rules and relationships? Problems like these are at the heart of <strong>SAT (Boolean Satisfiability Problem)</strong> and <strong>SMT (Satisfiability Modulo Theories)</strong>, two important topics in computer science and logic. They help us solve complex puzzles in many areas, from designing computer chips to scheduling tasks. This essay will explore what SAT and SMT are, why they matter, and how they are used in real-world situations.</p>
+<p>As a fun and practical example of how these tools can be used, we’ll end this post by showing how SMT can be used to solve Sudoku puzzles, turning a well-known puzzle into a logic-based problem-solving task.</p>
+<section id="sat" class="level3">
+<h3 class="anchored" data-anchor-id="sat">SAT</h3>
+<p><strong>SAT</strong> stands for <strong>Boolean Satisfiability Problem</strong>. It’s all about answering a basic question: <em>“Can we assign True or False values to certain variables in a way that makes a given logical formula true?”</em></p>
+<p>Think of SAT as a logic puzzle. Here’s an example:</p>
+<p>You’re given the statements:</p>
+<ol type="1">
+<li><p>$ x $ or $ y $ (meaning one of them, or both, must be True).</p></li>
+<li><p>Not $ x $ or $ z $ (meaning either $ x $ is False, or $ z $ is True, or both).</p></li>
+<li><p>Not $ y $ or not $ z $ (meaning at least one of $ y $ or $ z $ must be False).</p></li>
+</ol>
+<p>Can you assign True or False values to $ x $, $ y $, and $ z $ that make all of these statements true at the same time?</p>
+<p>This is a SAT problem! The goal is to find a solution where the statements don’t contradict each other, or determine if no such solution exists.</p>
+<section id="propositional-logic" class="level4">
+<h4 class="anchored" data-anchor-id="propositional-logic">Propositional logic</h4>
+<p><strong>Propositional logic</strong>, also known as <strong>Boolean logic</strong>, deals with statements that can either be <strong>True</strong> or <strong>False</strong>. These statements are called <strong>propositions</strong>, and they are combined using logical operators to form <strong>propositional logic formulas</strong>.</p>
+<p>A <strong>proposition</strong> is a statement that has a definite truth value—either True or False. For example:</p>
+<ul>
+<li><p>“It is raining” is a proposition, and it can be either True or False.</p></li>
+<li><p>In mathematical terms, we often use <strong>variables</strong> to represent propositions. For example, we might let:</p>
+<ul>
+<li><p>$ x $ represent “It is raining”.</p></li>
+<li><p>$ y $ represent “It is cloudy”.</p></li>
+</ul></li>
+</ul>
+<p>Each of these variables can take the value True or False.</p>
+<p>In propositional logic, we use <strong>logical operators</strong> to combine propositions into more complex formulas. The most important operators are:</p>
+<ul>
+<li><p><strong>AND ( ∧ )</strong>: The expression $ x y $ is True only if both $ x $ and $ y $ are True. Example: “It is raining <strong>and</strong> it is cloudy” is only True if both things are happening.</p></li>
+<li><p><strong>OR ( ∨ )</strong>: The expression $ x y $ is True if either $ x $ or $ y $ (or both) are True. Example: “It is raining <strong>or</strong> it is cloudy” is True if at least one of them is happening.</p></li>
+<li><p><strong>NOT ( ¬ )</strong>: The expression $ x $ (read as “not $ x $”) is True if $ x $ is False. Example: “It is <strong>not</strong> raining” is True if $ x $ is False (i.e., it is not raining).</p></li>
+<li><p><strong>Implication ( → )</strong>: The expression $ x y $ (read as “if $ x $, then $ y $”) is True unless $ x $ is True and $ y $ is False. Example: “If it is raining, then it is cloudy” is True unless it’s raining but not cloudy.</p></li>
+</ul>
+<p>A <strong>propositional logic formula</strong> is a combination of variables and logical operators that can be evaluated as True or False, depending on the values of the variables.</p>
+<p>For example, consider the formula:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A(x%20%5Clor%20y)%20%5Cland%20(%5Cneg%20x%20%5Clor%20z)%0A"></p>
+<p>This formula combines the variables $ x $, $ y $, and $ z $ using the logical operators AND, OR, and NOT. The task is to determine whether there are values for $ x $, $ y $, and $ z $ that make the whole formula True. This is exactly what the SAT problem asks us to solve.</p>
+</section>
+<section id="decision-problems" class="level4">
+<h4 class="anchored" data-anchor-id="decision-problems">Decision problems</h4>
+<p>A <strong>decision problem</strong> is a question that can be answered with a simple <strong>Yes</strong> or <strong>No</strong>. In the case of SAT, the decision problem is:</p>
+<p><em>“Given a propositional logic formula, is there an assignment of True/False values to the variables that makes the formula True?”</em></p>
+<p>If such an assignment exists, the answer is <strong>Yes</strong>, and we say the formula is <strong>satisfiable</strong>. If no such assignment exists, the answer is <strong>No</strong>, and we say the formula is <strong>unsatisfiable</strong>.</p>
+<p>Let’s consider a simple SAT problem:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A(x%20%5Clor%20y)%20%5Cland%20(%5Cneg%20x%20%5Clor%20z)%20%5Cland%20(%5Cneg%20y%20%5Clor%20%5Cneg%20z)%0A"></p>
+<p>We want to know if there’s a way to assign True or False values to $ x $, $ y $, and $ z $ so that the entire formula is True.</p>
+<p>Let’s try a few combinations:</p>
+<ul>
+<li><p>If $ x = , y = , z = $:</p>
+<ul>
+<li><p>$ (x y) $ = True, $ (x z) $ = True, but $ (y z) $ = False.</p></li>
+<li><p>This assignment does <strong>not</strong> satisfy the formula.</p></li>
+</ul></li>
+<li><p>If $ x = , y = , z = $:</p>
+<ul>
+<li><p>$ (x y) $ = True, $ (x z) $ = True, and $ (y z) $ = True.</p></li>
+<li><p>This assignment <strong>does</strong> satisfy the formula!</p></li>
+</ul></li>
+</ul>
+<p>So, the formula is satisfiable, and the answer to the SAT problem is Yes.</p>
+</section>
+<section id="standardizing-sat-problems" class="level4">
+<h4 class="anchored" data-anchor-id="standardizing-sat-problems">Standardizing SAT problems</h4>
+<p>Many SAT problems are written in a special format called <strong>Conjunctive Normal Form (CNF)</strong>. A formula is in CNF if it is a conjunction (AND) of one or more <strong>clauses</strong>, where each clause is a disjunction (OR) of <strong>literals</strong>. A literal is simply a variable or its negation.</p>
+<p>For example, the formula:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A(x%20%5Clor%20%5Cneg%20y)%20%5Cland%20(%5Cneg%20x%20%5Clor%20z%20%5Clor%20y)%0A"></p>
+<p>is in CNF because it is an AND of two OR clauses.</p>
+<p>Why is CNF important? SAT solvers (programs designed to solve SAT problems) work more efficiently when the formula is in CNF. In fact, any propositional logic formula can be converted into CNF without changing its satisfiability.</p>
+</section>
+<section id="np-complete-problems" class="level4">
+<h4 class="anchored" data-anchor-id="np-complete-problems">NP-Complete problems</h4>
+<p><strong>SAT is the first problem ever proven to be NP-complete.</strong> This means that:</p>
+<ol type="1">
+<li><p><strong>SAT is in NP</strong>: Given a solution (an assignment of True/False values), we can check if it satisfies the formula in a reasonable amount of time (in polynomial time).</p></li>
+<li><p><strong>SAT is NP-hard</strong>: Every problem in NP can be reduced to SAT in polynomial time. In simpler terms, if we can solve SAT quickly, we can solve every problem in NP quickly.</p></li>
+</ol>
+<p>This discovery has huge implications in computer science because it shows how SAT is connected to many other difficult problems. If we can find an efficient algorithm to solve SAT, we can apply it to a wide range of important problems, like optimization, scheduling, and even cryptography.</p>
+</section>
+<section id="sat-solvers-how-do-they-work" class="level4">
+<h4 class="anchored" data-anchor-id="sat-solvers-how-do-they-work">SAT solvers: how do they work?</h4>
+<p>SAT problems can get very complicated, especially when there are many variables and clauses. To solve them efficiently, we use <strong>SAT solvers</strong>, which are computer programs designed to find solutions to SAT problems. SAT solvers use several smart strategies to speed up the search for a solution. Two of the most common strategies are:</p>
+<ul>
+<li><p><strong>Backtracking</strong>: The solver tries different assignments of True/False values, and if it hits a dead end (an unsatisfiable assignment), it backtracks and tries a different path.</p></li>
+<li><p><strong>Unit propagation</strong>: If a clause contains only one unassigned variable, the solver can immediately assign it a value that satisfies the clause.</p></li>
+</ul>
+<p>Modern SAT solvers can solve problems with thousands or even millions of variables and clauses. These solvers are used in many applications, including verifying that hardware circuits work correctly and solving complex puzzles like Sudoku.</p>
+</section>
+</section>
+<section id="real-world-applications" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-applications">Real-world applications</h3>
+<p>Now that we know what SAT is, let’s explore some real-world uses:</p>
+<ul>
+<li><p><strong>Hardware and software verification</strong>: Before building a computer chip, engineers use SAT to check that the design behaves correctly. A mistake in the design could cause a computer to crash or malfunction. SAT solvers help catch these errors before they become costly problems. Similarly, SAT is used in software verification to ensure that a program behaves as expected under all possible conditions.</p></li>
+<li><p><strong>AI and decision making</strong>: In artificial intelligence (AI), SAT is used to solve planning and decision-making problems. For example, SAT can help an AI system figure out the best sequence of actions to achieve a goal while following certain rules.</p></li>
+<li><p><strong>Puzzles and games</strong>: Many logic-based puzzles, like Sudoku or Minesweeper, can be turned into SAT problems. A SAT solver can then be used to find the solution to the puzzle, or to check if the puzzle has a unique solution.</p></li>
+</ul>
+</section>
+<section id="what-is-smt" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-smt">What is SMT?</h3>
+<p>While SAT is focused on True/False logic, <strong>SMT (Satisfiability Modulo Theories)</strong> takes it a step further. SMT solves more complex problems by allowing us to deal with numbers, functions, and other things that aren’t just True or False.</p>
+<p><strong>The Difference Between SAT and SMT:</strong> - In SAT, the variables are either True or False. - In SMT, the variables can also represent numbers, arrays, or more complicated data types, and the problem includes rules (called <strong>theories</strong>) about how these variables relate to each other.</p>
+<p>Let’s look at an example of an SMT problem: - <strong>SAT version</strong>: $ x y z $ - Here, $ x $, $ y $, and $ z $ can be either True or False. - <strong>SMT version</strong>: $ x + y &gt; 3 x - y = 1 x $ - In this case, $ x $ and $ y $ are numbers, and we are asking if there are values for $ x $ and $ y $ that satisfy all the conditions.</p>
+<p><strong>Why SMT Matters:</strong></p>
+<p>SMT is incredibly useful in solving real-world problems because it combines logic with more complicated reasoning. For example, SMT can be used to: - <strong>Verify Software</strong>: Ensure that a computer program behaves correctly, even in all possible scenarios. - <strong>Optimize Scheduling</strong>: Figure out the best way to assign tasks or resources, like in planning flight schedules. - <strong>Solve Equations</strong>: SMT solvers can find solutions to math problems where we have multiple conditions to satisfy, like ensuring the total cost of a project stays under budget while meeting all the project requirements.</p>
+<hr>
+</section>
+<section id="how-do-sat-and-smt-solvers-work" class="level3">
+<h3 class="anchored" data-anchor-id="how-do-sat-and-smt-solvers-work">How Do SAT and SMT Solvers Work?</h3>
+<p>Both SAT and SMT problems can be tricky to solve by hand, especially when they involve lots of variables and conditions. That’s where <strong>SAT solvers</strong> and <strong>SMT solvers</strong> come in.</p>
+<p>A <strong>SAT solver</strong> is a computer program that can take a Boolean formula (like a complex logic puzzle) and quickly check if it’s possible to assign True/False values that make the formula true. These solvers use clever techniques like <strong>backtracking</strong> (trying different possibilities until one works) to efficiently search for a solution.</p>
+<p>An <strong>SMT solver</strong> works similarly, but it’s more powerful because it can handle numbers, functions, and other complex relationships between variables. One of the most popular SMT solvers is called <strong>Z3</strong>, developed by Microsoft Research. SMT solvers often break down the problem into two parts: 1. <strong>Boolean Abstraction</strong>: First, they solve the simpler SAT part of the problem (the logical structure). 2. <strong>Theory Solving</strong>: Then they check whether the numbers or other variables meet the conditions imposed by the theories (e.g., arithmetic rules).</p>
+<hr>
+</section>
+<section id="real-world-applications-of-sat-and-smt" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-applications-of-sat-and-smt">Real-World Applications of SAT and SMT</h3>
+<ol type="1">
+<li><p><strong>Verifying Computer Hardware and Software</strong>: Before a computer chip is built, engineers use SAT and SMT to make sure the design works. Similarly, SMT is used to verify that a software program behaves correctly in all possible situations.</p></li>
+<li><p><strong>Solving Puzzles</strong>: SAT solvers can be used to solve logic puzzles, like Sudoku or Word Search puzzles, by encoding the puzzle as a SAT problem and then letting the solver find the solution.</p></li>
+<li><p><strong>Optimization Problems</strong>: Imagine you’re organizing a big event, and you need to schedule rooms for different activities without any conflicts. SMT solvers can help you find the optimal schedule, ensuring that all the rooms and time slots are used efficiently.</p></li>
+<li><p><strong>Robotics and AI</strong>: In robotics, SMT solvers help design systems where the robot has to follow certain rules, such as moving through a space while avoiding obstacles. In AI, SAT and SMT can be used for reasoning, planning, and decision-making.</p></li>
+</ol>
+<hr>
+</section>
+<section id="conclusion" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion">Conclusion:</h3>
+<p>SAT and SMT might seem abstract, but they are powerful tools that help solve real-world problems in areas like technology, engineering, and even puzzle-solving. SAT focuses on simple True/False questions, while SMT goes beyond this to include numbers and other more complex objects. Both are important in making sure that systems—from computer chips to software programs—work correctly and efficiently.</p>
+<p>By learning about SAT and SMT, you’re diving into a fascinating world of logic and problem-solving that impacts many areas of modern life. Who knew that something as simple as asking, “Can this be true?” could unlock so many solutions?</p>
+<hr>
+<p>This essay introduces SAT and SMT in a way that connects them to both logic and everyday problem-solving. As you go further in your studies, you may encounter SAT and SMT in fields like computer science, mathematics, or engineering, where they play a crucial role in optimizing and verifying complex systems.</p>
+
+
+</section>
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>mathematics</category>
+  <category>Python</category>
+  <category>theory</category>
+  <category>🇬🇧</category>
+  <guid>https://antomon.github.io/posts/satisfiability-modulo-theories-sudoku/</guid>
+  <pubDate>Wed, 04 Sep 2024 22:00:00 GMT</pubDate>
+  <media:content url="https://antomon.github.io/posts/satisfiability-modulo-theories-sudoku/smt-sudoku.webp" medium="image" type="image/webp"/>
+</item>
 <item>
   <title>The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell</title>
   <dc:creator>Antonio Montano</dc:creator>
