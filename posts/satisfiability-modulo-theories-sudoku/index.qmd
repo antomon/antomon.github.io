@@ -399,6 +399,232 @@ Key features:
 
 - **Proving and model generation**: In addition to solving for satisfiability, Z3 can also be used to **prove the correctness** of formulas or **generate models** that demonstrate specific properties. For example, in verifying a software system, Z3 can either provide a counterexample where the program fails or prove that no such failure exists under any circumstances. This capability is essential in formal methods for software and hardware verification.
 
+### API basic usage
+
+The **Z3 solver API** provides a powerful interface for solving constraint satisfaction problems in Python. To use it, you first need to import Z3’s key components, such as `Solver()`, `Int()`, and constraint functions like `And()`, `Or()`, and `Distinct()`.
+
+You start by defining variables using `Int()` for integers or other types like `Bool()` for Boolean values. For example, to define an integer variable `X` and `Y`, you can do:
+
+```python
+from z3 import Int
+
+X = Int('X')
+Y = Int('Y')
+```
+This creates two integer variables `X` and `Y` that can take integer values.
+
+Next, you initialize the Z3 solver using the `Solver()` class. The solver will handle adding constraints and finding solutions. For example:
+
+```python
+from z3 import Solver
+
+solver = Solver()  # Initialize the Z3 solver
+```
+
+Now, you can add constraints to the solver using `solver.add()`. For example, let’s say you want to add a constraint that the sum of `X` and `Y` should equal 10, and both `X` and `Y` should be greater than 0:
+
+```python
+solver.add(X + Y == 10)  # Add constraint that X + Y equals 10
+solver.add(X > 0, Y > 0)  # Add constraint that X and Y are greater than 0
+```
+
+You can also use logical operators like `Or()` and `And()` for more complex constraints. For example:
+
+```python
+from z3 import Or
+solver.add(Or(X == 3, Y == 7))  # X must be 3 or Y must be 7
+```
+
+Once all constraints are added, you check whether the solver can find a solution by calling `solver.check()`:
+
+```python
+if solver.check() == sat:
+    model = solver.model()  # Retrieve the solution
+
+    print(f"X = {model.evaluate(X)}")
+    print(f"Y = {model.evaluate(Y)}")
+
+else:
+    print("No solution found")
+```
+
+Here, `sat` indicates that the problem is satisfiable. If a solution is found, `solver.model()` retrieves the values of the variables that meet all the constraints.
+
+In the example above, if the solver finds a solution, it evaluates the variables `X` and `Y` using `model.evaluate()`. For example, if `X = 3` and `Y = 7`, the output will be:
+
+```plaintext
+X = 3
+Y = 7
+```
+
+If no solution exists, `solver.check()` will return `unsat`, meaning the constraints are unsatisfiable.
+
+Here’s a complete example that ties everything together:
+
+```python
+from z3 import Int, Solver, Or
+
+# Define integer variables
+X = Int('X')
+Y = Int('Y')
+
+# Set up the solver
+solver = Solver()
+
+# Add some constraints
+solver.add(X + Y == 10)
+solver.add(X > 0, Y > 0)
+solver.add(Or(X == 3, Y == 7))
+
+# Solve the problem
+if solver.check() == sat:
+    model = solver.model()
+
+    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")
+
+else:
+    print("No solution found")
+```
+
+This simple example shows how Z3 can be used in Python to solve constraint satisfaction problems. With just a few lines of code, you can define variables, add constraints, and let Z3 find solutions for you. This makes Z3 a powerful tool for solving puzzles, optimization problems, or more complex logical tasks.
+
+### API overview
+
+The **Z3 solver API** provides a robust framework for solving a wide range of problems, including logic, optimization, and constraint satisfaction, using **SMT (Satisfiability Modulo Theories)**. It leverages mathematical methods such as **Boolean satisfiability (SAT)**, **linear arithmetic**, and **theory solvers** (for arrays, bit-vectors, real arithmetic, etc.). Z3's API allows you to formulate complex problems in terms of constraints and logical propositions, which it then solves using advanced heuristics, backtracking, and conflict-driven clause learning (CDCL).
+
+Overview of Z3 API concepts:
+
+- Z3 supports different types of **variables**, such as:
+
+  - **Integers** (`Int()`).
+
+  - **Booleans** (`Bool()`).
+
+  - **Real numbers** (`Real()`).
+
+  - **Bit-vectors** (`BitVec()`).
+
+  Each variable is associated with a domain, and constraints are imposed on these variables. For instance:
+
+  ```python
+  from z3 import Int, Bool
+  
+  X = Int('X')  # Integer variable
+  B = Bool('B')  # Boolean variable
+  ```
+
+- Z3 allows you to add **arithmetic**, **logical**, and **set-theoretic constraints** to your problem. These constraints can involve:
+
+  - **Arithmetic operations**: `+`, `-`, `*`, `/`.
+
+  - **Logical operations**: `And()`, `Or()`, `Not()`, `Implies()`.
+
+  - **Relational operations**: `<`, `>`, `==`, `!=`.
+
+  - **Set operations**: `Distinct()` (for ensuring distinct values in a set of variables).
+
+  Example:
+
+  ```python
+  solver.add(X + 2 * Y == 10)  # Add an arithmetic constraint
+  solver.add(And(X > 0, Y < 10))  # Add logical constraints
+  ```
+
+- Z3 excels in combining **SAT solvers** with **theory solvers** for specific domains. Theories are specialized solvers that handle specific classes of constraints:
+
+  - **Linear arithmetic**: Handles constraints involving addition, subtraction, and multiplication by constants (e.g., `X + Y >= 10`).
+
+  - **Non-linear arithmetic**: Handles more complex polynomial expressions.
+
+  - **Bit-vectors**: Useful for hardware modeling, where operations are performed on fixed-size binary numbers (e.g., `BitVec('X', 32)` for a 32-bit integer).
+
+  - **Arrays and functions**: Z3 supports reasoning about arrays and functions, allowing for the definition of array indices and function applications.
+   
+- Z3 works by converting the problem into a **Boolean satisfiability (SAT)** problem and then applying **conflict-driven clause learning (CDCL)** to explore possible solutions. It divides the problem into **Boolean logic** and **theory-specific reasoning** (such as arithmetic or bit-vector theory). The general solving process involves:
+
+  - **SAT-based search**: Z3 uses efficient SAT-solving techniques to find assignments to variables.
+
+  - **Theory propagation**: Z3 incorporates theory solvers to check consistency within a specific theory (e.g., arithmetic or arrays).
+
+  - **Backtracking and learning**: If a contradiction is encountered, Z3 backtracks and uses the learned conflict to prune the search space, improving efficiency.
+
+- Z3 also supports **optimization** over variables, where you can minimize or maximize a given objective function. This is useful in cases where you are not just looking for any solution, but the **best** one (e.g., minimal cost, maximum profit). You can use `Optimize()` instead of `Solver()` to define an optimization problem:
+  
+  ```python
+  from z3 import Optimize
+
+  opt = Optimize()  # Initialize an optimization solver
+  opt.add(X + Y >= 10)
+  opt.minimize(X)  # Minimize X
+
+  if opt.check() == sat:
+      model = opt.model()
+
+      print(model.evaluate(X), model.evaluate(Y))
+  ```
+
+- **Advanced solver techniques**:
+
+  - **Conflict-driven clause learning (CDCL)**: Z3 uses CDCL to handle the SAT problem. It systematically explores possible assignments and learns from conflicts (inconsistent assignments) to avoid repeating them.
+
+  - **Backjumping and restarting**: Z3 employs heuristics that help it decide when to backtrack, restart, or jump past certain unsolvable branches to explore more promising parts of the search space.
+
+  - **Theory combination**: Z3 excels at combining different theories. For example, you can solve problems that simultaneously involve linear arithmetic, arrays, and bit-vectors, combining results from theory solvers to find the overall solution.
+
+- Z3 supports **first-order logic** and can handle **universal** and **existential quantifiers**. You can express statements like "for all" or "there exists" using `ForAll()` and `Exists()`, respectively:
+
+  ```python
+  from z3 import ForAll, Exists
+  X = Int('X')
+  solver.add(ForAll([X], X >= 0))  # X is non-negative for all X
+  ```
+
+- Z3 can generate **proofs** for unsatisfiable queries, showing why no solution exists for a given set of constraints. This is useful for formal verification tasks where you need to prove the correctness of systems, such as verifying hardware circuits or ensuring software correctness.
+
+- Mathematical methods:
+
+  - **SAT Solvers**: Z3 primarily uses **Boolean satisfiability** solvers, which handle the basic logic of whether a problem can be satisfied given the constraints. Z3 applies CDCL techniques to improve efficiency in solving SAT problems.
+
+  - **Theory Solvers**:
+
+    - **Linear arithmetic solvers**: These handle systems of linear inequalities and equations.
+
+    - **Non-linear arithmetic solvers**: For handling polynomial constraints.
+
+    - **Bit-vector theory**: This theory is used to model and verify properties of hardware systems where operations are performed on fixed-length bit-vectors.
+
+    - **Array theory**: Provides reasoning about operations on arrays, such as read and write operations, making Z3 suitable for reasoning about data structures and memory models.
+
+  - **Optimization algorithms**: Z3's `Optimize()` module uses **linear programming** and **mixed-integer programming** techniques to find solutions that optimize an objective function under a set of constraints.
+
+  - **Quantifier elimination**: Z3 implements methods for handling quantifiers in first-order logic, allowing it to reason about quantified statements efficiently.
+
+### Complete example
+
+```python
+from z3 import Int, Solver, And, Or, Distinct
+
+# Define integer variables
+X = Int('X')
+Y = Int('Y')
+
+# Set up the solver
+solver = Solver()
+
+# Add constraints
+solver.add(X + Y == 10)  # Arithmetic constraint
+solver.add(And(X > 0, Y > 0))  # Logical constraint
+solver.add(Or(X == 3, Y == 7))  # Logical disjunction
+
+# Solve the problem
+if solver.check() == sat:
+    model = solver.model()
+    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")
+
+else:
+    print("No solution found")
+```
+
 ## Sudoku time!
 
 ### 9x9 size

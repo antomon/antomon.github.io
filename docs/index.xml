@@ -311,6 +311,496 @@
 <li><p><strong>Rich API support</strong>: Z3 provides rich API support for various programming languages, including Python, C++, and Java. This means that users can integrate Z3 into their existing software tools and workflows easily. For instance, developers can use Z3 within a Python environment to model complex optimization problems, check for software bugs, or verify hardware designs. Its user-friendly interface and robust API make Z3 accessible to both researchers and engineers.</p></li>
 <li><p><strong>Proving and model generation</strong>: In addition to solving for satisfiability, Z3 can also be used to <strong>prove the correctness</strong> of formulas or <strong>generate models</strong> that demonstrate specific properties. For example, in verifying a software system, Z3 can either provide a counterexample where the program fails or prove that no such failure exists under any circumstances. This capability is essential in formal methods for software and hardware verification.</p></li>
 </ul>
+<section id="api-basic-usage" class="level3">
+<h3 class="anchored" data-anchor-id="api-basic-usage">API basic usage</h3>
+<p>The <strong>Z3 solver API</strong> provides a powerful interface for solving constraint satisfaction problems in Python. To use it, you first need to import Z3’s key components, such as <code>Solver()</code>, <code>Int()</code>, and constraint functions like <code>And()</code>, <code>Or()</code>, and <code>Distinct()</code>.</p>
+<p>You start by defining variables using <code>Int()</code> for integers or other types like <code>Bool()</code> for Boolean values. For example, to define an integer variable <code>X</code> and <code>Y</code>, you can do:</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Int</span>
+<span id="cb1-2"></span>
+<span id="cb1-3">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'X'</span>)</span>
+<span id="cb1-4">Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Y'</span>)</span></code></pre></div>
+<p>This creates two integer variables <code>X</code> and <code>Y</code> that can take integer values.</p>
+<p>Next, you initialize the Z3 solver using the <code>Solver()</code> class. The solver will handle adding constraints and finding solutions. For example:</p>
+<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Solver</span>
+<span id="cb2-2"></span>
+<span id="cb2-3">solver <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Solver()  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Initialize the Z3 solver</span></span></code></pre></div>
+<p>Now, you can add constraints to the solver using <code>solver.add()</code>. For example, let’s say you want to add a constraint that the sum of <code>X</code> and <code>Y</code> should equal 10, and both <code>X</code> and <code>Y</code> should be greater than 0:</p>
+<div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add constraint that X + Y equals 10</span></span>
+<span id="cb3-2">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add constraint that X and Y are greater than 0</span></span></code></pre></div>
+<p>You can also use logical operators like <code>Or()</code> and <code>And()</code> for more complex constraints. For example:</p>
+<div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Or</span>
+<span id="cb4-2">solver.add(Or(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># X must be 3 or Y must be 7</span></span></code></pre></div>
+<p>Once all constraints are added, you check whether the solver can find a solution by calling <code>solver.check()</code>:</p>
+<div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> solver.check() <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> sat:</span>
+<span id="cb5-2">    model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> solver.model()  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Retrieve the solution</span></span>
+<span id="cb5-3"></span>
+<span id="cb5-4">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"X = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(X)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb5-5">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Y = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(Y)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb5-6"></span>
+<span id="cb5-7"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span>:</span>
+<span id="cb5-8">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No solution found"</span>)</span></code></pre></div>
+<p>Here, <code>sat</code> indicates that the problem is satisfiable. If a solution is found, <code>solver.model()</code> retrieves the values of the variables that meet all the constraints.</p>
+<p>In the example above, if the solver finds a solution, it evaluates the variables <code>X</code> and <code>Y</code> using <code>model.evaluate()</code>. For example, if <code>X = 3</code> and <code>Y = 7</code>, the output will be:</p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode numberSource plaintext number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1">X = 3</span>
+<span id="cb6-2">Y = 7</span></code></pre></div>
+<p>If no solution exists, <code>solver.check()</code> will return <code>unsat</code>, meaning the constraints are unsatisfiable.</p>
+<p>Here’s a complete example that ties everything together:</p>
+<div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Int, Solver, Or</span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define integer variables</span></span>
+<span id="cb7-4">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'X'</span>)</span>
+<span id="cb7-5">Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Y'</span>)</span>
+<span id="cb7-6"></span>
+<span id="cb7-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set up the solver</span></span>
+<span id="cb7-8">solver <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Solver()</span>
+<span id="cb7-9"></span>
+<span id="cb7-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add some constraints</span></span>
+<span id="cb7-11">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb7-12">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb7-13">solver.add(Or(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>))</span>
+<span id="cb7-14"></span>
+<span id="cb7-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Solve the problem</span></span>
+<span id="cb7-16"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> solver.check() <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> sat:</span>
+<span id="cb7-17">    model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> solver.model()</span>
+<span id="cb7-18"></span>
+<span id="cb7-19">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Solution: X = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(X)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">, Y = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(Y)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb7-20"></span>
+<span id="cb7-21"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span>:</span>
+<span id="cb7-22">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No solution found"</span>)</span></code></pre></div>
+<p>This simple example shows how Z3 can be used in Python to solve constraint satisfaction problems. With just a few lines of code, you can define variables, add constraints, and let Z3 find solutions for you. This makes Z3 a powerful tool for solving puzzles, optimization problems, or more complex logical tasks.</p>
+</section>
+<section id="api-overview" class="level3">
+<h3 class="anchored" data-anchor-id="api-overview">API overview</h3>
+<p>The <strong>Z3 solver API</strong> provides a robust framework for solving a wide range of problems, including logic, optimization, and constraint satisfaction, using <strong>SMT (Satisfiability Modulo Theories)</strong>. It leverages mathematical methods such as <strong>Boolean satisfiability (SAT)</strong>, <strong>linear arithmetic</strong>, and <strong>theory solvers</strong> (for arrays, bit-vectors, real arithmetic, etc.). Z3’s API allows you to formulate complex problems in terms of constraints and logical propositions, which it then solves using advanced heuristics, backtracking, and conflict-driven clause learning (CDCL).</p>
+<p>Overview of Z3 API concepts:</p>
+<ul>
+<li><p>Z3 supports different types of <strong>variables</strong>, such as:</p>
+<ul>
+<li><p><strong>Integers</strong> (<code>Int()</code>).</p></li>
+<li><p><strong>Booleans</strong> (<code>Bool()</code>).</p></li>
+<li><p><strong>Real numbers</strong> (<code>Real()</code>).</p></li>
+<li><p><strong>Bit-vectors</strong> (<code>BitVec()</code>).</p></li>
+</ul>
+<p>Each variable is associated with a domain, and constraints are imposed on these variables. For instance:</p>
+<div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Int, Bool</span>
+<span id="cb8-2"></span>
+<span id="cb8-3">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'X'</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Integer variable</span></span>
+<span id="cb8-4">B <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Bool(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'B'</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Boolean variable</span></span></code></pre></div></li>
+<li><p>Z3 allows you to add <strong>arithmetic</strong>, <strong>logical</strong>, and <strong>set-theoretic constraints</strong> to your problem. These constraints can involve:</p>
+<ul>
+<li><p><strong>Arithmetic operations</strong>: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>.</p></li>
+<li><p><strong>Logical operations</strong>: <code>And()</code>, <code>Or()</code>, <code>Not()</code>, <code>Implies()</code>.</p></li>
+<li><p><strong>Relational operations</strong>: <code>&lt;</code>, <code>&gt;</code>, <code>==</code>, <code>!=</code>.</p></li>
+<li><p><strong>Set operations</strong>: <code>Distinct()</code> (for ensuring distinct values in a set of variables).</p></li>
+</ul>
+<p>Example:</p>
+<div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add an arithmetic constraint</span></span>
+<span id="cb9-2">solver.add(And(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add logical constraints</span></span></code></pre></div></li>
+<li><p>Z3 excels in combining <strong>SAT solvers</strong> with <strong>theory solvers</strong> for specific domains. Theories are specialized solvers that handle specific classes of constraints:</p>
+<ul>
+<li><p><strong>Linear arithmetic</strong>: Handles constraints involving addition, subtraction, and multiplication by constants (e.g., <code>X + Y &gt;= 10</code>).</p></li>
+<li><p><strong>Non-linear arithmetic</strong>: Handles more complex polynomial expressions.</p></li>
+<li><p><strong>Bit-vectors</strong>: Useful for hardware modeling, where operations are performed on fixed-size binary numbers (e.g., <code>BitVec('X', 32)</code> for a 32-bit integer).</p></li>
+<li><p><strong>Arrays and functions</strong>: Z3 supports reasoning about arrays and functions, allowing for the definition of array indices and function applications.</p></li>
+</ul></li>
+<li><p>Z3 works by converting the problem into a <strong>Boolean satisfiability (SAT)</strong> problem and then applying <strong>conflict-driven clause learning (CDCL)</strong> to explore possible solutions. It divides the problem into <strong>Boolean logic</strong> and <strong>theory-specific reasoning</strong> (such as arithmetic or bit-vector theory). The general solving process involves:</p>
+<ul>
+<li><p><strong>SAT-based search</strong>: Z3 uses efficient SAT-solving techniques to find assignments to variables.</p></li>
+<li><p><strong>Theory propagation</strong>: Z3 incorporates theory solvers to check consistency within a specific theory (e.g., arithmetic or arrays).</p></li>
+<li><p><strong>Backtracking and learning</strong>: If a contradiction is encountered, Z3 backtracks and uses the learned conflict to prune the search space, improving efficiency.</p></li>
+</ul></li>
+<li><p>Z3 also supports <strong>optimization</strong> over variables, where you can minimize or maximize a given objective function. This is useful in cases where you are not just looking for any solution, but the <strong>best</strong> one (e.g., minimal cost, maximum profit). You can use <code>Optimize()</code> instead of <code>Solver()</code> to define an optimization problem:</p>
+<div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Optimize</span>
+<span id="cb10-2"></span>
+<span id="cb10-3">opt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Optimize()  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Initialize an optimization solver</span></span>
+<span id="cb10-4">opt.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)</span>
+<span id="cb10-5">opt.minimize(X)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Minimize X</span></span>
+<span id="cb10-6"></span>
+<span id="cb10-7"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> opt.check() <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> sat:</span>
+<span id="cb10-8">    model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> opt.model()</span>
+<span id="cb10-9"></span>
+<span id="cb10-10">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(model.evaluate(X), model.evaluate(Y))</span></code></pre></div></li>
+<li><p><strong>Advanced solver techniques</strong>:</p>
+<ul>
+<li><p><strong>Conflict-driven clause learning (CDCL)</strong>: Z3 uses CDCL to handle the SAT problem. It systematically explores possible assignments and learns from conflicts (inconsistent assignments) to avoid repeating them.</p></li>
+<li><p><strong>Backjumping and restarting</strong>: Z3 employs heuristics that help it decide when to backtrack, restart, or jump past certain unsolvable branches to explore more promising parts of the search space.</p></li>
+<li><p><strong>Theory combination</strong>: Z3 excels at combining different theories. For example, you can solve problems that simultaneously involve linear arithmetic, arrays, and bit-vectors, combining results from theory solvers to find the overall solution.</p></li>
+</ul></li>
+<li><p>Z3 supports <strong>first-order logic</strong> and can handle <strong>universal</strong> and <strong>existential quantifiers</strong>. You can express statements like “for all” or “there exists” using <code>ForAll()</code> and <code>Exists()</code>, respectively:</p>
+<div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> ForAll, Exists</span>
+<span id="cb11-2">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'X'</span>)</span>
+<span id="cb11-3">solver.add(ForAll([X], X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># X is non-negative for all X</span></span></code></pre></div></li>
+<li><p>Z3 can generate <strong>proofs</strong> for unsatisfiable queries, showing why no solution exists for a given set of constraints. This is useful for formal verification tasks where you need to prove the correctness of systems, such as verifying hardware circuits or ensuring software correctness.</p></li>
+<li><p>Mathematical methods:</p>
+<ul>
+<li><p><strong>SAT Solvers</strong>: Z3 primarily uses <strong>Boolean satisfiability</strong> solvers, which handle the basic logic of whether a problem can be satisfied given the constraints. Z3 applies CDCL techniques to improve efficiency in solving SAT problems.</p></li>
+<li><p><strong>Theory Solvers</strong>:</p>
+<ul>
+<li><p><strong>Linear arithmetic solvers</strong>: These handle systems of linear inequalities and equations.</p></li>
+<li><p><strong>Non-linear arithmetic solvers</strong>: For handling polynomial constraints.</p></li>
+<li><p><strong>Bit-vector theory</strong>: This theory is used to model and verify properties of hardware systems where operations are performed on fixed-length bit-vectors.</p></li>
+<li><p><strong>Array theory</strong>: Provides reasoning about operations on arrays, such as read and write operations, making Z3 suitable for reasoning about data structures and memory models.</p></li>
+</ul></li>
+<li><p><strong>Optimization algorithms</strong>: Z3’s <code>Optimize()</code> module uses <strong>linear programming</strong> and <strong>mixed-integer programming</strong> techniques to find solutions that optimize an objective function under a set of constraints.</p></li>
+<li><p><strong>Quantifier elimination</strong>: Z3 implements methods for handling quantifiers in first-order logic, allowing it to reason about quantified statements efficiently.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="complete-example" class="level3">
+<h3 class="anchored" data-anchor-id="complete-example">Complete example</h3>
+<div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> Int, Solver, And, Or, Distinct</span>
+<span id="cb12-2"></span>
+<span id="cb12-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Define integer variables</span></span>
+<span id="cb12-4">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'X'</span>)</span>
+<span id="cb12-5">Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Int(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Y'</span>)</span>
+<span id="cb12-6"></span>
+<span id="cb12-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set up the solver</span></span>
+<span id="cb12-8">solver <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Solver()</span>
+<span id="cb12-9"></span>
+<span id="cb12-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add constraints</span></span>
+<span id="cb12-11">solver.add(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Arithmetic constraint</span></span>
+<span id="cb12-12">solver.add(And(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Logical constraint</span></span>
+<span id="cb12-13">solver.add(Or(X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, Y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>))  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Logical disjunction</span></span>
+<span id="cb12-14"></span>
+<span id="cb12-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Solve the problem</span></span>
+<span id="cb12-16"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> solver.check() <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> sat:</span>
+<span id="cb12-17">    model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> solver.model()</span>
+<span id="cb12-18">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Solution: X = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(X)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">, Y = </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>model<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>evaluate(Y)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb12-19"></span>
+<span id="cb12-20"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span>:</span>
+<span id="cb12-21">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"No solution found"</span>)</span></code></pre></div>
+</section>
 </section>
 <section id="sudoku-time" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="sudoku-time">Sudoku time!</h2>
@@ -422,23 +912,23 @@
 </tbody>
 </table>
 <p>Code that leverages Z3 is:</p>
-<div class="sourceCode" id="annotated-cell-1" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-1-1" class="code-annotation-target"><span class="im" style="color: #00769E;
+<div class="sourceCode" id="annotated-cell-9" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-9-1" class="code-annotation-target"><span class="im" style="color: #00769E;
 background-color: null;
 font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
 background-color: null;
 font-style: inherit;">import</span> Int, Solver, And, Distinct, sat</span>
-<span id="annotated-cell-1-2"></span>
-<span id="annotated-cell-1-3"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-2"></span>
+<span id="annotated-cell-9-3"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Function to check if the solved Sudoku is correct</span></span>
-<span id="annotated-cell-1-4"><span class="kw" style="color: #003B4F;
+<span id="annotated-cell-9-4"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">def</span> is_valid_sudoku(solution):</span>
-<span id="annotated-cell-1-5">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-5">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Combined row and column checks in a single loop</span></span>
-<span id="annotated-cell-1-6">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-6">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -449,10 +939,10 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>):</span>
-<span id="annotated-cell-1-7">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-7">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check distinct values in row</span></span>
-<span id="annotated-cell-1-8">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-8">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -464,17 +954,17 @@ background-color: null;
 font-style: inherit;">!=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>:  </span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-1-9" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-9-9" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-1-10">    </span>
-<span id="annotated-cell-1-11">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-10">    </span>
+<span id="annotated-cell-9-11">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check distinct values in column</span></span>
-<span id="annotated-cell-1-12">    col <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-12">    col <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [solution[j][i] <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -487,8 +977,8 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>)]</span>
-<span id="annotated-cell-1-13"></span>
-<span id="annotated-cell-1-14">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-13"></span>
+<span id="annotated-cell-9-14">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -500,17 +990,17 @@ background-color: null;
 font-style: inherit;">!=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-1-15" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-9-15" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-1-16"></span>
-<span id="annotated-cell-1-17">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-16"></span>
+<span id="annotated-cell-9-17">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check 3x3 subgrids</span></span>
-<span id="annotated-cell-1-18">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-18">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -525,7 +1015,7 @@ background-color: null;
 font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>):</span>
-<span id="annotated-cell-1-19">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-19">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
@@ -540,7 +1030,7 @@ background-color: null;
 font-style: inherit;">9</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>):</span>
-<span id="annotated-cell-1-20">      subgrid <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-20">      subgrid <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [solution[i <span class="op" style="color: #5E5E5E;
 background-color: null;
@@ -567,8 +1057,8 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>)]</span>
-<span id="annotated-cell-1-21"></span>
-<span id="annotated-cell-1-22">      <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-21"></span>
+<span id="annotated-cell-9-22">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -580,31 +1070,31 @@ background-color: null;
 font-style: inherit;">!=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-1-23" class="code-annotation-target">        <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-9-23" class="code-annotation-target">        <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-1-24"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-1-25" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-24"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-9-25" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">True</span></span>
-<span id="annotated-cell-1-26"></span>
-<span id="annotated-cell-1-27"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-26"></span>
+<span id="annotated-cell-9-27"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Function to solve a Sudoku puzzle using Z3</span></span>
-<span id="annotated-cell-1-28"><span class="kw" style="color: #003B4F;
+<span id="annotated-cell-9-28"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">def</span> solve_sudoku(puzzle):</span>
-<span id="annotated-cell-1-29">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-29">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Create a 9x9 matrix of integer variables</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-1-30" class="code-annotation-target">  X <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-9-30" class="code-annotation-target">  X <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [[Int(<span class="ss" style="color: #20794D;
 background-color: null;
@@ -641,18 +1131,18 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>)]</span>
-<span id="annotated-cell-1-31">  </span>
-<span id="annotated-cell-1-32">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-31">  </span>
+<span id="annotated-cell-9-32">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Define the solver</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-1-33" class="code-annotation-target">  solver <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-9-33" class="code-annotation-target">  solver <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> Solver()</span>
-<span id="annotated-cell-1-34">  </span>
-<span id="annotated-cell-1-35">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-34">  </span>
+<span id="annotated-cell-9-35">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add constraints for cell values between 1 and 9</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-1-36" class="code-annotation-target">  solver.add([And(X[i][j] <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-9-36" class="code-annotation-target">  solver.add([And(X[i][j] <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -681,11 +1171,11 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>)])</span>
-<span id="annotated-cell-1-37">  </span>
-<span id="annotated-cell-1-38">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-37">  </span>
+<span id="annotated-cell-9-38">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add constraints for the pre-filled cells</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-1-39" class="code-annotation-target">  solver.add([X[i][j] <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-9-39" class="code-annotation-target">  solver.add([X[i][j] <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> puzzle[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -715,11 +1205,11 @@ background-color: null;
 font-style: inherit;">!=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>])</span>
-<span id="annotated-cell-1-40">  </span>
-<span id="annotated-cell-1-41">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-40">  </span>
+<span id="annotated-cell-9-41">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add constraints for rows, columns, and subgrids to contain distinct values</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-1-42" class="code-annotation-target">  solver.add([Distinct(X[i]) <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-9-42" class="code-annotation-target">  solver.add([Distinct(X[i]) <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -732,7 +1222,7 @@ background-color: null;
 font-style: inherit;">9</span>)])  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Row distinct</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-1-43" class="code-annotation-target">  solver.add([Distinct([X[i][j] <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-9-43" class="code-annotation-target">  solver.add([Distinct([X[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -755,7 +1245,7 @@ background-color: null;
 font-style: inherit;">9</span>)])  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Column distinct</span></span>
-<span id="annotated-cell-1-44">  solver.add([Distinct([X[i <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-44">  solver.add([Distinct([X[i <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> di][j <span class="op" style="color: #5E5E5E;
 background-color: null;
@@ -780,7 +1270,7 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>)])</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-1-45" class="code-annotation-target">              <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-9-45" class="code-annotation-target">              <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -811,21 +1301,21 @@ background-color: null;
 font-style: inherit;">3</span>)])  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Subgrid distinct</span></span>
-<span id="annotated-cell-1-46">  </span>
-<span id="annotated-cell-1-47">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-46">  </span>
+<span id="annotated-cell-9-47">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if the Sudoku puzzle is solvable</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-1-48" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-9-48" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> solver.check() <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> sat:</span>
-<span id="annotated-cell-1-49">    model <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-49">    model <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> solver.model()</span>
-<span id="annotated-cell-1-50"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-1-51" class="code-annotation-target">    result <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-50"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-9-51" class="code-annotation-target">    result <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [[model.evaluate(X[i][j]).as_long() <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -848,27 +1338,27 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>)]</span>
-<span id="annotated-cell-1-52"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-1-53" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-52"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-9-53" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> result</span>
-<span id="annotated-cell-1-54"></span>
-<span id="annotated-cell-1-55">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-54"></span>
+<span id="annotated-cell-9-55">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">else</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-1-56" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-9-56" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">None</span></span>
-<span id="annotated-cell-1-57"></span>
-<span id="annotated-cell-1-58"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-57"></span>
+<span id="annotated-cell-9-58"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Example of solving and checking a Sudoku puzzle</span></span>
-<span id="annotated-cell-1-59"><span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-59"><span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="va" style="color: #111111;
@@ -878,13 +1368,13 @@ background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"__main__"</span>:</span>
-<span id="annotated-cell-1-60">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-60">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Input Sudoku puzzle (0 represents empty cells)</span></span>
-<span id="annotated-cell-1-61">  puzzle <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-9-61">  puzzle <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [</span>
-<span id="annotated-cell-1-62">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-62">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -903,7 +1393,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-1-63">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-63">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -922,7 +1412,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-1-64">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-64">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -941,7 +1431,7 @@ background-color: null;
 font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-1-65">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-65">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -960,7 +1450,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span>],</span>
-<span id="annotated-cell-1-66">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-66">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -979,7 +1469,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span>],</span>
-<span id="annotated-cell-1-67">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-67">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -998,7 +1488,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">6</span>],</span>
-<span id="annotated-cell-1-68">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-68">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1017,7 +1507,7 @@ background-color: null;
 font-style: inherit;">8</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-1-69">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-69">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1036,7 +1526,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">5</span>],</span>
-<span id="annotated-cell-1-70">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-9-70">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1055,153 +1545,153 @@ background-color: null;
 font-style: inherit;">7</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">9</span>]</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-1-71" class="code-annotation-target">  ]</span>
-<span id="annotated-cell-1-72"></span>
-<span id="annotated-cell-1-73">  <span class="co" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-9-71" class="code-annotation-target">  ]</span>
+<span id="annotated-cell-9-72"></span>
+<span id="annotated-cell-9-73">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Solve the Sudoku puzzle</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-1-74" class="code-annotation-target">  solved <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-9-74" class="code-annotation-target">  solved <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> solve_sudoku(puzzle)</span>
-<span id="annotated-cell-1-75"></span>
-<span id="annotated-cell-1-76">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-75"></span>
+<span id="annotated-cell-9-76">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Print the solved Sudoku puzzle and check if it's valid</span></span>
-<span id="annotated-cell-1-77">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-77">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> solved:</span>
-<span id="annotated-cell-1-78">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-78">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> row <span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">in</span> solved:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-1-79" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-9-79" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(row)</span>
-<span id="annotated-cell-1-80"></span>
-<span id="annotated-cell-1-81">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-9-80"></span>
+<span id="annotated-cell-9-81">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if the solution is valid</span></span>
-<span id="annotated-cell-1-82">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-82">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> is_valid_sudoku(solved):</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-1-83" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-9-83" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"The solution is valid!"</span>)</span>
-<span id="annotated-cell-1-84"></span>
-<span id="annotated-cell-1-85">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-84"></span>
+<span id="annotated-cell-9-85">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">else</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-1-86" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-9-86" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"The solution is not valid!"</span>)</span>
-<span id="annotated-cell-1-87"></span>
-<span id="annotated-cell-1-88">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-9-87"></span>
+<span id="annotated-cell-9-88">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">else</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-1-89" class="code-annotation-target">    <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-9-89" class="code-annotation-target">    <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"No solution found."</span>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
 <dl class="code-annotation-container-grid">
-<dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="1" data-code-annotation="1">Import required components from the Z3 solver library.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="1" data-code-annotation="1">Import required components from the Z3 solver library.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="9" data-code-annotation="2">Check distinct values in row: Ensures each row contains distinct values (1 to 9).</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="9" data-code-annotation="2">Check distinct values in row: Ensures each row contains distinct values (1 to 9).</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="3">3</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="15" data-code-annotation="3">Check distinct values in column: Ensures each column contains distinct values (1 to 9).</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="15" data-code-annotation="3">Check distinct values in column: Ensures each column contains distinct values (1 to 9).</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="4">4</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="23" data-code-annotation="4">Check 3x3 subgrids: Ensures each 3x3 subgrid contains distinct values.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="23" data-code-annotation="4">Check 3x3 subgrids: Ensures each 3x3 subgrid contains distinct values.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="5">5</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="25" data-code-annotation="5">Return <code>True</code> if the solution is valid, otherwise return <code>False</code>.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="25" data-code-annotation="5">Return <code>True</code> if the solution is valid, otherwise return <code>False</code>.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="6">6</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="6">6</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="30" data-code-annotation="6">Create a 9x9 matrix of integer variables using Z3’s <code>Int</code> to represent each cell.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="30" data-code-annotation="6">Create a 9x9 matrix of integer variables using Z3’s <code>Int</code> to represent each cell.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="7">7</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="7">7</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="33" data-code-annotation="7">Initialize the Z3 solver to begin solving the problem.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="33" data-code-annotation="7">Initialize the Z3 solver to begin solving the problem.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="8">8</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="8">8</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="36" data-code-annotation="8">Add constraints to ensure that each cell value is between 1 and 9.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="36" data-code-annotation="8">Add constraints to ensure that each cell value is between 1 and 9.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="9">9</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="9">9</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="39" data-code-annotation="9">Add constraints for the pre-filled cells (the given values from the puzzle) to keep them unchanged.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="39" data-code-annotation="9">Add constraints for the pre-filled cells (the given values from the puzzle) to keep them unchanged.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="10">10</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="10">10</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="42" data-code-annotation="10">Add row constraints: Each row must contain distinct values.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="42" data-code-annotation="10">Add row constraints: Each row must contain distinct values.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="11">11</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="11">11</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="43" data-code-annotation="11">Add column constraints: Each column must contain distinct values.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="43" data-code-annotation="11">Add column constraints: Each column must contain distinct values.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="12">12</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="12">12</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="45" data-code-annotation="12">Add subgrid constraints: Each 3x3 subgrid must contain distinct values.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="45" data-code-annotation="12">Add subgrid constraints: Each 3x3 subgrid must contain distinct values.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="13">13</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="13">13</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="48" data-code-annotation="13">Check if the Sudoku is solvable using the Z3 solver.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="48" data-code-annotation="13">Check if the Sudoku is solvable using the Z3 solver.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="14">14</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="14">14</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="51" data-code-annotation="14">Extract the solution: If a solution is found, extract it from the model.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="51" data-code-annotation="14">Extract the solution: If a solution is found, extract it from the model.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="15">15</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="15">15</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="53" data-code-annotation="15">Return the solved puzzle.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="53" data-code-annotation="15">Return the solved puzzle.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="16">16</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="16">16</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="56" data-code-annotation="16">Return <code>None</code> if no solution is found.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="56" data-code-annotation="16">Return <code>None</code> if no solution is found.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="17">17</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="17">17</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="71" data-code-annotation="17">Input Sudoku puzzle: A 9x9 grid where <code>0</code> represents empty cells.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="71" data-code-annotation="17">Input Sudoku puzzle: A 9x9 grid where <code>0</code> represents empty cells.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="18">18</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="18">18</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="74" data-code-annotation="18">Solve the puzzle: Call the <code>solve_sudoku()</code> function.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="74" data-code-annotation="18">Solve the puzzle: Call the <code>solve_sudoku()</code> function.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="19">19</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="19">19</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="79" data-code-annotation="19">Print the solved puzzle.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="79" data-code-annotation="19">Print the solved puzzle.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="20">20</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="20">20</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="83" data-code-annotation="20">Check if the solution is valid using the <code>is_valid_sudoku()</code> function.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="83" data-code-annotation="20">Check if the solution is valid using the <code>is_valid_sudoku()</code> function.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="21">21</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="21">21</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="86" data-code-annotation="21">Print an error message if the solution is not valid.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="86" data-code-annotation="21">Print an error message if the solution is not valid.</span>
 </dd>
-<dt data-target-cell="annotated-cell-1" data-target-annotation="22">22</dt>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="22">22</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="89" data-code-annotation="22">Print “No solution found” if no solution can be found by the solver.</span>
+<span data-code-cell="annotated-cell-9" data-code-lines="89" data-code-annotation="22">Print “No solution found” if no solution can be found by the solver.</span>
 </dd>
 </dl>
 <p>Running the code, Z3 gives us:</p>
@@ -1342,28 +1832,28 @@ font-style: inherit;">"No solution found."</span>)</span><div class="code-annota
 </tbody>
 </table>
 <p>And the improved code:</p>
-<div class="sourceCode" id="annotated-cell-2" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-2-1" class="code-annotation-target"><span class="im" style="color: #00769E;
+<div class="sourceCode" id="annotated-cell-10" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-10-1" class="code-annotation-target"><span class="im" style="color: #00769E;
 background-color: null;
 font-style: inherit;">from</span> z3 <span class="im" style="color: #00769E;
 background-color: null;
 font-style: inherit;">import</span> Int, Solver, And, Distinct, Or, sat</span>
-<span id="annotated-cell-2-2"></span>
-<span id="annotated-cell-2-3"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-2"></span>
+<span id="annotated-cell-10-3"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Function to check if a given Sudoku solution is valid</span></span>
-<span id="annotated-cell-2-4"><span class="kw" style="color: #003B4F;
+<span id="annotated-cell-10-4"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">def</span> is_valid_sudoku(solution):</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-2-5" class="code-annotation-target">  n <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-10-5" class="code-annotation-target">  n <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">len</span>(solution)  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Determine the size of the grid</span></span>
-<span id="annotated-cell-2-6"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-2-7" class="code-annotation-target">  sqrt_n <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-6"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-10-7" class="code-annotation-target">  sqrt_n <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> <span class="bu" style="color: null;
 background-color: null;
@@ -1374,21 +1864,21 @@ background-color: null;
 font-style: inherit;">0.5</span>)  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Determine the size of subgrids</span></span>
-<span id="annotated-cell-2-8">  </span>
-<span id="annotated-cell-2-9">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-8">  </span>
+<span id="annotated-cell-10-9">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if each row contains distinct values</span></span>
-<span id="annotated-cell-2-10">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-10">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> row <span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">in</span> solution:</span>
-<span id="annotated-cell-2-11">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-11">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Ensure values are within range and distinct</span></span>
-<span id="annotated-cell-2-12">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-12">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -1418,17 +1908,17 @@ font-style: inherit;">for</span> x <span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">in</span> row): </span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-2-13" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-10-13" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-2-14">  </span>
-<span id="annotated-cell-2-15">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-14">  </span>
+<span id="annotated-cell-10-15">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if each column contains distinct values</span></span>
-<span id="annotated-cell-2-16">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-16">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
@@ -1437,7 +1927,7 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n):</span>
-<span id="annotated-cell-2-17">    col <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-17">    col <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [solution[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -1450,8 +1940,8 @@ background-color: null;
 font-style: inherit;">range</span>(n)]  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Extract each column</span></span>
-<span id="annotated-cell-2-18"></span>
-<span id="annotated-cell-2-19">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-18"></span>
+<span id="annotated-cell-10-19">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -1461,17 +1951,17 @@ background-color: null;
 font-style: inherit;">set</span>(col)) <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">!=</span> n:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-2-20" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-10-20" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-2-21"></span>
-<span id="annotated-cell-2-22">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-21"></span>
+<span id="annotated-cell-10-22">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if each sqrt_n x sqrt_n subgrid contains distinct values</span></span>
-<span id="annotated-cell-2-23">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-23">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -1482,7 +1972,7 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, n, sqrt_n):</span>
-<span id="annotated-cell-2-24">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-24">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> j <span class="kw" style="color: #003B4F;
@@ -1493,13 +1983,13 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, n, sqrt_n):</span>
-<span id="annotated-cell-2-25">      subgrid <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-25">      subgrid <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> []  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Collect the values of each subgrid</span></span>
-<span id="annotated-cell-2-26"></span>
-<span id="annotated-cell-2-27">      <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-26"></span>
+<span id="annotated-cell-10-27">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> di <span class="kw" style="color: #003B4F;
@@ -1508,7 +1998,7 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(sqrt_n):</span>
-<span id="annotated-cell-2-28">        <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-28">        <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> dj <span class="kw" style="color: #003B4F;
@@ -1517,13 +2007,13 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(sqrt_n):</span>
-<span id="annotated-cell-2-29">          subgrid.append(solution[i <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-29">          subgrid.append(solution[i <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> di][j <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> dj])</span>
-<span id="annotated-cell-2-30"></span>
-<span id="annotated-cell-2-31">      <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-30"></span>
+<span id="annotated-cell-10-31">      <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="bu" style="color: null;
@@ -1535,14 +2025,14 @@ background-color: null;
 font-style: inherit;">!=</span> n:  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Ensure distinct values in subgrid</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-2-32" class="code-annotation-target">        <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-10-32" class="code-annotation-target">        <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
 background-color: null;
 font-style: inherit;">False</span></span>
-<span id="annotated-cell-2-33"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-2-34" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-33"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-10-34" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> <span class="va" style="color: #111111;
@@ -1550,26 +2040,26 @@ background-color: null;
 font-style: inherit;">True</span>  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># If all checks pass, the solution is valid</span></span>
-<span id="annotated-cell-2-35"></span>
-<span id="annotated-cell-2-36"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-35"></span>
+<span id="annotated-cell-10-36"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Function to solve Sudoku puzzles where size is determined from the puzzle</span></span>
-<span id="annotated-cell-2-37"><span class="kw" style="color: #003B4F;
+<span id="annotated-cell-10-37"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">def</span> solve_sudoku(puzzle):</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-2-38" class="code-annotation-target">  n <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-10-38" class="code-annotation-target">  n <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">len</span>(puzzle)  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Determine the size of the grid from the puzzle list</span></span>
-<span id="annotated-cell-2-39">  </span>
-<span id="annotated-cell-2-40">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-39">  </span>
+<span id="annotated-cell-10-40">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Create an n x n matrix of integer variables</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-2-41" class="code-annotation-target">  X <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-10-41" class="code-annotation-target">  X <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [[Int(<span class="ss" style="color: #20794D;
 background-color: null;
@@ -1602,18 +2092,18 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)]</span>
-<span id="annotated-cell-2-42">  </span>
-<span id="annotated-cell-2-43">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-42">  </span>
+<span id="annotated-cell-10-43">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Define the solver</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-2-44" class="code-annotation-target">  solver <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-10-44" class="code-annotation-target">  solver <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> Solver()</span>
-<span id="annotated-cell-2-45">  </span>
-<span id="annotated-cell-2-46">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-45">  </span>
+<span id="annotated-cell-10-46">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add constraints for cell values between 1 and n</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-2-47" class="code-annotation-target">  solver.add([And(X[i][j] <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-10-47" class="code-annotation-target">  solver.add([And(X[i][j] <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">&gt;=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1636,11 +2126,11 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)])</span>
-<span id="annotated-cell-2-48">  </span>
-<span id="annotated-cell-2-49">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-48">  </span>
+<span id="annotated-cell-10-49">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add constraints for the pre-filled cells</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-2-50" class="code-annotation-target">  solver.add([X[i][j] <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-10-50" class="code-annotation-target">  solver.add([X[i][j] <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> puzzle[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -1666,11 +2156,11 @@ background-color: null;
 font-style: inherit;">!=</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>])</span>
-<span id="annotated-cell-2-51">  </span>
-<span id="annotated-cell-2-52">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-51">  </span>
+<span id="annotated-cell-10-52">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add row constraints: each row must contain distinct values</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-2-53" class="code-annotation-target">  solver.add([Distinct(X[i]) <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-10-53" class="code-annotation-target">  solver.add([Distinct(X[i]) <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -1679,11 +2169,11 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)])</span>
-<span id="annotated-cell-2-54">  </span>
-<span id="annotated-cell-2-55">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-54">  </span>
+<span id="annotated-cell-10-55">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add column constraints: each column must contain distinct values</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-2-56" class="code-annotation-target">  solver.add([Distinct([X[i][j] <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-10-56" class="code-annotation-target">  solver.add([Distinct([X[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -1700,11 +2190,11 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)])</span>
-<span id="annotated-cell-2-57">  </span>
-<span id="annotated-cell-2-58">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-57">  </span>
+<span id="annotated-cell-10-58">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add subgrid constraints: each sqrt_n x sqrt_n subgrid must contain distinct values</span></span>
-<span id="annotated-cell-2-59">  sqrt_n <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-59">  sqrt_n <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> <span class="bu" style="color: null;
 background-color: null;
@@ -1713,8 +2203,8 @@ background-color: null;
 font-style: inherit;">**</span><span class="fl" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0.5</span>)</span>
-<span id="annotated-cell-2-60"></span>
-<span id="annotated-cell-2-61">  solver.add([Distinct([X[i <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-60"></span>
+<span id="annotated-cell-10-61">  solver.add([Distinct([X[i <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">+</span> di][j <span class="op" style="color: #5E5E5E;
 background-color: null;
@@ -1735,7 +2225,7 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(sqrt_n)])</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-2-62" class="code-annotation-target">              <span class="cf" style="color: #003B4F;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-10-62" class="code-annotation-target">              <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
@@ -1756,27 +2246,27 @@ background-color: null;
 font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, n, sqrt_n)])</span>
-<span id="annotated-cell-2-63">  </span>
-<span id="annotated-cell-2-64">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-63">  </span>
+<span id="annotated-cell-10-64">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Find all possible solutions</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-2-65" class="code-annotation-target">  solutions <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-10-65" class="code-annotation-target">  solutions <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> []  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># List to store all solutions</span></span>
-<span id="annotated-cell-2-66"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-2-67" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-66"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-10-67" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">while</span> solver.check() <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> sat:</span>
-<span id="annotated-cell-2-68">    model <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-68">    model <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> solver.model()</span>
-<span id="annotated-cell-2-69"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-2-70" class="code-annotation-target">    solution <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-69"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-10-70" class="code-annotation-target">    solution <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [[model.evaluate(X[i][j]).as_long() <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -1795,15 +2285,15 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)]</span>
-<span id="annotated-cell-2-71"></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-2-72" class="code-annotation-target">    solutions.append(solution)  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-71"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-10-72" class="code-annotation-target">    solutions.append(solution)  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Store the solution</span></span>
-<span id="annotated-cell-2-73"></span>
-<span id="annotated-cell-2-74">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-73"></span>
+<span id="annotated-cell-10-74">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Add a constraint to prevent finding the same solution again</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-2-75" class="code-annotation-target">    solver.add(Or([X[i][j] <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-10-75" class="code-annotation-target">    solver.add(Or([X[i][j] <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">!=</span> solution[i][j] <span class="cf" style="color: #003B4F;
 background-color: null;
@@ -1822,18 +2312,18 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">range</span>(n)]))</span>
-<span id="annotated-cell-2-76">  </span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-2-77" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-76">  </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-10-77" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">return</span> solutions  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Return all solutions</span></span>
-<span id="annotated-cell-2-78"></span>
-<span id="annotated-cell-2-79"><span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-78"></span>
+<span id="annotated-cell-10-79"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Example of a 4x4 Sudoku puzzle with multiple solutions</span></span>
-<span id="annotated-cell-2-80"><span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-80"><span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> <span class="va" style="color: #111111;
@@ -1843,13 +2333,13 @@ background-color: null;
 font-style: inherit;">==</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"__main__"</span>:</span>
-<span id="annotated-cell-2-81">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-81">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># 4x4 Sudoku puzzle (0 represents empty cells)</span></span>
-<span id="annotated-cell-2-82">  puzzle <span class="op" style="color: #5E5E5E;
+<span id="annotated-cell-10-82">  puzzle <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> [</span>
-<span id="annotated-cell-2-83">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-10-83">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1858,7 +2348,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>],</span>
-<span id="annotated-cell-2-84">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-10-84">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1867,7 +2357,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-2-85">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-10-85">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1876,7 +2366,7 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>],</span>
-<span id="annotated-cell-2-86">    [<span class="dv" style="color: #AD0000;
+<span id="annotated-cell-10-86">    [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1885,19 +2375,19 @@ background-color: null;
 font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span>]</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-2-87" class="code-annotation-target">  ]</span>
-<span id="annotated-cell-2-88"></span>
-<span id="annotated-cell-2-89">  <span class="co" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-10-87" class="code-annotation-target">  ]</span>
+<span id="annotated-cell-10-88"></span>
+<span id="annotated-cell-10-89">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Solve the Sudoku puzzle (size will be determined automatically)</span></span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="23" onclick="event.preventDefault();">23</a><span id="annotated-cell-2-90" class="code-annotation-target">  solutions <span class="op" style="color: #5E5E5E;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="23" onclick="event.preventDefault();">23</a><span id="annotated-cell-10-90" class="code-annotation-target">  solutions <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">=</span> solve_sudoku(puzzle)</span>
-<span id="annotated-cell-2-91"></span>
-<span id="annotated-cell-2-92">  <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-91"></span>
+<span id="annotated-cell-10-92">  <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Print all the solutions and check if they're valid</span></span>
-<span id="annotated-cell-2-93">  <span class="bu" style="color: null;
+<span id="annotated-cell-10-93">  <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
 background-color: null;
@@ -1910,7 +2400,7 @@ background-color: null;
 font-style: inherit;">}</span><span class="ss" style="color: #20794D;
 background-color: null;
 font-style: inherit;"> solution(s):"</span>)</span>
-<span id="annotated-cell-2-94">  <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-94">  <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> idx, solution <span class="kw" style="color: #003B4F;
@@ -1919,7 +2409,7 @@ font-weight: bold;
 font-style: inherit;">in</span> <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">enumerate</span>(solutions):</span>
-<span id="annotated-cell-2-95">    <span class="bu" style="color: null;
+<span id="annotated-cell-10-95">    <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
 background-color: null;
@@ -1934,170 +2424,170 @@ background-color: null;
 font-style: inherit;">}</span><span class="ss" style="color: #20794D;
 background-color: null;
 font-style: inherit;">:"</span>)</span>
-<span id="annotated-cell-2-96"></span>
-<span id="annotated-cell-2-97">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-96"></span>
+<span id="annotated-cell-10-97">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">for</span> row <span class="kw" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">in</span> solution:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="24" onclick="event.preventDefault();">24</a><span id="annotated-cell-2-98" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="24" onclick="event.preventDefault();">24</a><span id="annotated-cell-10-98" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(row)</span>
-<span id="annotated-cell-2-99"></span>
-<span id="annotated-cell-2-100">    <span class="bu" style="color: null;
+<span id="annotated-cell-10-99"></span>
+<span id="annotated-cell-10-100">    <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>()</span>
-<span id="annotated-cell-2-101">    </span>
-<span id="annotated-cell-2-102">    <span class="co" style="color: #5E5E5E;
+<span id="annotated-cell-10-101">    </span>
+<span id="annotated-cell-10-102">    <span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Check if the solution is valid</span></span>
-<span id="annotated-cell-2-103">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-103">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">if</span> is_valid_sudoku(solution):</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="25" onclick="event.preventDefault();">25</a><span id="annotated-cell-2-104" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="25" onclick="event.preventDefault();">25</a><span id="annotated-cell-10-104" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"The solution is valid!"</span>)</span>
-<span id="annotated-cell-2-105"></span>
-<span id="annotated-cell-2-106">    <span class="cf" style="color: #003B4F;
+<span id="annotated-cell-10-105"></span>
+<span id="annotated-cell-10-106">    <span class="cf" style="color: #003B4F;
 background-color: null;
 font-weight: bold;
 font-style: inherit;">else</span>:</span>
-<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="26" onclick="event.preventDefault();">26</a><span id="annotated-cell-2-107" class="code-annotation-target">      <span class="bu" style="color: null;
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="26" onclick="event.preventDefault();">26</a><span id="annotated-cell-10-107" class="code-annotation-target">      <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"The solution is not valid!"</span>)</span>
-<span id="annotated-cell-2-108"></span>
-<span id="annotated-cell-2-109">    <span class="bu" style="color: null;
+<span id="annotated-cell-10-108"></span>
+<span id="annotated-cell-10-109">    <span class="bu" style="color: null;
 background-color: null;
 font-style: inherit;">print</span>()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
 <dl class="code-annotation-container-grid">
-<dt data-target-cell="annotated-cell-2" data-target-annotation="1">1</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="1" data-code-annotation="1">Import required components from the Z3 solver library.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="1" data-code-annotation="1">Import required components from the Z3 solver library.</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="2">2</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="5" data-code-annotation="2">Determine the grid size from the solution passed to <code>is_valid_sudoku</code>.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="5" data-code-annotation="2">Determine the grid size from the solution passed to <code>is_valid_sudoku</code>.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="3">3</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="3">3</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="7" data-code-annotation="3">Determine subgrid size based on the square root of the grid size (for 4x4, this would be 2x2 subgrids).</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="7" data-code-annotation="3">Determine subgrid size based on the square root of the grid size (for 4x4, this would be 2x2 subgrids).</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="4">4</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="4">4</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="13" data-code-annotation="4">Check rows: Ensure each row has distinct values between 1 and n.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="13" data-code-annotation="4">Check rows: Ensure each row has distinct values between 1 and n.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="5">5</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="5">5</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="20" data-code-annotation="5">Check columns: Ensure each column has distinct values.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="20" data-code-annotation="5">Check columns: Ensure each column has distinct values.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="6">6</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="6">6</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="32" data-code-annotation="6">Check subgrids: Ensure each subgrid contains distinct values.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="32" data-code-annotation="6">Check subgrids: Ensure each subgrid contains distinct values.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="7">7</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="7">7</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="34" data-code-annotation="7">Return <code>True</code> if all checks pass, meaning the solution is valid.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="34" data-code-annotation="7">Return <code>True</code> if all checks pass, meaning the solution is valid.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="8">8</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="8">8</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="38" data-code-annotation="8">Determine puzzle size from the input list. This makes the function adaptable to any Sudoku size (e.g., 4x4, 9x9).<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="38" data-code-annotation="8">Determine puzzle size from the input list. This makes the function adaptable to any Sudoku size (e.g., 4x4, 9x9).<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="9">9</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="9">9</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="41" data-code-annotation="9">Create integer variables to represent each cell in the Sudoku grid.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="41" data-code-annotation="9">Create integer variables to represent each cell in the Sudoku grid.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="10">10</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="10">10</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="44" data-code-annotation="10">Initialize the Z3 solver. # &lt;10&gt;</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="44" data-code-annotation="10">Initialize the Z3 solver. # &lt;10&gt;</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="11">11</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="11">11</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="47" data-code-annotation="11">Add constraints to ensure each cell’s value is between 1 and n.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="47" data-code-annotation="11">Add constraints to ensure each cell’s value is between 1 and n.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="12">12</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="12">12</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="50" data-code-annotation="12">Add constraints for the pre-filled cells in the puzzle.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="50" data-code-annotation="12">Add constraints for the pre-filled cells in the puzzle.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="13">13</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="13">13</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="53" data-code-annotation="13">Ensure distinct values in each row.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="53" data-code-annotation="13">Ensure distinct values in each row.</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="14">14</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="14">14</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="56" data-code-annotation="14">Ensure distinct values in each column.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="56" data-code-annotation="14">Ensure distinct values in each column.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="15">15</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="15">15</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="62" data-code-annotation="15">Ensure distinct values in each subgrid.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="62" data-code-annotation="15">Ensure distinct values in each subgrid.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="16">16</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="16">16</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="65" data-code-annotation="16">Initialize list to store all solutions.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="65" data-code-annotation="16">Initialize list to store all solutions.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="17">17</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="17">17</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="67" data-code-annotation="17">Check if the puzzle is solvable using Z3’s <code>sat</code> check.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="67" data-code-annotation="17">Check if the puzzle is solvable using Z3’s <code>sat</code> check.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="18">18</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="18">18</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="70" data-code-annotation="18">Extract the solution from the model if it’s solvable.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="70" data-code-annotation="18">Extract the solution from the model if it’s solvable.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="19">19</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="19">19</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="72" data-code-annotation="19">Store each solution in the <code>solutions</code> list.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="72" data-code-annotation="19">Store each solution in the <code>solutions</code> list.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="20">20</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="20">20</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="75" data-code-annotation="20">Add constraint to ensure the solver does not return the same solution again.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="75" data-code-annotation="20">Add constraint to ensure the solver does not return the same solution again.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="21">21</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="21">21</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="77" data-code-annotation="21">Return all found solutions.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="77" data-code-annotation="21">Return all found solutions.</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="22">22</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="22">22</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="87" data-code-annotation="22">Define a 4x4 Sudoku puzzle. Empty cells are represented by <code>0</code>.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="87" data-code-annotation="22">Define a 4x4 Sudoku puzzle. Empty cells are represented by <code>0</code>.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="23">23</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="23">23</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="90" data-code-annotation="23">Solve the puzzle and automatically determine the size.<br>
+<span data-code-cell="annotated-cell-10" data-code-lines="90" data-code-annotation="23">Solve the puzzle and automatically determine the size.<br>
 </span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="24">24</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="24">24</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="98" data-code-annotation="24">Print each solution.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="98" data-code-annotation="24">Print each solution.</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="25">25</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="25">25</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="104" data-code-annotation="25">Check if the solution is valid using the <code>is_valid_sudoku()</code> function.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="104" data-code-annotation="25">Check if the solution is valid using the <code>is_valid_sudoku()</code> function.</span>
 </dd>
-<dt data-target-cell="annotated-cell-2" data-target-annotation="26">26</dt>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="26">26</dt>
 <dd>
-<span data-code-cell="annotated-cell-2" data-code-lines="107" data-code-annotation="26">Print validation result for each solution.</span>
+<span data-code-cell="annotated-cell-10" data-code-lines="107" data-code-annotation="26">Print validation result for each solution.</span>
 </dd>
 </dl>
 <p>The output has two solutions:</p>
