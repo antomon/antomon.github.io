@@ -5,10 +5,10 @@ format:
   html:
     toc: true
     toc-expand: 3
-description: "This post explores the fundamental concepts of SAT (Boolean Satisfiability Problem) and SMT (Satisfiability Modulo Theories), which are key tools in computer science for solving complex logical and mathematical problems. SAT focuses on determining whether there exists a True/False assignment to variables that satisfies a logical formula, while SMT extends this by incorporating additional mathematical structures like integers, arrays, and functions. We will delve into how these tools are used in real-world applications such as hardware verification, AI, and optimization, and conclude with a practical example of using SMT to solve Sudoku puzzles, demonstrating the problem-solving power of these techniques."
+description: "We explore the fundamental concepts of SAT (Boolean Satisfiability Problem) and SMT (Satisfiability Modulo Theories), which are key tools in computer science for solving complex logical and mathematical problems. SAT focuses on determining whether there exists a True/False assignment to variables that satisfies a logical formula, while SMT extends this by incorporating additional mathematical structures like integers, arrays, and functions. We will understand how these tools are used in real-world applications such as hardware verification, AI, and optimization, and conclude with a practical example of using SMT to solve Sudoku puzzles, demonstrating the problem-solving power of these techniques."
 author: "Antonio Montano"
 date: "2024-09-05"
-date-modified: "2024-09-05"
+date-modified: "2024-09-06"
 categories: [fun, mathematics, Python, 🇬🇧]
 image: "smt-sudoku.webp"
 comments: 
@@ -411,6 +411,7 @@ from z3 import Int
 X = Int('X')
 Y = Int('Y')
 ```
+
 This creates two integer variables `X` and `Y` that can take integer values.
 
 Next, you initialize the Z3 solver using the `Solver()` class. The solver will handle adding constraints and finding solutions. For example:
@@ -418,73 +419,104 @@ Next, you initialize the Z3 solver using the `Solver()` class. The solver will h
 ```python
 from z3 import Solver
 
-solver = Solver()  # Initialize the Z3 solver
+solver = Solver()  # <1>
 ```
+1. Initialize the Z3 solver.
 
 Now, you can add constraints to the solver using `solver.add()`. For example, let’s say you want to add a constraint that the sum of `X` and `Y` should equal 10, and both `X` and `Y` should be greater than 0:
 
 ```python
-solver.add(X + Y == 10)  # Add constraint that X + Y equals 10
-solver.add(X > 0, Y > 0)  # Add constraint that X and Y are greater than 0
+from z3 import Solver
+
+solver.add(X + Y == 10)  # <1>
+solver.add(X > 0, Y > 0)  # <2>
 ```
+1. Add constraint that X + Y equals 10.
+2. Add constraint that X and Y are greater than 0.
 
 You can also use logical operators like `Or()` and `And()` for more complex constraints. For example:
 
 ```python
-from z3 import Or
-solver.add(Or(X == 3, Y == 7))  # X must be 3 or Y must be 7
+from z3 import Int, Solver, Or, And  # <1>
+
+X = Int('X')  # <2>
+Y = Int('Y')  # <3>
+
+solver = Solver()  # <4>
+
+solver.add(X + Y == 10)  # <5>
+
+solver.add(And(X > 0, Y > 0))  # <6>
+
+solver.add(Or(X < 5, Y > 5))  # <7>
 ```
+1. Import Z3 components: `Int` for integer variables, `Solver` to set up the constraint solver, and `Or` and `And` for logical operations. 
+2. Define an integer variable `X` using Z3's `Int` constructor.  
+3. Define another integer variable `Y`. 
+4. Initialize the solver.  
+5. Add constraint: `X + Y == 10`, so the sum of `X` and `Y` must equal 10.  
+6. Add constraint using `And()`: Both `X` and `Y` must be greater than 0.  
+7. Add constraint using `Or()`: Either `X` is less than 5 or `Y` is greater than 5.  
 
 Once all constraints are added, you check whether the solver can find a solution by calling `solver.check()`:
 
 ```python
-if solver.check() == sat:
-    model = solver.model()  # Retrieve the solution
+if solver.check() == sat: # <1>
+  model = solver.model()  # <2>
 
-    print(f"X = {model.evaluate(X)}")
-    print(f"Y = {model.evaluate(Y)}")
+  print(f"X = {model.evaluate(X)}") # <3>
+  print(f"Y = {model.evaluate(Y)}")
 
 else:
     print("No solution found")
 ```
+1. Call to `solver.check()` causes the execution of the actual constraint-solving algorithm. If `solver.check()` returns `sat`, then it means Z3 found a solution.
+2. `solver.model()` retrieves the solution.
+3. `model.evaluate(X)` retrieves the value of the variable `X` from the solution (`model`) that Z3 has already found after executing the full algorithm during the `solver.check()` call.
 
-Here, `sat` indicates that the problem is satisfiable. If a solution is found, `solver.model()` retrieves the values of the variables that meet all the constraints.
+The `solver.check()` method is used to determine whether the given set of constraints is **satisfiable**. The result of `solver.check()` can be one of three possible values:
 
-In the example above, if the solver finds a solution, it evaluates the variables `X` and `Y` using `model.evaluate()`. For example, if `X = 3` and `Y = 7`, the output will be:
+- `sat` (satisfiable): This means that Z3 has found at least one solution that satisfies all the constraints you've provided. If `solver.check() == sat`, it means that Z3 was able to find a solution where all the constraints hold true.
 
-```plaintext
-X = 3
-Y = 7
-```
+- `unsat` (unsatisfiable): This means that there is **no possible solution** that satisfies the given set of constraints. If `solver.check()` returns `unsat`, it means that the constraints are contradictory, and Z3 cannot find any values for the variables that satisfy all the constraints.
 
-If no solution exists, `solver.check()` will return `unsat`, meaning the constraints are unsatisfiable.
+- `unknown`: This means Z3 could not determine whether the constraints are satisfiable or unsatisfiable, often due to the complexity of the problem or limitations in the solver's ability to handle the specific problem. This result can happen in more complex cases, such as problems involving non-linear arithmetic or other advanced features.
 
 Here’s a complete example that ties everything together:
 
 ```python
-from z3 import Int, Solver, Or
+from z3 import Int, Solver, Or, And, sat  # <1>
 
-# Define integer variables
-X = Int('X')
-Y = Int('Y')
+X = Int('X')  # <2>
+Y = Int('Y')  # <3>
 
-# Set up the solver
-solver = Solver()
+solver = Solver()  # <4>
 
-# Add some constraints
-solver.add(X + Y == 10)
-solver.add(X > 0, Y > 0)
-solver.add(Or(X == 3, Y == 7))
+solver.add(X + Y == 10)  # <5>
 
-# Solve the problem
-if solver.check() == sat:
-    model = solver.model()
+solver.add(And(X > 0, Y > 0))  # <6>
 
-    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")
+solver.add(Or(X < 5, Y > 5))  # <7>
+
+if solver.check() == sat:  # <8>
+  model = solver.model()  # <9>
+
+  print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")  # <10>
 
 else:
-    print("No solution found")
+  print("No solution found")  # <11>
 ```
+1. Import Z3 components: `Int` for integer variables, `Solver` to set up the constraint solver, and `Or` and `And` for logical operations. 
+2. Define an integer variable `X` using Z3's `Int` constructor.  
+3. Define another integer variable `Y`. 
+4. Initialize the solver.  
+5. Add constraint: `X + Y == 10`, so the sum of `X` and `Y` must equal 10.  
+6. Add constraint using `And()`: Both `X` and `Y` must be greater than 0.  
+7. Add constraint using `Or()`: Either `X` is less than 5 or `Y` is greater than 5.  
+8. Check if the constraints are satisfiable. 
+9. Retrieve the solution model if satisfiable.
+10. Print the values of `X` and `Y`. Output: Solution: `X = 4, Y = 6`.
+11. Print a message if no solution is found.
 
 This simple example shows how Z3 can be used in Python to solve constraint satisfaction problems. With just a few lines of code, you can define variables, add constraints, and let Z3 find solutions for you. This makes Z3 a powerful tool for solving puzzles, optimization problems, or more complex logical tasks.
 
@@ -526,9 +558,43 @@ Overview of Z3 API concepts:
   Example:
 
   ```python
-  solver.add(X + 2 * Y == 10)  # Add an arithmetic constraint
-  solver.add(And(X > 0, Y < 10))  # Add logical constraints
+  from z3 import Int, Solver, And, Or, Not, Distinct, sat  # <1>
+
+  X = Int('X')  # <2>
+  Y = Int('Y')  # <3>
+  Z = Int('Z')  # <4>
+
+  solver = Solver()  # <5>
+
+  solver.add(X + 2 * Y == 10)  # <6>
+
+  solver.add(And(X > 0, Y < 10))  # <7>
+
+  solver.add(Z > X, Y < Z)  # <8>
+
+  solver.add(Distinct(X, Y, Z))  # <9>
+
+  if solver.check() == sat:  # <10>
+    model = solver.model()  # <11>
+
+    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}, Z = {model.evaluate(Z)}")  # <12>
+
+  else:
+    print("No solution found")  # <13>
   ```
+  1. Import the necessary components: Z3 components such as `Int`, `Solver`, `And`, `Distinct`, etc., are imported. 
+  2. Define an integer variable `X` using Z3's `Int` constructor.  
+  3. Define another integer variable `Y`. 
+  4. Define a third integer variable `Z`. 
+  5. Set up the Z3 solver: This initializes the solver that will manage and solve the constraints. 
+  6. Add an arithmetic constraint: `X + 2 * Y == 10` ensures that `X` plus twice `Y` equals 10. 
+  7. Add a logical constraint: `X > 0` and `Y < 10` using the `And()` function.  
+  8. Add relational constraints: `Z > X` and `Y < Z` to ensure relations between `X`, `Y`, and `Z`.  
+  9. Add distinctness constraint: `Distinct(X, Y, Z)` ensures that `X`, `Y`, and `Z` all have distinct values.  
+  10. Check if the constraints are satisfiable using `solver.check()`.  
+  11. Retrieve the model (solution) if the constraints are satisfiable.  
+  12. Print the solution for `X`, `Y`, and `Z`. Output: `Solution: X = 10, Y = 0, Z = 11`.
+  13. Print a message if no solution is found.
 
 - Z3 excels in combining **SAT solvers** with **theory solvers** for specific domains. Theories are specialized solvers that handle specific classes of constraints:
 
@@ -551,17 +617,35 @@ Overview of Z3 API concepts:
 - Z3 also supports **optimization** over variables, where you can minimize or maximize a given objective function. This is useful in cases where you are not just looking for any solution, but the **best** one (e.g., minimal cost, maximum profit). You can use `Optimize()` instead of `Solver()` to define an optimization problem:
   
   ```python
-  from z3 import Optimize
+  from z3 import Int, Optimize, sat  # <1>
 
-  opt = Optimize()  # Initialize an optimization solver
-  opt.add(X + Y >= 10)
-  opt.minimize(X)  # Minimize X
+  X = Int('X')  # <2>
+  Y = Int('Y')  # <3>
 
-  if opt.check() == sat:
-      model = opt.model()
+  opt = Optimize()  # <4>
 
-      print(model.evaluate(X), model.evaluate(Y))
+  opt.add(X + Y >= 10)  # <5>
+
+  opt.minimize(X)  # <6>
+
+  if opt.check() == sat:  # <7>
+    model = opt.model()  # <8>
+
+    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")  # <9>
+
+  else:
+    print("No solution found")  # <10>
   ```
+  1. Import the necessary components: We import `Int` to define integer variables and `Optimize` for optimization.  
+  2. Define an integer variable `X` using Z3's `Int` constructor.  
+  3. Define another integer variable `Y`.  
+  4. Initialize the Z3 optimizer: Instead of using `Solver()`, we use `Optimize()` to allow the solver to minimize or maximize values. 
+  5. Add a constraint: The sum of `X + Y` must be greater than or equal to 10.  
+  6. Minimize `X`: We tell Z3 to minimize the value of `X`.  
+  7. Check if the problem is satisfiable: Z3 checks if it can satisfy the constraints while optimizing.  
+  8. Retrieve the model (solution) if the problem is satisfiable.  
+  9. Print the solution for `X` and `Y`. Output: Solution: `X = 10, Y = 0`.
+  10. Print a message if no solution is found. 
 
 - **Advanced solver techniques**:
 
@@ -571,13 +655,41 @@ Overview of Z3 API concepts:
 
   - **Theory combination**: Z3 excels at combining different theories. For example, you can solve problems that simultaneously involve linear arithmetic, arrays, and bit-vectors, combining results from theory solvers to find the overall solution.
 
-- Z3 supports **first-order logic** and can handle **universal** and **existential quantifiers**. You can express statements like "for all" or "there exists" using `ForAll()` and `Exists()`, respectively:
+- Z3 supports **first-order logic** and can handle **universal** and **existential quantifiers**. You can express statements like "for all" or "there exists" using `ForAll()` and `Exists()`, respectively. The example given below will demonstrate the use of both **universal** and **existential quantifiers**. We'll check if the solver can find a value for `Y` that satisfies a certain property for all values of `X` (universal quantification), and whether there exists a value of `X` that satisfies a condition (existential quantification).
 
   ```python
-  from z3 import ForAll, Exists
-  X = Int('X')
-  solver.add(ForAll([X], X >= 0))  # X is non-negative for all X
+  from z3 import Int, Solver, ForAll, Exists, Implies, Or, And, sat  # <1>
+
+  X = Int('X')  # <2>
+  Y = Int('Y')  # <3>
+
+  solver = Solver()  # <4>
+
+  domain = [1, 2, 3]  # <5>
+
+  solver.add(ForAll([X], Implies(Or([X == val for val in domain]), X + Y >= 5)))  # <6>
+
+  solver.add(Exists([X], And(Or([X == val for val in domain]), X + Y == 6)))  # <7>
+
+  if solver.check() == sat:  # <8>
+    model = solver.model()  # <9>
+    
+    print(f"Solution: Y = {model.evaluate(Y)}")  # <10>
+    
+  else:
+    print("No solution found")  # <11>
   ```
+  1. Import required Z3 components: `Int`, `Solver`, `ForAll`, `Exists`, `Implies`, `Or`, and `And`.  
+  2. Define an integer variable `X` using Z3's `Int` constructor.  
+  3. Define another integer variable `Y`.
+  4. Initialize the Z3 solver using the `Solver()` class to manage and solve constraints. 
+  5. Define the finite domain of `X` as `[1, 2, 3]`.  
+  6. Add a universal quantifier constraint: For all `X` in the domain, `X + Y >= 5`.  
+  7. Add an existential quantifier constraint: There exists an `X` in the domain such that `X + Y == 6`.  
+  8. Check if the constraints are satisfiable using `solver.check()`.  
+  9. Retrieve the model (solution) if the constraints are satisfiable.  
+  10. Print the value of `Y` from the model (solution). Output: `Solution: Y = 4`.
+  11. Print a message if no solution is found.  
 
 - Z3 can generate **proofs** for unsatisfiable queries, showing why no solution exists for a given set of constraints. This is useful for formal verification tasks where you need to prove the correctness of systems, such as verifying hardware circuits or ensuring software correctness.
 
@@ -602,28 +714,104 @@ Overview of Z3 API concepts:
 ### Complete example
 
 ```python
-from z3 import Int, Solver, And, Or, Distinct
+from z3 import Int, Solver, And, Or, sat  # <1>
 
-# Define integer variables
-X = Int('X')
-Y = Int('Y')
+X = Int('X')  # <2>
+Y = Int('Y')  # <3>
 
-# Set up the solver
-solver = Solver()
+solver = Solver()  # <4>
 
-# Add constraints
-solver.add(X + Y == 10)  # Arithmetic constraint
-solver.add(And(X > 0, Y > 0))  # Logical constraint
-solver.add(Or(X == 3, Y == 7))  # Logical disjunction
+solver.add(X + Y == 10)  # <5>
+solver.add(And(X > 0, Y > 0))  # <6>
+solver.add(Or(X == 3, Y == 7))  # <7>
 
-# Solve the problem
-if solver.check() == sat:
-    model = solver.model()
-    print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")
+if solver.check() == sat:  # <8>
+  model = solver.model()  # <9>
+  
+  print(f"Solution: X = {model.evaluate(X)}, Y = {model.evaluate(Y)}")  # <10>
 
 else:
-    print("No solution found")
+  print("No solution found")  # <11>
 ```
+1. Import the required Z3 components: `Int`, `Solver`, `And`, `Or`, and `sat`.  
+2. Define an integer variable `X` using Z3's `Int` constructor.  
+3. Define another integer variable `Y`. 
+4. Set up the Z3 solver using the `Solver()` class to manage and solve constraints.
+5. Add an arithmetic constraint: `X + Y` must equal 10. 
+6. Add a logical constraint: Both `X` and `Y` must be greater than 0. 
+7. Add a logical disjunction: Either `X` is equal to 3, or `Y` is equal to 7.  
+8. Check if the constraints are satisfiable using `solver.check()`.  
+9. Retrieve the model (solution) if the constraints are satisfiable.  
+10. Print the values of `X` and `Y` from the model (solution). Output: `Solution: X = 3, Y = 7`.
+11. Print a message if no solution is found. 
+
+### Uninterpreted functions
+
+**Uninterpreted functions** in Z3 allow you to work with symbolic functions without specifying their exact definition or behavior. They are useful in scenarios where you want to reason about relationships between variables without providing the actual function’s implementation. Z3 treats these functions symbolically, meaning you only impose constraints on the inputs and outputs rather than defining the internal workings of the function.
+
+Uninterpreted functions are commonly used in **formal verification** (e.g., verifying the correctness of algorithms or systems), **theory reasoning**, and **model checking**, where you care about the relationships between function calls but not necessarily their specific behavior.
+
+In Z3, you can define an uninterpreted function using `Function()` and specify the domain and range of the function. You can then impose constraints on how the function behaves for certain inputs and reason about its properties.
+
+Suppose we have a function `f(x)` which maps integers to integers. We don’t know the exact behavior of `f(x)`, but we want to reason about its properties—specifically, we want to know if `f(x)` satisfies certain conditions.
+
+Here’s how you define and work with an uninterpreted function in Z3:
+
+```python
+from z3 import Int, Function, Solver, IntSort, sat  # <1>
+
+x = Int('x')  # <2>
+y = Int('y')  # <3>
+
+f = Function('f', IntSort(), IntSort())  # <4>
+
+solver = Solver()  # <5>
+
+solver.add(f(x) == y + 2)  # <6>
+solver.add(f(3) == 5)  # <7>
+solver.add(f(4) == 6)  # <8>
+solver.add(f(7) == 10)  # <9>
+
+if solver.check() == sat:  # <10>
+  model = solver.model()  # <11>
+  
+  print(f"Solution: f(x) = {model.evaluate(f(x))}, y = {model.evaluate(y)}")  # <12>
+  print(f"f(3) = {model.evaluate(f(3))}, f(4) = {model.evaluate(f(4))}, f(7) = {model.evaluate(f(7))}")  # <13>
+  
+else:
+  print("No solution found")  # <14>
+```
+1. Import required components from the Z3 solver library. 
+2. Define integer variable `x`.  
+3. Define integer variable `y`.  
+4. Define an uninterpreted function `f` that takes an integer and returns an integer. 
+5. Set up the solver by initializing an instance of the `Solver()` class.  
+6. Add a constraint specifying that `f(x)` is equal to `y + 2`. 
+7. Add a constraint specifying that `f(3)` must equal `5`.  
+8. Add a constraint specifying that `f(4)` must equal `6`.  
+9. Add a constraint specifying that `f(7)` must equal `10`.  
+10. Check if the constraints are satisfiable.  
+11. Retrieve the model (solution) if the constraints are satisfiable.  
+12. Print the solution for `f(x)` and `y`. Output: `Solution: f(x) = 5, y = 3`.
+13. Print the solution for `f(3)`, `f(4)`, and `f(7)`. Output: `f(3) = 5, f(4) = 6, f(7) = 10`.
+14. Print a message if no solution is found. 
+
+If the solver finds a solution, you will see something like:
+
+```plaintext
+Solution: f(x) = 5, y = 3
+f(3) = 5, f(4) = 6, f(7) = 10
+```
+
+This shows that `f(3)`, `f(4)`, and `f(7)` satisfy the imposed constraints, while `f(x)` is defined symbolically as `y + 2` for an arbitrary `x`.
+
+Use cases for uninterpreted functions:
+
+- **Abstract Reasoning**: Uninterpreted functions allow you to reason abstractly about the behavior of functions without specifying their exact definitions.
+
+- **Formal verification**: In program verification, you can model abstract operations or methods as uninterpreted functions and reason about their effects on program state.
+
+- **Theorem proving**: They can be used in automated theorem proving, where certain properties of functions are inferred based on logical constraints.
 
 ## Sudoku time!
 
