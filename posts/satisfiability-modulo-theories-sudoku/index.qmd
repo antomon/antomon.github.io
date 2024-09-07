@@ -408,6 +408,7 @@ You start by defining variables using `Int()` for integers or other types like `
 ```python
 from z3 import Int
 
+
 X = Int('X')
 Y = Int('Y')
 ```
@@ -438,6 +439,7 @@ You can also use logical operators like `Or()` and `And()` for more complex cons
 
 ```python
 from z3 import Int, Solver, Or, And  # <1>
+
 
 X = Int('X')  # <2>
 Y = Int('Y')  # <3>
@@ -486,6 +488,7 @@ Here’s a complete example that ties everything together:
 
 ```python
 from z3 import Int, Solver, Or, And, sat  # <1>
+
 
 X = Int('X')  # <2>
 Y = Int('Y')  # <3>
@@ -560,6 +563,7 @@ Overview of Z3 API concepts:
   ```python
   from z3 import Int, Solver, And, Or, Not, Distinct, sat  # <1>
 
+
   X = Int('X')  # <2>
   Y = Int('Y')  # <3>
   Z = Int('Z')  # <4>
@@ -619,6 +623,7 @@ Overview of Z3 API concepts:
   ```python
   from z3 import Int, Optimize, sat  # <1>
 
+
   X = Int('X')  # <2>
   Y = Int('Y')  # <3>
 
@@ -659,6 +664,7 @@ Overview of Z3 API concepts:
 
   ```python
   from z3 import Int, Solver, ForAll, Exists, Implies, Or, And, sat  # <1>
+
 
   X = Int('X')  # <2>
   Y = Int('Y')  # <3>
@@ -716,6 +722,7 @@ Overview of Z3 API concepts:
 ```python
 from z3 import Int, Solver, And, Or, sat  # <1>
 
+
 X = Int('X')  # <2>
 Y = Int('Y')  # <3>
 
@@ -759,6 +766,7 @@ Here’s how you define and work with an uninterpreted function in Z3:
 
 ```python
 from z3 import Int, Function, Solver, IntSort, sat  # <1>
+
 
 x = Int('x')  # <2>
 y = Int('y')  # <3>
@@ -971,6 +979,7 @@ Code that leverages Z3 is:
 ```python
 from z3 import Int, Solver, And, Distinct, sat  # <1>
 
+
 # Function to check if the solved Sudoku is correct
 def is_valid_sudoku(solution):
   # Combined row and column checks in a single loop
@@ -995,27 +1004,20 @@ def is_valid_sudoku(solution):
 
   return True  # <5>
 
-# Function to solve a Sudoku puzzle using Z3
 def solve_sudoku(puzzle):
-  # Create a 9x9 matrix of integer variables
   X = [[Int(f"x_{i}_{j}") for j in range(9)] for i in range(9)]  # <6>
   
-  # Define the solver
   solver = Solver()  # <7>
   
-  # Add constraints for cell values between 1 and 9
   solver.add([And(X[i][j] >= 1, X[i][j] <= 9) for i in range(9) for j in range(9)])  # <8>
   
-  # Add constraints for the pre-filled cells
   solver.add([X[i][j] == puzzle[i][j] for i in range(9) for j in range(9) if puzzle[i][j] != 0])  # <9>
   
-  # Add constraints for rows, columns, and subgrids to contain distinct values
   solver.add([Distinct(X[i]) for i in range(9)])  # Row distinct  # <10>
   solver.add([Distinct([X[i][j] for i in range(9)]) for j in range(9)])  # Column distinct  # <11>
   solver.add([Distinct([X[i + di][j + dj] for di in range(3) for dj in range(3)])
               for i in range(0, 9, 3) for j in range(0, 9, 3)])  # Subgrid distinct  # <12>
   
-  # Check if the Sudoku puzzle is solvable
   if solver.check() == sat:  # <13>
     model = solver.model()
 
@@ -1026,9 +1028,7 @@ def solve_sudoku(puzzle):
   else:
     return None  # <16>
 
-# Example of solving and checking a Sudoku puzzle
 if __name__ == "__main__":
-  # Input Sudoku puzzle (0 represents empty cells)
   puzzle = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
     [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -1041,10 +1041,8 @@ if __name__ == "__main__":
     [0, 0, 0, 0, 8, 0, 0, 7, 9]
   ]  # <17>
 
-  # Solve the Sudoku puzzle
   solved = solve_sudoku(puzzle)  # <18>
 
-  # Print the solved Sudoku puzzle and check if it's valid
   if solved:
     for row in solved:
       print(row)  # <19>
@@ -1229,21 +1227,21 @@ And the improved code:
 ```python
 from z3 import Int, Solver, And, Distinct, Or, sat  # <1>
 
+
 # Function to check if a given Sudoku solution is valid
 def is_valid_sudoku(solution):
-  n = len(solution)  # Determine the size of the grid  # <2>
+  n = len(solution) # <2>
 
-  sqrt_n = int(n**0.5)  # Determine the size of subgrids  # <3>
+  sqrt_n = int(n**0.5)  # <3>
   
   # Check if each row contains distinct values
   for row in solution:
-    # Ensure values are within range and distinct
     if len(set(row)) != n or any(x < 1 or x > n for x in row): 
       return False  # <4>
   
   # Check if each column contains distinct values
   for j in range(n):
-    col = [solution[i][j] for i in range(n)]  # Extract each column
+    col = [solution[i][j] for i in range(n)]  
 
     if len(set(col)) != n:
       return False  # <5>
@@ -1251,63 +1249,52 @@ def is_valid_sudoku(solution):
   # Check if each sqrt_n x sqrt_n subgrid contains distinct values
   for i in range(0, n, sqrt_n):
     for j in range(0, n, sqrt_n):
-      subgrid = []  # Collect the values of each subgrid
+      subgrid = []  
 
       for di in range(sqrt_n):
         for dj in range(sqrt_n):
           subgrid.append(solution[i + di][j + dj])
 
-      if len(set(subgrid)) != n:  # Ensure distinct values in subgrid
+      if len(set(subgrid)) != n:  
         return False  # <6>
 
-  return True  # If all checks pass, the solution is valid  # <7>
+  return True   # <7>
 
 # Function to solve Sudoku puzzles where size is determined from the puzzle
 def solve_sudoku(puzzle):
-  n = len(puzzle)  # Determine the size of the grid from the puzzle list  # <8>
+  n = len(puzzle)   # <8>
   
-  # Create an n x n matrix of integer variables
   X = [[Int(f"x_{i}_{j}") for j in range(n)] for i in range(n)]  # <9>
   
-  # Define the solver
   solver = Solver()  # <10>
   
-  # Add constraints for cell values between 1 and n
   solver.add([And(X[i][j] >= 1, X[i][j] <= n) for i in range(n) for j in range(n)])  # <11>
   
-  # Add constraints for the pre-filled cells
   solver.add([X[i][j] == puzzle[i][j] for i in range(n) for j in range(n) if puzzle[i][j] != 0])  # <12>
   
-  # Add row constraints: each row must contain distinct values
   solver.add([Distinct(X[i]) for i in range(n)])  # <13>
   
-  # Add column constraints: each column must contain distinct values
   solver.add([Distinct([X[i][j] for i in range(n)]) for j in range(n)])  # <14>
   
-  # Add subgrid constraints: each sqrt_n x sqrt_n subgrid must contain distinct values
   sqrt_n = int(n**0.5)
 
   solver.add([Distinct([X[i + di][j + dj] for di in range(sqrt_n) for dj in range(sqrt_n)])
               for i in range(0, n, sqrt_n) for j in range(0, n, sqrt_n)])  # <15>
   
-  # Find all possible solutions
-  solutions = []  # List to store all solutions  # <16>
+  solutions = []  # <16>
 
   while solver.check() == sat:  # <17>
     model = solver.model()
 
     solution = [[model.evaluate(X[i][j]).as_long() for j in range(n)] for i in range(n)]  # <18>
 
-    solutions.append(solution)  # Store the solution  # <19>
+    solutions.append(solution)  # <19>
 
-    # Add a constraint to prevent finding the same solution again
     solver.add(Or([X[i][j] != solution[i][j] for i in range(n) for j in range(n)]))  # <20>
   
-  return solutions  # Return all solutions  # <21>
+  return solutions   # <21>
 
-# Example of a 4x4 Sudoku puzzle with multiple solutions
 if __name__ == "__main__":
-  # 4x4 Sudoku puzzle (0 represents empty cells)
   puzzle = [
     [1, 0, 0, 4],
     [0, 0, 0, 0],
@@ -1315,10 +1302,8 @@ if __name__ == "__main__":
     [4, 0, 0, 1]
   ]  # <22>
 
-  # Solve the Sudoku puzzle (size will be determined automatically)
   solutions = solve_sudoku(puzzle)  # <23>
 
-  # Print all the solutions and check if they're valid
   print(f"Found {len(solutions)} solution(s):")
   for idx, solution in enumerate(solutions):
     print(f"Solution {idx + 1}:")
@@ -1328,7 +1313,6 @@ if __name__ == "__main__":
 
     print()
     
-    # Check if the solution is valid
     if is_valid_sudoku(solution):
       print("The solution is valid!")  # <25>
 
