@@ -30,6 +30,20 @@ The concept of an "interface language" implies that a programming language serve
   Your browser does not support the audio element.
 </audio>
 
+## Audio 
+
+<button id="tts-button" style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">
+  ▶️ Play Audio
+</button>
+
+<label for="voice-selection" style="margin-left: 20px;">Choose a Voice: </label>
+<select id="voice-selection" style="margin-top: 10px;">
+  <!-- Options will be populated dynamically -->
+</select>
+
+<!-- Start reading after this marker -->
+<!-- start-tts-content -->
+
 ## Abstraction and human-machine interaction
 
 ### Simplified syntax and readability
@@ -653,6 +667,63 @@ Chinn, C. A., Buckland, L. A., & Samarapungavan, A. (2011). Expanding the dimens
 
 Turkle, S., & Papert, S. (1990). Epistemological pluralism and the revaluation of the concrete. *Journal of Mathematical Behavior*, 9(1), 3-33. [URL](http://web.mit.edu/sturkle/www/epistemologicalpluralism.html)
 
-## Changelog
+<script>
+  const ttsButton = document.getElementById('tts-button');
+  const voiceSelect = document.getElementById('voice-selection');
 
-20241005 - Added AI-generated review of the post
+  let voices = [];
+
+  // Populate the dropdown with available voices
+  function populateVoiceList() {
+    voices = speechSynthesis.getVoices();
+
+    // Clear out previous options (if any)
+    voiceSelect.innerHTML = '';
+
+    // Add each voice to the dropdown menu
+    voices.forEach((voice, index) => {
+      const option = document.createElement('option');
+      option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? ' [default]' : ''}`;
+      option.value = index;
+      voiceSelect.appendChild(option);
+    });
+  }
+
+  // Some browsers might load voices asynchronously, so we need to ensure they are loaded
+  populateVoiceList();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoiceList;
+  }
+
+  ttsButton.addEventListener('click', () => {
+    // Get all text following the marker <!-- start-tts-content -->
+    const marker = document.querySelector('comment()');  // Find the HTML comment marker
+    const textToRead = getTextAfterMarker(marker);  // Get all the text after the marker
+
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+
+    // Set the selected voice
+    const selectedVoiceIndex = voiceSelect.value;
+    if (voices[selectedVoiceIndex]) {
+      utterance.voice = voices[selectedVoiceIndex];
+    }
+
+    utterance.lang = voices[selectedVoiceIndex]?.lang || 'en-US';  // Use selected voice language or fallback
+    speechSynthesis.speak(utterance);
+  });
+
+  // Helper function to get all text nodes after the marker
+  function getTextAfterMarker(marker) {
+    let textContent = '';
+    let node = marker.nextSibling;
+    
+    while (node) {
+      if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE) {
+        textContent += node.textContent.trim() + ' ';
+      }
+      node = node.nextSibling;
+    }
+    
+    return textContent.trim();
+  }
+</script>

@@ -329,6 +329,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#ai-generated-podcast-from-the-text-using-noteboooklm" id="toc-ai-generated-podcast-from-the-text-using-noteboooklm" class="nav-link" data-scroll-target="#ai-generated-podcast-from-the-text-using-noteboooklm">AI-generated podcast from the text using NoteboookLM</a></li>
+  <li><a href="#audio" id="toc-audio" class="nav-link" data-scroll-target="#audio">Audio</a></li>
   <li><a href="#abstraction-and-human-machine-interaction" id="toc-abstraction-and-human-machine-interaction" class="nav-link" data-scroll-target="#abstraction-and-human-machine-interaction">Abstraction and human-machine interaction</a>
   <ul class="collapse">
   <li><a href="#simplified-syntax-and-readability" id="toc-simplified-syntax-and-readability" class="nav-link" data-scroll-target="#simplified-syntax-and-readability">Simplified syntax and readability</a></li>
@@ -359,7 +360,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#f2py" id="toc-f2py" class="nav-link" data-scroll-target="#f2py"><code>f2py</code></a></li>
   </ul></li>
   <li><a href="#other-references" id="toc-other-references" class="nav-link" data-scroll-target="#other-references">Other references</a></li>
-  <li><a href="#changelog" id="toc-changelog" class="nav-link" data-scroll-target="#changelog">Changelog</a></li>
   </ul>
 </nav>
     </div>
@@ -381,6 +381,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <source src="programming-human-languages-compressed.wav" type="audio/wav">
 <p>Your browser does not support the audio element. </p>
 </audio></section>
+<section id="audio" class="level2">
+<h2 class="anchored" data-anchor-id="audio">Audio</h2>
+<button id="tts-button" style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">
+▶️ Play Audio
+</button>
+<p><label for="voice-selection" style="margin-left: 20px;">Choose a Voice: </label> <select id="voice-selection" style="margin-top: 10px;"> <!-- Options will be populated dynamically --> </select></p>
+<!-- Start reading after this marker -->
+<!-- start-tts-content -->
+</section>
 <section id="abstraction-and-human-machine-interaction" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="abstraction-and-human-machine-interaction">Abstraction and human-machine interaction</h2>
 <section id="simplified-syntax-and-readability" class="level3 page-columns page-full">
@@ -862,10 +871,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Bartlett, F. C. (1932). <em>Remembering: A Study in Experimental and Social Psychology</em>. Cambridge University Press.</p>
 <p>Chinn, C. A., Buckland, L. A., &amp; Samarapungavan, A. (2011). Expanding the dimensions of epistemic cognition: Arguments from philosophy and psychology. <em>Educational Psychologist</em>, 46(3), 141-167. <a href="10.1080/00461520.2011.587722">DOI</a></p>
 <p>Turkle, S., &amp; Papert, S. (1990). Epistemological pluralism and the revaluation of the concrete. <em>Journal of Mathematical Behavior</em>, 9(1), 3-33. <a href="http://web.mit.edu/sturkle/www/epistemologicalpluralism.html">URL</a></p>
-</section>
-<section id="changelog" class="level2">
-<h2 class="anchored" data-anchor-id="changelog">Changelog</h2>
-<p>20241005 - Added AI-generated review of the post</p>
+<script>
+  const ttsButton = document.getElementById('tts-button');
+  const voiceSelect = document.getElementById('voice-selection');
+
+  let voices = [];
+
+  // Populate the dropdown with available voices
+  function populateVoiceList() {
+    voices = speechSynthesis.getVoices();
+
+    // Clear out previous options (if any)
+    voiceSelect.innerHTML = '';
+
+    // Add each voice to the dropdown menu
+    voices.forEach((voice, index) => {
+      const option = document.createElement('option');
+      option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? ' [default]' : ''}`;
+      option.value = index;
+      voiceSelect.appendChild(option);
+    });
+  }
+
+  // Some browsers might load voices asynchronously, so we need to ensure they are loaded
+  populateVoiceList();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoiceList;
+  }
+
+  ttsButton.addEventListener('click', () => {
+    // Get all text following the marker <!-- start-tts-content -->
+    const marker = document.querySelector('comment()');  // Find the HTML comment marker
+    const textToRead = getTextAfterMarker(marker);  // Get all the text after the marker
+
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+
+    // Set the selected voice
+    const selectedVoiceIndex = voiceSelect.value;
+    if (voices[selectedVoiceIndex]) {
+      utterance.voice = voices[selectedVoiceIndex];
+    }
+
+    utterance.lang = voices[selectedVoiceIndex]?.lang || 'en-US';  // Use selected voice language or fallback
+    speechSynthesis.speak(utterance);
+  });
+
+  // Helper function to get all text nodes after the marker
+  function getTextAfterMarker(marker) {
+    let textContent = '';
+    let node = marker.nextSibling;
+    
+    while (node) {
+      if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE) {
+        textContent += node.textContent.trim() + ' ';
+      }
+      node = node.nextSibling;
+    }
+    
+    return textContent.trim();
+  }
+</script>
 
 
 </section>
