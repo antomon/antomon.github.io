@@ -25,23 +25,119 @@ The concept of an "interface language" implies that a programming language serve
 
 ## AI-generated podcast from the text using NoteboookLM
 
-<audio controls>
-  <source src="programming-human-languages-compressed.wav" type="audio/wav">
-  Your browser does not support the audio element.
-</audio>
-
-## Audio 
-
-<button id="tts-button" style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">
+<button id="play-button" style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">
   ▶️ Play Audio
 </button>
 
-<label for="voice-selection" style="margin-left: 20px;">Choose a Voice: </label>
-<select id="voice-selection" style="margin-top: 10px;">
-  <!-- Options will be populated dynamically -->
-</select>
+<button id="pause-button" style="margin-top: 20px; padding: 10px 20px; font-size: 16px; display: none;">
+  ⏸️ Pause Audio
+</button>
 
-<!-- Start reading after this marker -->
+<label for="voice-selection" style="margin-left: 20px;">Choose a Voice: </label>
+<select id="voice-selection" style="margin-top: 10px;"></select>
+
+<progress id="progress-bar" value="0" max="100" style="width: 100%; margin-top: 20px;"></progress>
+
+<script>
+  const playButton = document.getElementById('play-button');
+  const pauseButton = document.getElementById('pause-button');
+  const voiceSelect = document.getElementById('voice-selection');
+  const progressBar = document.getElementById('progress-bar');
+
+  let voices = [];
+  let utterance;
+  let isPaused = false;
+
+  // Populate available voices
+  function populateVoiceList() {
+    voices = speechSynthesis.getVoices();
+    voiceSelect.innerHTML = '';
+    voices.forEach((voice, index) => {
+      const option = document.createElement('option');
+      option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? ' [default]' : ''}`;
+      option.value = index;
+      voiceSelect.appendChild(option);
+    });
+  }
+
+  // Ensure voices are loaded asynchronously
+  populateVoiceList();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoiceList;
+  }
+
+  // Function to read all text after the marker
+  function startReading() {
+    // Locate the marker and get all text after it
+    const marker = document.createComment('start-tts-content'); // Find the HTML comment marker
+    const textToRead = getTextAfterMarker(marker);
+
+    utterance = new SpeechSynthesisUtterance(textToRead);
+
+    // Set selected voice
+    const selectedVoiceIndex = voiceSelect.value;
+    if (voices[selectedVoiceIndex]) {
+      utterance.voice = voices[selectedVoiceIndex];
+    }
+
+    // Setup progress and play/pause
+    utterance.onstart = () => {
+      playButton.style.display = 'none';
+      pauseButton.style.display = 'inline-block';
+    };
+
+    utterance.onend = () => {
+      playButton.style.display = 'inline-block';
+      pauseButton.style.display = 'none';
+      progressBar.value = 100;  // Mark progress as complete
+    };
+
+    // Speech boundary event to track progress
+    utterance.onboundary = (event) => {
+      if (event.name === 'word') {
+        const wordIndex = event.charIndex / textToRead.length;
+        progressBar.value = wordIndex * 100;
+      }
+    };
+
+    // Start speaking
+    speechSynthesis.speak(utterance);
+  }
+
+  // Helper function to get text after the marker
+  function getTextAfterMarker(startElement) {
+    let textContent = '';
+    let node = startElement.nextSibling; // Start from the next sibling of the marker
+    
+    while (node) {
+      if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE) {
+        textContent += node.textContent.trim() + ' ';
+      }
+      node = node.nextSibling;
+    }
+    
+    return textContent.trim();
+  }
+
+  // Play button action
+  playButton.addEventListener('click', () => {
+    if (isPaused) {
+      speechSynthesis.resume();
+    } else {
+      startReading();
+    }
+    isPaused = false;
+  });
+
+  // Pause button action
+  pauseButton.addEventListener('click', () => {
+    speechSynthesis.pause();
+    isPaused = true;
+    playButton.style.display = 'inline-block';
+    pauseButton.style.display = 'none';
+  });
+</script>
+
 <!-- start-tts-content -->
 
 ## Abstraction and human-machine interaction
@@ -667,63 +763,3 @@ Chinn, C. A., Buckland, L. A., & Samarapungavan, A. (2011). Expanding the dimens
 
 Turkle, S., & Papert, S. (1990). Epistemological pluralism and the revaluation of the concrete. *Journal of Mathematical Behavior*, 9(1), 3-33. [URL](http://web.mit.edu/sturkle/www/epistemologicalpluralism.html)
 
-<script>
-  const ttsButton = document.getElementById('tts-button');
-  const voiceSelect = document.getElementById('voice-selection');
-
-  let voices = [];
-
-  // Populate the dropdown with available voices
-  function populateVoiceList() {
-    voices = speechSynthesis.getVoices();
-
-    // Clear out previous options (if any)
-    voiceSelect.innerHTML = '';
-
-    // Add each voice to the dropdown menu
-    voices.forEach((voice, index) => {
-      const option = document.createElement('option');
-      option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? ' [default]' : ''}`;
-      option.value = index;
-      voiceSelect.appendChild(option);
-    });
-  }
-
-  // Some browsers might load voices asynchronously, so we need to ensure they are loaded
-  populateVoiceList();
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = populateVoiceList;
-  }
-
-  ttsButton.addEventListener('click', () => {
-    // Get all text following the marker <!-- start-tts-content -->
-    const marker = document.querySelector('comment()');  // Find the HTML comment marker
-    const textToRead = getTextAfterMarker(marker);  // Get all the text after the marker
-
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-
-    // Set the selected voice
-    const selectedVoiceIndex = voiceSelect.value;
-    if (voices[selectedVoiceIndex]) {
-      utterance.voice = voices[selectedVoiceIndex];
-    }
-
-    utterance.lang = voices[selectedVoiceIndex]?.lang || 'en-US';  // Use selected voice language or fallback
-    speechSynthesis.speak(utterance);
-  });
-
-  // Helper function to get all text nodes after the marker
-  function getTextAfterMarker(marker) {
-    let textContent = '';
-    let node = marker.nextSibling;
-    
-    while (node) {
-      if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE) {
-        textContent += node.textContent.trim() + ' ';
-      }
-      node = node.nextSibling;
-    }
-    
-    return textContent.trim();
-  }
-</script>
