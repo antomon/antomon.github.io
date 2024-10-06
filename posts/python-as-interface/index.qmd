@@ -143,9 +143,9 @@ Furthermore, the ability to wrap lower-level languages allows Python to serve as
 
 Python's versatility is further demonstrated in its role as an extension mechanism for existing applications written in C or C++. By employing Python, developers can bridge performance-critical components with more flexible, higher-level program logic. Computationally intensive modules can be implemented in C or C++, while Python orchestrates the broader application. This modular approach allows developers to leverage the best aspects of both worlds: the raw performance of C/C++ and the flexibility and ease of Python.
 
-Libraries such as `ctypes`, `cffi`, or tools like `SWIG` facilitate the seamless integration of C functions, enabling efficient interoperability and reducing development complexity by automatically generating bindings where needed. `ctypes` provides a straightforward mechanism for calling functions in shared libraries, allowing Python programs to invoke compiled C code directly. Meanwhile, `cffi` offers a more sophisticated interface, enabling developers to interface with C code in a way that is both more idiomatic and safer, ensuring type correctness and reducing potential runtime errors.
+Libraries such as `ctypes`, `cffi`, or tools like SWIG facilitate the seamless integration of C functions, enabling efficient interoperability and reducing development complexity by automatically generating bindings where needed. `ctypes` provides a straightforward mechanism for calling functions in shared libraries, allowing Python programs to invoke compiled C code directly. Meanwhile, `cffi` offers a more sophisticated interface, enabling developers to interface with C code in a way that is both more idiomatic and safer, ensuring type correctness and reducing potential runtime errors.
 
-`SWIG` (Simplified Wrapper and Interface Generator) is another invaluable tool in this ecosystem, particularly when working with large and complex C/C++ codebases. It automates the generation of wrapper code, enabling Python to interact with existing C/C++ libraries with minimal manual intervention. This kind of automation is crucial in large projects, where writing bindings by hand would be prohibitively time-consuming and error-prone. The ability to combine Python with C/C++ allows for a highly adaptable workflow, where developers can optimize critical sections of their codebase without sacrificing overall productivity and maintainability.
+SWIG (Simplified Wrapper and Interface Generator) is another invaluable tool in this ecosystem, particularly when working with large and complex C/C++ codebases. It automates the generation of wrapper code, enabling Python to interact with existing C/C++ libraries with minimal manual intervention. This kind of automation is crucial in large projects, where writing bindings by hand would be prohibitively time-consuming and error-prone. The ability to combine Python with C/C++ allows for a highly adaptable workflow, where developers can optimize critical sections of their codebase without sacrificing overall productivity and maintainability.
 
 This extensibility has led to widespread adoption of Python in fields such as robotics, embedded systems, and real-time computing, where high performance is often a requirement but the ease of development and rapid prototyping are also highly valued. By enabling a hybrid development model, Python empowers developers to build systems that are both powerful and flexible, with critical performance-sensitive components written in C/C++ while the overall application logic and orchestration are handled by Python. This approach not only streamlines development but also ensures that the end product is optimized for performance without compromising on maintainability.
 
@@ -426,6 +426,217 @@ The parallels between Python and natural language, particularly English, make Py
 The evolution of Python, through key changes such as the transition to Python 3 and the ongoing efforts to remove the Global Interpreter Lock (GIL), reflects a commitment to continuous improvement while staying true to its core principles. Python's adaptability and capacity to serve as a glue language in various domains—ranging from artificial intelligence and data science to education—underscore its versatility and enduring relevance in the software development landscape.
 
 In conclusion, Python's role as an interface language extends beyond mere syntax; it embodies a philosophical approach to programming that prioritizes human cognitive compatibility. By reducing barriers between human thought and machine logic, Python not only facilitates efficient software development but also fosters an inclusive programming culture where knowledge representation and problem-solving are accessible to a broad audience. The language's continued evolution ensures that it remains at the forefront of modern computing, bridging the gap between abstract human cognition and concrete machine execution in an ever-changing technological world.
+
+## Appendix: Extending Python with C, C++, and Fortran
+
+Python’s extensibility allows developers to combine high-level Python logic with low-level C/C++ or Fortran code to maximize both performance and productivity. Several tools help with this integration:
+
+1. `ctypes`: A built-in Python library for calling C functions in shared libraries.
+
+2. `cffi`: An advanced Foreign Function Interface for interfacing Python with C code.
+
+3. SWIG: A wrapper generator that enables Python to interact with existing C/C++ code.
+
+4. `f2py`: A tool for interfacing Python with Fortran code, which is particularly useful in numerical computing.
+
+Each tool has its strengths, from direct function calls with `ctypes` to more complex scenarios handled by SWIG. Let’s look at complete code examples for each tool and where they can be found or contributed to.
+
+### `ctypes`
+
+#### Overview
+
+`ctypes` is a built-in Python library for calling functions from shared C libraries. It provides an easy and direct way to call C functions, but requires more manual management of data types and memory.
+
+- Developers: Created by Thomas Heller, part of the Python standard library since version 2.5.
+
+- Where to find it: Available in [Python’s documentation](https://docs.python.org/3/library/ctypes.html).
+
+#### Code example
+
+`example.c` C file:
+
+```c
+// 
+#include <stdio.h>
+
+int add(int a, int b) {
+  return a + b;
+}
+
+void hello() {
+  printf("Hello from C!\n");
+}
+```
+
+Compile the C code (Unix-like operating systems such as Linux and macOS):
+
+```bash
+gcc -shared -o libexample.so -fPIC example.c
+```
+
+`ctypes_example.py` Python file:
+
+```python
+import ctypes
+
+# Load the shared library
+lib = ctypes.CDLL('./libexample.so')
+
+# Call the C function add
+result = lib.add(10, 20)
+print(f"Result of add(10, 20): {result}")
+
+# Call the C function hello
+lib.hello()
+```
+
+### `cffi`
+
+#### Overview
+
+`cffi` (C Foreign Function Interface) is more flexible and safer than `ctypes`. It handles C types directly and ensures correctness in calling conventions and memory usage.
+
+- Developers: Created by Armin Rigo and maintained by the PyPy project.
+
+- Where to find it: [cffi documentation](https://cffi.readthedocs.io/en/latest/) and the project on [GitHub](https://github.com/python-cffi/cffi).
+
+#### Code example
+
+`mathlib.c` C file:
+
+```c
+int multiply(int x, int y) {
+  return x * y;
+}
+```
+
+Compile the C code (Unix-like operating systems such as Linux and macOS):
+
+```bash
+gcc -shared -o libmathlib.so -fPIC mathlib.c
+```
+
+`cffi_example.py` Python file:
+
+```python
+from cffi import FFI
+
+ffi = FFI()
+
+# Declare the C function signature
+ffi.cdef("""
+  int multiply(int x, int y);
+""")
+
+# Load the shared library
+C = ffi.dlopen("./libmathlib.so")
+
+# Call the C function
+result = C.multiply(6, 7)
+print(f"Result of multiply(6, 7): {result}")
+```
+
+### SWIG
+
+#### Overview
+
+SWIG (Simplified Wrapper and Interface Generator) automates the creation of wrapper code so that Python can call C or C++ functions. It is ideal for larger, more complex C/C++ codebases where manual bindings would be difficult to manage.
+
+- Developers: Originally developed by David Beazley, now maintained by an open-source community.
+
+- Where to find it: [SWIG website](http://www.swig.org/) and [GitHub](https://github.com/swig/swig).
+
+#### Code example
+
+`example.cpp` C++ file:
+
+```cpp
+#include <iostream>
+#include <string>
+
+class Greeter {
+public:
+  void greet(const std::string& name) {
+    std::cout << "Hello, " << name << "!" << std::endl;
+  }
+};
+```
+
+`example.i` SWIG interface file:
+
+```swig
+%module example
+%{
+  #include "example.cpp"
+%}
+
+%include "example.cpp"
+```
+
+Generate the wrapper code with SWIG and compile (Unix-like operating systems such as Linux and macOS):
+
+```bash
+swig -python -c++ example.i
+g++ -shared -o _example.so example_wrap.cxx example.cpp -I/usr/include/python3.8 -fPIC
+```
+
+`swig_example.py` Python file:
+
+```python
+import example
+
+# Create an instance of Greeter and call the greet method
+g = example.Greeter()
+g.greet("World")
+```
+
+### `f2py` 
+
+#### Overview
+
+`f2py` (Fortran to Python Interface Generator) is a part of the NumPy ecosystem and is designed to interface Python with Fortran. This is especially useful for scientific computing projects that rely on Fortran for performance-intensive tasks.
+
+- Developers: Developed and maintained by the NumPy community.
+
+- Where to find it: [f2py documentation](https://numpy.org/doc/stable/f2py/) and part of the [NumPy GitHub repository](https://github.com/numpy/numpy).
+
+#### Code example
+
+`fortran_code.f90` Fortran file:
+
+```fortran
+subroutine add_arrays(a, b, result, n)
+  integer :: n
+
+  real(8), intent(in) :: a(n), b(n)
+  real(8), intent(out) :: result(n)
+
+  integer :: i
+
+  do i = 1, n
+    result(i) = a(i) + b(i)
+  end do
+
+end subroutine add_arrays
+```
+
+Generate Python bindings using `f2py` (Unix-like operating systems such as Linux and macOS, Windows through MinGW or other compatibile Fortran compiler):
+
+```bash
+f2py -c -m fortlib fortran_code.f90
+```
+
+`f2py_example.py` Python file:
+
+```python
+import fortlib
+
+a = [1.0, 2.0, 3.0]
+b = [4.0, 5.0, 6.0]
+result = fortlib.add_arrays(a, b, len(a))
+
+print("Result:", result)
+```
 
 ## Other references
 
