@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -73,8 +107,10 @@ ul.task-list li input[type="checkbox"] {
 
 <link rel="stylesheet" href="styles.css">
 <meta property="og:title" content="Antonio Montano’s Personal Website">
+<meta property="og:description" content="Antonio Montano’s personal blog">
 <meta property="og:site_name" content="Antonio Montano's Personal Website">
 <meta name="twitter:title" content="Antonio Montano’s Personal Website">
+<meta name="twitter:description" content="Antonio Montano’s personal blog">
 <meta name="twitter:card" content="summary">
 </head>
 
@@ -201,6 +237,12 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./posts/python-singleton/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Singletons in Python</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./posts/attentions/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Harnessing Focus: Merging AI and Market Dynamics</span></a>
   </div>
@@ -243,8 +285,447 @@ ul.task-list li input[type="checkbox"] {
 
 
 
+<section id="python-singleton" class="level1">
+<h1>Python Singleton </h1>
+<p>Before diving into different implementations of a Python **singleton**, it’s important to understand what singletons are from both theoretical and practical perspectives.</p>
+<section id="what-is-a-singleton" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-singleton">What is a Singleton?</h2>
+<p>A <strong>singleton</strong> is a <strong>creational design pattern</strong>, which is a type of design pattern that focuses on the creation of objects in a way that enhances flexibility and reuse. The singleton pattern ensures that a class has only one instance while providing a global access point to that instance. Creational design patterns are used to manage the object creation process and provide solutions to instantiate classes efficiently.</p>
+<p>Other examples of creational design patterns include:</p>
+<ul>
+<li><strong>Factory Method</strong>: Defines an interface for creating an object but allows subclasses to alter the type of objects that will be created.</li>
+<li><strong>Abstract Factory</strong>: Provides an interface for creating families of related or dependent objects without specifying their concrete classes.</li>
+<li><strong>Builder</strong>: Separates the construction of a complex object from its representation, allowing the same construction process to create different representations.</li>
+<li><strong>Prototype</strong>: Creates new objects by copying an existing object, which acts as a prototype. </li>
+</ul>
+<ol type="1">
+<li><p>The Singleton pattern solves two problems at the same time, violating the Single Responsibility Principle:</p>
+<p>Ensure that a class has just a single instance. Why would anyone want to control how many instances a class has? The most common reason for this is to control access to some shared resource—for example, a database or a file.</p>
+<p>Here’s how it works: imagine that you created an object, but after a while decided to create a new one. Instead of receiving a fresh object, you’ll get the one you already created.</p>
+<p>Note that this behavior is impossible to implement with a regular constructor since a constructor call must always return a new object by design.</p></li>
+<li><p>Provide a global access point to that instance. Remember those global variables that you (all right, me) used to store some essential objects? While they’re very handy, they’re also very unsafe since any code can potentially overwrite the contents of those variables and crash the app.</p>
+<p>Just like a global variable, the Singleton pattern lets you access some object from anywhere in the program. However, it also protects that instance from being overwritten by other code.</p>
+<p>There’s another side to this problem: you don’t want the code that solves problem #1 to be scattered all over your program. It’s much better to have it within one class, especially if the rest of your code already depends on it.The singleton pattern is particularly useful for managing shared resources such as database connections, configuration settings, or logging utilities, where creating multiple instances could lead to inefficiencies, resource conflicts, or inconsistencies.</p></li>
+</ol>
+<p>In practice, a singleton is achieved by creating a mechanism that keeps track of whether an instance of the class has already been created. If an instance exists, any subsequent attempt to create a new one will return the existing instance instead of creating a new one. This behavior helps provide a <strong>global point of access</strong> to shared resources. For example, consider the following simple Python implementation of a singleton:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">class</span> Singleton:</span>
+<span id="cb1-2"><a href="#cb1-2"></a>    _instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a>    <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb1-5"><a href="#cb1-5"></a>        <span class="cf">if</span> <span class="kw">not</span> cls._instance:</span>
+<span id="cb1-6"><a href="#cb1-6"></a>            cls._instance <span class="op">=</span> <span class="bu">super</span>(Singleton, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        <span class="cf">return</span> cls._instance</span>
+<span id="cb1-8"><a href="#cb1-8"></a></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="co"># Example usage</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>singleton1 <span class="op">=</span> Singleton()</span>
+<span id="cb1-11"><a href="#cb1-11"></a>singleton2 <span class="op">=</span> Singleton()</span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="bu">print</span>(singleton1 <span class="kw">is</span> singleton2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>Singleton</code> class ensures that only one instance is created by overriding the <code>__new__</code> method. When <code>singleton1</code> and <code>singleton2</code> are created, they both refer to the same instance, demonstrating the singleton pattern in action.</p>
+<p>For instance, in the context of logging, having a single logger instance ensures that all messages are processed in a consistent manner without redundant loggers cluttering the process.</p>
+<p>Despite its advantages, the singleton pattern can introduce potential pitfalls, such as making code more difficult to test and increasing coupling, which can reduce flexibility. Violates the Single Responsibility Principle. The pattern solves two problems at the time. This is why it should be used with caution and only in scenarios where a single instance is clearly needed.</p>
+<p>The singleton pattern also has some potential disadvantages. One major drawback is that it introduces global state into an application, which can make it challenging to determine how state changes across different parts of the system. This can result in unpredictable behavior, particularly when dealing with concurrent code. </p>
+<p>Additionally, singletons can make code harder to test, as they effectively act as a hidden dependency that can complicate the process of writing unit tests. To mitigate these issues, it is often recommended to keep the usage of singletons limited to cases where centralized control is truly necessary and beneficial.&nbsp;It may be difficult to unit test the client code of the Singleton because many test frameworks rely on inheritance when producing mock objects. Since the constructor of the singleton class is private and overriding static methods is impossible in most languages, you will need to think of a creative way to mock the singleton. Or just don’t write the tests. Or don’t use the Singleton pattern.</p>
+<p>Usage of singletons can be so bad that some developers consider it an antipattern.</p>
+<section id="a-real-world-singleton-application" class="level3">
+<h3 class="anchored" data-anchor-id="a-real-world-singleton-application">A Real-World Singleton Application</h3>
+<p>One of the simplest ways to implement the singleton pattern is by using a class-level attribute to store the instance. This method is both straightforward and effective.</p>
+<p>Consider a scenario where we want to manage application-wide configuration settings. The singleton pattern ensures that all parts of the application use the same configuration object:</p>
+<p>class AppConfig:</p>
+<p> _instance = None</p>
+<p> def __new__(cls, *args, **kwargs):</p>
+<p> if cls._instance is None:</p>
+<p> cls._instance = super(AppConfig, cls).__new__(cls, *args, **kwargs)</p>
+<p> # Initialize configuration settings</p>
+<p> cls._instance.settings = {</p>
+<p> ‘theme’: ‘light’,</p>
+<p> ‘language’: ‘en’,</p>
+<p> ‘version’: ‘1.0.0’</p>
+<p> }</p>
+<p> return cls._instance</p>
+<p> def update_setting(self, key, value):</p>
+<p> self.settings[key] = value</p>
+<p> def get_setting(self, key):</p>
+<p> return self.settings.get(key)</p>
+<p># Example usage</p>
+<p>config1 = AppConfig()</p>
+<p>config2 = AppConfig()</p>
+<p>print(config1 is config2) # Output: True</p>
+<p>config1.update_setting(‘theme’, ‘dark’)</p>
+<p>print(config2.get_setting(‘theme’)) # Output: ‘dark’</p>
+<p>In this example, the AppConfig class is used to manage application configuration settings. The __new__ method ensures that only one instance of the class is created. If an instance already exists, it is returned; otherwise, a new instance is created. This approach is effective and easy to understand, making it a good choice for simpler use cases.</p>
+<p>In this implementation, the __new__ method is overridden to ensure that only one instance of the class is created. If an instance already exists, it is returned; otherwise, a new instance is created. This approach is effective and easy to understand, making it a good choice for simpler use cases.What is a Decorator?</p>
+<p>A <strong>decorator</strong> in Python is a function that allows you to modify the behavior of another function or class without altering its code. Decorators provide a clean and readable way to extend functionality by “wrapping” functions or classes. This wrapping process means that the original function or class can have additional behavior added dynamically, without changing its internal implementation.</p>
+<p>Decorators in Python are incredibly versatile and can be used to extend the functionality of classes and functions in a modular and reusable manner. For instance, decorators are often used in web frameworks to handle authentication, logging, caching, or even input validation. They offer a practical way to separate cross-cutting concerns from the main logic of a function, leading to cleaner and more maintainable code.</p>
+<p>For example, decorators are commonly used to manage logging, authentication, or caching. In Python, they are represented with the <code>@decorator_name</code> syntax placed above the definition of the function or class you want to extend. This makes decorators an elegant solution for <strong>separation of concerns</strong>, allowing functionality to be extended in a modular way without directly modifying the core logic.</p>
+<p>Here is a simple example of using a decorator to log function calls:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">def</span> log_decorator(func):</span>
+<span id="cb2-2"><a href="#cb2-2"></a>    <span class="kw">def</span> wrapper(<span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb2-3"><a href="#cb2-3"></a>        <span class="bu">print</span>(<span class="ss">f"Calling function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' with arguments </span><span class="sc">{</span>args<span class="sc">}</span><span class="ss"> and </span><span class="sc">{</span>kwargs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4"></a>        result <span class="op">=</span> func(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb2-5"><a href="#cb2-5"></a>        <span class="bu">print</span>(<span class="ss">f"Function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' returned </span><span class="sc">{</span>result<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6"></a>        <span class="cf">return</span> result</span>
+<span id="cb2-7"><a href="#cb2-7"></a>    <span class="cf">return</span> wrapper</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="at">@log_decorator</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="kw">def</span> add(a, b):</span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a><span class="co"># Using the decorated function</span></span>
+<span id="cb2-14"><a href="#cb2-14"></a>add(<span class="dv">3</span>, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>log_decorator</code> wraps the <code>add</code> function to log its calls, arguments, and return value. When <code>add(3, 5)</code> is called, the output will show the logging information before and after the function execution, demonstrating how decorators can be used to extend functionality without modifying the original function code.</p>
+<p>From a practical standpoint, decorators offer a powerful and reusable way to add cross-cutting concerns to your code, such as logging every time a function is called or enforcing access control checks without cluttering the function’s core logic. The decorator abstracts these added behaviors, keeping the function or class simple and focused on its primary task.</p>
+<p>Moreover, decorators are deeply rooted in functional programming principles, showcasing Python’s versatility and expressive power. By allowing functions to be passed around and extended dynamically, decorators reflect Python’s ability to blend functional and object-oriented programming paradigms seamlessly.</p>
+<p>Decorators can also be stacked, meaning you can apply multiple decorators to a single function or class, each providing additional functionality. This stacking can help to compose complex behaviors from simple building blocks, making your code more modular and easier to maintain. For example, you might have one decorator that handles logging and another that handles access control, and you can apply both to a function to achieve both behaviors without modifying the core function code.</p>
+<p>The Singleton class can be implemented in different ways in Python. Some</p>
+<p> possible methods include: base class, decorator, metaclass. </p>
+</section>
+</section>
+<section id="singleton-implementation-with-decorators-step-by-step" class="level2">
+<h2 class="anchored" data-anchor-id="singleton-implementation-with-decorators-step-by-step">Singleton Implementation with Decorators (Step-by-Step)</h2>
+<p>To implement the singleton pattern using decorators, we can create a decorator function that wraps a class and ensures that only one instance of that class is created. Below, we walk through the implementation step by step.</p>
+<section id="step-1-create-a-wrapper-class" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-create-a-wrapper-class">Step 1: Create a Wrapper Class</h3>
+<p>The wrapper class will be responsible for storing the instance of the decorated class. It will ensure that if an instance already exists, it will return that instance instead of creating a new one.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> SingletonInstanceWrapper:</span>
+<span id="cb3-2"><a href="#cb3-2"></a>    <span class="co">"""</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co">    A wrapper class that ensures only one instance of the decorated class is created.</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="co">    """</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cls):</span>
+<span id="cb3-7"><a href="#cb3-7"></a>        <span class="va">self</span>.__wrapped__ <span class="op">=</span> cls</span>
+<span id="cb3-8"><a href="#cb3-8"></a>        <span class="va">self</span>._instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb3-11"><a href="#cb3-11"></a>        <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb3-12"><a href="#cb3-12"></a>            <span class="va">self</span>._instance <span class="op">=</span> <span class="va">self</span>.__wrapped__(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb3-13"><a href="#cb3-13"></a>        <span class="cf">return</span> <span class="va">self</span>._instance</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>The <code>__init__</code> method takes a class (<code>cls</code>) as input and stores it in the <code>__wrapped__</code> attribute.</li>
+<li>The <code>_instance</code> attribute is used to store the single instance of the class.</li>
+<li>The <code>__call__</code> method checks if an instance already exists. If it doesn’t, it creates a new instance; otherwise, it returns the existing one.</li>
+</ul>
+</section>
+<section id="step-2-create-the-decorator-function" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-create-the-decorator-function">Step 2: Create the Decorator Function</h3>
+<p>Now that we have the wrapper class, we need a decorator function that returns an instance of this wrapper class, allowing us to use it with any class we want to make a singleton.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">def</span> ensure_single_instance(cls):</span>
+<span id="cb4-2"><a href="#cb4-2"></a>    <span class="co">"""</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co">    A singleton decorator that returns a single instance of the decorated class.</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="co">    """</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="cf">return</span> SingletonInstanceWrapper(cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>ensure_single_instance</code> function takes a class as input and returns an instance of <code>SingletonInstanceWrapper</code>, which ensures that only one instance of the class can be created.</p>
+</section>
+<section id="step-3-use-the-decorator" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-use-the-decorator">Step 3: Use the Decorator</h3>
+<p>We can now use the decorator to enforce singleton behavior on any class. Let’s apply it to a class and see how it works.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a><span class="at">@ensure_single_instance</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">class</span> Logger:</span>
+<span id="cb5-3"><a href="#cb5-3"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb5-4"><a href="#cb5-4"></a>        <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="cb5-5"><a href="#cb5-5"></a></span>
+<span id="cb5-6"><a href="#cb5-6"></a>    <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="cb5-7"><a href="#cb5-7"></a>        <span class="va">self</span>.log.append(message)</span>
+<span id="cb5-8"><a href="#cb5-8"></a></span>
+<span id="cb5-9"><a href="#cb5-9"></a>    <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="cb5-10"><a href="#cb5-10"></a>        <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="cb5-11"><a href="#cb5-11"></a></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="co"># Example usage</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="cb5-14"><a href="#cb5-14"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="cb5-15"><a href="#cb5-15"></a></span>
+<span id="cb5-16"><a href="#cb5-16"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="bu">print</span>(logger2.read_log())  <span class="co"># Output: ['Log message 1']</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>Logger</code> class is decorated with <code>@ensure_single_instance</code>. As a result, both <code>logger1</code> and <code>logger2</code> refer to the same instance, demonstrating the singleton behavior.</p>
+</section>
+</section>
+<section id="additional-singleton-implementations-and-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="additional-singleton-implementations-and-comparison">Additional Singleton Implementations and Comparison</h2>
+<p>While the decorator-based implementation is a clean and reusable way to enforce the singleton pattern, there are other methods that are also worth considering. Below, we explore two additional implementations of the singleton pattern in Python—one that is simple yet effective, and another that is more complex but highly efficient.</p>
+<section id="section" class="level3">
+<h3 class="anchored" data-anchor-id="section"></h3>
+</section>
+<section id="complex-and-efficient-singleton-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="complex-and-efficient-singleton-implementation">Complex and Efficient Singleton Implementation</h3>
+<p>For a more complex and efficient approach, especially in multi-threaded environments, you can use a combination of locking mechanisms to ensure thread safety. A <strong>race condition</strong> occurs when multiple threads try to access and modify shared resources concurrently, leading to unpredictable outcomes. This implementation uses the <code>threading</code> module to avoid race conditions when creating the singleton instance, ensuring that only one instance is created, even when accessed by multiple threads simultaneously.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a><span class="im">import</span> threading</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">class</span> ThreadSafeSingleton:</span>
+<span id="cb6-4"><a href="#cb6-4"></a>    _instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>    _lock <span class="op">=</span> threading.Lock()</span>
+<span id="cb6-6"><a href="#cb6-6"></a></span>
+<span id="cb6-7"><a href="#cb6-7"></a>    <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb6-8"><a href="#cb6-8"></a>        <span class="cf">if</span> cls._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb6-9"><a href="#cb6-9"></a>            <span class="cf">with</span> cls._lock:</span>
+<span id="cb6-10"><a href="#cb6-10"></a>                <span class="cf">if</span> cls._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb6-11"><a href="#cb6-11"></a>                    cls._instance <span class="op">=</span> <span class="bu">super</span>(ThreadSafeSingleton, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb6-12"><a href="#cb6-12"></a>        <span class="cf">return</span> cls._instance</span>
+<span id="cb6-13"><a href="#cb6-13"></a></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="co"># Example usage</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a>singleton1 <span class="op">=</span> ThreadSafeSingleton()</span>
+<span id="cb6-16"><a href="#cb6-16"></a>singleton2 <span class="op">=</span> ThreadSafeSingleton()</span>
+<span id="cb6-17"><a href="#cb6-17"></a></span>
+<span id="cb6-18"><a href="#cb6-18"></a><span class="bu">print</span>(singleton1 <span class="kw">is</span> singleton2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this implementation, the <code>__new__</code> method is also overridden, but a lock is used to ensure that only one thread can create the instance at a time. The double-checked locking pattern (<code>if cls._instance is None</code> inside and outside the <code>with</code> block) ensures that the instance is only created once, even in a multi-threaded context. This approach is more robust and suitable for scenarios where multiple threads might try to create an instance simultaneously.</p>
+</section>
+<section id="comparison-with-decorator-based-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="comparison-with-decorator-based-implementation">Comparison with Decorator-Based Implementation</h3>
+<p>The decorator-based implementation has several advantages, such as being reusable and easily applied to any class without altering its core structure. It is highly modular, allowing you to quickly enforce singleton behavior by simply adding a decorator to the class definition. This makes the code cleaner and easier to understand, particularly for classes that require singleton behavior but do not need additional thread safety.</p>
+<p>However, the decorator-based approach may not be the most straightforward for those unfamiliar with decorators, and it might lack the thread-safety required for more complex applications unless additional synchronization mechanisms are added. While decorators are ideal for a concise and reusable solution, they might not be optimal for environments where performance and thread safety are critical.</p>
+<p>The <strong>Simple Singleton Implementation</strong> is very easy to understand and implement. It uses the <code>__new__</code> method to ensure that only one instance of the class is created. This approach is effective and suitable for single-threaded applications or scenarios where thread safety is not a concern. It is also easy to follow for beginners, making it an ideal choice for simpler use cases. Unlike the decorator-based implementation, the simple singleton directly modifies the class and is less modular but more explicit.</p>
+<p>On the other hand, the <strong>Thread-Safe Singleton Implementation</strong> is a more robust solution that can handle concurrent instantiation attempts. By using a lock to control access, this implementation ensures that only one thread can create the instance at a time, preventing race conditions. This makes it well-suited for multi-threaded environments where efficiency and correctness are crucial. Compared to the decorator-based implementation, the thread-safe version is more complex and requires careful handling of concurrency, but it is significantly more reliable for applications requiring strict guarantees around resource sharing.</p>
+<p>In summary, each implementation has its strengths and ideal use cases:</p>
+<ul>
+<li>The <strong>Decorator-Based Implementation</strong> is best for reusable, clean, and easy-to-apply singleton behavior without complex threading needs.</li>
+<li>The <strong>Simple Singleton Implementation</strong> is straightforward and effective for basic, single-threaded use cases, with an explicit approach to ensure a single instance.</li>
+<li>The <strong>Thread-Safe Singleton Implementation</strong> is well-suited for environments that require high levels of concurrency and need to ensure thread safety during instantiation. Below, we extend the decorator-based singleton to add thread safety, making it suitable for multi-threaded environments.</li>
+</ul>
+</section>
+<section id="thread-safe-decorator-based-singleton-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="thread-safe-decorator-based-singleton-implementation">Thread-Safe Decorator-Based Singleton Implementation</h3>
+<p>To make the decorator-based singleton thread-safe, we can add a lock to ensure that only one thread creates the singleton instance at a time. This version retains the modularity of the decorator while adding the robustness required for concurrent environments:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a><span class="im">import</span> threading</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">class</span> SingletonInstanceWrapperThreadSafe:</span>
+<span id="cb7-4"><a href="#cb7-4"></a>    _lock <span class="op">=</span> threading.Lock()</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cls):</span>
+<span id="cb7-7"><a href="#cb7-7"></a>        <span class="va">self</span>.__wrapped__ <span class="op">=</span> cls</span>
+<span id="cb7-8"><a href="#cb7-8"></a>        <span class="va">self</span>._instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a></span>
+<span id="cb7-10"><a href="#cb7-10"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb7-11"><a href="#cb7-11"></a>        <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb7-12"><a href="#cb7-12"></a>            <span class="cf">with</span> <span class="va">self</span>._lock:</span>
+<span id="cb7-13"><a href="#cb7-13"></a>                <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb7-14"><a href="#cb7-14"></a>                    <span class="va">self</span>._instance <span class="op">=</span> <span class="va">self</span>.__wrapped__(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb7-15"><a href="#cb7-15"></a>        <span class="cf">return</span> <span class="va">self</span>._instance</span>
+<span id="cb7-16"><a href="#cb7-16"></a></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="kw">def</span> ensure_single_instance_thread_safe(cls):</span>
+<span id="cb7-18"><a href="#cb7-18"></a>    <span class="co">"""</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="co">    A thread-safe singleton decorator. Returns a wrapper object. A call on that object</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="co">    returns a single instance of the decorated class.</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="co">    """</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a>    <span class="cf">return</span> SingletonInstanceWrapperThreadSafe(cls)</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="co"># Example usage</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="at">@ensure_single_instance_thread_safe</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a><span class="kw">class</span> Logger:</span>
+<span id="cb7-27"><a href="#cb7-27"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb7-28"><a href="#cb7-28"></a>        <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="cb7-29"><a href="#cb7-29"></a></span>
+<span id="cb7-30"><a href="#cb7-30"></a>    <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="cb7-31"><a href="#cb7-31"></a>        <span class="va">self</span>.log.append(message)</span>
+<span id="cb7-32"><a href="#cb7-32"></a></span>
+<span id="cb7-33"><a href="#cb7-33"></a>    <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="cb7-34"><a href="#cb7-34"></a>        <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="cb7-35"><a href="#cb7-35"></a></span>
+<span id="cb7-36"><a href="#cb7-36"></a><span class="co"># Testing thread safety</span></span>
+<span id="cb7-37"><a href="#cb7-37"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="cb7-38"><a href="#cb7-38"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="cb7-39"><a href="#cb7-39"></a></span>
+<span id="cb7-40"><a href="#cb7-40"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this implementation, we use the <code>threading.Lock()</code> to ensure that only one thread can create the singleton instance. This makes the decorator-based singleton implementation thread-safe and suitable for concurrent environments, preserving both modularity and robustness.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The singleton pattern is a powerful tool when applied correctly. Using a decorator like the one we’ve explored here allows you to create clean, reusable code while enforcing singleton behavior. As with any design pattern, it’s important to understand the context in which it’s most beneficial and apply it judiciously.</p>
+<p>Decorators provide a flexible way to extend the behavior of classes, and combining them with the singleton pattern offers a clean and efficient way to manage shared resources. However, it’s crucial to be mindful of the limitations of the singleton pattern and use it only when appropriate to avoid common pitfalls such as tight coupling and global state.</p>
+<p>In summary, understanding when and how to use the singleton pattern can make your code more efficient and easier to manage. When combined with decorators, the singleton pattern becomes even more versatile, allowing you to apply singleton behavior in a reusable and modular way. By leveraging these powerful tools, you can create cleaner, more maintainable, and more efficient Python applications.</p>
+<hr>
+</section>
+</section>
+<section id="python-singleton-design-pattern" class="level1">
+<h1>Python Singleton Design Pattern</h1>
+<p>Before diving into different implementations of a Python <strong>Singleton</strong>, it’s essential to understand the concept from both theoretical and practical perspectives.</p>
+<section id="what-is-a-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-design-pattern">What is a Design Pattern?</h2>
+<p>A <strong>design pattern</strong> is a reusable solution to common problems that software developers encounter during application development. It represents best practices for addressing recurring design challenges, enabling developers to write code that is more flexible, maintainable, and reusable. Design patterns also provide a common vocabulary for designers and developers to communicate their approaches to solving software design problems.</p>
+<p>Design patterns can be categorized into three main types:</p>
+<ul>
+<li><strong>Creational Patterns</strong>: Focus on object creation, optimizing efficiency and controlling how instances are instantiated. Examples include Singleton, Factory Method, Builder, Prototype, and Abstract Factory.</li>
+<li><strong>Structural Patterns</strong>: Deal with object composition, ensuring that relationships between components are efficient and effective. Examples include Adapter, Bridge, Composite, Decorator, Facade, and Proxy.</li>
+<li><strong>Behavioral Patterns</strong>: Define how objects interact and communicate with each other. Examples include Strategy, Observer, Command, State, and Iterator.</li>
+</ul>
+</section>
+<section id="what-is-a-creational-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-creational-design-pattern">What is a Creational Design Pattern?</h2>
+<p>A <strong>creational design pattern</strong> focuses on how objects are created, helping developers manage complex instantiation processes in a more adaptable and reusable manner. By abstracting the object creation process, creational patterns allow the code to be more flexible and maintainable. Some common creational design patterns include:</p>
+<ul>
+<li><strong>Factory Method</strong>: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.</li>
+<li><strong>Abstract Factory</strong>: Provides an interface for creating families of related objects without specifying their concrete classes.</li>
+<li><strong>Builder</strong>: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.</li>
+<li><strong>Prototype</strong>: Creates new objects by copying an existing instance, which serves as a prototype.</li>
+<li><strong>Singleton</strong>: Ensures that a class has only one instance while providing a global access point to that instance.</li>
+</ul>
+</section>
+<section id="what-is-a-singleton-1" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-singleton-1">What is a Singleton?</h2>
+<p>The <strong>Singleton pattern</strong> serves two primary purposes, although it can violate the <strong>Single Responsibility Principle (SRP)</strong>:</p>
+<ol type="1">
+<li><p><strong>Ensure that a class has only one instance</strong>: The main goal of the Singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance.</p>
+<p>This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.</p></li>
+<li><p><strong>Provide a global access point to the instance</strong>: The Singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the Singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes.</p>
+<p>By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.</p></li>
+</ol>
+<p>The Singleton pattern is especially helpful when dealing with shared resources like logging systems, configuration settings, or database connections, where having multiple instances would lead to inefficiency, resource conflicts, or inconsistencies.</p>
+<section id="naive-singleton-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="naive-singleton-implementation">Naive Singleton Implementation</h3>
+<p>A basic Singleton can be implemented by keeping track of whether an instance has already been created. If an instance exists, any request for a new instance will return the existing one. This approach provides a <strong>global point of access</strong> to shared resources. Here is a simple implementation of a Singleton in Python:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">class</span> Singleton:</span>
+<span id="cb8-2"><a href="#cb8-2"></a>    _instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb8-5"><a href="#cb8-5"></a>        <span class="cf">if</span> <span class="kw">not</span> cls._instance:</span>
+<span id="cb8-6"><a href="#cb8-6"></a>            cls._instance <span class="op">=</span> <span class="bu">super</span>(Singleton, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb8-7"><a href="#cb8-7"></a>        <span class="cf">return</span> cls._instance</span>
+<span id="cb8-8"><a href="#cb8-8"></a></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="co"># Example usage</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>singleton1 <span class="op">=</span> Singleton()</span>
+<span id="cb8-11"><a href="#cb8-11"></a>singleton2 <span class="op">=</span> Singleton()</span>
+<span id="cb8-12"><a href="#cb8-12"></a></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="bu">print</span>(singleton1 <span class="kw">is</span> singleton2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>Singleton</code> class ensures that only one instance is created by overriding the <code>__new__</code> method. When <code>singleton1</code> and <code>singleton2</code> are instantiated, they both reference the same instance, demonstrating the Singleton pattern in action.</p>
+</section>
+<section id="disadvantages-of-the-singleton-pattern" class="level3">
+<h3 class="anchored" data-anchor-id="disadvantages-of-the-singleton-pattern">Disadvantages of the Singleton Pattern</h3>
+<p>While the Singleton pattern offers advantages like centralized control and resource efficiency, it also has some notable downsides:</p>
+<ul>
+<li><strong>Increased Coupling</strong>: Since Singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.</li>
+<li><strong>Global State</strong>: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.</li>
+<li><strong>Testing Challenges</strong>: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.</li>
+</ul>
+<p>Due to these potential issues, some developers view the Singleton pattern as an antipattern and recommend using it only when its benefits outweigh the disadvantages.</p>
+</section>
+</section>
+<section id="alternative-implementations-of-the-singleton-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="alternative-implementations-of-the-singleton-pattern">Alternative Implementations of the Singleton Pattern</h2>
+<p>The Singleton pattern can be implemented in several ways in Python, including using a base class, a decorator, or even a metaclass.</p>
+<section id="singleton-using-a-base-class" class="level3">
+<h3 class="anchored" data-anchor-id="singleton-using-a-base-class">Singleton Using a Base Class</h3>
+<p>One way to implement the Singleton pattern is by using a base class that other classes inherit from. This base class defines the Singleton behavior, ensuring that only one instance of the derived class is created.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">class</span> SingletonBase:</span>
+<span id="cb9-2"><a href="#cb9-2"></a>    _instances <span class="op">=</span> {}</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a>    <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb9-5"><a href="#cb9-5"></a>        <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<span id="cb9-6"><a href="#cb9-6"></a>            cls._instances[cls] <span class="op">=</span> <span class="bu">super</span>(SingletonBase, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb9-7"><a href="#cb9-7"></a>        <span class="cf">return</span> cls._instances[cls]</span>
+<span id="cb9-8"><a href="#cb9-8"></a></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="co"># Example usage</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="kw">class</span> Logger(SingletonBase):</span>
+<span id="cb9-11"><a href="#cb9-11"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb9-12"><a href="#cb9-12"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):  <span class="co"># Initialize only once</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a>            <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="cb9-14"><a href="#cb9-14"></a></span>
+<span id="cb9-15"><a href="#cb9-15"></a>    <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="cb9-16"><a href="#cb9-16"></a>        <span class="va">self</span>.log.append(message)</span>
+<span id="cb9-17"><a href="#cb9-17"></a></span>
+<span id="cb9-18"><a href="#cb9-18"></a>    <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="cb9-19"><a href="#cb9-19"></a>        <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="cb9-20"><a href="#cb9-20"></a></span>
+<span id="cb9-21"><a href="#cb9-21"></a><span class="co"># Testing the Singleton behavior</span></span>
+<span id="cb9-22"><a href="#cb9-22"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="cb9-23"><a href="#cb9-23"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="cb9-24"><a href="#cb9-24"></a></span>
+<span id="cb9-25"><a href="#cb9-25"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<span id="cb9-26"><a href="#cb9-26"></a><span class="bu">print</span>(logger2.read_log())  <span class="co"># Output: ['Log message 1']</span></span>
+<span id="cb9-27"><a href="#cb9-27"></a></span>
+<span id="cb9-28"><a href="#cb9-28"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this implementation: - The <code>SingletonBase</code> class ensures that only one instance of any subclass is created by maintaining a dictionary (<code>_instances</code>) of instances. - The <code>Logger</code> class inherits from <code>SingletonBase</code>, resulting in shared behavior and a single instance.</p>
+<p>This approach is useful when multiple classes need to follow the Singleton pattern, allowing for reuse of the Singleton logic.</p>
+</section>
+<section id="singleton-using-a-decorator" class="level3">
+<h3 class="anchored" data-anchor-id="singleton-using-a-decorator">Singleton Using a Decorator</h3>
+<section id="what-is-a-decorator" class="level4">
+<h4 class="anchored" data-anchor-id="what-is-a-decorator">What is a Decorator?</h4>
+<p>A <strong>decorator</strong> in Python is a function that allows you to modify the behavior of another function or class without changing its code. Decorators provide a clean, readable way to extend functionality by “wrapping” a function or class, making it easy to add behavior dynamically.</p>
+<p>Decorators are commonly used in web frameworks to handle concerns like authentication, logging, and caching. They are an effective way to separate cross-cutting concerns from the main logic of a function, leading to more organized and maintainable code.</p>
+<p>Below is an example of using a decorator to log function calls:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">def</span> log_decorator(func):</span>
+<span id="cb10-2"><a href="#cb10-2"></a>    <span class="kw">def</span> wrapper(<span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb10-3"><a href="#cb10-3"></a>        <span class="bu">print</span>(<span class="ss">f"Calling function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' with arguments </span><span class="sc">{</span>args<span class="sc">}</span><span class="ss"> and </span><span class="sc">{</span>kwargs<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4"></a>        result <span class="op">=</span> func(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb10-5"><a href="#cb10-5"></a>        <span class="bu">print</span>(<span class="ss">f"Function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' returned </span><span class="sc">{</span>result<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6"></a>        <span class="cf">return</span> result</span>
+<span id="cb10-7"><a href="#cb10-7"></a>    <span class="cf">return</span> wrapper</span>
+<span id="cb10-8"><a href="#cb10-8"></a></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="at">@log_decorator</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="kw">def</span> add(a, b):</span>
+<span id="cb10-11"><a href="#cb10-11"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span>
+<span id="cb10-12"><a href="#cb10-12"></a></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="co"># Using the decorated function</span></span>
+<span id="cb10-14"><a href="#cb10-14"></a>add(<span class="dv">3</span>, <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>log_decorator</code> wraps the <code>add</code> function to log its calls, arguments, and return value. The output shows logging information before and after the function execution, demonstrating how decorators can extend functionality without modifying the original function.</p>
+</section>
+</section>
+</section>
+<section id="singleton-implementation-with-decorators-step-by-step-1" class="level2">
+<h2 class="anchored" data-anchor-id="singleton-implementation-with-decorators-step-by-step-1">Singleton Implementation with Decorators (Step-by-Step)</h2>
+<p>To implement the Singleton pattern using decorators, we create a decorator function that wraps a class, ensuring that only one instance of that class is created.</p>
+<section id="step-1-create-a-wrapper-class-1" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-create-a-wrapper-class-1">Step 1: Create a Wrapper Class</h3>
+<p>The wrapper class is responsible for storing the instance of the decorated class and ensuring that any subsequent requests return the same instance.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">class</span> SingletonInstanceWrapper:</span>
+<span id="cb11-2"><a href="#cb11-2"></a>    <span class="co">"""</span></span>
+<span id="cb11-3"><a href="#cb11-3"></a><span class="co">    A wrapper class that ensures only one instance of the decorated class is created.</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="co">    """</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a></span>
+<span id="cb11-6"><a href="#cb11-6"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cls):</span>
+<span id="cb11-7"><a href="#cb11-7"></a>        <span class="va">self</span>.__wrapped__ <span class="op">=</span> cls</span>
+<span id="cb11-8"><a href="#cb11-8"></a>        <span class="va">self</span>._instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a></span>
+<span id="cb11-10"><a href="#cb11-10"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb11-11"><a href="#cb11-11"></a>        <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb11-12"><a href="#cb11-12"></a>            <span class="va">self</span>._instance <span class="op">=</span> <span class="va">self</span>.__wrapped__(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb11-13"><a href="#cb11-13"></a>        <span class="cf">return</span> <span class="va">self</span>._instance</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li>The <code>__init__</code> method initializes the wrapper with the class to be decorated (<code>cls</code>).</li>
+<li>The <code>_instance</code> attribute stores the single instance of the class.</li>
+<li>The <code>__call__</code> method checks if an instance already exists; if not, it creates one and returns it. If an instance already exists, it returns that instance.</li>
+</ul>
+</section>
+<section id="step-2-create-the-decorator-function-1" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-create-the-decorator-function-1">Step 2: Create the Decorator Function</h3>
+<p>Next, we need a decorator function that returns an instance of the wrapper class. This function will make it easy to apply the Singleton pattern to any class by simply adding a decorator.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">def</span> ensure_single_instance(cls):</span>
+<span id="cb12-2"><a href="#cb12-2"></a>    <span class="co">"""</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="co">    A singleton decorator that returns a single instance of the decorated class.</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="co">    """</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a>    <span class="cf">return</span> SingletonInstanceWrapper(cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>ensure_single_instance</code> function takes a class as input and returns an instance of <code>SingletonInstanceWrapper</code>, which enforces singleton behavior.</p>
+</section>
+<section id="step-3-use-the-decorator-1" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-use-the-decorator-1">Step 3: Use the Decorator</h3>
+<p>We can now use the decorator to enforce singleton behavior on any class. Let’s apply it to a <code>Logger</code> class to see how it works:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a><span class="at">@ensure_single_instance</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="kw">class</span> Logger:</span>
+<span id="cb13-3"><a href="#cb13-3"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb13-4"><a href="#cb13-4"></a>        <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>    <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="cb13-7"><a href="#cb13-7"></a>        <span class="va">self</span>.log.append(message)</span>
+<span id="cb13-8"><a href="#cb13-8"></a></span>
+<span id="cb13-9"><a href="#cb13-9"></a>    <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="cb13-10"><a href="#cb13-10"></a>        <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="cb13-11"><a href="#cb13-11"></a></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="co"># Example usage</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="cb13-14"><a href="#cb13-14"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="cb13-15"><a href="#cb13-15"></a></span>
+<span id="cb13-16"><a href="#cb13-16"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="bu">print</span>(logger2.read_log())  <span class="co"># Output: ['Log message 1']</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)  <span class="co"># Output: True</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>In this example, the <code>Logger</code> class is decorated with <code>@ensure_single_instance</code>. As a result, both <code>logger1</code> and <code>logger2</code> refer to the same instance, demonstrating the singleton behavior.</p>
+<p>This approach highlights the power of combining decorators with the Singleton pattern. By adding the <code>@ensure_single_instance</code> decorator, we ensure that the <code>Logger</code> class functions as a singleton, with all instances referring to the same underlying object. This simplifies the code and makes the intent explicit, enhancing readability and maintainability.</p>
 
 
+</section>
+</section>
+</section>
 
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

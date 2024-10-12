@@ -4444,7 +4444,7 @@ font-style: inherit;">5</span>)</span><div class="code-annotation-gutter-bg"></d
 <a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
   <category>haskell</category>
   <category>mathematics</category>
-  <category>programming languages</category>
+  <category>programming</category>
   <category>theory</category>
   <category>🇬🇧</category>
   <guid>https://antomon.github.io/posts/category-theory-functional-programming/</guid>
@@ -5461,6 +5461,1659 @@ font-style: inherit;"># CMYK:  CMYKColor (cmyk_c:0.0000 cmyk_m:1.0000 cmyk_y:0.0
   <guid>https://antomon.github.io/posts/color-space-sampling-101/</guid>
   <pubDate>Fri, 26 Jan 2024 23:00:00 GMT</pubDate>
   <media:content url="https://antomon.github.io/posts/color-space-sampling-101/colors101.png" medium="image" type="image/png" height="144" width="144"/>
+</item>
+<item>
+  <title>Singletons in Python</title>
+  <dc:creator>Antonio Montano</dc:creator>
+  <link>https://antomon.github.io/posts/python-singleton/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Before diving into different implementations of a Python <strong>singleton</strong>, it’s essential to understand the concept from both theoretical and practical perspectives.</p>
+<section id="what-is-a-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-design-pattern">What is a design pattern?</h2>
+<p>A <strong>design pattern</strong> is a reusable solution to common problems that software developers encounter during application development. It represents best practices for addressing recurring design challenges, enabling developers to write code that is more flexible, maintainable, and reusable. Design patterns also provide a common vocabulary for designers and developers to communicate their approaches to solving software design problems.</p>
+<p>Design patterns can be categorized into three main types:</p>
+<ul>
+<li><p>Creational patterns: Focus on object creation, optimizing efficiency and controlling how instances are instantiated. Examples include singleton, Factory Method, Builder, Prototype, and Abstract Factory.</p></li>
+<li><p>Structural patterns: Deal with object composition, ensuring that relationships between components are efficient and effective. Examples include Adapter, Bridge, Composite, Decorator, Facade, and Proxy.</p></li>
+<li><p>Behavioral patterns: Define how objects interact and communicate with each other. Examples include Strategy, Observer, Command, State, and Iterator.</p></li>
+</ul>
+</section>
+<section id="what-is-a-creational-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-creational-design-pattern">What is a creational design pattern?</h2>
+<p>A <strong>creational design pattern</strong> focuses on how objects are created, helping developers manage complex instantiation processes in a more adaptable and reusable manner. By abstracting the object creation process, creational patterns allow the code to be more flexible and maintainable. Some common creational design patterns include:</p>
+<ul>
+<li><p>Factory Method: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.</p></li>
+<li><p>Abstract Factory: Provides an interface for creating families of related objects without specifying their concrete classes.</p></li>
+<li><p>Builder: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.</p></li>
+<li><p>Prototype: Creates new objects by copying an existing instance, which serves as a prototype.</p></li>
+<li><p>Singleton: Ensures that a class has only one instance while providing a global access point to that instance.</p></li>
+</ul>
+</section>
+<section id="more-on-singletons" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="more-on-singletons">More on singletons</h2>
+<p>The <strong>singleton pattern</strong> serves two primary purposes:</p>
+<ol type="1">
+<li><p>Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance.</p>
+<p>This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.</p></li>
+<li><p>Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes.</p>
+<p>By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.</p></li>
+</ol>
+<p>So, the singleton pattern is especially helpful when dealing with shared resources, where having multiple instances would lead to inefficiency, resource conflicts, or inconsistencies.</p>
+<section id="naive-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="naive-implementation">Naive implementation</h3>
+<p>A basic singleton can be implemented by keeping track of whether an instance has already been created. If an instance exists, any request for a new instance will return the existing one. This approach provides a global point of access to shared resources. Here is a simple implementation of a singleton in Python:</p>
+<div class="sourceCode" id="annotated-cell-1" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-1-2" class="code-annotation-target">  _instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span></span>
+<span id="annotated-cell-1-3"></span>
+<span id="annotated-cell-1-4">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-1-5" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> cls._instance:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-1-6" class="code-annotation-target">      cls._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(Logger, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-1-7"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-1-8" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instance</span>
+<span id="annotated-cell-1-9"></span>
+<span id="annotated-cell-1-10">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-1-11" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">hasattr</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'log'</span>):</span>
+<span id="annotated-cell-1-12">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-1-13"></span>
+<span id="annotated-cell-1-14">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-1-15">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-1-16"></span>
+<span id="annotated-cell-1-17">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-1-18">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-1-19"></span>
+<span id="annotated-cell-1-20"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-1-21">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-1-22">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-1-23"></span>
+<span id="annotated-cell-1-24">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-1-25" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-1-26"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-1-27" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="2" data-code-annotation="1">Initializes the class variable <code>_instance</code> to <code>None</code> to store the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="5" data-code-annotation="2">Checks if <code>_instance</code> is <code>None</code>, meaning no instance has been created yet.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__new__</code> and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="8" data-code-annotation="4">Returns the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="11" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized to prevent re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="25" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="27" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class ensures that only one instance is created by overriding the <code>__new__</code> method. When <code>logger1</code> and <code>logger2</code> are instantiated, they both reference the same instance, demonstrating the singleton pattern in action.</p>
+</section>
+<section id="disadvantages" class="level3">
+<h3 class="anchored" data-anchor-id="disadvantages">Disadvantages</h3>
+<p>While the singleton pattern offers advantages like centralized control and resource efficiency, it also has some notable downsides:</p>
+<ul>
+<li><p>Increased Coupling: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.</p></li>
+<li><p>Global State: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.</p></li>
+<li><p>Testing Challenges: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.</p></li>
+</ul>
+<p>Due to these potential issues, some developers view the singleton pattern as an antipattern and recommend using it only when its benefits outweigh the disadvantages.</p>
+</section>
+<section id="single-responsibility-principle" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="single-responsibility-principle">Single Responsibility Principle</h3>
+<p>The <strong>Single Responsibility Principle (SRP)</strong> is one of the SOLID principles<sup>1</sup> of object-oriented design. It states that a class should have only one reason to change, meaning it should have a single responsibility or function within the system.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;The SOLID principles are a set of five fundamental design guidelines aimed at making software more understandable, flexible, and maintainable. The acronym <strong>SOLID</strong> stands for: Single Responsibility Principle (SRP), Open/Closed Principle (OCP), Liskov Substitution Principle (LSP), Interface Segregation Principle (ISP), Dependency Inversion Principle (DIP). These principles were introduced by Robert C. Martin, also known as <em>Uncle Bob</em>, in the early 2000s. They have become a cornerstone in object-oriented design and programming, promoting best practices that help developers build robust and scalable software systems.See Martin, R. C. (2002). <em>Agile Software Development, Principles, Patterns, and Practices</em>. Prentice Hall. ISBN: 978-0135974445.</p></div></div><p>Singletons often violate SRP because they typically serve two distinct purposes:</p>
+<ol type="1">
+<li><p>Managing their own instance: The singleton pattern ensures that only one instance of a class is created, and this instance management logic is built into the class itself.</p></li>
+<li><p>Providing functional behavior: In addition to managing their own instance, singleton classes also provide functionality related to their main purpose (e.g., logging, configuration management, etc.).</p></li>
+</ol>
+<p>By combining both instance management and functional behavior, a singleton class is taking on more than one responsibility, which violates SRP. This dual responsibility can lead to increased complexity, reduced maintainability, and challenges when attempting to test or extend the class.</p>
+</section>
+<section id="a-real-world-application" class="level3">
+<h3 class="anchored" data-anchor-id="a-real-world-application">A real-world application</h3>
+<p>One of the simplest ways to implement the singleton pattern is by using a class-level attribute to store the instance. This method is both straightforward and effective.</p>
+<p>Consider a scenario where we want to manage application-wide logging. The singleton pattern ensures that all parts of the application use the same logger object:</p>
+<div class="sourceCode" id="annotated-cell-2" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-2-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-2-2" class="code-annotation-target">  _instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span></span>
+<span id="annotated-cell-2-3"></span>
+<span id="annotated-cell-2-4">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-2-5" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls._instance <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-2-6" class="code-annotation-target">      cls._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(Logger, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-2-7" class="code-annotation-target">      cls._instance.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-2-8"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-2-9" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instance</span>
+<span id="annotated-cell-2-10"></span>
+<span id="annotated-cell-2-11">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-2-12">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-2-13"></span>
+<span id="annotated-cell-2-14">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-2-15">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-2-16"></span>
+<span id="annotated-cell-2-17"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-2-18">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-2-19">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-2-20"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-2-21" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span>
+<span id="annotated-cell-2-22"></span>
+<span id="annotated-cell-2-23">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-2-24" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-2" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="2" data-code-annotation="1">Initializes the class variable <code>_instance</code> to <code>None</code> to store the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="5" data-code-annotation="2">Checks if <code>_instance</code> is <code>None</code> to determine if an instance already exists.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__new__</code> and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="7" data-code-annotation="4">Initializes the <code>log</code> attribute with an empty list.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="9" data-code-annotation="5">Returns the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="21" data-code-annotation="6">Output: <code>True</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="24" data-code-annotation="7">Output: <code>['Log message 1']</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class is used to manage application-wide logging. The <code>__new__</code> method ensures that only one instance of the class is created. If an instance already exists, it is returned; otherwise, a new instance is created. This approach is effective and easy to understand, making it a good choice for simpler use cases.</p>
+</section>
+</section>
+<section id="alternative-implementations" class="level2">
+<h2 class="anchored" data-anchor-id="alternative-implementations">Alternative implementations</h2>
+<p>The singleton pattern can be implemented in several ways in Python, including using a base class, a decorator, or even a metaclass.</p>
+<section id="using-a-base-class" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-base-class">Using a base class</h3>
+<p>One way to implement the singleton pattern is by using a base class that other classes inherit from. This base class defines the singleton behavior, ensuring that only one instance of the derived class is created.</p>
+<div class="sourceCode" id="annotated-cell-3" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-3-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonBase:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-3-2" class="code-annotation-target">  _instances <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {}</span>
+<span id="annotated-cell-3-3"></span>
+<span id="annotated-cell-3-4">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-3-5" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-3-6" class="code-annotation-target">      cls._instances[cls] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(SingletonBase, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-3-7"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-3-8" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-3-9"></span>
+<span id="annotated-cell-3-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-3-11"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger(SingletonBase):</span>
+<span id="annotated-cell-3-12">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-3-13" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">hasattr</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'log'</span>):</span>
+<span id="annotated-cell-3-14">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-3-15"></span>
+<span id="annotated-cell-3-16">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-3-17">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-3-18"></span>
+<span id="annotated-cell-3-19">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-3-20">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-3-21"></span>
+<span id="annotated-cell-3-22"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-3-23">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-3-24">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-3-25"></span>
+<span id="annotated-cell-3-26">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-3-27" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-3-28"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-3-29" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-3" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="2" data-code-annotation="1">Initializes a class-level dictionary <code>_instances</code> to keep track of singleton instances.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="5" data-code-annotation="2">Checks if the class (<code>cls</code>) is not in <code>_instances</code> to determine if an instance has been created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="6" data-code-annotation="3">Creates a new instance and stores it in <code>_instances</code> under the class key.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="8" data-code-annotation="4">Returns the singleton instance from <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="13" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized to prevent re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="27" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="29" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The <code>SingletonBase</code> class ensures that only one instance of any subclass is created by maintaining a dictionary (<code>_instances</code>) of instances.</p></li>
+<li><p>The <code>Logger</code> class inherits from <code>SingletonBase</code>, resulting in shared behavior and a single instance.</p></li>
+</ul>
+<p>This approach is useful when multiple classes need to follow the singleton pattern, allowing for reuse of the singleton logic.</p>
+</section>
+<section id="using-a-decorator" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-decorator">Using a decorator</h3>
+<section id="what-is-a-decorator" class="level4">
+<h4 class="anchored" data-anchor-id="what-is-a-decorator">What is a decorator?</h4>
+<p>A <strong>decorator</strong> in Python is a function that allows you to modify the behavior of another function or class without changing its code. Decorators provide a clean, readable way to extend functionality by “wrapping” a function or class, making it easy to add behavior dynamically.</p>
+<p>Decorators are commonly used in web frameworks to handle concerns like authentication, logging, and caching. They are an effective way to separate cross-cutting concerns from the main logic of a function, leading to more organized and maintainable code.</p>
+<p>Below is an example of using a decorator to log function calls:</p>
+<div class="sourceCode" id="annotated-cell-4" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-4-1" class="code-annotation-target"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> log_decorator(func):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-4-2" class="code-annotation-target">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> wrapper(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-4-3" class="code-annotation-target">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Calling function '</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>func<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">__name__</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">' with arguments </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>args<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;"> and </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>kwargs<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-4-4" class="code-annotation-target">    result <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> func(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-4-5" class="code-annotation-target">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Function '</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>func<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">__name__</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">' returned </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="annotated-cell-4-6"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-4-7" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> result</span>
+<span id="annotated-cell-4-8"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-4-9" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> wrapper</span>
+<span id="annotated-cell-4-10"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-4-11" class="code-annotation-target"><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">@log_decorator</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-4-12" class="code-annotation-target"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> add(a, b):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-4-13" class="code-annotation-target">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> a <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> b</span>
+<span id="annotated-cell-4-14"></span>
+<span id="annotated-cell-4-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Using the decorated function</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-4-16" class="code-annotation-target">add(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-4" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="1" data-code-annotation="1">Defines the <code>log_decorator</code> function, which accepts another function <code>func</code> as its argument.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="2" data-code-annotation="2">Defines an inner function <code>wrapper</code> that can accept any number of positional (<code>*args</code>) and keyword (<code>**kwargs</code>) arguments.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="3" data-code-annotation="3">Prints a message indicating that <code>func</code> is being called, along with the arguments passed to it.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="4" data-code-annotation="4">Calls the original function <code>func</code> with the provided arguments and stores the result in <code>result</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="5" data-code-annotation="5">Prints a message indicating that <code>func</code> has returned a value, displaying the result.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="7" data-code-annotation="6">Returns the <code>result</code> obtained from calling <code>func</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="9" data-code-annotation="7">Returns the <code>wrapper</code> function, effectively replacing <code>func</code> with <code>wrapper</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="8">8</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="11" data-code-annotation="8">Applies the <code>log_decorator</code> to the <code>add</code> function using the decorator syntax.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="9">9</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="12" data-code-annotation="9">Defines the <code>add</code> function, which takes two arguments <code>a</code> and <code>b</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="10">10</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="13" data-code-annotation="10">Returns the sum of <code>a</code> and <code>b</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="11">11</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="16" data-code-annotation="11">Calls the decorated <code>add</code> function with arguments <code>3</code> and <code>5</code>.</span>
+</dd>
+</dl>
+</section>
+<section id="code" class="level4">
+<h4 class="anchored" data-anchor-id="code">Code</h4>
+<p>To implement the singleton pattern using decorators, we create a decorator function that wraps a class, ensuring that only one instance of that class is created.</p>
+<section id="step-1-create-a-wrapper-class" class="level5">
+<h5 class="anchored" data-anchor-id="step-1-create-a-wrapper-class">Step 1: Create a wrapper class</h5>
+<p>The wrapper class is responsible for storing the instance of the decorated class and ensuring that any subsequent requests return the same instance.</p>
+<div class="sourceCode" id="annotated-cell-5" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-5-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonInstanceWrapper:</span>
+<span id="annotated-cell-5-2">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, cls):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-5-3" class="code-annotation-target">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.__wrapped__ <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> cls</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-5-4" class="code-annotation-target">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span></span>
+<span id="annotated-cell-5-5"></span>
+<span id="annotated-cell-5-6">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-5-7" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-5-8" class="code-annotation-target">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.__wrapped__(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-5-9"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-5-10" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-5" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="3" data-code-annotation="1">Stores the original class in the <code>__wrapped__</code> attribute.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="4" data-code-annotation="2">Initializes <code>_instance</code> to <code>None</code> to hold the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="7" data-code-annotation="3">Checks if <code>_instance</code> is <code>None</code> to determine if an instance needs to be created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="8" data-code-annotation="4">Creates a new instance of the decorated class and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="10" data-code-annotation="5">Returns the singleton instance.</span>
+</dd>
+</dl>
+</section>
+<section id="step-2-create-the-decorator-function" class="level5">
+<h5 class="anchored" data-anchor-id="step-2-create-the-decorator-function">Step 2: Create the decorator function</h5>
+<p>Next, we need a decorator function that returns an instance of the wrapper class. This function will make it easy to apply the singleton pattern to any class by simply adding a decorator.</p>
+<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> ensure_single_instance(cls):</span>
+<span id="cb1-2">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> SingletonInstanceWrapper(cls)</span></code></pre></div>
+</section>
+<section id="step-3-use-the-decorator" class="level5">
+<h5 class="anchored" data-anchor-id="step-3-use-the-decorator">Step 3: Use the decorator</h5>
+<p>We can now use the decorator to enforce singleton behavior on any class. Let’s apply it to a <code>Logger</code> class to see how it works:</p>
+<div class="sourceCode" id="annotated-cell-7" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-7-1"><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">@ensure_single_instance</span></span>
+<span id="annotated-cell-7-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger:</span>
+<span id="annotated-cell-7-3">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-7-4">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-7-5"></span>
+<span id="annotated-cell-7-6">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-7-7">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-7-8"></span>
+<span id="annotated-cell-7-9">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-7-10">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-7-11"></span>
+<span id="annotated-cell-7-12"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-7-13">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-7-14">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-7-15"></span>
+<span id="annotated-cell-7-16">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-7-17" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-7-18"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-7-19" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-7" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-lines="17" data-code-annotation="1">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-7" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-lines="19" data-code-annotation="2">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class is decorated with <code>@ensure_single_instance</code>. As a result, both <code>logger1</code> and <code>logger2</code> refer to the same instance, demonstrating the singleton behavior.</p>
+<p>This approach highlights the power of combining decorators with the singleton pattern. By adding the <code>@ensure_single_instance</code> decorator, we ensure that the <code>Logger</code> class functions as a singleton, with all instances referring to the same underlying object. This simplifies the code and makes the intent explicit, enhancing readability and maintainability.</p>
+</section>
+</section>
+</section>
+<section id="comparing-the-three-implementations" class="level3">
+<h3 class="anchored" data-anchor-id="comparing-the-three-implementations">Comparing the three implementations</h3>
+<p>Each of the three implementations of the singleton pattern—using a base class, a decorator, and a metaclass—has its own advantages and use cases:</p>
+<ul>
+<li><p>Base class implementation: This approach is useful when multiple classes need to follow the singleton pattern. It allows for reuse of the singleton logic, as any class inheriting from the base class will automatically follow the singleton behavior. However, it introduces tight coupling with the base class, which might limit flexibility.</p></li>
+<li><p>Decorator implementation: The decorator approach makes the intent to create a singleton explicit in the class definition. It keeps the singleton logic separate from the core functionality of the class, promoting better separation of concerns. This method is highly readable, but requires a decorator function and an additional wrapper class, which can add some complexity.</p></li>
+<li><p>Metaclass implementation: Using a metaclass to enforce the singleton pattern is a powerful and Pythonic solution. It allows multiple classes to follow the singleton pattern without explicit inheritance or decoration. This approach is highly reusable and works well when you need singleton behavior across different classes without modifying each class definition. However, metaclasses can be more difficult to understand, especially for developers who are not familiar with Python’s metaclass system.</p></li>
+</ul>
+</section>
+<section id="using-a-metaclass" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-metaclass">Using a metaclass</h3>
+<p>A metaclass can also be used to implement the singleton pattern. A <strong>metaclass</strong> is a class of a class, meaning it defines how classes behave. By using a metaclass, you can control the instantiation process of classes, making it a suitable tool for enforcing the singleton pattern.</p>
+<p>Below is an example of how to implement the singleton pattern using a metaclass:</p>
+<div class="sourceCode" id="annotated-cell-8" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-8-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonMeta(<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">type</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-8-2" class="code-annotation-target">  _instances <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {}</span>
+<span id="annotated-cell-8-3"></span>
+<span id="annotated-cell-8-4">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-8-5" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-8-6" class="code-annotation-target">      cls._instances[cls] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(SingletonMeta, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-8-7"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-8-8" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-8-9"></span>
+<span id="annotated-cell-8-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-8-11"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger(metaclass<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>SingletonMeta):</span>
+<span id="annotated-cell-8-12">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-8-13" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">hasattr</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'log'</span>):</span>
+<span id="annotated-cell-8-14">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-8-15"></span>
+<span id="annotated-cell-8-16">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-8-17">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-8-18"></span>
+<span id="annotated-cell-8-19">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-8-20">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-8-21"></span>
+<span id="annotated-cell-8-22"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-8-23">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-8-24">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-8-25"></span>
+<span id="annotated-cell-8-26">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-8-27" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-8-28"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-8-29" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-8" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="2" data-code-annotation="1">Initializes a class-level dictionary <code>_instances</code> to store instances of classes using this metaclass.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="5" data-code-annotation="2">Checks if the class (<code>cls</code>) is not in <code>_instances</code> to see if an instance has been created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__call__</code> and stores it in <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="8" data-code-annotation="4">Returns the singleton instance from <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="13" data-code-annotation="5">Checks if the <code>log</code> attribute is already set to avoid re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="27" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="29" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The <code>SingletonMeta</code> class is a metaclass that overrides the <code>__call__</code> method. This method is responsible for creating instances of classes.</p></li>
+<li><p>The <code>__call__</code> method checks if an instance already exists in the <code>_instances</code> dictionary. If not, it creates a new instance and stores it. Otherwise, it returns the existing instance.</p></li>
+<li><p>The <code>Logger</code> class uses <code>SingletonMeta</code> as its metaclass, ensuring that only one instance is ever created.</p></li>
+</ul>
+<p>This approach is particularly powerful because it allows you to enforce singleton behavior at the metaclass level, meaning that any class using <code>SingletonMeta</code> as its metaclass will automatically follow the singleton pattern. This approach is also more flexible and reusable compared to other singleton implementations.</p>
+<p>Using metaclasses for singletons allows for a more Pythonic approach to instance management, especially when working with multiple classes that need to follow the singleton pattern.</p>
+</section>
+</section>
+<section id="thread-safe-implementations" class="level2">
+<h2 class="anchored" data-anchor-id="thread-safe-implementations">Thread-Safe implementations</h2>
+<p>It’s crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the Global Interpreter Lock (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.</p>
+<p>To make singleton implementations thread-safe, we need to ensure that multiple threads do not create multiple instances simultaneously. Below are thread-safe versions of the singleton pattern implemented using a base class, a decorator, and a metaclass.</p>
+<section id="using-a-base-class-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-base-class-1">Using a base class</h3>
+<p>In a thread-safe singleton implementation using a base class, we use a lock to ensure that only one thread can create the instance at a time:</p>
+<div class="sourceCode" id="annotated-cell-9" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-9-1" class="code-annotation-target"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> threading</span>
+<span id="annotated-cell-9-2"></span>
+<span id="annotated-cell-9-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonBaseThreadSafe:</span>
+<span id="annotated-cell-9-4">  _instances <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {}</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-9-5" class="code-annotation-target">  _lock <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> threading.Lock()</span>
+<span id="annotated-cell-9-6"></span>
+<span id="annotated-cell-9-7">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<span id="annotated-cell-9-8">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-9-9" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">with</span> cls._lock:</span>
+<span id="annotated-cell-9-10">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-9-11" class="code-annotation-target">          cls._instances[cls] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(SingletonBaseThreadSafe, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__new__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-9-12"></span>
+<span id="annotated-cell-9-13">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-9-14"></span>
+<span id="annotated-cell-9-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-9-16"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger(SingletonBaseThreadSafe):</span>
+<span id="annotated-cell-9-17">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-9-18" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">hasattr</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'log'</span>):</span>
+<span id="annotated-cell-9-19">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-9-20"></span>
+<span id="annotated-cell-9-21">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-9-22">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-9-23"></span>
+<span id="annotated-cell-9-24">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-9-25">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-9-26"></span>
+<span id="annotated-cell-9-27"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-9-28">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-9-29">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-9-30"></span>
+<span id="annotated-cell-9-31">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-9-32" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-9-33"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-9-34" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-9" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module to use threading locks.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="5" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> to ensure thread safety.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="9" data-code-annotation="3">Acquires the lock to prevent multiple threads from entering the critical section.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="11" data-code-annotation="4">Creates the singleton instance inside the locked section if it doesn’t exist.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="18" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="32" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="34" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>A class-level lock (<code>_lock</code>) is used to ensure that only one thread can execute the code that creates the singleton instance.</p></li>
+<li><p>The <code>with cls._lock</code> statement prevents multiple threads from entering the critical section where the instance is created, ensuring thread safety.</p></li>
+</ul>
+</section>
+<section id="using-a-decorator-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-decorator-1">Using a decorator</h3>
+<p>The decorator-based singleton can be made thread-safe by adding a lock to ensure only one thread creates the instance:</p>
+<div class="sourceCode" id="annotated-cell-10" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-10-1" class="code-annotation-target"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> threading</span>
+<span id="annotated-cell-10-2"></span>
+<span id="annotated-cell-10-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonInstanceWrapperThreadSafe:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-10-4" class="code-annotation-target">  _lock <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> threading.Lock()</span>
+<span id="annotated-cell-10-5"></span>
+<span id="annotated-cell-10-6">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, cls):</span>
+<span id="annotated-cell-10-7">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.__wrapped__ <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> cls</span>
+<span id="annotated-cell-10-8">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span></span>
+<span id="annotated-cell-10-9"></span>
+<span id="annotated-cell-10-10">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<span id="annotated-cell-10-11">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-10-12" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">with</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._lock:</span>
+<span id="annotated-cell-10-13">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-10-14" class="code-annotation-target">          <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.__wrapped__(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-10-15"></span>
+<span id="annotated-cell-10-16">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>._instance</span>
+<span id="annotated-cell-10-17"></span>
+<span id="annotated-cell-10-18"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> ensure_single_instance_thread_safe(cls):</span>
+<span id="annotated-cell-10-19">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> SingletonInstanceWrapperThreadSafe(cls)</span>
+<span id="annotated-cell-10-20"></span>
+<span id="annotated-cell-10-21"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-10-22"><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">@ensure_single_instance_thread_safe</span></span>
+<span id="annotated-cell-10-23"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger:</span>
+<span id="annotated-cell-10-24">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-10-25">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-10-26"></span>
+<span id="annotated-cell-10-27">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-10-28">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-10-29"></span>
+<span id="annotated-cell-10-30">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-10-31">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-10-32"></span>
+<span id="annotated-cell-10-33"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-10-34">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-10-35">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-10-36"></span>
+<span id="annotated-cell-10-37">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-10-38" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-10-39"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-10-40" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-10" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="4" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> to manage thread access.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="12" data-code-annotation="3">Acquires the lock to enter the critical section safely.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="14" data-code-annotation="4">Creates the singleton instance within the locked section if it doesn’t exist.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="38" data-code-annotation="5">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="40" data-code-annotation="6">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>A class-level lock (<code>_lock</code>) is used to prevent multiple threads from creating multiple instances simultaneously.</p></li>
+<li><p>The <code>with self._lock</code> statement ensures that only one thread can execute the code that initializes the singleton instance.</p></li>
+</ul>
+</section>
+<section id="using-a-metaclass-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-metaclass-1">Using a metaclass</h3>
+<p>For a thread-safe singleton using a metaclass, we add a lock to the metaclass to ensure that only one thread can create the instance:</p>
+<div class="sourceCode" id="annotated-cell-11" style="background: #f1f3f5;"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-11-1" class="code-annotation-target"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> threading</span>
+<span id="annotated-cell-11-2"></span>
+<span id="annotated-cell-11-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> SingletonMetaThreadSafe(<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">type</span>):</span>
+<span id="annotated-cell-11-4">  _instances <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {}</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-11-5" class="code-annotation-target">  _lock <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> threading.Lock()</span>
+<span id="annotated-cell-11-6"></span>
+<span id="annotated-cell-11-7">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(cls, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs):</span>
+<span id="annotated-cell-11-8">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-11-9" class="code-annotation-target">      <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">with</span> cls._lock:</span>
+<span id="annotated-cell-11-10">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> cls <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-11-11" class="code-annotation-target">          cls._instances[cls] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>(SingletonMetaThreadSafe, cls).<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__call__</span>(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>args, <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span>kwargs)</span>
+<span id="annotated-cell-11-12"></span>
+<span id="annotated-cell-11-13">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-11-14"></span>
+<span id="annotated-cell-11-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example usage</span></span>
+<span id="annotated-cell-11-16"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> Logger(metaclass<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>SingletonMetaThreadSafe):</span>
+<span id="annotated-cell-11-17">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-11-18" class="code-annotation-target">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">hasattr</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'log'</span>):</span>
+<span id="annotated-cell-11-19">      <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="annotated-cell-11-20"></span>
+<span id="annotated-cell-11-21">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> write_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, message):</span>
+<span id="annotated-cell-11-22">    <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log.append(message)</span>
+<span id="annotated-cell-11-23"></span>
+<span id="annotated-cell-11-24">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> read_log(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>):</span>
+<span id="annotated-cell-11-25">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.log</span>
+<span id="annotated-cell-11-26"></span>
+<span id="annotated-cell-11-27"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-11-28">logger1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-11-29">logger2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> Logger()</span>
+<span id="annotated-cell-11-30"></span>
+<span id="annotated-cell-11-31">logger1.write_log(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-11-32" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-11-33"></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-11-34" class="code-annotation-target"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(logger1 <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-11" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="5" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> in the metaclass.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="9" data-code-annotation="3">Uses the lock to prevent concurrent instance creation.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="11" data-code-annotation="4">Creates the singleton instance inside the critical section.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="18" data-code-annotation="5">Checks if the <code>log</code> attribute is already set to avoid re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="32" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="34" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The metaclass <code>SingletonMetaThreadSafe</code> uses a class-level lock (<code>_lock</code>) to prevent multiple threads from creating multiple instances.</p></li>
+<li><p>The <code>with cls._lock</code> statement ensures thread safety by restricting access to the instance creation code to only one thread at a time.</p></li>
+</ul>
+</section>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>All three implementations ensure that the singleton instance is created in a thread-safe manner by using locks. This prevents multiple threads from creating separate instances, ensuring the singleton property holds even in concurrent environments.</p>
+<p>In CPython, the reference implementation of Python, the GIL ensures that only one thread executes Python bytecode at a time. This means that even without explicit locks, bytecode execution is atomic at the interpreter level, which can mitigate some thread safety concerns for simple operations. However, the GIL does not protect against all threading issues, especially when dealing with non-atomic operations or when interfacing with external systems and I/O operations. Therefore, relying solely on the GIL for thread safety is not advisable.</p>
+<p>Moreover, there are proposals like <strong><a href="https://peps.python.org/pep-0703/">PEP 703</a></strong> titled <em>Making the Global Interpreter Lock Optional in CPython</em>, which aim to make the GIL optional in future versions of Python. If such changes are implemented, threads could execute Python bytecode concurrently, removing the atomicity guarantees currently provided by the GIL. This would increase the importance of explicit thread safety mechanisms in your code.</p>
+<p>Given these considerations, it’s important to implement explicit thread safety measures, such as locks, in your singleton implementations. This ensures that your code is robust not only in the current CPython environment but also in future Python interpreters that may not have a GIL. By proactively managing thread safety, you can prevent subtle bugs and race conditions that could occur in a truly concurrent execution environment.</p>
+<p>While each singleton implementation method—base class, decorator, or metaclass—has its own strengths, the choice depends on the specific requirements of your application, such as readability, reusability, and your familiarity with Python’s advanced features like metaclasses or decorators. Regardless of the method chosen, incorporating explicit thread safety measures is crucial for maintaining the singleton property in multi-threaded applications, both now and in anticipation of future developments in Python’s concurrency model.</p>
+</section>
+</section>
+<section id="final-thoughts" class="level2">
+<h2 class="anchored" data-anchor-id="final-thoughts">Final thoughts</h2>
+<p>The singleton pattern is a powerful tool when used appropriately, particularly for managing shared resources like configuration settings or logging mechanisms. However, it’s important to weigh the benefits of the singleton pattern against its potential downsides. Overusing it or applying it in the wrong context can lead to design issues such as increased coupling, global state management problems, and violations of the Single Responsibility Principle.</p>
+<p>The singleton pattern can be implemented in several ways, each with its pros and cons. The base class implementation is straightforward and easy to reuse but can introduce tight coupling. The decorator implementation provides clear separation of concerns and is highly readable but may add complexity due to the need for additional wrapper classes. The metaclass approach is powerful and reusable across different classes without modifying their definitions, but it may be challenging for developers who are not familiar with metaclasses.</p>
+<p>In summary, while the singleton pattern is useful, its usage should be carefully considered and limited to cases where ensuring a single instance truly adds value to the application. Understanding the trade-offs of different implementations will help you make the best design decisions for your specific needs.</p>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>programming</category>
+  <category>Python</category>
+  <category>🇬🇧</category>
+  <guid>https://antomon.github.io/posts/python-singleton/</guid>
+  <pubDate>Thu, 07 Dec 2023 23:00:00 GMT</pubDate>
+  <media:content url="https://antomon.github.io/posts/python-singleton/singletons.webp" medium="image" type="image/webp"/>
 </item>
 <item>
   <title>Python: Bridging the Gap Between Human Thought and Machine Code</title>
