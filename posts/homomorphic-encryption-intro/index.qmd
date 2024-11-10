@@ -1,0 +1,440 @@
+---
+title: "Homorphic Encryption Intro"
+subtitle: ""
+format:
+  html:
+    toc: true
+    toc-expand: 3
+description: ""
+author: "Antonio Montano"
+date: "2022-06-24"
+date-modified: "2024-06-24"
+categories: [cryptography, Python, 🇬🇧]
+image: "homomorphic-encryption.webp"
+comments: 
+  utterances:
+    repo: antomon/antomon-utterances
+    theme: github-light
+---
+
+## Introduction
+
+Legacy encryption systems rely heavily on the concept of key sharing to secure communications. In these systems, the key—whether public or private—must be distributed among all parties involved in exchanging an encrypted message. This traditional approach presents notable privacy and security challenges, particularly because it requires trust in whoever holds the key. Whoever possesses the key has full control over the encrypted data, meaning that service providers or intermediaries can, in principle, access, manage, and exploit the sensitive information, depending on their level of access. This setup becomes especially worrisome when we consider the growing reliance on popular cloud services to store and process personal or proprietary data.
+
+When users or businesses upload their encrypted data to the cloud, they relinquish some control over their privacy, even if they do not directly share their encryption keys. For example, consider a healthcare provider that needs to store patient medical records in the cloud to enable research and improve patient outcomes. Even if the data is encrypted, the cloud provider still has the ability to access metadata, such as timestamps, file sizes, and usage patterns. This metadata could potentially be used to infer sensitive information, like the frequency of record access or correlations between patients and certain conditions, without actually decrypting the data. Furthermore, the cloud provider may retain this metadata or identifying elements long after the healthcare provider ends its relationship with them, which creates persistent privacy risks. This makes data vulnerable to breaches or misuse, especially in cases where cloud operators, servers, or service providers are untrusted.
+
+Homomorphic Encryption (HE) emerges as a promising solution to address these concerns. HE is a type of encryption that allows computations to be performed directly on encrypted data without requiring prior decryption. In other words, third parties can perform operations—such as statistical analysis or machine learning processes—on encrypted datasets without ever seeing the raw, sensitive information. This unique feature of HE dramatically reduces privacy concerns, since the data remains secure and unreadable at all times during the computation process. This is a major advantage over traditional encryption schemes, where data must typically be decrypted before operations can be performed, thus exposing it to potential vulnerabilities.
+
+Encryption methods like RSA, AES, and DES are not homomorphic, meaning that they require the data to be decrypted before any computation can be performed. This makes it challenging to use these encryption methods in situations where data privacy is a critical concern, such as cloud computing and data analytics. In contrast, Homomorphic Encryption enables computations to be performed directly on encrypted data, without the need for decryption. This has significant implications for privacy-preserving technologies, as it allows for secure outsourcing of computation to untrusted servers while maintaining the confidentiality of the data.
+
+### Real-world example: medical research
+
+Consider a medical research company working with sensitive patient data to develop new treatments. The company needs to analyze large datasets containing personal health information across multiple hospital networks but wants to maintain patient privacy and comply with healthcare regulations. Using traditional encryption methods, they might encrypt the data before uploading it to a cloud service provider for processing. However, to perform any meaningful analysis—such as identifying patterns in treatment outcomes or running statistical models—the data must first be decrypted. This creates a critical vulnerability: the cloud service provider must have access to the decryption keys to process the information.
+
+Even if the cloud provider is contractually bound to protect the data, several risks emerge. First, any employee with sufficient access privileges could potentially view sensitive patient information. Second, if the provider's systems are compromised, attackers could gain access to both the encrypted data and the means to decrypt it. Third, the medical company loses direct control over how their data is handled once it's decrypted for processing. The provider could, intentionally or unintentionally, create unauthorized copies, fail to properly delete sensitive information, or expose the data through misconfigured security settings. This scenario illustrates how traditional encryption becomes a potential liability when data needs to be both stored and processed by third parties—a common requirement in today's interconnected digital landscape.
+
+### The problem with metadata
+
+More troubling still, even without decrypting the data itself, service providers can often infer sensitive information merely by analyzing patterns and metadata. Consider a cloud-based email service that stores encrypted messages. While the provider cannot read the actual content of the emails, they can observe message frequencies, sizes, timestamps, and communication patterns. For instance, if a user suddenly starts exchanging frequent messages with email addresses belonging to oncology clinics, followed by regular correspondence with insurance companies and pharmaceutical suppliers, the provider could infer that the user likely has a cancer diagnosis—all without ever decrypting a single message. Similarly, in financial services, encrypted transaction data can reveal spending patterns, income levels, and lifestyle changes through metadata alone. A sudden increase in encrypted transactions with medical facilities, followed by regular payments to a specific pharmacy, could indicate the development of a chronic condition, even though the transaction details remain encrypted.
+
+The metadata vulnerability extends far beyond medical privacy. Consider these real-world scenarios:
+
+1. **Corporate mergers and acquisitions**: When a company is preparing for a merger, their encrypted network traffic patterns can reveal the negotiations even if the content remains secret. Sudden increases in encrypted communications between two companies' legal departments, followed by regular virtual meetings between executive teams, can signal impending corporate deals. Competitors monitoring these patterns could gain unfair market advantages or manipulate stock prices, despite never accessing the encrypted contents.
+
+2. **Military operations**: Even with encrypted communications, the volume and timing of military messages can telegraph impending operations. A sudden spike in encrypted traffic between command centers and specific field units, combined with changes in satellite image requests for particular regions, could reveal planned operations to adversaries monitoring these patterns.
+
+3. **Political campaigns**: Campaign strategies can be exposed through metadata analysis of encrypted communications. The pattern of messages between campaign headquarters and local offices, combined with the timing and location of ad purchases and voter database queries, can reveal targeting strategies and key battleground areas—all while the actual message content remains encrypted.
+
+4. **Personal relationships**: Social mapping through encrypted messaging patterns can reveal sensitive personal information. The frequency, timing, and duration of encrypted video calls, combined with location data and message sizes, can expose romantic relationships, family dynamics, or personal crises, even when the communication content is completely secured.
+
+5. **Research and development**: Companies developing new products leave metadata footprints despite using encryption. Patterns in encrypted traffic between research facilities, patent offices, and manufacturing partners can reveal product development timelines and strategic initiatives to competitors, even without access to the actual encrypted data.
+
+These examples demonstrate how traditional encryption, while securing individual data points, fails to protect against sophisticated pattern analysis that can reveal highly sensitive information through metadata alone. The ability to derive meaningful intelligence from encrypted data patterns undermines the fundamental promise of privacy that encryption is meant to provide. This "side-channel" vulnerability highlights why modern privacy solutions must address not only the security of the data itself but also the patterns of its usage and transmission.
+
+### The journey of fully Homomorphic Encryption
+
+Despite its immense potential, the practical application of Fully Homomorphic Encryption (FHE) has faced significant challenges. The idea behind HE has been around for over three decades, but it wasn't until 2009 that Craig Gentry introduced the first plausible and functional FHE scheme. Gentry's scheme was a major breakthrough, as it demonstrated that it was theoretically possible to allow any arbitrary computation to be performed on encrypted data—effectively enabling encrypted data to be processed in the same way as unencrypted data. This marked a new era for secure data processing, promising an unprecedented level of privacy.
+
+However, the journey towards making FHE practical for widespread use has proven to be difficult. Early implementations of Gentry's scheme, while groundbreaking, were computationally expensive and impractical for real-world applications due to their immense computational overhead and resource requirements. As a result, while the concept of FHE is extraordinarily appealing, current implementations are often slow and require significant computational power, which limits their usability in consumer applications and even in some enterprise-level environments. Researchers continue to work on improving these encryption schemes, making them more efficient and scalable, but the progress towards making FHE truly practical on all platforms remains an ongoing challenge.
+
+## Mathematical background
+
+Homomorphic Encryption relies on fundamental concepts in algebra and number theory to enable secure computation on encrypted data without needing decryption. One of the key mathematical principles underlying Homomorphic Encryption is the notion of **homomorphisms**, which are structure-preserving maps between algebraic systems such as groups, rings, or fields. In the context of encryption, this means that certain operations on the ciphertext correspond directly to operations on the plaintext, preserving the underlying structure of the data.
+
+To better understand this, let us consider two plaintext messages, $m_1$ and $m_2$, and their corresponding encrypted ciphertexts, $c_1 = E(m_1)$ and $c_2 = E(m_2)$, where $E$ represents the encryption function. If the encryption scheme is homomorphic, it should allow computations on $c_1$ and $c_2$ to yield an encrypted result that matches the operation applied to the plaintexts. For example, if we add $m_1$ and $m_2$, then the encrypted sum can be obtained directly by operating on $c_1$ and $c_2$ without needing to decrypt them first:
+
+$$
+E(m_1 + m_2) = c_1 + c_2 = E(m_1) + E(m_2)
+$$
+
+This property allows computations to be performed on encrypted data without decrypting it, thus preserving privacy and security. The same concept can be applied to other operations, such as multiplication. If the encryption scheme supports an operation like addition or multiplication directly in the encrypted space, it is said to be homomorphic for that operation.
+
+### Defining Homomorphic Encryption mathematically
+
+Imagine a scenario where the operation is represented by $+$ in the plaintext space, and let $E$ be an encryption scheme. $E$ is said to be homomorphic if it satisfies the following equation for all possible plaintexts $m_1, m_2$:
+
+$$
+E(m_1 + m_2) = E(m_1) + E(m_2)
+$$
+
+where $M$ is the set of all possible messages. In abstract algebra, a structure-preserving map between two algebraic structures or groups is called a homomorphism. For instance, if we consider a set $S$ and an operation $+$, which combines any two elements $a$ and $b$ to form another element $a + b$, the set $(S, +)$ must satisfy the following properties to be a group:
+
+1. **Closure property**: For all $a, b \in S$, the result of $a + b$ must also belong to $S$.
+
+2. **Associativity property**: For all $a, b, c \in S$, $(a + b) + c = a + (b + c)$.
+
+3. **Identity element**: There exists an element $e \in S$ such that $e + a = a$ for all $a \in S$. This element $e$ is known as the identity element.
+
+4. **Inverse element**: For every element $a \in S$, there exists an element $b \in S$ such that $a + b = b + a = e$, where $e$ is the identity element.
+
+These properties are fundamental in defining group structures that are used in Homomorphic Encryption.
+
+### Group homomorphism
+
+Group homomorphisms come into play when testing whether an encryption scheme is homomorphic or not. Consider a group homomorphism $f: G 
+ightarrow H$, where $G$ and $H$ are groups, and the function $f$ holds the property:
+
+$$
+f(g_1 \ast g_2) = f(g_1) \circ f(g_2), \quad orall g_1, g_2 \in G
+$$
+
+where $\ast$ and $\circ$ are the group operations in $G$ and $H$, respectively. Similarly, in an encryption scheme, if we denote the plaintext group by $P$ and the ciphertext group by $C$, and if using a specific key $k$, the encryption scheme $E$ maps elements of $P$ to elements of $C$, then for an operation $\star$, the homomorphic property can be expressed as:
+
+$$
+E_{k}(a) \star E_{k}(b) = E_{k}(a \star b), \quad orall a, b \in P, k \in K
+$$
+
+Here, $k$ can be a symmetric key or a public key, depending on the encryption algorithm used.
+
+### Example: RSA
+
+A concrete example of Homomorphic Encryption is the RSA algorithm, which is partially homomorphic for multiplication. In RSA, plaintext $p$ is encrypted to produce ciphertext $c$ using a public key $(e, n)$ where $n$ is the product of two large primes and $e$ is the encryption exponent. For two plaintexts $p_1, p_2 \in P$, the encrypted values are given by:
+
+$$
+E(p_1) = p_1^e \mod n \quad 	ext{and} \quad E(p_2) = p_2^e \mod n
+$$
+
+Using these encrypted values, we can compute:
+
+$$
+E(p_1) \cdot E(p_2) = (p_1^e \mod n) \cdot (p_2^e \mod n) = (p_1 \cdot p_2)^e \mod n = E(p_1 \cdot p_2)
+$$
+
+Thus, RSA is homomorphic for modular multiplication, meaning that multiplying two ciphertexts yields a ciphertext that, when decrypted, is equivalent to the product of the original plaintexts. However, RSA is not homomorphic for addition, which limits its usefulness as a fully Homomorphic Encryption scheme.
+
+## Classification of algorithms
+
+Homomorphic Encryption algorithms are classified based on the types of operations they support and the extent to which they allow computations on encrypted data. The existing encryption schemes have inherent limitations and may not all satisfy homomorphism for every kind of operation or support an unlimited number of operations. Some encryption algorithms are homomorphic for addition or multiplication operations only, while others may support an infinite number of subsequent additions but only a limited number of multiplications. As a result, Homomorphic Encryption algorithms are categorized into three primary types: Partially Homomorphic Encryption (PHE), Somewhat Homomorphic Encryption (SWHE), and Fully Homomorphic Encryption (FHE).
+
+### Partially Homomorphic Encryption
+
+Partially Homomorphic Encryption (PHE) schemes are encryption methods that allow computations on encrypted data, but only for a limited number of operations. Typically, PHE supports either addition or multiplication, but not both. This limited operation support makes PHE less computationally costly compared to other types of Homomorphic Encryption, which is beneficial for applications where only basic operations are needed. However, the limited utility of PHE also restricts its use in more complex data processing scenarios.
+
+For instance, RSA is a well-known PHE scheme that supports homomorphic multiplication. This means that given two encrypted values, the product of these values can be calculated without decryption. Goldwasser-Micali is another example of a PHE scheme that supports homomorphic addition. While these schemes are useful in situations where specific operations are required, they cannot handle arbitrary computations.
+
+Other examples of PHE schemes include:
+
+- **El-Gamal**: Supports multiplication operations on encrypted data.
+
+- **Benaloh**: Extends Goldwasser-Micali to support larger message spaces while maintaining additive homomorphism.
+
+- **Paillier**: A widely used PHE scheme that supports additive operations.
+
+- **Okamoto-Uchiyama**: Supports additive homomorphism, similar to the Paillier scheme.
+
+These PHE schemes are generally more efficient in terms of computational resources, making them suitable for specific use cases such as secure voting, basic privacy-preserving data aggregation, and simple cryptographic protocols where only one type of operation is required.
+
+### Somewhat Homomorphic Encryption
+
+Somewhat Homomorphic Encryption (SWHE) enables more complex operations on encrypted data compared to PHE. SWHE schemes can support both addition and multiplication, but only up to a certain depth or a limited number of times. This means that SWHE can handle more complicated functions, such as polynomial evaluations or basic exponentiation, but it is still constrained by the level of complexity and the number of operations it can perform before decryption becomes necessary.
+
+SWHE is more computationally demanding than PHE due to the increased complexity of the operations it supports. However, it offers more capabilities, making it suitable for applications that require a moderate level of data processing without compromising security. For instance, SWHE can be used in machine learning models for simple training tasks where data privacy must be preserved, but the complexity of the operations is not too high.
+
+Examples of SWHE schemes include:
+
+- **BGN (Boneh-Goh-Nissim)**: Supports both addition and a limited number of multiplications, making it a versatile SWHE scheme.
+
+- **Polly Cracker Scheme**: Allows for the evaluation of polynomials on encrypted data, providing more flexibility compared to PHE.
+
+The utility of SWHE lies in its ability to perform a combination of operations on encrypted data while maintaining data privacy. However, the noise introduced during each operation accumulates, which limits the depth of computations that can be performed. Techniques such as noise management and re-encryption are often employed to mitigate this issue, although these techniques also add to the computational overhead.
+
+### Fully Homomorphic Encryption
+
+Fully Homomorphic Encryption (FHE) is the most advanced form of Homomorphic Encryption, supporting arbitrary computations on encrypted data, including complex operations like conditional statements, branching, and looping. Unlike PHE and SWHE, FHE allows for an unlimited number of additions and multiplications, making it suitable for virtually any type of computation on encrypted data. This flexibility makes FHE the most powerful but also the most computationally expensive type of Homomorphic Encryption.
+
+FHE schemes typically rely on techniques like **bootstrapping** to maintain homomorphism over an extended series of computations. Bootstrapping is a process used to reduce the noise that accumulates during homomorphic operations, effectively refreshing the ciphertext so that further computations can be performed without losing accuracy. However, bootstrapping is computationally intensive, and optimizing it remains an active area of research in cryptography.
+
+Examples of FHE schemes include:
+
+- **Ideal Lattice-Based FHE**: Utilizes lattice-based cryptography to provide security against quantum attacks and support homomorphic operations. Lattice structures make it possible to perform a wide range of operations, but managing the noise remains a significant challenge.
+
+- **FHE Schemes over Integers**: These schemes use arithmetic over large integers to achieve homomorphism. They are conceptually simpler than lattice-based schemes but may require larger ciphertext sizes for the same level of security.
+
+- **LWE-Based (Learning With Errors)**: These schemes are based on the Learning With Errors problem, which provides strong security guarantees. LWE-based schemes are known for their resistance to quantum attacks, making them a promising candidate for post-quantum cryptography.
+
+- **NTRU-Like Schemes**: Derived from the NTRU encryption algorithm, these schemes use polynomial rings to achieve homomorphic properties. They are efficient compared to other FHE schemes but still face challenges related to noise management and ciphertext size.
+
+FHE has numerous applications, particularly in areas that require secure, privacy-preserving computations. For example, in healthcare, FHE can be used to analyze encrypted patient data without compromising patient privacy. In finance, FHE enables secure computations on encrypted financial records, allowing institutions to perform risk assessments and fraud detection while maintaining data confidentiality. FHE also holds promise in cloud computing, where sensitive data can be processed by cloud servers without revealing the underlying information.
+
+### Applications
+
+All three schemes of Homomorphic Encryption—PHE, SWHE, and FHE—are useful in any field that deals with data processing. They can be utilized in outsourcing storage and computation sectors where customers can share data with an outsourcing corporation without disclosing sensitive information, while allowing the companies to perform operations on the data.
+
+One such example is a system architecture capable of performing biometric identification in the encrypted domain, as discussed in [1]. This system allows the implementation of Homomorphic Encryption techniques to maintain privacy while analyzing biometric data, overcoming technological challenges in secure processing environments.
+
+Let's consider a sample client-server interaction scenario where the client needs to send sensitive data to the server, and the server returns the data after performing certain operations. This scenario can be achieved with or without using Homomorphic Encryption (HE). Both methods are illustrated below:
+
+#### Without Homomorphic Encryption
+
+Client (C) has an asymmetric key pair $(	ext{pu}_C, 	ext{pr}_C)$ and a message $M$ that must be sent to the server. Similarly, server (S) has its asymmetric key pair $(	ext{pu}_S, 	ext{pr}_S)$ and a function $f$ which will be applied to the client's message. To maintain confidentiality, the client encrypts $M$ using the server's public key to form $E(M, 	ext{pu}_S)$, which is then sent to the server. The server decrypts $E(M, 	ext{pu}_S)$ using its private key $	ext{pr}_S$ to get $M$, performs the function $f$ on $M$ to get $f(M)$, and then encrypts $f(M)$ using the client's public key $	ext{pu}_C$ before sending it back to the client. The client receives $E(f(M), 	ext{pu}_C)$ and decrypts it using its private key to get $f(M)$.
+
+In this scenario, the server has full visibility of the message, which poses a significant security risk for the client. When dealing with sensitive data, there must be a way to prevent the server from viewing the raw data.
+
+```{dot}
+digraph ClientServerWithoutHE {
+  rankdir=LR;
+  node [shape=box];
+  
+  Client [label="Client (C)"];
+  Server [label="Server (S)"];
+  
+  Client -> Server [label="1. C encrypts M using pu_S: E(M, pu_S)"];
+  Server -> Server [label="2. S decrypts E(M, pu_S) using pr_S: M"];
+  Server -> Server [label="3. S performs f on M: f(M)"];
+  Server -> Client [label="4. S encrypts f(M) using pu_C: E(f(M), pu_C)"];
+  Client -> Client [label="5. C decrypts E(f(M), pu_C) using pr_C: f(M)"];
+}
+```
+
+#### With Homomorphic Encryption
+
+Client (C) has a Homomorphic Encryption function $He$, its corresponding decryption function $Hd$, and a message $M$ that must be processed by the server. The server (S) has a function $f$ that needs to be applied to the client's data. The client encrypts the message $M$ using Homomorphic Encryption to obtain $He(M)$ and sends it to the server for computation. The server performs the operation $f$ homomorphically to get $He(f(M))$ and sends it back to the client. The client then decrypts the data using $Hd(He(f(M)))$ to get $f(M)$.
+
+Unlike the previous scenario, here the server performs its operations without being able to see the original message. The confidentiality of the client's data is preserved, both from the public and from the server itself.
+
+```{dot}
+digraph ClientServerWithHE {
+  rankdir=LR;
+  node [shape=box];
+  
+  Client [label="Client (C)"];
+  Server [label="Server (S)"];
+  
+  Client -> Server [label="1. C encrypts M using He: He(M)"];
+  Server -> Server [label="2. S performs f on He(M): He(f(M))"];
+  Server -> Client [label="3. S sends He(f(M)) to C"];
+  Client -> Client [label="4. C decrypts He(f(M)) using Hd: f(M)"];
+}
+```
+
+
+
+
+## Code 
+
+```{python}
+import random
+from dataclasses import dataclass
+from typing import Tuple #1
+
+def generate_keys() -> Tuple[int, int, int]: #2
+    p = 17  #3
+    q = 23  #4
+    n = p * q
+    return n, p, q
+
+def encrypt(plaintext: int, public_key: int) -> int: #5
+    noise = random.randint(1, 5)  #6
+    return plaintext + noise * public_key
+
+def decrypt(ciphertext: int, p: int, q: int) -> int: #7
+    n = p * q
+    return ciphertext % n
+
+def homomorphic_add(c1: int, c2: int) -> int: #8
+    return c1 + c2
+
+def homomorphic_multiply(c1: int, c2: int) -> int: #9
+    return c1 * c2
+
+def demonstrate_simple_fhe(): #10
+    print("=== Simple Educational FHE Demo ===")
+    
+    public_key, p, q = generate_keys()
+    print(f"Keys - Public: {public_key}, Private: (p={p}, q={q})")
+    
+    m1, m2 = 3, 4 #11
+    print(f"\nOriginal messages: m1={m1}, m2={m2}")
+    
+    c1 = encrypt(m1, public_key) #12
+    c2 = encrypt(m2, public_key)
+    print(f"Encrypted messages: c1={c1}, c2={c2}")
+    
+    c_add = homomorphic_add(c1, c2) #13
+    c_mult = homomorphic_multiply(c1, c2)
+    
+    d_add = decrypt(c_add, p, q) #14
+    d_mult = decrypt(c_mult, p, q)
+    
+    print(f"\nHomomorphic Addition: {m1} + {m2} = {d_add}")
+    print(f"Homomorphic Multiplication: {m1} * {m2} = {d_mult}")
+```
+1. Required imports for this minimal educational implementation
+2. Function to generate public key n and private keys p, q
+3. Fixed prime for demonstration purposes
+4. Another fixed prime for demonstration
+5. Encrypt a message using public key and random noise
+6. Small fixed range for demonstration purposes
+7. Decrypt a message using private keys p and q
+8. Add two ciphertexts homomorphically
+9. Multiply two ciphertexts homomorphically
+10. Example usage demonstration
+11. Setting up original messages for encryption
+12. Encrypt both messages using the public key
+13. Perform homomorphic operations on encrypted data
+14. Decrypt the results of homomorphic operations
+
+```{python}
+import random
+from dataclasses import dataclass
+from typing import Tuple, Optional
+from math import gcd
+import secrets #1
+
+@dataclass
+class KeyPair: #2
+    public_key: int
+    private_p: int
+    private_q: int
+
+@dataclass
+class Ciphertext: #3
+    value: int
+    noise_level: int = 0
+
+class FHE: #4
+    def __init__(self, security_bits: int = 8): #5
+        self.security_bits = security_bits
+        self.noise_threshold = 2 ** (security_bits // 2)
+    
+    def generate_prime(self, bits: int) -> int: #6
+        def is_prime(n: int, k: int = 5) -> bool: #7
+            if n < 2: return False
+            if n == 2: return True
+            if n % 2 == 0: return False
+            
+            r, s = 0, n - 1 #8
+            while s % 2 == 0:
+                r += 1
+                s //= 2
+                
+            for _ in range(k): #9
+                a = random.randrange(2, n - 1)
+                x = pow(a, s, n)
+                if x == 1 or x == n - 1:
+                    continue
+                for _ in range(r - 1):
+                    x = pow(x, 2, n)
+                    if x == n - 1:
+                        break
+                else:
+                    return False
+            return True
+        
+        while True: #10
+            candidate = secrets.randbits(bits) | (1 << (bits - 1)) | 1
+            if is_prime(candidate):
+                return candidate
+
+    def generate_keys(self) -> KeyPair: #11
+        p = self.generate_prime(self.security_bits)
+        q = self.generate_prime(self.security_bits)
+        while p == q:
+            q = self.generate_prime(self.security_bits)
+            
+        return KeyPair(
+            public_key=p * q,
+            private_p=p,
+            private_q=q
+        )
+    
+    def encrypt(self, plaintext: int, public_key: int) -> Ciphertext: #12
+        if plaintext >= public_key:
+            raise ValueError("Plaintext must be smaller than public key")
+            
+        noise = secrets.randbelow(self.noise_threshold)
+        return Ciphertext(
+            value=plaintext + noise * public_key,
+            noise_level=1
+        )
+    
+    def decrypt(self, ciphertext: Ciphertext, keys: KeyPair) -> int: #13
+        if ciphertext.noise_level >= self.noise_threshold:
+            raise ValueError("Noise level too high - decryption may be incorrect")
+            
+        return ciphertext.value % keys.public_key
+    
+    def homomorphic_add(self, c1: Ciphertext, c2: Ciphertext) -> Ciphertext: #14
+        return Ciphertext(
+            value=c1.value + c2.value,
+            noise_level=max(c1.noise_level, c2.noise_level) + 1
+        )
+    
+    def homomorphic_multiply(self, c1: Ciphertext, c2: Ciphertext) -> Ciphertext: #15
+        return Ciphertext(
+            value=c1.value * c2.value,
+            noise_level=c1.noise_level + c2.noise_level + 1
+        )
+
+def demonstrate_refined_fhe(): #16
+    print("\n=== Refined FHE Demo ===")
+    
+    fhe = FHE(security_bits=8) #17
+    
+    keys = fhe.generate_keys() #18
+    public_key = keys.public_key
+    p, q = keys.private_p, keys.private_q
+    
+    print(f"Keys - Public: {public_key}, Private: (p={p}, q={q})")
+    
+    m1, m2 = 3, 4 #19
+    print(f"\nOriginal messages: m1={m1}, m2={m2}")
+    
+    c1 = fhe.encrypt(m1, public_key) #20
+    c2 = fhe.encrypt(m2, public_key)
+    print(f"Encrypted messages: c1={c1.value}, c2={c2.value}")
+    
+    c_add = fhe.homomorphic_add(c1, c2) #21
+    c_mult = fhe.homomorphic_multiply(c1, c2)
+    
+    d_add = fhe.decrypt(c_add, keys) #22
+    d_mult = fhe.decrypt(c_mult, keys)
+    
+    print(f"\nHomomorphic Addition: {m1} + {m2} = {d_add}")
+    print(f"Homomorphic Multiplication: {m1} * {m2} = {d_mult}")
+    print(f"Noise levels - Addition: {c_add.noise_level}, Multiplication: {c_mult.noise_level}")
+
+```
+1. Required imports including secure random number generation
+2. Container class for storing cryptographic key pairs
+3. Container class for encrypted data with noise tracking
+4. More complete somewhat homomorphic encryption implementation with better security
+5. Initialize FHE system with specified security parameter
+6. Generate a prime number of specified bit length
+7. Miller-Rabin primality test implementation
+8. Find odd part of n-1 for Miller-Rabin test
+9. Perform k rounds of Miller-Rabin testing
+10. Generate random candidate and test for primality
+11. Generate public and private keys using secure prime generation
+12. Encrypt a message using public key and controlled noise
+13. Decrypt a message using private keys with noise level check
+14. Add two ciphertexts homomorphically while tracking noise
+15. Multiply two ciphertexts homomorphically while tracking noise
+16. Demonstration of the refined FHE implementation
+17. Initialize FHE system with 8-bit security parameter
+18. Generate and extract key components
+19. Set up test messages for demonstration
+20. Encrypt test messages with noise tracking
+21. Perform homomorphic operations on encrypted data
+22. Decrypt results and display noise levels
+
