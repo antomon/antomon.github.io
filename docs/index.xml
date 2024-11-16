@@ -7116,7 +7116,7 @@ font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutte
   <media:content url="https://antomon.github.io/posts/python-singleton/singletons.webp" medium="image" type="image/webp"/>
 </item>
 <item>
-  <title>Homorphic Encryption Intro</title>
+  <title>Homomorphic Encryption for Developers</title>
   <dc:creator>Antonio Montano</dc:creator>
   <link>https://antomon.github.io/posts/homomorphic-encryption-intro/</link>
   <description><![CDATA[ 
@@ -7125,1372 +7125,317 @@ font-style: inherit;">is</span> logger2)</span><div class="code-annotation-gutte
 
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Legacy encryption systems rely heavily on the concept of key sharing to secure communications. In these systems, the key—whether public or private—must be distributed among all parties involved in exchanging an encrypted message. This traditional approach presents notable privacy and security challenges, particularly because it requires trust in whoever holds the key. Whoever possesses the key has full control over the encrypted data, meaning that service providers or intermediaries can, in principle, access, manage, and exploit the sensitive information, depending on their level of access. This setup becomes especially worrisome when we consider the growing reliance on popular cloud services to store and process personal or proprietary data.</p>
-<p>When users or businesses upload their encrypted data to the cloud, they relinquish some control over their privacy, even if they do not directly share their encryption keys. For example, consider a healthcare provider that needs to store patient medical records in the cloud to enable research and improve patient outcomes. Even if the data is encrypted, the cloud provider still has the ability to access metadata, such as timestamps, file sizes, and usage patterns. This metadata could potentially be used to infer sensitive information, like the frequency of record access or correlations between patients and certain conditions, without actually decrypting the data. Furthermore, the cloud provider may retain this metadata or identifying elements long after the healthcare provider ends its relationship with them, which creates persistent privacy risks. This makes data vulnerable to breaches or misuse, especially in cases where cloud operators, servers, or service providers are untrusted.</p>
-<p>Homomorphic Encryption (HE) emerges as a promising solution to address these concerns. HE is a type of encryption that allows computations to be performed directly on encrypted data without requiring prior decryption. In other words, third parties can perform operations—such as statistical analysis or machine learning processes—on encrypted datasets without ever seeing the raw, sensitive information. This unique feature of HE dramatically reduces privacy concerns, since the data remains secure and unreadable at all times during the computation process. This is a major advantage over traditional encryption schemes, where data must typically be decrypted before operations can be performed, thus exposing it to potential vulnerabilities.</p>
-<p>Encryption methods like RSA, AES, and DES are not homomorphic, meaning that they require the data to be decrypted before any computation can be performed. This makes it challenging to use these encryption methods in situations where data privacy is a critical concern, such as cloud computing and data analytics. In contrast, Homomorphic Encryption enables computations to be performed directly on encrypted data, without the need for decryption. This has significant implications for privacy-preserving technologies, as it allows for secure outsourcing of computation to untrusted servers while maintaining the confidentiality of the data.</p>
-<section id="real-world-example-medical-research" class="level3">
-<h3 class="anchored" data-anchor-id="real-world-example-medical-research">Real-world example: medical research</h3>
-<p>Consider a medical research company working with sensitive patient data to develop new treatments. The company needs to analyze large datasets containing personal health information across multiple hospital networks but wants to maintain patient privacy and comply with healthcare regulations. Using traditional encryption methods, they might encrypt the data before uploading it to a cloud service provider for processing. However, to perform any meaningful analysis—such as identifying patterns in treatment outcomes or running statistical models—the data must first be decrypted. This creates a critical vulnerability: the cloud service provider must have access to the decryption keys to process the information.</p>
-<p>Even if the cloud provider is contractually bound to protect the data, several risks emerge. First, any employee with sufficient access privileges could potentially view sensitive patient information. Second, if the provider’s systems are compromised, attackers could gain access to both the encrypted data and the means to decrypt it. Third, the medical company loses direct control over how their data is handled once it’s decrypted for processing. The provider could, intentionally or unintentionally, create unauthorized copies, fail to properly delete sensitive information, or expose the data through misconfigured security settings. This scenario illustrates how traditional encryption becomes a potential liability when data needs to be both stored and processed by third parties—a common requirement in today’s interconnected digital landscape.</p>
+<section id="homomorphic-encryption-for-developers" class="level1">
+<h1>Homomorphic Encryption for Developers</h1>
+<section id="introduction-the-problem-with-traditional-encryption" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-the-problem-with-traditional-encryption">Introduction: The Problem with Traditional Encryption</h2>
+<p>Imagine you’re building a healthcare app that needs to analyze patient data stored in the cloud. Since the data is sensitive, you encrypt it before sending it. However, every time you need to analyze the data, you have to decrypt it, which means the data is exposed and creates a security risk.</p>
+<p>This is the main problem with traditional encryption systems like RSA and AES. They protect data while it’s stored or sent, but as soon as you need to use the data, you have to decrypt it. It’s like keeping money in a safe but needing to take it out every time you want to count it. This fundamental limitation makes it challenging to keep sensitive information secure throughout its lifecycle, especially as more applications rely on cloud computing, where the need for remote processing is common.</p>
+<p>Homomorphic encryption aims to solve this problem by allowing data to remain encrypted even while it’s being processed. It promises to make the cloud much safer for storing and analyzing data, which could have far-reaching impacts on healthcare, finance, and many other fields. Imagine being able to calculate the average income of a group of people without ever knowing how much any individual earns—that’s the promise of homomorphic encryption.</p>
 </section>
-<section id="the-problem-with-metadata" class="level3">
-<h3 class="anchored" data-anchor-id="the-problem-with-metadata">The problem with metadata</h3>
-<p>More troubling still, even without decrypting the data itself, service providers can often infer sensitive information merely by analyzing patterns and metadata. Consider a cloud-based email service that stores encrypted messages. While the provider cannot read the actual content of the emails, they can observe message frequencies, sizes, timestamps, and communication patterns. For instance, if a user suddenly starts exchanging frequent messages with email addresses belonging to oncology clinics, followed by regular correspondence with insurance companies and pharmaceutical suppliers, the provider could infer that the user likely has a cancer diagnosis—all without ever decrypting a single message. Similarly, in financial services, encrypted transaction data can reveal spending patterns, income levels, and lifestyle changes through metadata alone. A sudden increase in encrypted transactions with medical facilities, followed by regular payments to a specific pharmacy, could indicate the development of a chronic condition, even though the transaction details remain encrypted.</p>
-<p>The metadata vulnerability extends far beyond medical privacy. Consider these real-world scenarios:</p>
+<section id="the-challenge-with-data-security" class="level2">
+<h2 class="anchored" data-anchor-id="the-challenge-with-data-security">The Challenge with Data Security</h2>
+<p>Even when data is encrypted and stored in the cloud, there are still some risks:</p>
 <ol type="1">
-<li><p><strong>Corporate mergers and acquisitions</strong>: When a company is preparing for a merger, their encrypted network traffic patterns can reveal the negotiations even if the content remains secret. Sudden increases in encrypted communications between two companies’ legal departments, followed by regular virtual meetings between executive teams, can signal impending corporate deals. Competitors monitoring these patterns could gain unfair market advantages or manipulate stock prices, despite never accessing the encrypted contents.</p></li>
-<li><p><strong>Military operations</strong>: Even with encrypted communications, the volume and timing of military messages can telegraph impending operations. A sudden spike in encrypted traffic between command centers and specific field units, combined with changes in satellite image requests for particular regions, could reveal planned operations to adversaries monitoring these patterns.</p></li>
-<li><p><strong>Political campaigns</strong>: Campaign strategies can be exposed through metadata analysis of encrypted communications. The pattern of messages between campaign headquarters and local offices, combined with the timing and location of ad purchases and voter database queries, can reveal targeting strategies and key battleground areas—all while the actual message content remains encrypted.</p></li>
-<li><p><strong>Personal relationships</strong>: Social mapping through encrypted messaging patterns can reveal sensitive personal information. The frequency, timing, and duration of encrypted video calls, combined with location data and message sizes, can expose romantic relationships, family dynamics, or personal crises, even when the communication content is completely secured.</p></li>
-<li><p><strong>Research and development</strong>: Companies developing new products leave metadata footprints despite using encryption. Patterns in encrypted traffic between research facilities, patent offices, and manufacturing partners can reveal product development timelines and strategic initiatives to competitors, even without access to the actual encrypted data.</p></li>
-</ol>
-<p>These examples demonstrate how traditional encryption, while securing individual data points, fails to protect against sophisticated pattern analysis that can reveal highly sensitive information through metadata alone. The ability to derive meaningful intelligence from encrypted data patterns undermines the fundamental promise of privacy that encryption is meant to provide. This “side-channel” vulnerability highlights why modern privacy solutions must address not only the security of the data itself but also the patterns of its usage and transmission.</p>
-</section>
-<section id="the-journey-of-fully-homomorphic-encryption" class="level3">
-<h3 class="anchored" data-anchor-id="the-journey-of-fully-homomorphic-encryption">The journey of fully Homomorphic Encryption</h3>
-<p>Despite its immense potential, the practical application of Fully Homomorphic Encryption (FHE) has faced significant challenges. The idea behind HE has been around for over three decades, but it wasn’t until 2009 that Craig Gentry introduced the first plausible and functional FHE scheme. Gentry’s scheme was a major breakthrough, as it demonstrated that it was theoretically possible to allow any arbitrary computation to be performed on encrypted data—effectively enabling encrypted data to be processed in the same way as unencrypted data. This marked a new era for secure data processing, promising an unprecedented level of privacy.</p>
-<p>However, the journey towards making FHE practical for widespread use has proven to be difficult. Early implementations of Gentry’s scheme, while groundbreaking, were computationally expensive and impractical for real-world applications due to their immense computational overhead and resource requirements. As a result, while the concept of FHE is extraordinarily appealing, current implementations are often slow and require significant computational power, which limits their usability in consumer applications and even in some enterprise-level environments. Researchers continue to work on improving these encryption schemes, making them more efficient and scalable, but the progress towards making FHE truly practical on all platforms remains an ongoing challenge.</p>
-</section>
-</section>
-<section id="mathematical-background" class="level2">
-<h2 class="anchored" data-anchor-id="mathematical-background">Mathematical background</h2>
-<p>Homomorphic Encryption relies on fundamental concepts in algebra and number theory to enable secure computation on encrypted data without needing decryption. One of the key mathematical principles underlying Homomorphic Encryption is the notion of <strong>homomorphisms</strong>, which are structure-preserving maps between algebraic systems such as groups, rings, or fields. In the context of encryption, this means that certain operations on the ciphertext correspond directly to operations on the plaintext, preserving the underlying structure of the data.</p>
-<p>To better understand this, let us consider two plaintext messages, <img src="https://latex.codecogs.com/png.latex?m_1"> and <img src="https://latex.codecogs.com/png.latex?m_2">, and their corresponding encrypted ciphertexts, <img src="https://latex.codecogs.com/png.latex?c_1%20=%20E(m_1)"> and <img src="https://latex.codecogs.com/png.latex?c_2%20=%20E(m_2)">, where <img src="https://latex.codecogs.com/png.latex?E"> represents the encryption function. If the encryption scheme is homomorphic, it should allow computations on <img src="https://latex.codecogs.com/png.latex?c_1"> and <img src="https://latex.codecogs.com/png.latex?c_2"> to yield an encrypted result that matches the operation applied to the plaintexts. For example, if we add <img src="https://latex.codecogs.com/png.latex?m_1"> and <img src="https://latex.codecogs.com/png.latex?m_2">, then the encrypted sum can be obtained directly by operating on <img src="https://latex.codecogs.com/png.latex?c_1"> and <img src="https://latex.codecogs.com/png.latex?c_2"> without needing to decrypt them first:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AE(m_1%20+%20m_2)%20=%20c_1%20+%20c_2%20=%20E(m_1)%20+%20E(m_2)%0A"></p>
-<p>This property allows computations to be performed on encrypted data without decrypting it, thus preserving privacy and security. The same concept can be applied to other operations, such as multiplication. If the encryption scheme supports an operation like addition or multiplication directly in the encrypted space, it is said to be homomorphic for that operation.</p>
-<section id="defining-homomorphic-encryption-mathematically" class="level3">
-<h3 class="anchored" data-anchor-id="defining-homomorphic-encryption-mathematically">Defining Homomorphic Encryption mathematically</h3>
-<p>Imagine a scenario where the operation is represented by <img src="https://latex.codecogs.com/png.latex?+"> in the plaintext space, and let <img src="https://latex.codecogs.com/png.latex?E"> be an encryption scheme. <img src="https://latex.codecogs.com/png.latex?E"> is said to be homomorphic if it satisfies the following equation for all possible plaintexts <img src="https://latex.codecogs.com/png.latex?m_1,%20m_2">:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AE(m_1%20+%20m_2)%20=%20E(m_1)%20+%20E(m_2)%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?M"> is the set of all possible messages. In abstract algebra, a structure-preserving map between two algebraic structures or groups is called a homomorphism. For instance, if we consider a set <img src="https://latex.codecogs.com/png.latex?S"> and an operation <img src="https://latex.codecogs.com/png.latex?+">, which combines any two elements <img src="https://latex.codecogs.com/png.latex?a"> and <img src="https://latex.codecogs.com/png.latex?b"> to form another element <img src="https://latex.codecogs.com/png.latex?a%20+%20b">, the set <img src="https://latex.codecogs.com/png.latex?(S,%20+)"> must satisfy the following properties to be a group:</p>
-<ol type="1">
-<li><p><strong>Closure property</strong>: For all <img src="https://latex.codecogs.com/png.latex?a,%20b%20%5Cin%20S">, the result of <img src="https://latex.codecogs.com/png.latex?a%20+%20b"> must also belong to <img src="https://latex.codecogs.com/png.latex?S">.</p></li>
-<li><p><strong>Associativity property</strong>: For all <img src="https://latex.codecogs.com/png.latex?a,%20b,%20c%20%5Cin%20S">, <img src="https://latex.codecogs.com/png.latex?(a%20+%20b)%20+%20c%20=%20a%20+%20(b%20+%20c)">.</p></li>
-<li><p><strong>Identity element</strong>: There exists an element <img src="https://latex.codecogs.com/png.latex?e%20%5Cin%20S"> such that <img src="https://latex.codecogs.com/png.latex?e%20+%20a%20=%20a"> for all <img src="https://latex.codecogs.com/png.latex?a%20%5Cin%20S">. This element <img src="https://latex.codecogs.com/png.latex?e"> is known as the identity element.</p></li>
-<li><p><strong>Inverse element</strong>: For every element <img src="https://latex.codecogs.com/png.latex?a%20%5Cin%20S">, there exists an element <img src="https://latex.codecogs.com/png.latex?b%20%5Cin%20S"> such that <img src="https://latex.codecogs.com/png.latex?a%20+%20b%20=%20b%20+%20a%20=%20e">, where <img src="https://latex.codecogs.com/png.latex?e"> is the identity element.</p></li>
-</ol>
-<p>These properties are fundamental in defining group structures that are used in Homomorphic Encryption.</p>
-</section>
-<section id="group-homomorphism" class="level3">
-<h3 class="anchored" data-anchor-id="group-homomorphism">Group homomorphism</h3>
-<p>Group homomorphisms come into play when testing whether an encryption scheme is homomorphic or not. Consider a group homomorphism <img src="https://latex.codecogs.com/png.latex?f:%20G%0Aightarrow%20H">, where <img src="https://latex.codecogs.com/png.latex?G"> and <img src="https://latex.codecogs.com/png.latex?H"> are groups, and the function <img src="https://latex.codecogs.com/png.latex?f"> holds the property:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Af(g_1%20%5Cast%20g_2)%20=%20f(g_1)%20%5Ccirc%20f(g_2),%20%5Cquad%20%0Corall%20g_1,%20g_2%20%5Cin%20G%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?%5Cast"> and <img src="https://latex.codecogs.com/png.latex?%5Ccirc"> are the group operations in <img src="https://latex.codecogs.com/png.latex?G"> and <img src="https://latex.codecogs.com/png.latex?H">, respectively. Similarly, in an encryption scheme, if we denote the plaintext group by <img src="https://latex.codecogs.com/png.latex?P"> and the ciphertext group by <img src="https://latex.codecogs.com/png.latex?C">, and if using a specific key <img src="https://latex.codecogs.com/png.latex?k">, the encryption scheme <img src="https://latex.codecogs.com/png.latex?E"> maps elements of <img src="https://latex.codecogs.com/png.latex?P"> to elements of <img src="https://latex.codecogs.com/png.latex?C">, then for an operation <img src="https://latex.codecogs.com/png.latex?%5Cstar">, the homomorphic property can be expressed as:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AE_%7Bk%7D(a)%20%5Cstar%20E_%7Bk%7D(b)%20=%20E_%7Bk%7D(a%20%5Cstar%20b),%20%5Cquad%20%0Corall%20a,%20b%20%5Cin%20P,%20k%20%5Cin%20K%0A"></p>
-<p>Here, <img src="https://latex.codecogs.com/png.latex?k"> can be a symmetric key or a public key, depending on the encryption algorithm used.</p>
-</section>
-<section id="example-rsa" class="level3">
-<h3 class="anchored" data-anchor-id="example-rsa">Example: RSA</h3>
-<p>A concrete example of Homomorphic Encryption is the RSA algorithm, which is partially homomorphic for multiplication. In RSA, plaintext <img src="https://latex.codecogs.com/png.latex?p"> is encrypted to produce ciphertext <img src="https://latex.codecogs.com/png.latex?c"> using a public key <img src="https://latex.codecogs.com/png.latex?(e,%20n)"> where <img src="https://latex.codecogs.com/png.latex?n"> is the product of two large primes and <img src="https://latex.codecogs.com/png.latex?e"> is the encryption exponent. For two plaintexts <img src="https://latex.codecogs.com/png.latex?p_1,%20p_2%20%5Cin%20P">, the encrypted values are given by:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AE(p_1)%20=%20p_1%5Ee%20%5Cmod%20n%20%5Cquad%20%20%20%20%20ext%7Band%7D%20%5Cquad%20E(p_2)%20=%20p_2%5Ee%20%5Cmod%20n%0A"></p>
-<p>Using these encrypted values, we can compute:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AE(p_1)%20%5Ccdot%20E(p_2)%20=%20(p_1%5Ee%20%5Cmod%20n)%20%5Ccdot%20(p_2%5Ee%20%5Cmod%20n)%20=%20(p_1%20%5Ccdot%20p_2)%5Ee%20%5Cmod%20n%20=%20E(p_1%20%5Ccdot%20p_2)%0A"></p>
-<p>Thus, RSA is homomorphic for modular multiplication, meaning that multiplying two ciphertexts yields a ciphertext that, when decrypted, is equivalent to the product of the original plaintexts. However, RSA is not homomorphic for addition, which limits its usefulness as a fully Homomorphic Encryption scheme.</p>
-</section>
-</section>
-<section id="classification-of-algorithms" class="level2">
-<h2 class="anchored" data-anchor-id="classification-of-algorithms">Classification of algorithms</h2>
-<p>Homomorphic Encryption algorithms are classified based on the types of operations they support and the extent to which they allow computations on encrypted data. The existing encryption schemes have inherent limitations and may not all satisfy homomorphism for every kind of operation or support an unlimited number of operations. Some encryption algorithms are homomorphic for addition or multiplication operations only, while others may support an infinite number of subsequent additions but only a limited number of multiplications. As a result, Homomorphic Encryption algorithms are categorized into three primary types: Partially Homomorphic Encryption (PHE), Somewhat Homomorphic Encryption (SWHE), and Fully Homomorphic Encryption (FHE).</p>
-<section id="partially-homomorphic-encryption" class="level3">
-<h3 class="anchored" data-anchor-id="partially-homomorphic-encryption">Partially Homomorphic Encryption</h3>
-<p>Partially Homomorphic Encryption (PHE) schemes are encryption methods that allow computations on encrypted data, but only for a limited number of operations. Typically, PHE supports either addition or multiplication, but not both. This limited operation support makes PHE less computationally costly compared to other types of Homomorphic Encryption, which is beneficial for applications where only basic operations are needed. However, the limited utility of PHE also restricts its use in more complex data processing scenarios.</p>
-<p>For instance, RSA is a well-known PHE scheme that supports homomorphic multiplication. This means that given two encrypted values, the product of these values can be calculated without decryption. Goldwasser-Micali is another example of a PHE scheme that supports homomorphic addition. While these schemes are useful in situations where specific operations are required, they cannot handle arbitrary computations.</p>
-<p>Other examples of PHE schemes include:</p>
+<li><p><strong>Metadata Exposure</strong>: Even if the data is encrypted, cloud providers can still see some information:</p>
 <ul>
-<li><p><strong>El-Gamal</strong>: Supports multiplication operations on encrypted data.</p></li>
-<li><p><strong>Benaloh</strong>: Extends Goldwasser-Micali to support larger message spaces while maintaining additive homomorphism.</p></li>
-<li><p><strong>Paillier</strong>: A widely used PHE scheme that supports additive operations.</p></li>
-<li><p><strong>Okamoto-Uchiyama</strong>: Supports additive homomorphism, similar to the Paillier scheme.</p></li>
+<li>When the data is accessed</li>
+<li>How much data is being processed</li>
+<li>Patterns of usage that could reveal some details</li>
 </ul>
-<p>These PHE schemes are generally more efficient in terms of computational resources, making them suitable for specific use cases such as secure voting, basic privacy-preserving data aggregation, and simple cryptographic protocols where only one type of operation is required.</p>
-</section>
-<section id="somewhat-homomorphic-encryption" class="level3">
-<h3 class="anchored" data-anchor-id="somewhat-homomorphic-encryption">Somewhat Homomorphic Encryption</h3>
-<p>Somewhat Homomorphic Encryption (SWHE) enables more complex operations on encrypted data compared to PHE. SWHE schemes can support both addition and multiplication, but only up to a certain depth or a limited number of times. This means that SWHE can handle more complicated functions, such as polynomial evaluations or basic exponentiation, but it is still constrained by the level of complexity and the number of operations it can perform before decryption becomes necessary.</p>
-<p>SWHE is more computationally demanding than PHE due to the increased complexity of the operations it supports. However, it offers more capabilities, making it suitable for applications that require a moderate level of data processing without compromising security. For instance, SWHE can be used in machine learning models for simple training tasks where data privacy must be preserved, but the complexity of the operations is not too high.</p>
-<p>Examples of SWHE schemes include:</p>
+<p>Metadata may not contain the actual content of the data, but it can still provide insights that compromise privacy. For instance, frequent access to a medical record could imply a serious health condition, even if the actual diagnosis remains encrypted.</p></li>
+<li><p><strong>Trust Issues</strong>: Cloud providers or intermediaries who have access to encryption keys could:</p>
 <ul>
-<li><p><strong>BGN (Boneh-Goh-Nissim)</strong>: Supports both addition and a limited number of multiplications, making it a versatile SWHE scheme.</p></li>
-<li><p><strong>Polly Cracker scheme</strong>: Allows for the evaluation of polynomials on encrypted data, providing more flexibility compared to PHE.</p></li>
+<li>Access decrypted data when it’s being processed</li>
+<li>Keep metadata even after the service ends</li>
+<li>Create privacy risks by storing information about data access, which could help them infer details even if the data itself is never fully decrypted</li>
 </ul>
-<p>The utility of SWHE lies in its ability to perform a combination of operations on encrypted data while maintaining data privacy. However, the noise introduced during each operation accumulates, which limits the depth of computations that can be performed. Techniques such as noise management and re-encryption are often employed to mitigate this issue, although these techniques also add to the computational overhead.</p>
+<p>These issues highlight the importance of removing the need to trust third parties. Homomorphic encryption can help solve this problem by ensuring that data remains encrypted, even when it’s being analyzed.</p></li>
+</ol>
 </section>
-<section id="fully-homomorphic-encryption" class="level3">
-<h3 class="anchored" data-anchor-id="fully-homomorphic-encryption">Fully Homomorphic Encryption</h3>
-<p>Fully Homomorphic Encryption (FHE) is the most advanced form of Homomorphic Encryption, supporting arbitrary computations on encrypted data, including complex operations like conditional statements, branching, and looping. Unlike PHE and SWHE, FHE allows for an unlimited number of additions and multiplications, making it suitable for virtually any type of computation on encrypted data. This flexibility makes FHE the most powerful but also the most computationally expensive type of Homomorphic Encryption.</p>
-<p>FHE schemes typically rely on techniques like <strong>bootstrapping</strong> to maintain homomorphism over an extended series of computations. Bootstrapping is a process used to reduce the noise that accumulates during homomorphic operations, effectively refreshing the ciphertext so that further computations can be performed without losing accuracy. However, bootstrapping is computationally intensive, and optimizing it remains an active area of research in cryptography.</p>
-<p>Examples of FHE schemes include:</p>
+<section id="homomorphic-encryption-computing-on-encrypted-data" class="level2">
+<h2 class="anchored" data-anchor-id="homomorphic-encryption-computing-on-encrypted-data">Homomorphic Encryption: Computing on Encrypted Data</h2>
+<section id="a-magic-trick-for-privacy" class="level3">
+<h3 class="anchored" data-anchor-id="a-magic-trick-for-privacy">A Magic Trick for Privacy</h3>
+<p>Homomorphic encryption (HE) is like a magic trick that lets you do math on data without ever actually seeing the data. Imagine helping someone count their money without them ever opening their wallet.</p>
+<p>Let’s say a client has some data (x), and a server has a function (f). The client wants to know the answer to f(x):</p>
 <ul>
-<li><p><strong>Ideal Lattice-Based FHE</strong>: Utilizes lattice-based cryptography to provide security against quantum attacks and support homomorphic operations. Lattice structures make it possible to perform a wide range of operations, but managing the noise remains a significant challenge.</p></li>
-<li><p><strong>FHE schemes over integers</strong>: These schemes use arithmetic over large integers to achieve homomorphism. They are conceptually simpler than lattice-based schemes but may require larger ciphertext sizes for the same level of security.</p></li>
-<li><p><strong>LWE-based (Learning With Errors)</strong>: These schemes are based on the Learning With Errors problem, which provides strong security guarantees. LWE-based schemes are known for their resistance to quantum attacks, making them a promising candidate for post-quantum cryptography.</p></li>
-<li><p><strong>NTRU-like schemes</strong>: Derived from the NTRU encryption algorithm, these schemes use polynomial rings to achieve homomorphic properties. They are efficient compared to other FHE schemes but still face challenges related to noise management and ciphertext size.</p></li>
+<li><strong>Traditional Approach</strong>: The client has to share x with the server.</li>
+<li><strong>HE Approach</strong>: The client sends an encrypted version of x to the server, and the server does the calculations on the encrypted data.</li>
 </ul>
-<p>FHE has numerous applications, particularly in areas that require secure, privacy-preserving computations. For example, in healthcare, FHE can be used to analyze encrypted patient data without compromising patient privacy. In finance, FHE enables secure computations on encrypted financial records, allowing institutions to perform risk assessments and fraud detection while maintaining data confidentiality. FHE also holds promise in cloud computing, where sensitive data can be processed by cloud servers without revealing the underlying information.</p>
-</section>
-<section id="applications" class="level3">
-<h3 class="anchored" data-anchor-id="applications">Applications</h3>
-<p>All three schemes of Homomorphic Encryption—PHE, SWHE, and FHE—are useful in any field that deals with data processing. They can be utilized in outsourcing storage and computation sectors where customers can share data with an outsourcing corporation without disclosing sensitive information, while allowing the companies to perform operations on the data.</p>
-<p>One such example is a system architecture capable of performing biometric identification in the encrypted domain, as discussed in [1]. This system allows the implementation of Homomorphic Encryption techniques to maintain privacy while analyzing biometric data, overcoming technological challenges in secure processing environments.</p>
-<p>Let’s consider a sample client-server interaction scenario where the client needs to send sensitive data to the server, and the server returns the data after performing certain operations. This scenario can be achieved with or without using Homomorphic Encryption (HE). Both methods are illustrated below:</p>
-<section id="without-homomorphic-encryption" class="level4">
-<h4 class="anchored" data-anchor-id="without-homomorphic-encryption">Without Homomorphic Encryption</h4>
-<p>Client (C) has an asymmetric key pair <img src="https://latex.codecogs.com/png.latex?(%20%20%20%20ext%7Bpu%7D_C,%20%20ext%7Bpr%7D_C)"> and a message <img src="https://latex.codecogs.com/png.latex?M"> that must be sent to the server. Similarly, server (S) has its asymmetric key pair <img src="https://latex.codecogs.com/png.latex?(%20ext%7Bpu%7D_S,%20%20ext%7Bpr%7D_S)"> and a function <img src="https://latex.codecogs.com/png.latex?f"> which will be applied to the client’s message. To maintain confidentiality, the client encrypts <img src="https://latex.codecogs.com/png.latex?M"> using the server’s public key to form <img src="https://latex.codecogs.com/png.latex?E(M,%20%20ext%7Bpu%7D_S)">, which is then sent to the server. The server decrypts <img src="https://latex.codecogs.com/png.latex?E(M,%20%20%20%20ext%7Bpu%7D_S)"> using its private key $ ext{pr}_S$ to get <img src="https://latex.codecogs.com/png.latex?M">, performs the function <img src="https://latex.codecogs.com/png.latex?f"> on <img src="https://latex.codecogs.com/png.latex?M"> to get <img src="https://latex.codecogs.com/png.latex?f(M)">, and then encrypts <img src="https://latex.codecogs.com/png.latex?f(M)"> using the client’s public key $ ext{pu}_C$ before sending it back to the client. The client receives <img src="https://latex.codecogs.com/png.latex?E(f(M),%20%20%20ext%7Bpu%7D_C)"> and decrypts it using its private key to get <img src="https://latex.codecogs.com/png.latex?f(M)">.</p>
-<p>In this scenario, the server has full visibility of the message, which poses a significant security risk for the client. When dealing with sensitive data, there must be a way to prevent the server from viewing the raw data.</p>
-<div class="cell" data-layout-align="default">
-<div class="cell-output-display">
-<div>
-<p></p><figure class="figure"><p></p>
-<div>
-<svg width="672" height="480" viewbox="0.00 0.00 618.39 130.78" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="; max-width: none; max-height: none">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 126.78)">
-<title>ClientServerWithoutHE</title>
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-126.78 614.39,-126.78 614.39,4 -4,4"></polygon>
-<!-- Client -->
-<g id="node1" class="node">
-<title>Client</title>
-<polygon fill="none" stroke="black" points="165.67,-54.78 92.9,-54.78 92.9,-18.78 165.67,-18.78 165.67,-54.78"></polygon>
-<text text-anchor="middle" x="129.29" y="-32.58" font-family="Times,serif" font-size="14.00">Client (C)</text>
-</g>
-<!-- Client&#45;&gt;Client -->
-<g id="edge5" class="edge">
-<title>Client-&gt;Client</title>
-<path fill="none" stroke="black" d="M96.36,-54.93C91.3,-64.32 102.27,-72.78 129.29,-72.78 145.75,-72.78 156.26,-69.64 160.81,-65.06"></path>
-<polygon fill="black" stroke="black" points="164.3,-65.32 162.21,-54.93 157.37,-64.35 164.3,-65.32"></polygon>
-<text text-anchor="middle" x="129.29" y="-76.98" font-family="Times,serif" font-size="14.00">5. C decrypts E(f(M), pu_C) using pr_C: f(M)</text>
-</g>
-<!-- Server -->
-<g id="node2" class="node">
-<title>Server</title>
-<polygon fill="none" stroke="black" points="534.06,-54.78 460.77,-54.78 460.77,-18.78 534.06,-18.78 534.06,-54.78"></polygon>
-<text text-anchor="middle" x="497.42" y="-32.58" font-family="Times,serif" font-size="14.00">Server (S)</text>
-</g>
-<!-- Client&#45;&gt;Server -->
-<g id="edge1" class="edge">
-<title>Client-&gt;Server</title>
-<path fill="none" stroke="black" d="M165.73,-36.78C232.35,-36.78 376.22,-36.78 450.28,-36.78"></path>
-<polygon fill="black" stroke="black" points="450.69,-40.28 460.69,-36.78 450.69,-33.28 450.69,-40.28"></polygon>
-<text text-anchor="middle" x="313.16" y="-40.98" font-family="Times,serif" font-size="14.00">1. C encrypts M using pu_S: E(M, pu_S)</text>
-</g>
-<!-- Server&#45;&gt;Client -->
-<g id="edge4" class="edge">
-<title>Server-&gt;Client</title>
-<path fill="none" stroke="black" d="M460.64,-20.81C454.79,-18.81 448.73,-17.08 442.84,-15.98 329.54,5.25 296.76,5.38 183.48,-15.98 180.79,-16.49 178.05,-17.13 175.32,-17.86"></path>
-<polygon fill="black" stroke="black" points="174.03,-14.6 165.51,-20.91 176.1,-21.29 174.03,-14.6"></polygon>
-<text text-anchor="middle" x="313.16" y="-19.98" font-family="Times,serif" font-size="14.00">4. S encrypts f(M) using pu_C: E(f(M), pu_C)</text>
-</g>
-<!-- Server&#45;&gt;Server -->
-<g id="edge2" class="edge">
-<title>Server-&gt;Server</title>
-<path fill="none" stroke="black" d="M480.77,-54.93C478.21,-64.32 483.76,-72.78 497.42,-72.78 505.74,-72.78 511.05,-69.64 513.35,-65.06"></path>
-<polygon fill="black" stroke="black" points="516.85,-65.15 514.06,-54.93 509.87,-64.66 516.85,-65.15"></polygon>
-<text text-anchor="middle" x="497.42" y="-76.98" font-family="Times,serif" font-size="14.00">2. S decrypts E(M, pu_S) using pr_S: M</text>
-</g>
-<!-- Server&#45;&gt;Server -->
-<g id="edge3" class="edge">
-<title>Server-&gt;Server</title>
-<path fill="none" stroke="black" d="M469.52,-55.03C455.05,-72.18 464.35,-90.78 497.42,-90.78 524.8,-90.78 535.88,-78.02 530.66,-63.9"></path>
-<polygon fill="black" stroke="black" points="533.48,-61.79 525.31,-55.03 527.48,-65.4 533.48,-61.79"></polygon>
-<text text-anchor="middle" x="497.42" y="-94.98" font-family="Times,serif" font-size="14.00">3. S performs f on M: f(M)</text>
-</g>
-</g>
-</svg>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-</section>
-<section id="with-homomorphic-encryption" class="level4">
-<h4 class="anchored" data-anchor-id="with-homomorphic-encryption">With Homomorphic Encryption</h4>
-<p>Client (C) has a Homomorphic Encryption function <img src="https://latex.codecogs.com/png.latex?He">, its corresponding decryption function <img src="https://latex.codecogs.com/png.latex?Hd">, and a message <img src="https://latex.codecogs.com/png.latex?M"> that must be processed by the server. The server (S) has a function <img src="https://latex.codecogs.com/png.latex?f"> that needs to be applied to the client’s data. The client encrypts the message <img src="https://latex.codecogs.com/png.latex?M"> using Homomorphic Encryption to obtain <img src="https://latex.codecogs.com/png.latex?He(M)"> and sends it to the server for computation. The server performs the operation <img src="https://latex.codecogs.com/png.latex?f"> homomorphically to get <img src="https://latex.codecogs.com/png.latex?He(f(M))"> and sends it back to the client. The client then decrypts the data using <img src="https://latex.codecogs.com/png.latex?Hd(He(f(M)))"> to get <img src="https://latex.codecogs.com/png.latex?f(M)">.</p>
-<p>Unlike the previous scenario, here the server performs its operations without being able to see the original message. The confidentiality of the client’s data is preserved, both from the public and from the server itself.</p>
-<div class="cell" data-layout-align="default">
-<div class="cell-output-display">
-<div>
-<p></p><figure class="figure"><p></p>
-<div>
-<svg width="672" height="480" viewbox="0.00 0.00 516.47 93.27" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="; max-width: none; max-height: none">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 89.27)">
-<title>ClientServerWithHE</title>
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-89.27 512.47,-89.27 512.47,4 -4,4"></polygon>
-<!-- Client -->
-<g id="node1" class="node">
-<title>Client</title>
-<polygon fill="none" stroke="black" points="145.44,-50.47 72.68,-50.47 72.68,-14.47 145.44,-14.47 145.44,-50.47"></polygon>
-<text text-anchor="middle" x="109.06" y="-28.27" font-family="Times,serif" font-size="14.00">Client (C)</text>
-</g>
-<!-- Client&#45;&gt;Client -->
-<g id="edge4" class="edge">
-<title>Client-&gt;Client</title>
-<path fill="none" stroke="black" d="M82.29,-50.62C78.17,-60 87.09,-68.47 109.06,-68.47 122.45,-68.47 130.99,-65.32 134.69,-60.74"></path>
-<polygon fill="black" stroke="black" points="138.19,-60.95 135.83,-50.62 131.23,-60.16 138.19,-60.95"></polygon>
-<text text-anchor="middle" x="109.06" y="-72.67" font-family="Times,serif" font-size="14.00">4. C decrypts He(f(M)) using Hd: f(M)</text>
-</g>
-<!-- Server -->
-<g id="node2" class="node">
-<title>Server</title>
-<polygon fill="none" stroke="black" points="443.84,-50.47 370.54,-50.47 370.54,-14.47 443.84,-14.47 443.84,-50.47"></polygon>
-<text text-anchor="middle" x="407.19" y="-28.27" font-family="Times,serif" font-size="14.00">Server (S)</text>
-</g>
-<!-- Client&#45;&gt;Server -->
-<g id="edge1" class="edge">
-<title>Client-&gt;Server</title>
-<path fill="none" stroke="black" d="M145.49,-32.47C199.07,-32.47 300.76,-32.47 360.06,-32.47"></path>
-<polygon fill="black" stroke="black" points="360.26,-35.97 370.26,-32.47 360.26,-28.97 360.26,-35.97"></polygon>
-<text text-anchor="middle" x="257.93" y="-36.67" font-family="Times,serif" font-size="14.00">1. C encrypts M using He: He(M)</text>
-</g>
-<!-- Server&#45;&gt;Client -->
-<g id="edge3" class="edge">
-<title>Server-&gt;Client</title>
-<path fill="none" stroke="black" d="M370.41,-16.5C364.57,-14.5 358.5,-12.77 352.61,-11.67 269.89,3.83 245.96,3.93 163.25,-11.67 160.56,-12.17 157.83,-12.81 155.1,-13.55"></path>
-<polygon fill="black" stroke="black" points="153.8,-10.29 145.28,-16.6 155.87,-16.98 153.8,-10.29"></polygon>
-<text text-anchor="middle" x="257.93" y="-15.67" font-family="Times,serif" font-size="14.00">3. S sends He(f(M)) to C</text>
-</g>
-<!-- Server&#45;&gt;Server -->
-<g id="edge2" class="edge">
-<title>Server-&gt;Server</title>
-<path fill="none" stroke="black" d="M380.41,-50.62C376.29,-60 385.22,-68.47 407.19,-68.47 420.58,-68.47 429.12,-65.32 432.82,-60.74"></path>
-<polygon fill="black" stroke="black" points="436.32,-60.95 433.96,-50.62 429.36,-60.16 436.32,-60.95"></polygon>
-<text text-anchor="middle" x="407.19" y="-72.67" font-family="Times,serif" font-size="14.00">2. S performs f on He(M): He(f(M))</text>
-</g>
-</g>
-</svg>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-</section>
-</section>
-</section>
-<section id="code" class="level2">
-<h2 class="anchored" data-anchor-id="code">Code</h2>
-<div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> random</span>
-<span id="cb1-2"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">from</span> dataclasses <span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> dataclass</span>
-<span id="cb1-3"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">from</span> typing <span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> Tuple <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#1</span></span>
-<span id="cb1-4"></span>
-<span id="cb1-5"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> generate_keys() <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> Tuple[<span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>]: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#2</span></span>
-<span id="cb1-6">    p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">17</span>  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#3</span></span>
-<span id="cb1-7">    q <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">23</span>  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#4</span></span>
-<span id="cb1-8">    n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> q</span>
-<span id="cb1-9">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> n, p, q</span>
-<span id="cb1-10"></span>
-<span id="cb1-11"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> encrypt(plaintext: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, public_key: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#5</span></span>
-<span id="cb1-12">    noise <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> random.randint(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>)  <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#6</span></span>
-<span id="cb1-13">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> plaintext <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> noise <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> public_key</span>
-<span id="cb1-14"></span>
-<span id="cb1-15"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> decrypt(ciphertext: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, p: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, q: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#7</span></span>
-<span id="cb1-16">    n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> q</span>
-<span id="cb1-17">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> ciphertext <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%</span> n</span>
-<span id="cb1-18"></span>
-<span id="cb1-19"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> homomorphic_add(c1: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, c2: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#8</span></span>
-<span id="cb1-20">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> c1 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> c2</span>
-<span id="cb1-21"></span>
-<span id="cb1-22"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> homomorphic_multiply(c1: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, c2: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#9</span></span>
-<span id="cb1-23">    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> c1 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> c2</span>
-<span id="cb1-24"></span>
-<span id="cb1-25"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> demonstrate_simple_fhe(): <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#10</span></span>
-<span id="cb1-26">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"=== Simple Educational FHE Demo ==="</span>)</span>
-<span id="cb1-27">    </span>
-<span id="cb1-28">    public_key, p, q <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> generate_keys()</span>
-<span id="cb1-29">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Keys - Public: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>public_key<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, Private: (p=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>p<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, q=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>q<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)"</span>)</span>
-<span id="cb1-30">    </span>
-<span id="cb1-31">    m1, m2 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span> <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#11</span></span>
-<span id="cb1-32">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Original messages: m1=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, m2=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb1-33">    </span>
-<span id="cb1-34">    c1 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> encrypt(m1, public_key) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#12</span></span>
-<span id="cb1-35">    c2 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> encrypt(m2, public_key)</span>
-<span id="cb1-36">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Encrypted messages: c1=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, c2=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb1-37">    </span>
-<span id="cb1-38">    c_add <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> homomorphic_add(c1, c2) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#13</span></span>
-<span id="cb1-39">    c_mult <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> homomorphic_multiply(c1, c2)</span>
-<span id="cb1-40">    </span>
-<span id="cb1-41">    d_add <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> decrypt(c_add, p, q) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#14</span></span>
-<span id="cb1-42">    d_mult <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> decrypt(c_mult, p, q)</span>
-<span id="cb1-43">    </span>
-<span id="cb1-44">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Homomorphic Addition: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> + </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> = </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>d_add<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb1-45">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Homomorphic Multiplication: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> * </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> = </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>d_mult<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
+<p>How can you do calculations on encrypted data? This works because of something called <strong>semantic security</strong>. Here’s how it works:</p>
 <ol type="1">
-<li>Required imports for this minimal educational implementation</li>
-<li>Function to generate public key n and private keys p, q</li>
-<li>Fixed prime for demonstration purposes</li>
-<li>Another fixed prime for demonstration</li>
-<li>Encrypt a message using public key and random noise</li>
-<li>Small fixed range for demonstration purposes</li>
-<li>Decrypt a message using private keys p and q</li>
-<li>Add two ciphertexts homomorphically</li>
-<li>Multiply two ciphertexts homomorphically</li>
-<li>Example usage demonstration</li>
-<li>Setting up original messages for encryption</li>
-<li>Encrypt both messages using the public key</li>
-<li>Perform homomorphic operations on encrypted data</li>
-<li>Decrypt the results of homomorphic operations</li>
+<li>The encryption is random.</li>
+<li>Encrypting the same input twice will give different results each time.</li>
+<li>The result of a calculation on encrypted data is also encrypted and looks completely different from the input.</li>
 </ol>
-<div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> random</span>
-<span id="cb2-2"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">from</span> dataclasses <span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> dataclass</span>
-<span id="cb2-3"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">from</span> typing <span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> Tuple, Optional</span>
-<span id="cb2-4"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">from</span> math <span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> gcd</span>
-<span id="cb2-5"><span class="im" style="color: #00769E;
-background-color: null;
-font-style: inherit;">import</span> secrets <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#1</span></span>
-<span id="cb2-6"></span>
-<span id="cb2-7"><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">@dataclass</span></span>
-<span id="cb2-8"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">class</span> KeyPair: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#2</span></span>
-<span id="cb2-9">    public_key: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span></span>
-<span id="cb2-10">    private_p: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span></span>
-<span id="cb2-11">    private_q: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span></span>
-<span id="cb2-12"></span>
-<span id="cb2-13"><span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">@dataclass</span></span>
-<span id="cb2-14"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">class</span> Ciphertext: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#3</span></span>
-<span id="cb2-15">    value: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span></span>
-<span id="cb2-16">    noise_level: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span></span>
-<span id="cb2-17"></span>
-<span id="cb2-18"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">class</span> FHE: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#4</span></span>
-<span id="cb2-19">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, security_bits: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>): <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#5</span></span>
-<span id="cb2-20">        <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.security_bits <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> security_bits</span>
-<span id="cb2-21">        <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.noise_threshold <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">**</span> (security_bits <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">//</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb2-22">    </span>
-<span id="cb2-23">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> generate_prime(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, bits: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#6</span></span>
-<span id="cb2-24">        <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> is_prime(n: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, k: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">bool</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#7</span></span>
-<span id="cb2-25">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>: <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb2-26">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>: <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">True</span></span>
-<span id="cb2-27">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>: <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb2-28">            </span>
-<span id="cb2-29">            r, s <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>, n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span> <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#8</span></span>
-<span id="cb2-30">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> s <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0</span>:</span>
-<span id="cb2-31">                r <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-32">                s <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">//=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span></span>
-<span id="cb2-33">                </span>
-<span id="cb2-34">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span> _ <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">range</span>(k): <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#9</span></span>
-<span id="cb2-35">                a <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> random.randrange(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb2-36">                x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">pow</span>(a, s, n)</span>
-<span id="cb2-37">                <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span> <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">or</span> x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>:</span>
-<span id="cb2-38">                    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">continue</span></span>
-<span id="cb2-39">                <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">for</span> _ <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">in</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">range</span>(r <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>):</span>
-<span id="cb2-40">                    x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">pow</span>(x, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, n)</span>
-<span id="cb2-41">                    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> n <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>:</span>
-<span id="cb2-42">                        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">break</span></span>
-<span id="cb2-43">                <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">else</span>:</span>
-<span id="cb2-44">                    <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">False</span></span>
-<span id="cb2-45">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">True</span></span>
-<span id="cb2-46">        </span>
-<span id="cb2-47">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">True</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#10</span></span>
-<span id="cb2-48">            candidate <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> secrets.randbits(bits) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|</span> (<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&lt;&lt;</span> (bits <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-49">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> is_prime(candidate):</span>
-<span id="cb2-50">                <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> candidate</span>
-<span id="cb2-51"></span>
-<span id="cb2-52">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> generate_keys(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> KeyPair: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#11</span></span>
-<span id="cb2-53">        p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.generate_prime(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.security_bits)</span>
-<span id="cb2-54">        q <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.generate_prime(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.security_bits)</span>
-<span id="cb2-55">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">while</span> p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> q:</span>
-<span id="cb2-56">            q <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.generate_prime(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.security_bits)</span>
-<span id="cb2-57">            </span>
-<span id="cb2-58">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> KeyPair(</span>
-<span id="cb2-59">            public_key<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>p <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> q,</span>
-<span id="cb2-60">            private_p<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>p,</span>
-<span id="cb2-61">            private_q<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>q</span>
-<span id="cb2-62">        )</span>
-<span id="cb2-63">    </span>
-<span id="cb2-64">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> encrypt(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, plaintext: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>, public_key: <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> Ciphertext: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#12</span></span>
-<span id="cb2-65">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> plaintext <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;=</span> public_key:</span>
-<span id="cb2-66">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">raise</span> <span class="pp" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">ValueError</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Plaintext must be smaller than public key"</span>)</span>
-<span id="cb2-67">            </span>
-<span id="cb2-68">        noise <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> secrets.randbelow(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.noise_threshold)</span>
-<span id="cb2-69">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> Ciphertext(</span>
-<span id="cb2-70">            value<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>plaintext <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> noise <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> public_key,</span>
-<span id="cb2-71">            noise_level<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-72">        )</span>
-<span id="cb2-73">    </span>
-<span id="cb2-74">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> decrypt(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, ciphertext: Ciphertext, keys: KeyPair) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">int</span>: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#13</span></span>
-<span id="cb2-75">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">if</span> ciphertext.noise_level <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">&gt;=</span> <span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>.noise_threshold:</span>
-<span id="cb2-76">            <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">raise</span> <span class="pp" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">ValueError</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Noise level too high - decryption may be incorrect"</span>)</span>
-<span id="cb2-77">            </span>
-<span id="cb2-78">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> ciphertext.value <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">%</span> keys.public_key</span>
-<span id="cb2-79">    </span>
-<span id="cb2-80">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> homomorphic_add(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, c1: Ciphertext, c2: Ciphertext) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> Ciphertext: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#14</span></span>
-<span id="cb2-81">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> Ciphertext(</span>
-<span id="cb2-82">            value<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>c1.value <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> c2.value,</span>
-<span id="cb2-83">            noise_level<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span><span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">max</span>(c1.noise_level, c2.noise_level) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-84">        )</span>
-<span id="cb2-85">    </span>
-<span id="cb2-86">    <span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> homomorphic_multiply(<span class="va" style="color: #111111;
-background-color: null;
-font-style: inherit;">self</span>, c1: Ciphertext, c2: Ciphertext) <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-&gt;</span> Ciphertext: <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#15</span></span>
-<span id="cb2-87">        <span class="cf" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">return</span> Ciphertext(</span>
-<span id="cb2-88">            value<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>c1.value <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">*</span> c2.value,</span>
-<span id="cb2-89">            noise_level<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span>c1.noise_level <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> c2.noise_level <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span></span>
-<span id="cb2-90">        )</span>
-<span id="cb2-91"></span>
-<span id="cb2-92"><span class="kw" style="color: #003B4F;
-background-color: null;
-font-weight: bold;
-font-style: inherit;">def</span> demonstrate_refined_fhe(): <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#16</span></span>
-<span id="cb2-93">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\n</span><span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">=== Refined FHE Demo ==="</span>)</span>
-<span id="cb2-94">    </span>
-<span id="cb2-95">    fhe <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> FHE(security_bits<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">8</span>) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#17</span></span>
-<span id="cb2-96">    </span>
-<span id="cb2-97">    keys <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.generate_keys() <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#18</span></span>
-<span id="cb2-98">    public_key <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> keys.public_key</span>
-<span id="cb2-99">    p, q <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> keys.private_p, keys.private_q</span>
-<span id="cb2-100">    </span>
-<span id="cb2-101">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Keys - Public: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>public_key<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, Private: (p=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>p<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, q=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>q<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">)"</span>)</span>
-<span id="cb2-102">    </span>
-<span id="cb2-103">    m1, m2 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span> <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#19</span></span>
-<span id="cb2-104">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Original messages: m1=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, m2=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb2-105">    </span>
-<span id="cb2-106">    c1 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.encrypt(m1, public_key) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#20</span></span>
-<span id="cb2-107">    c2 <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.encrypt(m2, public_key)</span>
-<span id="cb2-108">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Encrypted messages: c1=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>value<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, c2=</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>value<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb2-109">    </span>
-<span id="cb2-110">    c_add <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.homomorphic_add(c1, c2) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#21</span></span>
-<span id="cb2-111">    c_mult <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.homomorphic_multiply(c1, c2)</span>
-<span id="cb2-112">    </span>
-<span id="cb2-113">    d_add <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.decrypt(c_add, keys) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">#22</span></span>
-<span id="cb2-114">    d_mult <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> fhe.decrypt(c_mult, keys)</span>
-<span id="cb2-115">    </span>
-<span id="cb2-116">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"</span><span class="ch" style="color: #20794D;
-background-color: null;
-font-style: inherit;">\n</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">Homomorphic Addition: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> + </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> = </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>d_add<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb2-117">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Homomorphic Multiplication: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> * </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>m2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;"> = </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>d_mult<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span>
-<span id="cb2-118">    <span class="bu" style="color: null;
-background-color: null;
-font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">f"Noise levels - Addition: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c_add<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>noise_level<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">, Multiplication: </span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>c_mult<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span>noise_level<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span><span class="ss" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"</span>)</span></code></pre></div>
+<p>It’s like putting your data in a different locked box every time—each box looks different, and no one can tell what’s inside just by looking at it.</p>
+<p>This “magic trick” makes homomorphic encryption extremely powerful for situations where privacy is crucial. It allows sensitive information to be processed by remote servers without the risk of exposing the actual data. Imagine if healthcare providers could analyze patient data to find patterns for research, all while keeping every individual’s data private. Homomorphic encryption could enable exactly that.</p>
+</section>
+</section>
+<section id="how-does-homomorphic-encryption-work" class="level2">
+<h2 class="anchored" data-anchor-id="how-does-homomorphic-encryption-work">How Does Homomorphic Encryption Work?</h2>
+<p>In traditional encryption, encrypted data can’t be processed in any useful way. It’s like trying to add two numbers written in totally different languages.</p>
+<p>Homomorphic encryption is different because it keeps the relationships between numbers, even when they’re encrypted. Here’s a simple example:</p>
+<ul>
+<li>Let’s say you have two numbers, <strong>a</strong> and <strong>b</strong>.</li>
+<li>You encrypt them to get <strong>E(a)</strong> and <strong>E(b)</strong>.</li>
+<li>With HE, you can add <strong>E(a)</strong> and <strong>E(b)</strong> and get an encrypted result that, when decrypted, gives you <strong>a + b</strong>.</li>
+</ul>
+<p>This means you can perform calculations on encrypted data without having to decrypt it first. The ability to compute on encrypted data without decryption is what makes HE so revolutionary. In essence, it allows data to stay secure throughout its entire lifecycle, from collection to storage to processing.</p>
+<p>Homomorphic encryption works by using complex mathematical operations that preserve the structure of the data even when it’s encrypted. The mathematics behind this is quite advanced, involving polynomial functions and number theory. These mathematical techniques ensure that operations such as addition and multiplication can be performed on the encrypted data in a way that yields correct results when decrypted.</p>
+</section>
+<section id="types-of-homomorphic-encryption" class="level2">
+<h2 class="anchored" data-anchor-id="types-of-homomorphic-encryption">Types of Homomorphic Encryption</h2>
+<p>There are a few different types of homomorphic encryption, each with its strengths and limitations:</p>
 <ol type="1">
-<li>Required imports including secure random number generation</li>
-<li>Container class for storing cryptographic key pairs</li>
-<li>Container class for encrypted data with noise tracking</li>
-<li>More complete somewhat homomorphic encryption implementation with better security</li>
-<li>Initialize FHE system with specified security parameter</li>
-<li>Generate a prime number of specified bit length</li>
-<li>Miller-Rabin primality test implementation</li>
-<li>Find odd part of n-1 for Miller-Rabin test</li>
-<li>Perform k rounds of Miller-Rabin testing</li>
-<li>Generate random candidate and test for primality</li>
-<li>Generate public and private keys using secure prime generation</li>
-<li>Encrypt a message using public key and controlled noise</li>
-<li>Decrypt a message using private keys with noise level check</li>
-<li>Add two ciphertexts homomorphically while tracking noise</li>
-<li>Multiply two ciphertexts homomorphically while tracking noise</li>
-<li>Demonstration of the refined FHE implementation</li>
-<li>Initialize FHE system with 8-bit security parameter</li>
-<li>Generate and extract key components</li>
-<li>Set up test messages for demonstration</li>
-<li>Encrypt test messages with noise tracking</li>
-<li>Perform homomorphic operations on encrypted data</li>
-<li>Decrypt results and display noise levels</li>
+<li><p><strong>Partially Homomorphic Encryption (PHE)</strong>:</p>
+<ul>
+<li>Supports only one type of operation, like multiplication.</li>
+<li>Faster but limited in what it can do.</li>
+<li>Useful for applications that require only a single type of computation, such as multiplying encrypted values to calculate totals in a secure manner.</li>
+</ul></li>
+<li><p><strong>Somewhat Homomorphic Encryption (SWHE)</strong>:</p>
+<ul>
+<li>Supports both addition and multiplication but only up to a certain limit.</li>
+<li>It’s like a calculator with limited battery—it works for a while but eventually stops.</li>
+<li>SWHE can be useful when you need to perform a few operations, but it doesn’t support unlimited computation. For example, it could be used in a scenario where only a fixed number of additions and multiplications are needed.</li>
+</ul></li>
+<li><p><strong>Fully Homomorphic Encryption (FHE)</strong>:</p>
+<ul>
+<li>Supports unlimited operations on encrypted data.</li>
+<li>This is the “holy grail” of encryption and was first discovered by Craig Gentry in 2009.</li>
+<li>It can be slow and require a lot of computing power, but it offers the most flexibility.</li>
+<li>FHE is the ultimate solution for privacy-preserving data processing, allowing for complex computations, such as machine learning algorithms, to be performed securely on encrypted data.</li>
+</ul></li>
 </ol>
+</section>
+<section id="how-homomorphic-encryption-enhances-private-computing" class="level2">
+<h2 class="anchored" data-anchor-id="how-homomorphic-encryption-enhances-private-computing">How Homomorphic Encryption Enhances Private Computing</h2>
+<p>Homomorphic encryption can be combined with other privacy techniques to keep data secure while still being able to use it. These techniques are independent but can work well together with HE to achieve privacy goals:</p>
+<ul>
+<li><p><strong>Differential Privacy (DP)</strong>: DP is a method that ensures individual data points in a dataset can’t be identified, even if the results are analyzed multiple times. By adding noise to the output, DP protects people’s privacy while still allowing useful insights to be gained from the data. HE can be combined with DP to keep data encrypted during analysis, while DP adds another layer of privacy. For example, a healthcare company could use HE to compute encrypted patient data and add differential privacy to ensure that the output does not compromise individual identities.</p></li>
+<li><p><strong>Secure Multiparty Computation (SMC)</strong>: SMC allows several parties to jointly compute a result from their inputs without revealing those inputs to each other. HE is often used in SMC to make sure the data stays encrypted throughout the computation. This way, everyone can contribute without giving up their private data. For example, multiple banks could jointly analyze data to detect fraud patterns without sharing individual customer information.</p></li>
+<li><p><strong>Zero-Knowledge Proofs (ZKPs)</strong>: ZKPs are a way to prove that a statement is true without revealing any other information beyond the fact that the statement is true. ZKPs can be combined with HE to verify computations on encrypted data without revealing any sensitive information. This is particularly useful in scenarios like blockchain, where privacy and verification are both important. For instance, ZKPs could allow someone to prove they have enough funds for a transaction without revealing their exact account balance.</p></li>
+</ul>
+</section>
+</section>
+<section id="applications-of-homomorphic-encryption-where-can-we-use-it" class="level1">
+<h1>Applications of Homomorphic Encryption: Where Can We Use It?</h1>
+<section id="public-cloud-services" class="level2">
+<h2 class="anchored" data-anchor-id="public-cloud-services">1. Public Cloud Services</h2>
+<section id="what-are-public-cloud-services" class="level3">
+<h3 class="anchored" data-anchor-id="what-are-public-cloud-services">What Are Public Cloud Services?</h3>
+<p>Imagine a giant digital library that many people share—this is essentially what a public cloud service is. Services like Google Drive, Dropbox, or Microsoft Azure are examples where many users store and process their data in the same place. It’s like having your personal locker in a public gym—while you have your private space, you’re still using a shared facility.</p>
+<p>The challenge with public clouds is keeping your information private while still being able to use all the helpful features they offer. Think about it like this: you want to ask someone to count your money, but you don’t want them to see how much you have. That’s where homomorphic encryption comes in—it lets the cloud service work with your data without actually seeing what’s in it.</p>
+<p>Public cloud services are used for various purposes, including data storage, file sharing, and running applications remotely. The privacy challenge in public cloud services is significant, as many users want the benefits of powerful processing without sacrificing the confidentiality of their data. Homomorphic encryption offers a groundbreaking solution, allowing computations to be performed while the data remains encrypted.</p>
+<p>Homomorphic encryption enables users to make the most of public cloud services without giving up their privacy. For example, organizations can store and process customer information, health records, and financial data without ever exposing sensitive information. This capability makes public cloud services more secure and suitable for a wide range of applications involving confidential data.</p>
+</section>
+<section id="real-world-examples" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-examples">Real-World Examples</h3>
+<ul>
+<li><strong>Navigation Apps</strong>
+<ul>
+<li><strong>What it does</strong>: Helps you find your way without revealing where you are.</li>
+<li><strong>How it works</strong>: Imagine telling someone, “I’m somewhere in New York” and getting directions without revealing your exact street corner.</li>
+<li><strong>Privacy benefit</strong>: Your location stays secret while still getting accurate directions.</li>
+<li><strong>Extended Example</strong>: Consider using a navigation app while traveling in another country. With homomorphic encryption, your exact route information remains private, and the service can still provide you with the best possible routes, ensuring both convenience and privacy.</li>
+</ul></li>
+<li><strong>Health Monitoring Devices</strong>
+<ul>
+<li><strong>What it does</strong>: Your smartwatch or fitness tracker can process your health data securely.</li>
+<li><strong>How it works</strong>: It’s like having a doctor analyze your health charts while they’re in a sealed envelope.</li>
+<li><strong>Privacy benefit</strong>: You get health insights while keeping your personal metrics private.</li>
+<li><strong>Extended Example</strong>: Imagine that a health service aggregates data from thousands of users’ fitness trackers to find patterns in sleep quality. Homomorphic encryption allows this analysis while keeping every user’s specific sleep data private, so the service can improve recommendations without compromising privacy.</li>
+</ul></li>
+<li><strong>Personal Data Analysis</strong>
+<ul>
+<li><strong>What it does</strong>: Gets insights from your data without exposing the details.</li>
+<li><strong>How it works</strong>: Similar to having someone tell you if your spending is normal for your age group without seeing your actual purchases.</li>
+<li><strong>Privacy benefit</strong>: You learn from your data while keeping it confidential.</li>
+<li><strong>Extended Example</strong>: A budgeting app could use homomorphic encryption to compare a user’s spending habits against aggregate data to provide personalized recommendations, all while keeping individual transactions encrypted and secure.</li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="private-cloud-computing" class="level2">
+<h2 class="anchored" data-anchor-id="private-cloud-computing">2. Private Cloud Computing</h2>
+<section id="what-is-private-cloud-computing" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-private-cloud-computing">What Is Private Cloud Computing?</h3>
+<p>Think of private cloud computing as having your own personal digital vault, rather than sharing space in a public facility. It’s like the difference between having a personal gym in your home versus going to a public gym. While this gives you more control, you still want to make sure your information stays private when you’re processing it.</p>
+<p>Private clouds are especially important for organizations that handle sensitive information, like hospitals or banks. Even though they have their own private space, they still need to protect the data they’re working with. In a private cloud, homomorphic encryption ensures that data remains secure, even when it is being actively processed for analytics or other purposes. This approach adds an extra layer of privacy, ensuring that data can be used productively without the risk of exposure.</p>
+<p>By utilizing homomorphic encryption in private cloud environments, companies can confidently work with highly sensitive data while enjoying the benefits of cloud computing. For example, financial institutions can run predictive models on client data without exposing sensitive financial information, and hospitals can analyze patient data without compromising patient confidentiality.</p>
+</section>
+<section id="real-world-examples-1" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-examples-1">Real-World Examples</h3>
+<ul>
+<li><strong>Medical Research</strong>
+<ul>
+<li><strong>What it does</strong>: Allows hospitals to study patient data while keeping it private.</li>
+<li><strong>How it works</strong>: Like doctors studying X-rays with the patient names and personal details blurred out.</li>
+<li><strong>Privacy benefit</strong>: Researchers can find important patterns without seeing individual patient details.</li>
+<li><strong>Extended Example</strong>: A pharmaceutical company could use homomorphic encryption to analyze medical data from hospitals across the country. This allows the company to identify effective treatments and new drug opportunities while ensuring patient privacy is never compromised.</li>
+</ul></li>
+<li><strong>Financial Services</strong>
+<ul>
+<li><strong>What it does</strong>: Processes banking information while keeping account details secret.</li>
+<li><strong>How it works</strong>: Similar to having a financial advisor tell you if you qualify for a loan without seeing your bank statements.</li>
+<li><strong>Privacy benefit</strong>: Get financial services while keeping your money matters private.</li>
+<li><strong>Extended Example</strong>: Banks could use homomorphic encryption to assess loan applications by running risk analyses on encrypted financial data. This would allow for automated decision-making without exposing customers’ financial histories.</li>
+</ul></li>
+<li><strong>Private Data Queries</strong>
+<ul>
+<li><strong>What it does</strong>: Lets you search through sensitive information securely.</li>
+<li><strong>How it works</strong>: Like asking someone to find a book in a library without telling them what book you’re looking for.</li>
+<li><strong>Privacy benefit</strong>: Get the information you need while keeping your interests private.</li>
+<li><strong>Extended Example</strong>: Imagine a private investigator wanting to search through a private database for criminal records. Using homomorphic encryption, the search could be conducted without revealing which names or records were queried, ensuring privacy for both the investigator and individuals in the database.</li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="blockchain-technology" class="level2">
+<h2 class="anchored" data-anchor-id="blockchain-technology">3. Blockchain Technology</h2>
+<section id="what-is-blockchain-in-simple-terms" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-blockchain-in-simple-terms">What Is Blockchain in Simple Terms?</h3>
+<p>Think of blockchain as a digital ledger that everyone can see, like a giant spreadsheet that tracks transactions. The challenge is: how do you keep certain details private on this public ledger? It’s like wanting to tell people you bought something without revealing how much you paid for it.</p>
+<p>Blockchain technology is known for its transparency and security, which is useful for verifying transactions. However, this transparency also creates a privacy challenge. Homomorphic encryption helps make blockchain more private while keeping its benefits of being transparent and secure. It’s like being able to prove you paid for something without showing anyone your credit card details.</p>
+<p>Homomorphic encryption can solve many privacy issues within blockchain systems. For example, private information such as transaction amounts or user identities can remain hidden while still allowing verification by the entire network. This makes blockchain a powerful yet private solution for many use cases.</p>
+</section>
+<section id="real-world-examples-2" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-examples-2">Real-World Examples</h3>
+<ul>
+<li><strong>Private Transactions</strong>
+<ul>
+<li><strong>What it does</strong>: Keeps transaction details hidden while proving they’re valid.</li>
+<li><strong>How it works</strong>: Like paying for something with an envelope of money that proves you paid enough without showing how much is inside.</li>
+<li><strong>Privacy benefit</strong>: Others can verify the transaction without seeing the amounts.</li>
+<li><strong>Extended Example</strong>: In cryptocurrency networks, users can make purchases with homomorphic encryption ensuring that the exact transaction amount remains private, while validators confirm that the transaction is valid without revealing sensitive details.</li>
+</ul></li>
+<li><strong>Smart Contracts</strong>
+<ul>
+<li><strong>What it does</strong>: Automatically executes agreements while keeping details private.</li>
+<li><strong>How it works</strong>: Similar to having a vending machine that knows you have enough money without seeing your wallet.</li>
+<li><strong>Privacy benefit</strong>: Contracts can run automatically while keeping sensitive information secret.</li>
+<li><strong>Extended Example</strong>: Imagine a real estate transaction conducted through a smart contract. Homomorphic encryption allows the contract terms, such as the payment amount and buyer/seller identities, to remain confidential while still executing securely on the blockchain.</li>
+</ul></li>
+</ul>
+</section>
+<section id="combining-cryptographic-techniques-for-enhanced-privacy" class="level3">
+<h3 class="anchored" data-anchor-id="combining-cryptographic-techniques-for-enhanced-privacy">Combining Cryptographic Techniques for Enhanced Privacy</h3>
+<p>Homomorphic encryption can be combined with other cryptographic tools like zero-knowledge proofs (ZKPs) to enhance privacy while maintaining the transparency that blockchain technology requires. These techniques work together to ensure that data can be verified without being fully revealed.</p>
+<section id="real-world-examples-of-combining-cryptographic-techniques" class="level4">
+<h4 class="anchored" data-anchor-id="real-world-examples-of-combining-cryptographic-techniques">Real-World Examples of Combining Cryptographic Techniques</h4>
+<ul>
+<li><strong>Private Transaction Verification</strong>
+<ul>
+<li><strong>What it does</strong>: ZKPs combined with HE allow transactions to be verified without revealing the amounts or the parties involved.</li>
+<li><strong>How it works</strong>: A user can prove they have enough funds to complete a transaction by using ZKPs, while the transaction itself remains encrypted with homomorphic encryption.</li>
+<li><strong>Privacy benefit</strong>: The transaction can be verified by the network without exposing any sensitive information.</li>
+<li><strong>Extended Example</strong>: In a decentralized lending platform, users can prove their creditworthiness by using ZKPs and homomorphic encryption, ensuring that their financial history and transactions remain private while still demonstrating their ability to repay loans.</li>
+</ul></li>
+<li><strong>Voting in DAOs (Decentralized Autonomous Organizations)</strong>
+<ul>
+<li><strong>What it does</strong>: Allows members of a DAO to vote on proposals without revealing individual votes.</li>
+<li><strong>How it works</strong>: Homomorphic encryption is used to encrypt each member’s vote, while ZKPs are used to prove that each vote is valid without revealing how the member voted.</li>
+<li><strong>Privacy benefit</strong>: Members can participate in the decision-making process privately, while the final tally remains verifiable by everyone.</li>
+<li><strong>Extended Example</strong>: In a large-scale DAO, members could vote on the allocation of funds or new projects. Homomorphic encryption and ZKPs ensure that the votes are counted correctly while maintaining voter anonymity.</li>
+</ul></li>
+<li><strong>Identity Verification</strong>
+<ul>
+<li><strong>What it does</strong>: Verifies the identity of users in a blockchain system without revealing any additional personal information.</li>
+<li><strong>How it works</strong>: ZKPs can be used to prove that a user has a valid credential (such as age verification) while HE ensures that the verification process itself remains secure and private.</li>
+<li><strong>Privacy benefit</strong>: Users can prove their identity or specific attributes without revealing unnecessary details about themselves.</li>
+<li><strong>Extended Example</strong>: In a decentralized ride-sharing app, users could prove they are licensed drivers without revealing their identity or personal information, maintaining their privacy while accessing the platform.</li>
+</ul></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="secure-data-operations" class="level2">
+<h2 class="anchored" data-anchor-id="secure-data-operations">4. Secure Data Operations</h2>
+<section id="what-are-secure-data-operations" class="level3">
+<h3 class="anchored" data-anchor-id="what-are-secure-data-operations">What Are Secure Data Operations?</h3>
+<p>Secure data operations involve different organizations working together with their data while keeping their individual information private. Imagine several companies wanting to know if they pay similar salaries without actually telling each other their exact numbers.</p>
+<p>Secure data operations combine homomorphic encryption with other privacy-preserving techniques like secure multiparty computation (SMC) and differential privacy. This allows different parties to collaborate, analyze data, and draw meaningful insights without revealing sensitive details. Homomorphic encryption plays a vital role by ensuring data remains encrypted throughout the entire process.</p>
+<p>Homomorphic encryption also enables new opportunities for collaboration in industries like finance, healthcare, and government, where maintaining data privacy is essential. Companies can jointly conduct market analysis, healthcare providers can collaborate on treatment research, and government agencies can securely analyze crime statistics without compromising individual privacy.</p>
+</section>
+<section id="real-world-examples-3" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-examples-3">Real-World Examples</h3>
+<ul>
+<li><strong>Joint Research Projects</strong>
+<ul>
+<li><strong>What it does</strong>: Lets multiple organizations analyze combined data while keeping individual data private.</li>
+<li><strong>How it works</strong>: Like several restaurants comparing their total sales without revealing individual restaurant earnings.</li>
+<li><strong>Privacy benefit</strong>: Get insights from combined data while keeping individual information secret.</li>
+<li><strong>Extended Example</strong>: Universities across different countries could share encrypted research data to identify global health trends, such as the spread of a disease, while ensuring that the data of individual participants is kept confidential.</li>
+</ul></li>
+<li><strong>Private Voting Systems</strong>
+<ul>
+<li><strong>What it does</strong>: Counts votes accurately while keeping individual votes secret.</li>
+<li><strong>How it works</strong>: Similar to putting marbles in a jar—you can count the total without knowing who put which marble in.</li>
+<li><strong>Privacy benefit</strong>: Everyone can verify the result while keeping their vote private.</li>
+<li><strong>Extended Example</strong>: In local community elections, homomorphic encryption can be used to securely tally votes while ensuring that no one knows who voted for which candidate, maintaining voter privacy.</li>
+</ul></li>
+<li><strong>Financial Analysis</strong>
+<ul>
+<li><strong>What it does</strong>: Analyzes financial patterns across multiple banks without exposing customer data.</li>
+<li><strong>How it works</strong>: Like comparing average spending patterns without seeing individual transactions.</li>
+<li><strong>Privacy benefit</strong>: Spot important trends while protecting customer privacy.</li>
+<li><strong>Extended Example</strong>: Banks across different regions could collaborate to identify trends in fraudulent activities while ensuring that individual account details remain private and encrypted throughout the process.</li>
+</ul></li>
+<li><strong>Secure Auctions</strong>
+<ul>
+<li><strong>What it does</strong>: Runs auctions where even the auctioneer can’t see the bids until the end.</li>
+<li><strong>How it works</strong>: Like everyone putting their bids in sealed envelopes that only open when determining the winner.</li>
+<li><strong>Privacy benefit</strong>: Fair auction results without exposing individual bids.</li>
+<li><strong>Extended Example</strong>: In a government auction for land or resources, homomorphic encryption ensures that each bid is kept secret, leveling the playing field for all bidders while maintaining transparency during the final tally.</li>
+</ul></li>
+<li><strong>Collaborative Data Analysis</strong>
+<ul>
+<li><strong>What it does</strong>: Allows organizations to work together on data analytics projects without revealing their sensitive data.</li>
+<li><strong>How it works</strong>: Homomorphic encryption keeps the data encrypted while computations are performed, allowing everyone to benefit from the analysis.</li>
+<li><strong>Privacy benefit</strong>: Secure cooperation without exposing individual datasets.</li>
+<li><strong>Extended Example</strong>: Pharmaceutical companies could collaborate to analyze encrypted clinical trial data from multiple sources to improve drug development without ever seeing one another’s raw data.</li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="private-information-retrieval" class="level2">
+<h2 class="anchored" data-anchor-id="private-information-retrieval">5. Private Information Retrieval</h2>
+<section id="what-is-private-information-retrieval" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-private-information-retrieval">What Is Private Information Retrieval?</h3>
+<p>Private Information Retrieval (PIR) is a process that allows a client to get data from a large database held by a server without the server knowing which specific piece of data was requested. Imagine the server is holding a massive collection, like the US patent database, and the client wants to retrieve one particular record without revealing which one it is. Homomorphic encryption allows the client to encrypt the index of the record they want to retrieve. The server can then perform a calculation on the encrypted index to get the encrypted result, which is sent back to the client. The client can then decrypt this result to obtain the plaintext record they were looking for.</p>
+<p>PIR is useful in situations where privacy is crucial, such as when accessing large public databases or confidential corporate data. It allows users to perform queries without giving away their interests or compromising privacy.</p>
+</section>
+<section id="real-world-examples-4" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-examples-4">Real-World Examples</h3>
+<ul>
+<li><strong>Patent Database Retrieval</strong>
+<ul>
+<li><strong>What it does</strong>: Lets a client request a specific record from a large patent database without revealing which one they want.</li>
+<li><strong>How it works</strong>: The client sends an encrypted index of the record they want. The server evaluates the function on the encrypted index and returns the encrypted result.</li>
+<li><strong>Privacy benefit</strong>: The server never learns which specific record the client is interested in.</li>
+<li><strong>Extended Example</strong>: Researchers could use PIR to access specific patents in the US patent database to gather information for a project, without the patent office ever knowing which specific patents were accessed.</li>
+</ul></li>
+<li><strong>Medical Information Retrieval</strong>
+<ul>
+<li><strong>What it does</strong>: Allows a patient to retrieve a specific medical record from a hospital database without the hospital knowing which record was requested.</li>
+<li><strong>How it works</strong>: The patient encrypts the index of the record they want, and the hospital processes this encrypted request to return the corresponding encrypted medical record.</li>
+<li><strong>Privacy benefit</strong>: The hospital never learns which specific medical information the patient is interested in.</li>
+<li><strong>Extended Example</strong>: A patient undergoing treatment for a sensitive condition could use PIR to retrieve specific medical records without revealing their interest to the hospital staff, ensuring full confidentiality of their medical inquiries.</li>
+</ul></li>
+<li><strong>Corporate Data Retrieval</strong>
+<ul>
+<li><strong>What it does</strong>: Allows employees of a company to retrieve records from a confidential database without revealing which record they are looking for.</li>
+<li><strong>How it works</strong>: The employee sends an encrypted query to the server, which processes it and returns the encrypted result.</li>
+<li><strong>Privacy benefit</strong>: The server cannot determine which specific record was accessed.</li>
+<li><strong>Extended Example</strong>: An employee working on a confidential project could retrieve specific internal documents without revealing the nature of their query to the IT team managing the database, ensuring that confidential research remains secure.</li>
+</ul></li>
+</ul>
 
 
+</section>
+</section>
 </section>
 
 <a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
