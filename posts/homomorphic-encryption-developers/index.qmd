@@ -49,11 +49,85 @@ Even when data is encrypted and stored in the cloud, there are still some risks:
 
 HE is like a magic trick that lets you do math on data without ever actually seeing the data. Imagine helping someone count their money without them ever opening their wallet.
 
-Let’s say a client has some data $x$, and a server has a function $f$. The client wants to know the answer to $f(x)$:
+Let’s say a client has some data $m$, and a server has a function $f$. The client wants to know the answer to $f(m)$:
 
-- Traditional approach: The client has to share $x$ with the server.
+- Traditional approach: The client has to share $m$ with the server.
 
-- HE approach: The client sends an encrypted version of $x$ to the server, and the server does the calculations on the encrypted data.
+```{mermaid}
+%%| label: fig-traditional-approach-diagram
+%%| fig-cap: A simple client-server scenario for the traditional approach, where C is Client and S is Server
+%%| fig-alt: A simple client-server scenario for the traditional approach, where C is Client and S is Server
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart TD
+  subgraph Client["Client"]
+    C1[["Step 1: Prepare private data $$\ m$$"]]
+    C2[/"Step 2: Send $$\ m$$ to Server"/]
+    C3[["Step 5: Receive $$\ f(m)$$ from Server"]]
+  end
+  subgraph Server["Server"]
+    S1[["Step 3: Perform computation $$\ f(m)$$"]]
+    S2[/"Step 4: Send $$\ f(m)$$ back to Client"/]
+  end
+  C1 --> C2
+  C2 --> S1
+  S1 --> S2
+  S2 --> C3
+
+  style C1 stroke:#000000
+  style C2 stroke:#000000
+  style C3 stroke:#000000
+  style S1 stroke:#000000
+  style S2 stroke:#000000
+  style Client stroke:#00C853,fill:#00C853,color:#000000
+  style Server stroke:#FFD600,fill:#FFD600,color:#000000
+  linkStyle 0 stroke:#000000,fill:none
+  linkStyle 1 stroke:#000000,fill:none
+  linkStyle 2 stroke:#000000,fill:none
+  linkStyle 3 stroke:#000000
+```
+
+- HE approach: The client sends an encrypted version of $m$ to the server, and the server does the calculations on the encrypted data.
+
+```{mermaid}
+%%| label: fig-simple-he-diagram
+%%| fig-cap: A simple client-server HE scenario, where C is Client and S is Server
+%%| fig-alt: A simple client-server HE scenario, where C is Client and S is Server
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart TD
+  subgraph Client["Client"]
+    C1[["Step 1: Encrypt private data $$\ Enc(m)$$"]]
+    C2[/"Step 2: Send $$\ Enc(m)\ $$ to Server"/]
+    C3[/"Step 3: Send query $$\ f()\ $$ to Server"/]
+    C4[["Step 6: Compute $$\ Dec(Enc(f(m)))=f(m)\ $$"]]
+  end
+  subgraph Server["Server"]
+    S1[["Step 4: Perform $$\ Eval(f, Enc(m))=Enc(f(m))\ $$"]]
+    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"\]
+  end
+  C1 --> C2
+  C2 --> C3
+  C3 --> S1
+  S1 --> S2
+  S2 --> C4
+
+  style C1 stroke:#000000
+  style C2 stroke:#000000
+  style C3 stroke:#000000
+  style C4 stroke:#000000
+  style S1 stroke:#000000
+  style S2 stroke:#000000
+  style Client stroke:#00C853,fill:#00C853,color:#000000
+  style Server stroke:#FFD600,fill:#FFD600,color:#000000
+  linkStyle 0 stroke:#000000,fill:none
+  linkStyle 1 stroke:#000000,fill:none
+  linkStyle 2 stroke:#000000,fill:none
+  linkStyle 3 stroke:#000000,fill:none
+  linkStyle 4 stroke:#000000
+```
+
+### Semantic security
 
 How can you do calculations on encrypted data? This works because of something called **semantic security**. Here’s how it works:
 
@@ -67,7 +141,7 @@ It’s like putting your data in a different locked box every time—each box lo
 
 This "magic trick" makes HE extremely powerful for situations where privacy is crucial. It allows sensitive information to be processed by remote servers without the risk of exposing the actual data. Imagine if healthcare providers could analyze patient data to find patterns for research, all while keeping every individual’s data private. HE could enable exactly that.
 
-### How Does HE Work?
+### How does HE work?
 
 In traditional encryption, encrypted data can’t be processed in any useful way. It’s like trying to add two numbers written in totally different languages.
 
@@ -299,7 +373,7 @@ Below, we outline some of the challenges and constraints associated with HE, pro
 1. Encrypted output: While HE allows for arbitrary computations on encrypted data, the outcome of these computations is still encrypted. This means that the result is only useful to someone with the secret key to decrypt it. For example, if a cloud server performs a complex computation on encrypted health records, the resulting encrypted output cannot be interpreted without the corresponding decryption key. This presents a challenge for practical implementations, as it requires data owners to perform decryption locally to understand the results. In contrast, other techniques like obfuscation and functional encryption enable certain types of encrypted computations where the output is directly accessible in plaintext. These techniques can be more practical in situations where immediate interpretation of results is required.
   Another drawback of the encrypted output is the lack of flexibility for collaboration. In many use cases, organizations need to share the results of computations with multiple stakeholders who may not have access to the decryption key. This means that HE, by default, limits the ease of sharing processed information unless additional mechanisms for key distribution are implemented. As a result, using HE often necessitates careful planning around how decryption keys are managed and shared, which can introduce additional security concerns. Managing key distribution securely while ensuring accessibility is an ongoing area of research in the field of cryptography.
 
-2- Single key requirement: To perform computations on encrypted data, all inputs must be encrypted using the same key. This constraint limits scenarios where data from multiple sources, encrypted with different keys, needs to be jointly processed. For instance, in a scenario where multiple healthcare providers wish to collaborate on a dataset of encrypted patient records, each provider's data must be encrypted with the same key for joint analysis to be possible. This presents a significant barrier to collaboration, as coordinating the use of a single encryption key across multiple entities introduces security and logistical challenges.
+2. Single key requirement: To perform computations on encrypted data, all inputs must be encrypted using the same key. This constraint limits scenarios where data from multiple sources, encrypted with different keys, needs to be jointly processed. For instance, in a scenario where multiple healthcare providers wish to collaborate on a dataset of encrypted patient records, each provider's data must be encrypted with the same key for joint analysis to be possible. This presents a significant barrier to collaboration, as coordinating the use of a single encryption key across multiple entities introduces security and logistical challenges.
   Addressing this limitation often requires the use of advanced key management techniques or trusted intermediaries, which can complicate the overall system architecture. Techniques like secure multiparty computation (SMC) can sometimes be used alongside HE to facilitate joint computations without sharing a common key, but these solutions tend to increase computational overhead and complexity. Moreover, the need for a single key also raises concerns about key compromise—if the key is exposed, all encrypted data becomes vulnerable, making key security a critical aspect of using HE in real-world applications.
   Researchers are actively exploring methods to allow computations on data encrypted with different keys, such as through key homomorphism or the use of proxy re-encryption. These approaches aim to enable interoperability between datasets encrypted with different keys, thereby enhancing the practicality of HE for collaborative applications. However, these methods are still in their experimental stages and are not yet widely adopted in mainstream cryptographic systems.
 
@@ -326,45 +400,120 @@ In addition to the limitations outlined above, HE faces several other challenges
 
 ## Basics
 
+### Homomorphisms
+
+Homomorphisms are an important concept in abstract algebra, referring to a function between two algebraic structures that preserves the operations of those structures. Simply put, if we have two sets, each with their own operations, a homomorphism ensures that operations performed on elements of the first set correspond directly to the operations on their mapped elements in the second set.
+
+Consider two sets of numbers, Set A and Set B, where Set B is derived from Set A using a homomorphism function. If we take two numbers, 3 and 5, from Set A and add them to get 8, the homomorphism would ensure that their images in Set B, say 6 and 10, also add up to give the corresponding result, which is 16.
+
+In formal terms, let Set A be represented by elements $a_1, a_2 \in A$, and Set B by their corresponding images under the homomorphism $f: A 	o B$. If $a_1 = 3$ and $a_2 = 5$, then:
+
+$$
+a_1 + a_2 = 8
+$$
+
+Applying the homomorphism $f$:
+
+$$
+f(a_1) = 6, \quad f(a_2) = 10
+$$
+
+Thus:
+
+$$
+f(a_1 + a_2) = f(a_1) + f(a_2) = 6 + 10 = 16
+$$
+
+This demonstrates how the homomorphism preserves the operation between the sets.
+
+### Group properties in homomorphism
+In abstract algebra, a set $S$ and an operation "$\star$" that combines any two elements $a$ and $b$ to form another element $a \star b$ qualifies as a group if the following properties hold:
+
+- Closure: For all $a, b \in S$, the result of $a \star b$ is also in $S$. Example: Consider the set of integers $\mathbb{Z}$ under addition $+$. If $a = 3$ and $b = 5$, then $a + b = 8 \in \mathbb{Z}$. The result is also an integer, demonstrating closure.
+
+- Associativity: For all $a, b, c \in S$, $(a \star b) \star c = a \star (b \star c)$. Example: In the set of integers $$(\mathbb{Z}, +)$, addition is associative. For any integers $a = 3$, $b = 5$, and $c = 2$, we have:
+
+  $$
+  (a + b) + c = (3 + 5) + 2 = 8 + 2 = 10
+  $$
+
+  $$
+  a + (b + c) = 3 + (5 + 2) = 3 + 7 = 10
+  $$
+
+  Thus, $(a + b) + c = a + (b + c)$, which shows that addition is associative.
+
+- Identity Element: There exists an element $e \in S$ such that $e \star a = a \star e = a$ for all $a \in S$.
+  
+  *Example*: In $(\mathbb{Z}, +)$, the identity element is $0$, as $0 + a = a + 0 = a$ for any integer $a$. For instance, $0 + 5 = 5$ and $5 + 0 = 5$.
+
+- Inverse Element: For each element $a \in S$, there exists an element $b \in S$ such that $a \star b = b \star a = e$. Example: In $(\mathbb{Z}, +)$, the inverse of an element $a$ is $-a$, since $a + (-a) = (-a) + a = 0$, where $0$ is the identity element. For example, the inverse of $5$ is $-5$, because:
+
+  $$
+  5 + (-5) = 0
+  $$
+
+These properties ensure consistency and predictability in operations involving homomorphisms, making them a crucial aspect of algebraic structures.
+
+## HE scheme
+
+An encryption scheme is called homomorphic over an operation $\star$ if it supports the following property:
+
+$$
+	ext{Enc}(m_1) \star 	ext{Enc}(m_2) = 	ext{Enc}(m_1 \star m_2), \quad orall m_1, m_2 \in M
+$$
+
+where $Enc$ is the encryption algorithm, and $M$ is the set of all possible messages. This property means that performing the operation on encrypted data yields the same result as performing the operation on the plaintexts and then encrypting the outcome.
+
+HE leverages the concept of homomorphism, as previously defined from abstract algebra, to allow operations on ciphertexts in a way that preserves the relationships between the original plaintexts. In a HE scheme, a function that operates on encrypted data will yield a result that, when decrypted, matches the result of the same function applied to the original plaintext data.
+
+### Functional completeness
+
+To create an encryption scheme that allows for the homomorphic evaluation of arbitrary functions, it is sufficient to support only addition and multiplication operations. Addition and multiplication form a functionally complete set over finite fields, meaning that any function, including Boolean functions, can be represented using combinations of these operations.
+
+For example, any Boolean circuit can be expressed using only XOR (representing addition) and AND (representing multiplication) gates. Therefore, an encryption scheme that supports homomorphic addition and multiplication is capable of evaluating any Boolean circuit on encrypted data, making it fully homomorphic.
+
+### Symmetric vs. asymmetric HE
+
+A HE scheme can be designed to use either the same key for both encryption and decryption (symmetric encryption) or different keys for encryption and decryption (asymmetric encryption).
+
+- Symmetric HE: In this case, the same secret key is used for both encryption and decryption. This approach is simpler but may have practical limitations, especially in multi-user environments.
+
+- Asymmetric HE: Here, a public key is used for encryption, and a private key is used for decryption. This is more suitable for scenarios where data needs to be securely shared and processed by third parties, such as cloud computing.
+
+### Key Components of HE
+
+An HE scheme is primarily characterized by four operations: KeyGen, Enc, Dec, and Eval:
+
+1. KeyGen: Generates a secret and public key pair for the asymmetric version of HE or a single key for the symmetric version. Key generation is crucial for establishing secure communication.
+
+2. Enc (Encryption): Encrypts the plaintext messages. The encryption process ensures that sensitive data is transformed into ciphertext, which is unintelligible without the appropriate decryption key.
+
+3. Dec (Decryption): Decrypts the ciphertext to recover the original message. Decryption ensures that only authorized users with the correct key can access the plaintext.
+
+4. Eval (Evaluation): Takes ciphertexts as input and outputs a ciphertext corresponding to a function applied to the original plaintexts. The Eval function is the distinguishing feature of HE, as it allows computations to be performed directly on encrypted data without exposing the underlying plaintext. Eval performs the function $f$ over the ciphertexts $(c_1, c_2)$ without revealing the original messages $(m_1, m_2)$. The most crucial aspect of HE is that the format of the ciphertext must be preserved after evaluation to ensure correct decryption, and the size of the ciphertext should ideally remain constant to support an unlimited number of operations efficiently.
+
+### Capabilities of Different HE Schemes
+
+- PHE Schemes: Partially HE schemes support the Eval function for only one operation—either addition or multiplication. They are less versatile but often computationally efficient for specific tasks. Examples include:
+
+  - RSA: Supports multiplication as the homomorphic operation.
+  - Paillier: Supports addition as the homomorphic operation.
+  - ElGamal: Supports multiplication as the homomorphic operation.
+  - Goldwasser-Micali: Supports XOR as the homomorphic operation.
+  - Okamoto-Uchiyama: Supports addition as the homomorphic operation.
+
+- SWHE Schemes: Somewhat HE schemes support a limited number of operations or can evaluate certain restricted circuits (e.g., branching programs). The accumulation of noise in ciphertexts restricts the depth of evaluation they can perform.
+
+- FHE Schemes: Fully HE schemes support the evaluation of arbitrary functions (e.g., searching, sorting, max, min, etc.) for an unlimited number of times over ciphertexts. This capability allows complex functions to be evaluated securely, making FHE a powerful tool in privacy-preserving computations.
 
 
-```{mermaid}
-%%| label: fig-simple-he-diagram
-%%| fig-cap: A simple client-server HE scenario, where C is Client and S is Server
-%%| fig-alt: A simple client-server HE scenario, where C is Client and S is Server
-%%| fig-align: center
-%%{init: {"theme": "neo", "look": "handDrawn"}}%%
-flowchart TD
-  subgraph Client["Client"]
-    C1[["Step 1: Encrypt private data $$\ Enc(m)$$"]]
-    C2[/"Step 2: Send $$\ Enc(m)\ $$ to Server"/]
-    C3[/"Step 3: Send query $$\ f()\ $$ to Server"/]
-    C4[["Step 6: Compute $$\ Dec(Enc(f(m)))=f(m)\ $$"]]
-  end
-  subgraph Server["Server"]
-    S1[["Step 4: Perform $$\ Eval(f, Enc(m))=Enc(f(m))\ $$"]]
-    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"\]
-  end
-  C1 --> C2
-  C2 --> C3
-  C3 --> S1
-  S1 --> S2
-  S2 --> C4
 
-  style C1 stroke:#000000
-  style C2 stroke:#000000
-  style C3 stroke:#000000
-  style C4 stroke:#000000
-  style S1 stroke:#000000
-  style S2 stroke:#000000
-  style Client stroke:#00C853,fill:#00C853,color:#000000
-  style Server stroke:#FFD600,fill:#FFD600,color:#000000
-  linkStyle 0 stroke:#000000,fill:none
-  linkStyle 1 stroke:#000000,fill:none
-  linkStyle 2 stroke:#000000,fill:none
-  linkStyle 3 stroke:#000000,fill:none
-  linkStyle 4 stroke:#000000
-```
+
+
+
+
+
 
 
 
