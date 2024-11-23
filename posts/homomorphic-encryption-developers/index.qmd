@@ -8,7 +8,7 @@ format:
 description: "As data privacy becomes a critical concern in the digital era, cryptographic innovations such as Homomorphic Encryption are paving the way for secure and private data processing. HE allows computations on encrypted data without decryption, enabling privacy-preserving operations across diverse fields like healthcare, finance, cloud computing, and blockchain. This article explores the principles of HE, its different flavors, and its integration with complementary techniques like Differential Privacy, Secure Multiparty Computation, and Zero-Knowledge Proofs. While it holds transformative potential, challenges such as computational overheads, ciphertext expansion, and scalability hinder its widespread adoption. By addressing these barriers and advancing cryptographic research, Homomorphic Encryption can unlock unprecedented opportunities for secure data collaboration and innovation, safeguarding privacy without compromising utility."
 author: "Antonio Montano"
 date: "2022-06-23"
-date-modified: "2022-06-24"
+date-modified: "2024-03-24"
 categories: [cryptography, essay, Python, 🇬🇧]
 image: "homomorphic-encryption.webp"
 comments: 
@@ -505,15 +505,17 @@ In addition to the limitations outlined above, HE faces several other challenges
 
 6. Scalability issues: HE can be difficult to scale, especially for applications requiring large-scale data processing, such as big data analytics or machine learning. The computational overhead and increased data sizes make scaling HE to handle vast amounts of information a considerable challenge. Researchers are exploring the use of hybrid cryptographic solutions, where HE is combined with other privacy-preserving techniques like DP and SMC, to achieve a balance between scalability and privacy. These hybrid approaches can potentially make HE more viable for large-scale, real-time applications by distributing the computational burden and reducing latency.
 
-## Basics
+## Mathematical basics
 
 ### Homomorphisms
 
 Homomorphisms are an important concept in abstract algebra, referring to a function between two algebraic structures that preserves the operations of those structures. Simply put, if we have two sets, each with their own operations, a homomorphism ensures that operations performed on elements of the first set correspond directly to the operations on their mapped elements in the second set.
 
-Consider two sets of numbers, Set A and Set B, where Set B is derived from Set A using a homomorphism function. If we take two numbers, 3 and 5, from Set A and add them to get 8, the homomorphism would ensure that their images in Set B, say 6 and 10, also add up to give the corresponding result, which is 16.
+Let's break this down with a simple analogy. Imagine we have two different languages, but both languages describe similar actions. A homomorphism is like a translation between these languages that ensures the meaning of sentences is preserved. If you take an action in the first language, the translation will represent the same action in the second language. The structure remains consistent.
 
-In formal terms, let Set A be represented by elements $a_1, a_2 \in A$, and Set B by their corresponding images under the homomorphism $f: A 	o B$. If $a_1 = 3$ and $a_2 = 5$, then:
+Consider two sets of numbers, $A$ and $B$, where $B$ is derived from $A$ using a homomorphism function. If we take two numbers, $3$ and $5$, from $A$ and add them to get $8$, the homomorphism ensures that their images in $B$, $6$ and $10$, also add up to give the corresponding result, which is $16$.
+
+In formal terms, let $A$ be represented by elements $a_1, a_2 \in A$, and $B$ by their corresponding images under the homomorphism $f: A 	o B$. If $a_1 = 3$ and $a_2 = 5$, then:
 
 $$
 a_1 + a_2 = 8
@@ -534,6 +536,7 @@ $$
 This demonstrates how the homomorphism preserves the operation between the sets.
 
 ### Group properties in homomorphism
+
 In abstract algebra, a set $S$ and an operation "$\star$" that combines any two elements $a$ and $b$ to form another element $a \star b$ qualifies as a group if the following properties hold:
 
 - Closure: For all $a, b \in S$, the result of $a \star b$ is also in $S$. Example: Consider the set of integers $\mathbb{Z}$ under addition $+$. If $a = 3$ and $b = 5$, then $a + b = 8 \in \mathbb{Z}$. The result is also an integer, demonstrating closure.
@@ -550,11 +553,9 @@ In abstract algebra, a set $S$ and an operation "$\star$" that combines any two 
 
   Thus, $(a + b) + c = a + (b + c)$, which shows that addition is associative.
 
-- Identity Element: There exists an element $e \in S$ such that $e \star a = a \star e = a$ for all $a \in S$.
-  
-  *Example*: In $(\mathbb{Z}, +)$, the identity element is $0$, as $0 + a = a + 0 = a$ for any integer $a$. For instance, $0 + 5 = 5$ and $5 + 0 = 5$.
+- Identity element: There exists an element $e \in S$ such that $e \star a = a \star e = a$ for all $a \in S$. Example: In $(\mathbb{Z}, +)$, the identity element is $0$, as $0 + a = a + 0 = a$ for any integer $a$. For instance, $0 + 5 = 5$ and $5 + 0 = 5$.
 
-- Inverse Element: For each element $a \in S$, there exists an element $b \in S$ such that $a \star b = b \star a = e$. Example: In $(\mathbb{Z}, +)$, the inverse of an element $a$ is $-a$, since $a + (-a) = (-a) + a = 0$, where $0$ is the identity element. For example, the inverse of $5$ is $-5$, because:
+- Inverse element: For each element $a \in S$, there exists an element $b \in S$ such that $a \star b = b \star a = e$. Example: In $(\mathbb{Z}, +)$, the inverse of an element $a$ is $-a$, since $a + (-a) = (-a) + a = 0$, where $0$ is the identity element. For example, the inverse of $5$ is $-5$, because:
 
   $$
   5 + (-5) = 0
@@ -562,23 +563,75 @@ In abstract algebra, a set $S$ and an operation "$\star$" that combines any two 
 
 These properties ensure consistency and predictability in operations involving homomorphisms, making them a crucial aspect of algebraic structures.
 
-## HE scheme
+### HE scheme
 
-An encryption scheme is called homomorphic over an operation $\star$ if it supports the following property:
+An encryption scheme is called **homomorphic** over an operation $\star$ if it supports the following property:
 
 $$
-	ext{Enc}(m_1) \star 	ext{Enc}(m_2) = 	ext{Enc}(m_1 \star m_2), \quad orall m_1, m_2 \in M
+Enc(m_1) \star Enc(m_2) = Enc(m_1 \star m_2), \quad \forall m_1, m_2 \in M
 $$
 
 where $Enc$ is the encryption algorithm, and $M$ is the set of all possible messages. This property means that performing the operation on encrypted data yields the same result as performing the operation on the plaintexts and then encrypting the outcome.
 
-HE leverages the concept of homomorphism, as previously defined from abstract algebra, to allow operations on ciphertexts in a way that preserves the relationships between the original plaintexts. In a HE scheme, a function that operates on encrypted data will yield a result that, when decrypted, matches the result of the same function applied to the original plaintext data.
+Let's make this more concrete with a simple example. Suppose we have two numbers, $m_1 = 5$ and $m_2 = 3$, and we want to add them, that is $\star$ represents addition. Normally, we would calculate $5 + 3 = 8$. In a homomorphic encryption scheme, instead of adding $5$ and $3$ directly, we first encrypt them:
+
+$$
+Enc(5), \quad Enc(3)
+$$
+
+If the encryption scheme is homomorphic over addition, we can add these encrypted values directly:
+
+$$
+Enc(5) + Enc(3) = Enc(8)
+$$
+
+After computing on the encrypted values, we can decrypt the result to get the sum:
+
+$$
+Dec(Enc(8)) = 8
+$$
 
 ### Functional completeness
 
-To create an encryption scheme that allows for the homomorphic evaluation of arbitrary functions, it is sufficient to support only addition and multiplication operations. Addition and multiplication form a functionally complete set over finite fields, meaning that any function, including Boolean functions, can be represented using combinations of these operations.
+Imagine you have a secret message inside a locked box, and you want someone else to be able to perform some calculations on it without unlocking the box. Homomorphic encryption allows this kind of magic. But how much can they really do with the box still locked?
 
-For example, any Boolean circuit can be expressed using only XOR (representing addition) and AND (representing multiplication) gates. Therefore, an encryption scheme that supports homomorphic addition and multiplication is capable of evaluating any Boolean circuit on encrypted data, making it fully homomorphic.
+Functional completeness is a fancy way of saying that if we can perform just two basic kinds of calculations on our locked message, then we can actually compute *anything*. These two basic calculations are **addition** and **multiplication**.
+
+Think of these as building blocks, like Lego pieces. With just addition and multiplication, you can build any mathematical function you want. It's a bit like how you only need a few types of Lego pieces to build a spaceship, a car, or even a whole castle. Addition and multiplication are enough to recreate every possible calculation.
+
+In fact, even in the world of computers and logic, every complicated decision or process can be broken down into combinations of simpler pieces. For example, **XOR** (which acts like addition without carrying over numbers) and **AND** (which acts like multiplication) are the Lego pieces of digital logic. If an encryption system allows you to perform these two operations, you can calculate any kind of logical operation on encrypted data—without ever seeing the original secret message.
+
+It is also worth noting that **NAND** or **NOR** gates alone can form a complete basis for Boolean logic. This means that, just like addition and multiplication, NAND or NOR are also sufficient to represent any Boolean function. This is an interesting parallel to the completeness of addition and multiplication in homomorphic encryption.
+
+This is why addition and multiplication are so powerful. They are enough to make the encryption scheme fully homomorphic, meaning it can perform *any* kind of computation on encrypted data, keeping the secrets locked up but still allowing useful work to be done. In simple terms, if you can add and multiply, you can do it all!
+
+#### Formal definition
+
+To formally understand functional completeness in homomorphic encryption, it's important to start with the algebraic foundations. In algebra, a **homomorphism** is a structure-preserving map between two algebraic structures, such as groups, rings, or fields. This means that the operations defined in one structure are preserved under the mapping to the other structure. In the context of homomorphic encryption, the homomorphism property allows operations to be carried out on encrypted data that mirror operations on the plaintext.
+
+The algebraic structures we are concerned with here are typically **groups**, **fields**, and **rings**. A group is a set equipped with an operation that satisfies closure, associativity, has an identity element, and where every element has an inverse. When we extend these properties to include additional operations like multiplication, we get **rings** and **fields**, which have more complex properties. In a **ring**, both addition and multiplication are defined, but not every element necessarily has a multiplicative inverse. In a **field**, every non-zero element has a multiplicative inverse, making it a richer structure.
+
+In homomorphic encryption, we work with these algebraic structures because they provide the foundation for well-defined operations on encrypted data. The key operations, namely addition** and multiplication, are defined over these structures in a way that ensures they behave predictably and securely. When we say that an encryption scheme is homomorphic, we mean that it allows addition and multiplication to be performed on encrypted values, and the result, when decrypted, matches what would have been obtained if the operations were performed directly on the plaintext values.
+
+Functional completeness, in this context, refers to the ability of an encryption scheme to support arbitrary computations on encrypted data by leveraging both addition and multiplication. These two operations are fundamental because they form a functionally complete set over finite fields. The latter distinction is important because functional completeness is well-defined in finite fields due to properties like closure under addition and multiplication. In infinite fields, however, the same guarantees may not hold, and constructing certain functions can be more challenging. The finite nature ensures that every combination of addition and multiplication stays within the set, which is a crucial requirement for functional completeness in encryption schemes. Moreover, since physical computations in digital systems are inherently carried out over finite fields, this limitation does not affect practical applications. As a matter of fact, digital systems use finite representations (such as bits), and operations are performed over well-defined finite fields like GF(2)[^GF2-homomorphic-encryption-developers]. 
+
+[^GF2-homomorphic-encryption-developers]: GF(2), or Galois Field of order 2, is a finite field consisting of just two elements: usually represented as 0 and 1. 
+
+To clarify the connection with the previous discussion, consider **Boolean circuits**, which are a model of computation used in computer science to represent logical functions. A Boolean circuit consists of logic gates such as XOR and AND, which can be seen as parallels to addition and multiplication, and can be combined to represent any possible computation, as supported by the concept of Turing completeness, which states that any computation can be performed given sufficient resources and the right set of operations, such as XOR and AND, which were previously introduced as parallels to addition and multiplication, and together are sufficient to represent any computable function. Similarly, in arithmetic circuits, addition and multiplication serve as the fundamental operations. By chaining these operations together, we can construct any polynomial function. The ability to construct polynomial functions is significant because, according to the **Stone-Weierstrass theorem**, any continuous function can be approximated by a polynomial to any desired degree of accuracy. This means that by constructing polynomial functions, we can represent a wide range of complex computations, including those needed for encryption and data processing. In the context of homomorphic encryption, this enables us to perform arbitrary functions on encrypted data, ultimately allowing powerful and flexible operations while preserving data privacy. In the context of homomorphic encryption, this means we can perform a wide variety of operations on encrypted data, ultimately allowing us to evaluate arbitrary functions while preserving data privacy. This explanation builds on the algebraic foundations discussed earlier, demonstrating how addition and multiplication form a functionally complete set for building complex computations, both in logical and arithmetic contexts.
+
+In homomorphic encryption, an encryption scheme is said to be **fully homomorphic** if it supports both addition and multiplication on encrypted data, without needing to decrypt it. This property allows for the evaluation of any arithmetic circuit or Boolean circuit on encrypted data, effectively enabling arbitrary computation while preserving the confidentiality of the original data.
+
+For instance, in the context of Boolean logic, XOR can be represented by addition (without carry), and AND can be represented by multiplication. These two gates are sufficient to build any Boolean function, making them functionally complete. Therefore, an encryption scheme that supports homomorphic addition and multiplication can evaluate any Boolean function, making it a fully homomorphic encryption (FHE) scheme.
+
+#### Relevance in HE 
+
+The concept of functional completeness is crucial because it determines the power and flexibility of a homomorphic encryption scheme. If an encryption scheme can only support addition or only multiplication, it is called **PHE**. Such schemes can perform useful but limited computations, like adding encrypted numbers together or multiplying them by a constant. However, they cannot handle more complex functions that require a combination of both operations.
+
+Examples of partially homomorphic encryption schemes include **RSA**, which is **multiplicatively homomorphic**, and **Paillier**, which is **additively homomorphic**. These schemes allow for specific types of computations on encrypted data but lack the flexibility of fully homomorphic encryption.
+
+A **FHE** scheme, on the other hand, allows for arbitrary computations on encrypted data. This means that any function, no matter how complex, can be evaluated while the data remains encrypted. This capability has significant implications for data privacy and security, especially in fields like cloud computing, where sensitive data can be processed by third-party servers without exposing the underlying information.
+
+
 
 ### Symmetric vs. asymmetric HE
 
