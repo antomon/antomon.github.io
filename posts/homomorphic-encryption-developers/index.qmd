@@ -23,9 +23,9 @@ Imagine you’re building a healthcare app that needs to analyze patient data st
 
 This is the main problem with traditional encryption systems like RSA[^RSA-homomorphic-encryption-developers] and AES[^AES-homomorphic-encryption-developers]. They protect data while it's stored or sent, but as soon as you need to use the data, you have to decrypt it. It’s like keeping money in a safe but needing to take it out every time you want to count it. This fundamental limitation makes it challenging to keep sensitive information secure throughout its lifecycle, especially as more applications rely on cloud computing, where the need for remote processing is common.
 
-[^RSA-homomorphic-encryption-developers]: The RSA algorithm is named after its inventors: Rivest, Shamir, and Adleman, who developed it in 1977. It is a widely-used asymmetric encryption method that relies on the computational difficulty of factoring large integers, enabling secure data transmission with a public key for encryption and a private key for decryption. See: Rivest, R. L., Shamir, A., & Adleman, L. (1978). **A method for obtaining digital signatures and public-key cryptosystems**. *Communications of the ACM, 21*(2), 120–126. [DOI](https://doi.org/10.1145/359340.359342)
+[^RSA-homomorphic-encryption-developers]: The RSA algorithm is named after its inventors: Rivest, Shamir, and Adleman, who developed it in 1977. It is a widely-used asymmetric encryption method that relies on the computational difficulty of factoring large integers, currently enabling secure data transmission with a public key for encryption and a private key for decryption. Quantum computers can use Shor’s algorithm to factor integers exponentially faster than classical algorithms, making RSA effectively insecure against quantum attacks. See: Rivest, R. L., Shamir, A., & Adleman, L. (1978). **A method for obtaining digital signatures and public-key cryptosystems**. *Communications of the ACM*, 21(2), 120–126. [DOI](https://doi.org/10.1145/359340.359342), and Shor, P. W. (1994). **Algorithms for quantum computation: Discrete logarithms and factoring**. *Proceedings of the 35th Annual Symposium on Foundations of Computer Science*, 124–134. IEEE. [DOI](https://doi.org/10.1109/SFCS.1994.365700)
 
-[^AES-homomorphic-encryption-developers]: The AES algorithm (Advanced Encryption Standard) is a symmetric encryption standard established by the National Institute of Standards and Technology (NIST) in 2001, based on the Rijndael cipher designed by Joan Daemen and Vincent Rijmen. It is widely used for secure data encryption due to its speed and robustness. See: Daemen, J., & Rijmen, V. (1998). **Advanced Encryption Standard (AES) (FIPS PUB 197)**. [Downlaod](https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf)
+[^AES-homomorphic-encryption-developers]: The AES algorithm (Advanced Encryption Standard) is a symmetric encryption standard established by the National Institute of Standards and Technology (NIST) in 2001, based on the Rijndael cipher designed by Joan Daemen and Vincent Rijmen. It is widely used for secure data encryption due to its speed and robustness. See: Daemen, J., & Rijmen, V. (1998). **Advanced Encryption Standard (AES) (FIPS PUB 197)**. [Downlaod](https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf). AES relies on the computational difficulty of brute-forcing keys, which requires trying all possible key combinations. Quantum computers can use **Grover’s algorithm**, which provides a quadratic speedup for searching through possible keys. Instead of taking $2^n$ steps to brute-force an $n$-bit key, Grover’s algorithm reduces it to approximately $2^{n/2}$ steps. This means that AES-128 (128-bit keys) would have the equivalent security of a 64-bit key against a quantum computer, making it potentially vulnerable. AES-256 is considered quantum-resistant for the foreseeable future because Grover’s algorithm would reduce its effective strength to $2^{128}$, which is still computationally infeasible. See: UK National Cyber Security Centre. **On the practical cost of Grover’s algorithm for AES key recovery**. *Fifth PQC Standardization Conference*. [Downlaod](https://csrc.nist.gov/csrc/media/Events/2024/fifth-pqc-standardization-conference/documents/papers/on-practical-cost-of-grover.pdf)
 
 Homomorphic encryption (HE) aims to solve this problem by allowing data to remain encrypted even while it's being processed. It promises to make the cloud much safer for storing and analyzing data, which could have far-reaching impacts on healthcare, finance, and many other fields. Imagine being able to calculate the average income of a group of people without ever knowing how much any individual earns, that's the promise of HE.
 
@@ -163,11 +163,19 @@ HE encompasses various schemes, each with distinct capabilities, applications, a
 
 1. **Partially Homomorphic Encryption (PHE):**
 
-   - PHE supports a single type of operation—either addition or multiplication—on encrypted data, which offers high efficiency due to its limited operational scope.
+   - PHE supports a single type of operation, either addition or multiplication, on encrypted data, which offers high efficiency due to its limited operational scope.
 
    - Applications: Ideal for scenarios requiring only one type of computation. For instance, PHE is utilized in secure voting systems, where votes are encrypted and then aggregated (added) without decryption, ensuring voter privacy and data integrity.
 
    - Historical context: The concept of PHE dates back to 1978 with the introduction of the RSA algorithm, which supports multiplicative homomorphism. Subsequent schemes, such as the Paillier cryptosystem introduced in 1999, provided additive homomorphism, allowing for the addition of encrypted values. These early approaches laid the mathematical foundation for later, more complex forms of HE. The development of RSA was also a part of broader cryptographic breakthroughs in public-key cryptography, which fundamentally changed secure communication by allowing encryption without pre-shared keys.
+
+   - Some notable examples:
+
+     - RSA: Supports multiplication as the homomorphic operation.
+     - Paillier: Addition.
+     - ElGamal: Multiplication.
+     - Goldwasser-Micali: XOR.
+     - Okamoto-Uchiyama: Addition.
 
 2. **Somewhat Homomorphic Encryption (SWHE):**
 
@@ -261,15 +269,13 @@ To mitigate these risks, organizations need a comprehensive, multi-layered secur
 
 - SMC is also employed for collaborative computations without revealing individual inputs. Advanced integrations include using HE with Intel SGX for secure computation spaces, hybrid HE-MPC protocols for efficient distributed computing, and memory encryption with AMD SEV or Intel TDX for enhanced data protection.
 
-- HE can also be integrated with Attribute-Based Encryption (ABE)[^ABE-homomorphic-encryption-developers] to allow fine-grained access control, ensuring that data access is granted only to users with specific attributes or roles. Identity-Based Encryption (IBE)[^IBE-homomorphic-encryption-developers] simplifies key management by allowing public keys to be derived from unique user identifiers, reducing the complexity of certificate distribution (Boneh, D., & Franklin, M., 2001). ZKPs provide anonymous authentication, allowing users to prove their identity or access rights without revealing any underlying sensitive information[^Goldwasser89-homomorphic-encryption-developers]. By combining these techniques, HE ensures that data remains encrypted throughout its lifecycle while still allowing flexible and secure access management, simplified key handling, and privacy-preserving authentication.
+- HE can also be integrated with Attribute-Based Encryption (ABE)[^ABE-homomorphic-encryption-developers] to allow fine-grained access control, ensuring that data access is granted only to users with specific attributes or roles. Identity-Based Encryption (IBE)[^IBE-homomorphic-encryption-developers] simplifies key management by allowing public keys to be derived from unique user identifiers, reducing the complexity of certificate distribution (Boneh, D., & Franklin, M., 2001). ZKPs provide anonymous authentication, allowing users to prove their identity or access rights without revealing any underlying sensitive information. By combining these techniques, HE ensures that data remains encrypted throughout its lifecycle while still allowing flexible and secure access management, simplified key handling, and privacy-preserving authentication.
 
 [^McKeen13-homomorphic-encryption-developers]: McKeen, F., Alexandrovich, I., Berenzon, A., Rozas, C., Shafi, H., Shanbhogue, V., & Savagaonkar, U. R. (2013). **Innovative instructions and software model for isolated execution**. *Proceedings of the 2nd International Workshop on Hardware and Architectural Support for Security and Privacy (HASP)*. https://doi.org/10.1145/2487726.2488368
 
 [^ABE-homomorphic-encryption-developers]: Goyal, V., Pandey, O., Sahai, A., & Waters, B. (2006). **Attribute-based encryption for fine-grained access control of encrypted data**. *Proceedings of the 13th ACM Conference on Computer and Communications Security (CCS)*, 89-98. [DOI](https://doi.org/10.1145/1180405.1180418)
 
 [^IBE-homomorphic-encryption-developers]: Boneh, D., & Franklin, M. (2001). **Identity-based encryption from the Weil pairing**. *SIAM Journal on Computing*, 32(3), 586-615. [DOI](https://doi.org/10.1137/S0097539701398521)
-
-[^Goldwasser89-homomorphic-encryption-developers]: Goldwasser, S., Micali, S., & Rackoff, C. (1989). **The knowledge complexity of interactive proof systems**. *SIAM Journal on Computing*, 18(1), 186-208. [DOI](https://doi.org/10.1137/0218012)
 
 This layered approach ensures that HE is not deployed in isolation but rather as part of a comprehensive security architecture where each component strengthens the overall security posture. The combination of these technologies provides defense-in-depth while addressing specific threats at each layer of the infrastructure.
 
@@ -675,13 +681,11 @@ The four core components that make HE functional are discussed in detail below:
 
     - Generation of random numbers: Random numbers are generated from a specified distribution, such as uniform, Gaussian, or discrete Gaussian distributions. For example, uniform distributions ensure equal likelihood across a range, while Gaussian distributions are used to introduce controlled randomness with a specific mean and standard deviation. Discrete Gaussian distributions, common foundational in HE, particularly in lattice-based cryptography, add noise with precision suitable for cryptographic operations. The randomness is crucial for ensuring that every generated key is unique and unpredictable.
 
-    - Mathematical operations: Complex mathematical operations are used based on the scheme's underlying hardness assumptions. For example,  mathematical frameworks in HE, such as Ring-LWE (Learning With Errors) and NTRU (Nth degree Truncated Polynomial Ring) are foundational in HE. These frameworks define problems that are computationally infeasible to solve without specific secret information (such as the private or secret key generated during the $KeyGen$ phase), ensuring the security of the encryption scheme. These assumptions make it computationally infeasible for an attacker to derive the private key from the public key or ciphertexts, as they are based on the hardness of specific mathematical problems (e.g., Ring-LWE or NTRU). These problems require secret information, such as the private or secret key generated during the $KeyGen$ phase, to be solvable within a practical timeframe.
+    - Mathematical operations: Complex mathematical operations are used based on the scheme's underlying hardness assumptions. For example, mathematical frameworks in HE, such as Ring-LWE (Learning With Errors) and NTRU (Nth degree Truncated Polynomial Ring) are foundational in HE. These frameworks define problems that are computationally infeasible to solve without specific secret information (such as the private or secret key generated during the $KeyGen$ phase), ensuring the security of the encryption scheme. These assumptions make it computationally infeasible for an attacker to derive the private key from the public key or ciphertexts, as they are based on the hardness of specific mathematical problems (e.g., Ring-LWE or NTRU). These problems require secret information, such as the private or secret key generated during the $KeyGen$ phase, to be solvable within a practical timeframe.
 
     - Parameter generation: Generation of additional parameters is often required for homomorphic evaluation, such as relinearization keys in some schemes. These parameters help to maintain efficiency and support specific operations like multiplication without a significant increase in ciphertext size. Relinearization keys simplify the increased complexity that occurs after a ciphertext multiplication by "recompressing" the resulting ciphertext into a manageable size and form, ensuring efficient further computations. Without these keys, ciphertexts could grow exponentially, making further evaluations impractical.
 
   The robustness of the $KeyGen$ function directly impacts the overall security of the HE scheme. It must ensure that the generated keys meet the desired security standards while balancing the computational resources required for efficient operation.
-
-[^modulus-size-key-length-homomorphic-encryption-developers]: In HE schemes, modulus size and key length are essential cryptographic parameters and FHE and SWHE schemes rely heavily on them. _Modulus size_, which refers to the number size used in modular arithmetic, impacts both security and computational overhead—larger sizes increase security but require more processing power. _Key length_, typically measured in bits, determines the strength of encryption; longer keys offer higher security by increasing the complexity of brute-force attacks. These parameters are carefully selected to balance security, performance, and the computational depth of operations, especially in FHE schemes where extensive computations on encrypted data are possible.
 
 - The $Enc$ encryption function transforms plaintext messages into ciphertexts. In HE schemes, this process must preserve the algebraic structure that enables homomorphic operations:
 
@@ -707,7 +711,7 @@ The four core components that make HE functional are discussed in detail below:
 
   Critical aspects of the decryption process include:
 
-  - Noise removal: Decryption involves removing the noise added during encryption. This is achieved by leveraging the secret key or decryption algorithm to isolate the original message from the noisy ciphertext. Noise levels must remain below a threshold defined by the scheme's parameters; otherwise, the decryption process may fail, yielding incorrect results. Techniques like modulus alignment[^modulus-homomorphic-encryption-developers] or parameter scaling are often used to ensure the noise is adequately suppressed during decryption.
+  - Noise removal: Decryption involves removing the noise added during encryption. This is achieved by leveraging the secret key or decryption algorithm to isolate the original message from the noisy ciphertext. Noise levels must remain below a threshold defined by the scheme's parameters; otherwise, the decryption process may fail, yielding incorrect results. Techniques like modulus alignment[^modulus-homomorphic-encryption-developers] or parameter scaling[^parameter-scaling-homomorphic-encryption-developers] are often used to ensure the noise is adequately suppressed during decryption.
 
   - Extraction from mathematical structure: The message is extracted from its embedded mathematical structure. This involves interpreting the ciphertext within the mathematical framework it was transformed into during encryption (e.g., polynomial rings or lattice structures). Decryption uses the secret key to reverse this transformation by applying the inverse operations in the specified algebraic domain. This process isolates the plaintext while ensuring that noise and other artifacts are accounted for, reconstructing the original message accurately.
 
@@ -791,7 +795,9 @@ The interaction between these components must satisfy several security and funct
 
 - Noise growth bounds: Every homomorphic operation increases noise in ciphertexts. Noise management techniques, such as modulus switching and bootstrapping, introduced in $Eval$, provide clear bounds on noise growth. These bounds define the maximum circuit depth that can be evaluated before decryption becomes unreliable. Effective noise control is vital for ensuring that computations on ciphertexts can be completed successfully.
 
-- Efficiency: The efficiency of HE schemes depends on balancing computational overhead, noise management, and security. Operations like addition, which introduce linear noise, are computationally inexpensive. However, multiplication, which introduces exponential noise, requires careful management through relinearization and bootstrapping. The choice of parameters during $KeyGen$, such as key length and modulus size, directly impacts the trade-offs between efficiency and security.
+- Efficiency: The efficiency of HE schemes depends on balancing computational overhead, noise management, and security. Operations like addition, which introduce linear noise, are computationally inexpensive. However, multiplication, which introduces exponential noise, requires careful management through relinearization and bootstrapping. The choice of parameters during $KeyGen$, such as key length and modulus size[^modulus-size-key-length-homomorphic-encryption-developers], directly impacts the trade-offs between efficiency and security.
+
+[^modulus-size-key-length-homomorphic-encryption-developers]: In HE schemes, modulus size and key length are essential cryptographic parameters and FHE and SWHE schemes rely heavily on them. _Modulus size_, which refers to the number size used in modular arithmetic, impacts both security and computational overhead—larger sizes increase security but require more processing power. _Key length_, typically measured in bits, determines the strength of encryption; longer keys offer higher security by increasing the complexity of brute-force attacks. These parameters are carefully selected to balance security, performance, and the computational depth of operations, especially in FHE schemes where extensive computations on encrypted data are possible.
 
 Understanding these components and their properties is crucial for leveraging HE effectively in theory and practice. These considerations highlight the interplay between the core HE operations and their implications:
 
@@ -805,28 +811,143 @@ Understanding these components and their properties is crucial for leveraging HE
 
 - Designing efficient protocols: HE enables secure protocols by leveraging its unique properties. Applications like encrypted database queries or privacy-preserving machine learning benefit from advanced evaluation capabilities, such as rotation keys for vector manipulations or bootstrapping keys for resetting noise.
 
-## HE Schemes
+## Homomorphism on the RSA
 
-- PHE Schemes: Partially HE schemes support the $Eval$ function for only one operation—either addition or multiplication. They are less versatile but often computationally efficient for specific tasks. Examples include:
+To understand how HE schemes work, we will explore the RSA algorithm. First, we must review the essential mathematical concepts behind encryption schemes. These include number theory, group theory, field theory, probability and statistics, complexity theory, which form the foundation for modern cryptography.
 
-  - RSA: Supports multiplication as the homomorphic operation.
-  - Paillier: Supports addition as the homomorphic operation.
-  - ElGamal: Supports multiplication as the homomorphic operation.
-  - Goldwasser-Micali: Supports XOR as the homomorphic operation.
-  - Okamoto-Uchiyama: Supports addition as the homomorphic operation.
+### Number theory
 
-- SWHE schemes: Somewhat HE schemes support a limited number of operations or can evaluate certain restricted circuits (e.g., branching programs). The accumulation of noise in ciphertexts restricts the depth of evaluation they can perform.
+#### Primes and factorization
 
-- FHE schemes: Fully HE schemes support the evaluation of arbitrary functions (e.g., searching, sorting, max, min, etc.) for an unlimited number of times over ciphertexts. This capability allows complex functions to be evaluated securely, making FHE a powerful tool in privacy-preserving computations.
+The journey into number theory starts with the basic building blocks of integers and their relationships, such as divisibility and the idea of prime numbers.
 
+> **Definition (*Set of integers*)**: The set of integers is denoted as $\mathbb{Z} = {..., -2, -1, 0, 1, 2, ...}$.
 
+> **Definition (*Divisibility*)**: Two integers $a$ and $b$ are divisible if there exists an integer $c$ such that $b = a \cdot c$. When true, this relationship is written as $a \mid b$. 
 
+For example, $6 \mid 18$ holds because $18 = 6 \cdot 3$. If $a \nmid b$, then $a$ does not divide $b$.
 
+> **Theorem (*Division algorithm*)**: For any integers $a$ and $b > 0$, there exist unique integers $q$ (quotient) and $r$ (remainder) such that:
+> $$
+> a = q \cdot b + r, \quad 0 \leq r < b
+> $$.
 
+For example, dividing $17$ by $5$ gives $q = 3$ and $r = 2$, as $17 = 3 \cdot 5 + 2$.
 
+Prime numbers are the building blocks of integers. 
 
+> **Definition (*Integer primality*)**: A number $p > 1$ is prime if its only divisors are $1$ and $p$. 
 
+For instance, $7$ is prime, while $12$ is composite because $12 = 2 \cdot 6$.
 
+> **Theorem (*Fundamental Theorem of Arithmetic*)**: Every integer $n > 1$ can be uniquely expressed as a product of prime powers:
+> $$
+> n = p_1^{e_1} \cdot p_2^{e_2} \cdots p_k^{e_k}
+> $$,
+> where $p_i$ are distinct primes, $i$ and $e_i$ are positive integers, and $k$ is the number of distinct prime factors of $n$.
 
+For example, $84 = 2^2 \cdot 3 \cdot 7$ demonstrates this principle.
 
+> **Remark**: It is straightforward to compute the product of two large prime numbers $p$ and $q$. However, the reverse operation, determining the original prime factors from their product $n = p \cdot q$, is computationally difficult. This difficulty arises from the lack of efficient algorithms for factorizing large integers. The best-known algorithms, such as the General Number Field Sieve (GNFS)[^GNFS-homomorphic-encryption-developers], have exponential time complexity for large inputs. This asymmetry makes factoring infeasible within a reasonable timeframe as the bit length of $p$ and $q$ increases. Moreover, the factors $p$ and $q$ are typically chosen to be large primes of similar bit length to avoid simple heuristics or optimizations. 
+> This problem is so significant that it has its own name, the Integer Factorization Problem (denoted $ \text{Fact}[n] $), and it underpins the security of many public-key cryptosystems, including RSA, ensuring that decrypting or compromising encrypted data without the private key remains practically impossible.
 
+[^GNFS-homomorphic-encryption-developers]: Lenstra, A. K., & Lenstra, H. W. (1993). **The development of the number field sieve** (Vol. 1554). _Springer-Verlag_. [DOI](https://doi.org/10.1007/BFb0091534)
+
+#### Greatest common divisor
+
+To explore relationships between numbers, we often need their greatest common divisor, e.g. to simplify a fraction or to synchronize cycles.
+
+> **Definition (*Greatest common divisor (GCD)*)**: The greatest common divisor of two integers $a$ and $b$, denoted $\gcd(a, b)$, is the largest integer dividing both $a$ and $b$. 
+
+For example, $\gcd(12, 18) = 6$. 
+
+> **Definition (*Relatively primality of integers*)**: Two integers are relatively prime if their GCD is $1$.
+
+Finding the GCD is efficient with the Euclidean algorithm:
+
+> **Theorem (*Euclidean Algorithm*)**: The GCD of two integers $a$ and $b$, where at least one is nonzero, can be computed using the recursive relation:
+> $$
+> \gcd(a, b) = \gcd(b, a \mod b).
+> $$
+
+This recursive formula stems from the property of divisors:
+$$
+\gcd(a, b) = \gcd(b, a - q \cdot b),
+$$
+where $q$ is the quotient when $a$ is divided by $b$. Since $a - q \cdot b = a \mod b$, the recursion simplifies to:
+$$
+\gcd(a, b) = \gcd(b, r),
+$$
+where $r = a \mod b$. 
+
+For example, consider the integers $385$ and $364$. Using the Euclidean Algorithm:
+$$
+\begin{aligned}
+\gcd(385, 364) &= \gcd(364, 385 \mod 364) = \gcd(364, 21), \\
+\gcd(364, 21) &= \gcd(21, 364 \mod 21) = \gcd(21, 7), \\
+\gcd(21, 7) &= \gcd(7, 21 \mod 7) = \gcd(7, 0) = 7.
+\end{aligned}
+$$
+
+Thus, $\gcd(385, 364) = 7$. 
+
+The Euclidean Algorithm can be applied to any integers, positive or negative, as long as at least one of the integers is nonzero. The process uses the relationship $\gcd(a, b) = \gcd(b, a \mod b)$, where the modulus operation $a \mod b$ always returns a remainder $r$ satisfying $0 \leq r < |b|$. This means the algorithm effectively reduces to positive remainders during the recursion, even if $a$ or $b$ starts as a negative number.
+
+Example with negative integers, $\gcd(-48, 18)$:
+$$
+\begin{aligned}
+\gcd(-48, 18) &= \gcd(18, -48 \mod 18) = \gcd(18, 12), \\
+\gcd(18, 12) &= \gcd(12, 18 \mod 12) = \gcd(12, 6), \\
+\gcd(12, 6) &= \gcd(6, 12 \mod 6) = \gcd(6, 0) = 6.
+\end{aligned}
+$$
+
+The sign of the integers does not affect the result, as $\gcd(-a, b) = \gcd(a, b)$. 
+
+The GCD is not only useful for determining divisibility but also plays a key role in finding linear combinations of integers. This is formalized in Bézout's Identity:
+
+> **Theorem (*Bézout's Identity*)**: For any integers $a$ and $b$, there exist integers $x$ and $y$ such that:
+> $$
+> \gcd(a, b) = ax + by.
+> $$
+> The integers $x$ and $y$ are called Bézout coefficients.
+
+These coefficients are not unique; for any integer $k$, another pair $(x', y')$ can be generated as:
+$$
+\begin{aligned}
+x' &= x + k \cdot \frac{b}{\gcd(a, b)}, \\
+y' &= y - k \cdot \frac{a}{\gcd(a, b)}.
+\end{aligned}
+$$
+
+The **Extended Euclidean Algorithm** builds upon the Euclidean Algorithm to compute the Bézout coefficients $x$ and $y$. It works by tracing back the remainders obtained during the GCD computation:
+
+> **Algorithm (*Extended Euclidean Algorithm*)**:
+> 1. Start with the Euclidean Algorithm to compute $\gcd(a, b)$.
+> 2. Work backwards, expressing each remainder as a combination of $a$ and $b$.
+
+Let $a = 48$ and $b = 18$. From the Euclidean Algorithm:
+$$
+\begin{aligned}
+48 &= 2 \cdot 18 + 12, \\
+18 &= 1 \cdot 12 + 6, \\
+12 &= 2 \cdot 6 + 0.
+\end{aligned}
+$$
+Thus, $\gcd(48, 18) = 6$.
+
+Working backwards:
+$$
+\begin{aligned}
+6 &= 18 - 1 \cdot 12, \\
+12 &= 48 - 2 \cdot 18, \\
+6 &= 18 - 1 \cdot (48 - 2 \cdot 18) = 3 \cdot 18 - 1 \cdot 48.
+\end{aligned}
+$$
+
+Thus, $x = -1$ and $y = 3$ satisfy Bézout's Identity:
+$$
+6 = (-1) \cdot 48 + 3 \cdot 18.
+$$
+
+This identity is critical in RSA for computing modular inverses, which rely on finding such coefficients.
