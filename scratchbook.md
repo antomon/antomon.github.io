@@ -1,128 +1,135 @@
+#### Congruence
 
+> **Definition (*Congruence*)**: For integers $a$, $b$, and $n$ with $n > 0$, $a$ is congruent to $b$ modulo $n$, written $a \equiv b \pmod{n}$, if $n \mid (a - b)$.
+ 
+For example, $23 \equiv 8 \pmod{5}$ because $5 \mid (23 - 8)$. 
 
-### Number theory
+This congruence partitions integers into **congruence classes** modulo $n$, grouping numbers that share the same remainder when divided by $n$. These equivalence classes reduce infinitely many integers to a manageable finite set.
 
-#### Primes and factorization
+> **Theorem (*Equivalence relation*)**: Congruence modulo $n$ satisfies the three fundamental properties of an equivalence relation:
+>
+> 1. Reflexivity: $a \equiv a \pmod{n}$, since $n \mid (a - a) = 0$.
+> 2. Symmetry: If $a \equiv b \pmod{n}$, then $b \equiv a \pmod{n}$, because $n \mid (a - b)$ implies $n \mid (b - a)$.
+> 3. Transitivity: If $a \equiv b \pmod{n}$ and $b \equiv c \pmod{n}$, then $a \equiv c \pmod{n}$, as $n \mid (a - b)$ and $n \mid (b - c)$ imply $n \mid (a - c)$.
 
-The journey into number theory starts with the basic building blocks of integers and their relationships, such as divisibility and the idea of prime numbers.
+These properties ensure that modular arithmetic forms a consistent framework for mathematical operations.
 
-> **Definition (*Set of integers*)**: The set of integers is denoted as $\mathbb{Z} = {..., -2, -1, 0, 1, 2, ...}$.
-
-> **Definition (*Divisibility*)**: Two integers $a$ and $b$ are divisible if there exists an integer $c$ such that $b = a \cdot c$. When true, this relationship is written as $a \mid b$. 
-
-For example, $6 \mid 18$ holds because $18 = 6 \cdot 3$. If $a \nmid b$, then $a$ does not divide $b$.
-
-> **Theorem (*Division algorithm*)**: For any integers $a$ and $b > 0$, there exist unique integers $q$ (quotient) and $r$ (remainder) such that:
+> **Theorem (*Congruence and remainders*)**: From the Division Algorithm, we have $r = a \mod b$, meaning $a \equiv b \pmod{n}$ if and only if $a$ and $b$ share the same remainder when divided by $n$. Moreover, both $a$ and $b$ are congruent to that common remainder:
 > $$
-> a = q \cdot b + r, \quad 0 \leq r < b
-> $$.
-
-For example, dividing $17$ by $5$ gives $q = 3$ and $r = 2$, as $17 = 3 \cdot 5 + 2$.
-
-Prime numbers are the building blocks of integers. 
-
-> **Definition (*Integer primality*)**: A number $p > 1$ is prime if its only divisors are $1$ and $p$. 
-
-For instance, $7$ is prime, while $12$ is composite because $12 = 2 \cdot 6$.
-
-> **Theorem (*Fundamental theorem of arithmetic*)**: Every integer $n > 1$ can be uniquely expressed as a product of prime powers:
-> $$
-> n = p_1^{e_1} \cdot p_2^{e_2} \cdots p_k^{e_k}
-> $$,
-> where $p_i$ are distinct primes, $i$ and $e_i$ are positive integers, and $k$ is the number of distinct prime factors of $n$.
-
-For example, $84 = 2^2 \cdot 3 \cdot 7$ demonstrates this principle.
-
-> **Remark**: It is straightforward to compute the product of two large prime numbers $p$ and $q$. However, the reverse operation, determining the original prime factors from their product $n = p \cdot q$, is computationally difficult. This difficulty arises from the lack of efficient algorithms for factorizing large integers. The best-known algorithms, such as the General Number Field Sieve (GNFS)[^GNFS-homomorphic-encryption-developers], have exponential time complexity for large inputs. This asymmetry makes factoring infeasible within a reasonable timeframe as the bit length of $p$ and $q$ increases. Moreover, the factors $p$ and $q$ are typically chosen to be large primes of similar bit length to avoid simple heuristics or optimizations. 
-> This problem is so significant that it has its own name, the Integer Factorization Problem (denoted $ \text{Fact}[n] $), and it underpins the security of many public-key cryptosystems, including RSA, ensuring that decrypting or compromising encrypted data without the private key remains practically impossible.
-
-[^GNFS-homomorphic-encryption-developers]: Lenstra, A. K., & Lenstra, H. W. (1993). **The development of the number field sieve** (Vol. 1554). Springer-Verlag. [DOI](https://doi.org/10.1007/BFb0091534)
-
-#### Greatest common divisor
-
-To explore relationships between numbers, we often need their greatest common divisor, e.g. to simplify a fraction or to synchronize cycles.
-
-> **Definition (*Greatest common divisor (GCD)*)**: The greatest common divisor of two integers $a$ and $b$, denoted $\gcd(a, b)$, is the largest integer dividing both $a$ and $b$. 
-
-For example, $\gcd(12, 18) = 6$. 
-
-> **Definition (*Relatively primality of integers*)**: Two integers are relatively prime if their GCD is $1$.
-
-Finding the GCD is efficient with the Euclidean algorithm:
-
-> **Theorem (*Euclidean algorithm*)**: The GCD of two integers can be computed using the recursive relation:
-> $$
-> \gcd(a, b) = \gcd(b, a \mod b).
+> a \equiv b \pmod{n} \implies a \mod n = b \mod n.
 > $$
 
-This recursive formula stems from the property of divisors:
-$$
-\gcd(a, b) = \gcd(b, a - q \cdot b),
-$$
-where $q$ is the quotient when $a$ is divided by $b$. Since $a - q \cdot b = a \mod b$, the recursion simplifies to:
-$$
-\gcd(a, b) = \gcd(b, r),
-$$
-where $r = a \mod b$. 
+This relationship provides a computational foundation for modular arithmetic.
 
-For example, consider the integers $72$ and $27$. Using the Euclidean algorithm:
+Every integer modulo $n$ can be uniquely represented by a remainder within a specific range. This principle is foundational to modular arithmetic, as it ensures that each congruence class has a single canonical representative. The following theorem formalizes this idea:
+
+> **Theorem (*Unique representation*)**: For $n \geq 2$, every integer is congruent modulo $n$ to exactly one element of the set $\{0, 1, 2, \dots, n-1\}$.
+
+The notion of congruence naturally leads to the concept of a congruence class, which groups integers that share the same remainder when divided by $n$. These classes partition the set of integers into distinct subsets, each representing one equivalence class under congruence modulo $n$.
+
+> **Definition (*Congruence class*)**: A congruence class modulo $n$, denoted $[a]_n$, is the set of integers equivalent to $a \pmod{n}$:
+> $$
+> [a]_n = \{a + kn \mid k \in \mathbb{Z}\}.
+> $$
+
+These classes partition $\mathbb{Z}$ into $n$ disjoint subsets, which together form the set $\mathbb{Z}_n$, the set of equivalence classes modulo $n$. Each subset corresponds to a unique remainder in $\{0, 1, \dots, n-1\}$.
+
+For example, modulo $3$, the congruence classes are:
+- $[0]_3 = \{..., -3, 0, 3, 6, ...\}$,
+- $[1]_3 = \{..., -2, 1, 4, 7, ...\}$,
+- $[2]_3 = \{..., -1, 2, 5, 8, ...\}.
+
+Thus, $\mathbb{Z}_3 = \{[0]_3, [1]_3, [2]_3\}$, representing all possible congruence classes modulo $3$.
+
+The concept of a congruence class provides a structured way to organize integers under modulo $n$. Each congruence class contains infinitely many integers that share the same modular properties. To simplify working with these classes, it is common to choose specific representatives for computations. The following definitions introduce the two most commonly used representatives:
+
+> **Definition (*Least positive representative*)**: The least positive representative of a congruence class modulo $n$ is the smallest nonnegative integer in the class, given by $a \mod n$.
+
+For example, consider modulo $5$:
+- For $[7]_5$, the least positive representative is $7 \mod 5 = 2$.
+- For $[-11]_5$, the least positive representative is $-11 \mod 5 = 4$.
+
+> **Definition (*Least magnitude representative*)**: The least magnitude representative of a congruence class modulo $n$ minimizes $|r|$, where $-n/2 < r \leq n/2$.
+
+Again, for modulo $5$:
+- For $[7]_5$, the least magnitude representative is $2$, as $-5/2 < 2 \leq 5/2$.
+- For $[-11]_5$, the least magnitude representative is $-1$, as $-5/2 < -1 \leq 5/2$.
+
+These representatives are key to simplifying modular arithmetic calculations and ensuring consistent results.
+
+#### Addition and multiplication
+
+In modular arithmetic, fundamental operations like addition and multiplication follow specific rules that maintain consistency within the modular system. These rules are formalized in the following theorem:
+
+> **Theorem (Modular addition and multiplication)**: For integers $a$ and $b$:
+> $$
+> \begin{aligned}
+> (a + b) \mod n &= ((a \mod n) + (b \mod n)) \mod n, \\
+> (a \cdot b) \mod n &= ((a \mod n) \cdot (b \mod n)) \mod n.
+> \end{aligned}
+> $$
+
+When comparing $\mathbb{Z}$ (integers) and $\mathbb{Z}_n$ (integers modulo n), we find both similarities and key differences in their algebraic properties:
+
+1. **Similarities**:
+
+   - Both have well-defined addition and multiplication operations.
+   - Zero has no multiplicative inverse in both systems.
+   - 1 (and -1 in $\mathbb{Z}$ or its equivalent $n-1$ in $\mathbb{Z}_n$) always has a multiplicative inverse.
+
+2. **Differences**:
+
+   - In $\mathbb{Z}$, only ±1 have multiplicative inverses.
+   - In $\mathbb{Z}_n$, any element $a$ where $\gcd(a,n)=1$ has a multiplicative inverse.
+   - $\mathbb{Z}$ is infinite, while $\mathbb{Z}_n$ has exactly $n$ elements.
+   - All operations in $\mathbb{Z}_n$ are bounded by $n$, while operations in $\mathbb{Z}$ can grow indefinitely.
+
+This distinction in multiplicative inverses makes $\mathbb{Z}_n$ particularly useful in applications like cryptography, where invertible elements are crucial for encryption and decryption operations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Modular Exponentiation
+
+> **Definition (Modular Exponentiation)**: Modular exponentiation is a key operation in cryptography, efficiently computing $a^b \mod n$. Direct computation is impractical for large exponents, so the **square-and-multiply algorithm** is used:
+>
+> 1. Express $b$ in binary.
+> 2. Initialize $result = 1$.
+> 3. For each bit of $b$ (starting from the most significant):
+>    - Square $result$ modulo $n$.
+>    - Multiply $result$ by $a$ modulo $n$ if the bit is $1$.
+
+Example:
+To compute $3^{13} \mod 7$:
 $$
 \begin{aligned}
-\gcd(385, 364) &= \gcd(364, 385 \mod 364) = \gcd(364, 21), \\
-\gcd(364, 21) &= \gcd(21, 364 \mod 21) = \gcd(21, 7), \\
-\gcd(21, 7) &= \gcd(7, 21 \mod 7) = \gcd(7, 0) = 7.
+13 &= (1101)_2, \\
+3^{13} \mod 7 &= (((3^2 \mod 7)^2 \mod 7) \cdot 3 \mod 7) = 5.
 \end{aligned}
 $$
+This algorithm ensures efficient computation, even for very large numbers, and is central to RSA encryption and decryption.
 
-Thus, $\gcd(72, 27) = 9$. 
+#### Modular Inverses
 
+> **Definition (Modular Inverse)**: The modular inverse of $a$ modulo $n$ is the integer $x$ such that:
+> $$
+>     a \cdot x \equiv 1 \pmod{n}.
+> $$
+> An inverse exists if and only if $\gcd(a, n) = 1$.
 
+The **Extended Euclidean Algorithm** efficiently computes this inverse, which is essential for generating RSA keys and performing decryption.
 
+### Applications in Cryptography
 
-
-### Modular Arithmetic
-
-In modular arithmetic, we focus on remainders.
-
-> **Definition**: If $a, b, n \in \mathbb{Z}$ and $n > 0$, then $a$ is congruent to $b$ modulo $n$, written $a \equiv b \pmod{n}$, if $n \mid (a - b)$.
-
-For example, $23 \equiv 8 \pmod{5}$ because $5 \mid (23 - 8)$.
-
-### Modular Exponentiation
-
-Cryptographic applications often involve exponentiation under a modulus.
-
-> **Definition**: Modular exponentiation computes $a^b \mod n$ efficiently using the **square-and-multiply algorithm**.
-
-For example, to compute $3^{13} \mod 7$:
-
-Thus, $3^{13} \equiv 5 \pmod{7}$.
-
-### Modular Inverses
-
-The modular inverse is vital in cryptography for ensuring reversible operations.
-
-> **Definition**: The **modular inverse** of $a$ modulo $n$ is an integer $x$ such that:
-
-An inverse exists if and only if $\gcd(a, n) = 1$.
-
-### Euler’s Theorem
-
-> **Theorem**: (Euler’s Theorem) If $a$ and $n$ are coprime, then:
->
-> where $\phi(n)$ is Euler’s totient function, counting integers less than $n$ that are coprime to $n$.
-
-For example, $\phi(12) = 4$ because ${1, 5, 7, 11}$ are coprime to $12$.
-
-### Chinese Remainder Theorem
-
-The Chinese Remainder Theorem (CRT) is a powerful tool for combining modular computations.
-
-> **Theorem**: (Chinese Remainder Theorem) Suppose $n\_1, n\_2, \dots, n\_k$ are pairwise coprime. For any integers $a\_1, a\_2, \dots, a\_k$, there exists a unique $x \pmod{N}$, where $N = n\_1 \cdot n\_2 \cdots n\_k$, satisfying:
-
-CRT simplifies complex modular arithmetic, making it essential in RSA operations.
-
-## Conclusion
-
-This primer on number theory has introduced the mathematical backbone of RSA. By mastering these concepts, readers can better understand the mechanisms that secure cryptographic systems. The next sections will explore group theory and elliptic curves, expanding the mathematical toolkit for modern encryption.
+Modular arithmetic is the backbone of cryptographic systems like RSA, enabling secure and efficient encryption, decryption, and key exchange. By confining computations to equivalence classes, it ensures that operations remain computationally feasible even with the massive numbers typical of cryptographic applications.
 
