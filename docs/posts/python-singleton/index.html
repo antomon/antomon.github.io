@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.39">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2023-12-08">
+<meta name="description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+
+<title>Singletons in Python – Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-0626ff4d7a71b55c8707dcae1d04a9b6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-13484e71349f5563e74c1d2bdd5b186c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="Singletons in Python – Bits of Knowledge">
+<meta property="og:description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+<meta property="og:image" content="https://antomon.github.io/posts/python-singleton/singletons.webp">
+<meta property="og:site_name" content="Bits of Knowledge">
+<meta name="twitter:title" content="Singletons in Python – Bits of Knowledge">
+<meta name="twitter:description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/python-singleton/singletons.webp">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed slimcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://4m4.it/corso-python/"> 
+<span class="menu-text">Corso Python</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Singletons in Python</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Singletons in Python</h1>
+            <p class="subtitle lead">Ensuring a single instance for shared resources</p>
+                  <div>
+        <div class="description">
+          The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">programming</div>
+                <div class="quarto-category">Python</div>
+                <div class="quarto-category">tutorial</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 8, 2023</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">December 11, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#what-is-a-design-pattern" id="toc-what-is-a-design-pattern" class="nav-link active" data-scroll-target="#what-is-a-design-pattern">What is a design pattern?</a></li>
+  <li><a href="#what-is-a-creational-design-pattern" id="toc-what-is-a-creational-design-pattern" class="nav-link" data-scroll-target="#what-is-a-creational-design-pattern">What is a creational design pattern?</a></li>
+  <li><a href="#more-on-singletons" id="toc-more-on-singletons" class="nav-link" data-scroll-target="#more-on-singletons">More on singletons</a>
+  <ul class="collapse">
+  <li><a href="#naive-implementation" id="toc-naive-implementation" class="nav-link" data-scroll-target="#naive-implementation">Naive implementation</a></li>
+  <li><a href="#disadvantages" id="toc-disadvantages" class="nav-link" data-scroll-target="#disadvantages">Disadvantages</a></li>
+  <li><a href="#single-responsibility-principle" id="toc-single-responsibility-principle" class="nav-link" data-scroll-target="#single-responsibility-principle">Single Responsibility Principle</a></li>
+  <li><a href="#a-real-world-application" id="toc-a-real-world-application" class="nav-link" data-scroll-target="#a-real-world-application">A real-world application</a></li>
+  </ul></li>
+  <li><a href="#alternative-implementations" id="toc-alternative-implementations" class="nav-link" data-scroll-target="#alternative-implementations">Alternative implementations</a>
+  <ul class="collapse">
+  <li><a href="#using-a-base-class" id="toc-using-a-base-class" class="nav-link" data-scroll-target="#using-a-base-class">Using a base class</a></li>
+  <li><a href="#using-a-decorator" id="toc-using-a-decorator" class="nav-link" data-scroll-target="#using-a-decorator">Using a decorator</a></li>
+  <li><a href="#using-a-metaclass" id="toc-using-a-metaclass" class="nav-link" data-scroll-target="#using-a-metaclass">Using a metaclass</a></li>
+  <li><a href="#comparing-the-three-implementations" id="toc-comparing-the-three-implementations" class="nav-link" data-scroll-target="#comparing-the-three-implementations">Comparing the three implementations</a></li>
+  </ul></li>
+  <li><a href="#taking-into-account-thread-safety" id="toc-taking-into-account-thread-safety" class="nav-link" data-scroll-target="#taking-into-account-thread-safety">Taking into account thread-safety</a>
+  <ul class="collapse">
+  <li><a href="#using-a-base-class-1" id="toc-using-a-base-class-1" class="nav-link" data-scroll-target="#using-a-base-class-1">Using a base class</a></li>
+  <li><a href="#using-a-decorator-1" id="toc-using-a-decorator-1" class="nav-link" data-scroll-target="#using-a-decorator-1">Using a decorator</a></li>
+  <li><a href="#using-a-metaclass-1" id="toc-using-a-metaclass-1" class="nav-link" data-scroll-target="#using-a-metaclass-1">Using a metaclass</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul></li>
+  <li><a href="#final-thoughts" id="toc-final-thoughts" class="nav-link" data-scroll-target="#final-thoughts">Final thoughts</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<p>Before diving into different implementations of a Python <strong>singleton</strong>, it’s essential to understand the concept from both theoretical and practical perspectives.</p>
+<section id="what-is-a-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-design-pattern">What is a design pattern?</h2>
+<p>A <strong>design pattern</strong> is a reusable solution to common problems that software developers encounter during application development. It represents best practices for addressing recurring design challenges, enabling developers to write code that is more flexible, maintainable, and reusable. Design patterns also provide a common vocabulary for designers and developers to communicate their approaches to solving software design problems.</p>
+<p>Design patterns can be categorized into three main types:</p>
+<ul>
+<li><p>Creational patterns: Focus on object creation, optimizing efficiency and controlling how instances are instantiated. Examples include singleton, Factory Method, Builder, Prototype, and Abstract Factory.</p></li>
+<li><p>Structural patterns: Deal with object composition, ensuring that relationships between components are efficient and effective. Examples include Adapter, Bridge, Composite, Decorator, Facade, and Proxy.</p></li>
+<li><p>Behavioral patterns: Define how objects interact and communicate with each other. Examples include Strategy, Observer, Command, State, and Iterator.</p></li>
+</ul>
+</section>
+<section id="what-is-a-creational-design-pattern" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-creational-design-pattern">What is a creational design pattern?</h2>
+<p>A <strong>creational design pattern</strong> focuses on how objects are created, helping developers manage complex instantiation processes in a more adaptable and reusable manner. By abstracting the object creation process, creational patterns allow the code to be more flexible and maintainable. Some common creational design patterns include:</p>
+<ul>
+<li><p>Factory Method: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.</p></li>
+<li><p>Abstract Factory: Provides an interface for creating families of related objects without specifying their concrete classes.</p></li>
+<li><p>Builder: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.</p></li>
+<li><p>Prototype: Creates new objects by copying an existing instance, which serves as a prototype.</p></li>
+<li><p>Singleton: Ensures that a class has only one instance while providing a global access point to that instance.</p></li>
+</ul>
+</section>
+<section id="more-on-singletons" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="more-on-singletons">More on singletons</h2>
+<p>The <strong>singleton pattern</strong> serves two primary purposes:</p>
+<ol type="1">
+<li><p>Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance.</p>
+<p>This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.</p></li>
+<li><p>Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes.</p>
+<p>By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.</p></li>
+</ol>
+<p>So, the singleton pattern is especially helpful when dealing with shared resources, where having multiple instances would lead to inefficiency, resource conflicts, or inconsistencies.</p>
+<section id="naive-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="naive-implementation">Naive implementation</h3>
+<p>A basic singleton can be implemented by keeping track of whether an instance has already been created. If an instance exists, any request for a new instance will return the existing one. This approach provides a global point of access to shared resources. Here is a simple implementation of a singleton in Python:</p>
+<div class="sourceCode" id="annotated-cell-1"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-1-1"><a href="#annotated-cell-1-1"></a><span class="kw">class</span> Logger:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-1-2" class="code-annotation-target"><a href="#annotated-cell-1-2"></a>  _instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="annotated-cell-1-3"><a href="#annotated-cell-1-3"></a></span>
+<span id="annotated-cell-1-4"><a href="#annotated-cell-1-4"></a>  <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-1-5" class="code-annotation-target"><a href="#annotated-cell-1-5"></a>    <span class="cf">if</span> <span class="kw">not</span> cls._instance:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-1-6" class="code-annotation-target"><a href="#annotated-cell-1-6"></a>      cls._instance <span class="op">=</span> <span class="bu">super</span>(Logger, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-1-7"><a href="#annotated-cell-1-7"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-1-8" class="code-annotation-target"><a href="#annotated-cell-1-8"></a>    <span class="cf">return</span> cls._instance</span>
+<span id="annotated-cell-1-9"><a href="#annotated-cell-1-9"></a></span>
+<span id="annotated-cell-1-10"><a href="#annotated-cell-1-10"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-1-11" class="code-annotation-target"><a href="#annotated-cell-1-11"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):</span>
+<span id="annotated-cell-1-12"><a href="#annotated-cell-1-12"></a>      <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-1-13"><a href="#annotated-cell-1-13"></a></span>
+<span id="annotated-cell-1-14"><a href="#annotated-cell-1-14"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-1-15"><a href="#annotated-cell-1-15"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-1-16"><a href="#annotated-cell-1-16"></a></span>
+<span id="annotated-cell-1-17"><a href="#annotated-cell-1-17"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-1-18"><a href="#annotated-cell-1-18"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-1-19"><a href="#annotated-cell-1-19"></a></span>
+<span id="annotated-cell-1-20"><a href="#annotated-cell-1-20"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-1-21"><a href="#annotated-cell-1-21"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-1-22"><a href="#annotated-cell-1-22"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-1-23"><a href="#annotated-cell-1-23"></a></span>
+<span id="annotated-cell-1-24"><a href="#annotated-cell-1-24"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-1-25" class="code-annotation-target"><a href="#annotated-cell-1-25"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-1-26"><a href="#annotated-cell-1-26"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-1-27" class="code-annotation-target"><a href="#annotated-cell-1-27"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="2" data-code-annotation="1">Initializes the class variable <code>_instance</code> to <code>None</code> to store the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="5" data-code-annotation="2">Checks if <code>_instance</code> is <code>None</code>, meaning no instance has been created yet.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__new__</code> and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="8" data-code-annotation="4">Returns the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="11" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized to prevent re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="25" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-lines="27" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class ensures that only one instance is created by overriding the <code>__new__</code> method. When <code>logger1</code> and <code>logger2</code> are instantiated, they both reference the same instance, demonstrating the singleton pattern in action.</p>
+</section>
+<section id="disadvantages" class="level3">
+<h3 class="anchored" data-anchor-id="disadvantages">Disadvantages</h3>
+<p>While the singleton pattern offers advantages like centralized control and resource efficiency, it also has some notable downsides:</p>
+<ul>
+<li><p>Increased Coupling: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.</p></li>
+<li><p>Global State: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.</p></li>
+<li><p>Testing Challenges: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.</p></li>
+</ul>
+<p>Due to these potential issues, some developers view the singleton pattern as an antipattern and recommend using it only when its benefits outweigh the disadvantages.</p>
+</section>
+<section id="single-responsibility-principle" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="single-responsibility-principle">Single Responsibility Principle</h3>
+<p>The <strong>Single Responsibility Principle (SRP)</strong> is one of the SOLID principles<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> of object-oriented design. It states that a class should have only one reason to change, meaning it should have a single responsibility or function within the system.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;The SOLID principles are a set of five fundamental design guidelines aimed at making software more understandable, flexible, and maintainable. The acronym <strong>SOLID</strong> stands for: Single Responsibility Principle, Open/Closed Principle (OCP), Liskov Substitution Principle (LSP), Interface Segregation Principle (ISP), Dependency Inversion Principle (DIP). These principles were introduced by Robert C. Martin, also known as <em>Uncle Bob</em>, in the early 2000s. They have become a cornerstone in object-oriented design and programming, promoting best practices that help developers build robust and scalable software systems.See Martin, R. C. (2002). <em>Agile Software Development, Principles, Patterns, and Practices</em>. Prentice Hall. ISBN: 978-0135974445.</p></div></div><p>Singletons often violate SRP because they typically serve two distinct purposes:</p>
+<ol type="1">
+<li><p>Managing their own instance: The singleton pattern ensures that only one instance of a class is created, and this instance management logic is built into the class itself.</p></li>
+<li><p>Providing functional behavior: In addition to managing their own instance, singleton classes also provide functionality related to their main purpose (e.g., logging, configuration management, etc.).</p></li>
+</ol>
+<p>By combining both instance management and functional behavior, a singleton class is taking on more than one responsibility, which violates SRP. This dual responsibility can lead to increased complexity, reduced maintainability, and challenges when attempting to test or extend the class.</p>
+</section>
+<section id="a-real-world-application" class="level3">
+<h3 class="anchored" data-anchor-id="a-real-world-application">A real-world application</h3>
+<p>One of the simplest ways to implement the singleton pattern is by using a class-level attribute to store the instance. This method is both straightforward and effective.</p>
+<p>Consider a scenario where we want to manage application-wide logging. The singleton pattern ensures that all parts of the application use the same logger object:</p>
+<div class="sourceCode" id="annotated-cell-2"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-2-1"><a href="#annotated-cell-2-1"></a><span class="kw">class</span> Logger:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-2-2" class="code-annotation-target"><a href="#annotated-cell-2-2"></a>  _instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="annotated-cell-2-3"><a href="#annotated-cell-2-3"></a></span>
+<span id="annotated-cell-2-4"><a href="#annotated-cell-2-4"></a>  <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-2-5" class="code-annotation-target"><a href="#annotated-cell-2-5"></a>    <span class="cf">if</span> cls._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-2-6" class="code-annotation-target"><a href="#annotated-cell-2-6"></a>      cls._instance <span class="op">=</span> <span class="bu">super</span>(Logger, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-2-7" class="code-annotation-target"><a href="#annotated-cell-2-7"></a>      cls._instance.log <span class="op">=</span> []</span>
+<span id="annotated-cell-2-8"><a href="#annotated-cell-2-8"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-2-9" class="code-annotation-target"><a href="#annotated-cell-2-9"></a>    <span class="cf">return</span> cls._instance</span>
+<span id="annotated-cell-2-10"><a href="#annotated-cell-2-10"></a></span>
+<span id="annotated-cell-2-11"><a href="#annotated-cell-2-11"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-2-12"><a href="#annotated-cell-2-12"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-2-13"><a href="#annotated-cell-2-13"></a></span>
+<span id="annotated-cell-2-14"><a href="#annotated-cell-2-14"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-2-15"><a href="#annotated-cell-2-15"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-2-16"><a href="#annotated-cell-2-16"></a></span>
+<span id="annotated-cell-2-17"><a href="#annotated-cell-2-17"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-2-18"><a href="#annotated-cell-2-18"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-2-19"><a href="#annotated-cell-2-19"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-2-20"><a href="#annotated-cell-2-20"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-2-21" class="code-annotation-target"><a href="#annotated-cell-2-21"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span>
+<span id="annotated-cell-2-22"><a href="#annotated-cell-2-22"></a></span>
+<span id="annotated-cell-2-23"><a href="#annotated-cell-2-23"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-2-24" class="code-annotation-target"><a href="#annotated-cell-2-24"></a><span class="bu">print</span>(logger2.read_log())</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-2" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="2" data-code-annotation="1">Initializes the class variable <code>_instance</code> to <code>None</code> to store the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="5" data-code-annotation="2">Checks if <code>_instance</code> is <code>None</code> to determine if an instance already exists.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__new__</code> and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="7" data-code-annotation="4">Initializes the <code>log</code> attribute with an empty list.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="9" data-code-annotation="5">Returns the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="21" data-code-annotation="6">Output: <code>True</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="24" data-code-annotation="7">Output: <code>['Log message 1']</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class is used to manage application-wide logging. The <code>__new__</code> method ensures that only one instance of the class is created. If an instance already exists, it is returned; otherwise, a new instance is created. This approach is effective and easy to understand, making it a good choice for simpler use cases.</p>
+</section>
+</section>
+<section id="alternative-implementations" class="level2">
+<h2 class="anchored" data-anchor-id="alternative-implementations">Alternative implementations</h2>
+<p>The singleton pattern can be implemented in several ways in Python, including using a base class, a decorator, or even a metaclass.</p>
+<section id="using-a-base-class" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-base-class">Using a base class</h3>
+<p>One way to implement the singleton pattern is by using a base class that other classes inherit from. This base class defines the singleton behavior, ensuring that only one instance of the derived class is created.</p>
+<div class="sourceCode" id="annotated-cell-3"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-3-1"><a href="#annotated-cell-3-1"></a><span class="kw">class</span> SingletonBase:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-3-2" class="code-annotation-target"><a href="#annotated-cell-3-2"></a>  _instances <span class="op">=</span> {}</span>
+<span id="annotated-cell-3-3"><a href="#annotated-cell-3-3"></a></span>
+<span id="annotated-cell-3-4"><a href="#annotated-cell-3-4"></a>  <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-3-5" class="code-annotation-target"><a href="#annotated-cell-3-5"></a>    <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-3-6" class="code-annotation-target"><a href="#annotated-cell-3-6"></a>      cls._instances[cls] <span class="op">=</span> <span class="bu">super</span>(SingletonBase, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-3-7"><a href="#annotated-cell-3-7"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-3-8" class="code-annotation-target"><a href="#annotated-cell-3-8"></a>    <span class="cf">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-3-9"><a href="#annotated-cell-3-9"></a></span>
+<span id="annotated-cell-3-10"><a href="#annotated-cell-3-10"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-3-11"><a href="#annotated-cell-3-11"></a><span class="kw">class</span> Logger(SingletonBase):</span>
+<span id="annotated-cell-3-12"><a href="#annotated-cell-3-12"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-3-13" class="code-annotation-target"><a href="#annotated-cell-3-13"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):</span>
+<span id="annotated-cell-3-14"><a href="#annotated-cell-3-14"></a>      <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-3-15"><a href="#annotated-cell-3-15"></a></span>
+<span id="annotated-cell-3-16"><a href="#annotated-cell-3-16"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-3-17"><a href="#annotated-cell-3-17"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-3-18"><a href="#annotated-cell-3-18"></a></span>
+<span id="annotated-cell-3-19"><a href="#annotated-cell-3-19"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-3-20"><a href="#annotated-cell-3-20"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-3-21"><a href="#annotated-cell-3-21"></a></span>
+<span id="annotated-cell-3-22"><a href="#annotated-cell-3-22"></a><span class="co"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-3-23"><a href="#annotated-cell-3-23"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-3-24"><a href="#annotated-cell-3-24"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-3-25"><a href="#annotated-cell-3-25"></a></span>
+<span id="annotated-cell-3-26"><a href="#annotated-cell-3-26"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-3-27" class="code-annotation-target"><a href="#annotated-cell-3-27"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-3-28"><a href="#annotated-cell-3-28"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-3-29" class="code-annotation-target"><a href="#annotated-cell-3-29"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-3" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="2" data-code-annotation="1">Initializes a class-level dictionary <code>_instances</code> to keep track of singleton instances.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="5" data-code-annotation="2">Checks if the class (<code>cls</code>) is not in <code>_instances</code> to determine if an instance has been created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="6" data-code-annotation="3">Creates a new instance and stores it in <code>_instances</code> under the class key.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="8" data-code-annotation="4">Returns the singleton instance from <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="13" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized to prevent re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="27" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="29" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The <code>SingletonBase</code> class ensures that only one instance of any subclass is created by maintaining a dictionary (<code>_instances</code>) of instances.</p></li>
+<li><p>The <code>Logger</code> class inherits from <code>SingletonBase</code>, resulting in shared behavior and a single instance.</p></li>
+</ul>
+<p>This approach is useful when multiple classes need to follow the singleton pattern, allowing for reuse of the singleton logic.</p>
+</section>
+<section id="using-a-decorator" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-decorator">Using a decorator</h3>
+<section id="what-is-a-decorator" class="level4">
+<h4 class="anchored" data-anchor-id="what-is-a-decorator">What is a decorator?</h4>
+<p>A <strong>decorator</strong> in Python is a function that allows you to modify the behavior of another function or class without changing its code. Decorators provide a clean, readable way to extend functionality by “wrapping” a function or class, making it easy to add behavior dynamically.</p>
+<p>Decorators are commonly used in web frameworks to handle concerns like authentication, logging, and caching. They are an effective way to separate cross-cutting concerns from the main logic of a function, leading to more organized and maintainable code.</p>
+<p>Below is an example of using a decorator to log function calls:</p>
+<div class="sourceCode" id="annotated-cell-4"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-4-1" class="code-annotation-target"><a href="#annotated-cell-4-1"></a><span class="kw">def</span> log_decorator(func):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-4-2" class="code-annotation-target"><a href="#annotated-cell-4-2"></a>  <span class="kw">def</span> wrapper(<span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-4-3" class="code-annotation-target"><a href="#annotated-cell-4-3"></a>    <span class="bu">print</span>(<span class="ss">f"Calling function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' with arguments </span><span class="sc">{</span>args<span class="sc">}</span><span class="ss"> and </span><span class="sc">{</span>kwargs<span class="sc">}</span><span class="ss">"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-4-4" class="code-annotation-target"><a href="#annotated-cell-4-4"></a>    result <span class="op">=</span> func(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-4-5" class="code-annotation-target"><a href="#annotated-cell-4-5"></a>    <span class="bu">print</span>(<span class="ss">f"Function '</span><span class="sc">{</span>func<span class="sc">.</span><span class="va">__name__</span><span class="sc">}</span><span class="ss">' returned </span><span class="sc">{</span>result<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="annotated-cell-4-6"><a href="#annotated-cell-4-6"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-4-7" class="code-annotation-target"><a href="#annotated-cell-4-7"></a>    <span class="cf">return</span> result</span>
+<span id="annotated-cell-4-8"><a href="#annotated-cell-4-8"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-4-9" class="code-annotation-target"><a href="#annotated-cell-4-9"></a>  <span class="cf">return</span> wrapper</span>
+<span id="annotated-cell-4-10"><a href="#annotated-cell-4-10"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-4-11" class="code-annotation-target"><a href="#annotated-cell-4-11"></a><span class="at">@log_decorator</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-4-12" class="code-annotation-target"><a href="#annotated-cell-4-12"></a><span class="kw">def</span> add(a, b):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-4-13" class="code-annotation-target"><a href="#annotated-cell-4-13"></a>  <span class="cf">return</span> a <span class="op">+</span> b</span>
+<span id="annotated-cell-4-14"><a href="#annotated-cell-4-14"></a></span>
+<span id="annotated-cell-4-15"><a href="#annotated-cell-4-15"></a><span class="co"># Using the decorated function</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-4" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-4-16" class="code-annotation-target"><a href="#annotated-cell-4-16"></a>add(<span class="dv">3</span>, <span class="dv">5</span>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-4" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="1" data-code-annotation="1">Defines the <code>log_decorator</code> function, which accepts another function <code>func</code> as its argument.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="2" data-code-annotation="2">Defines an inner function <code>wrapper</code> that can accept any number of positional (<code>*args</code>) and keyword (<code>**kwargs</code>) arguments.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="3" data-code-annotation="3">Prints a message indicating that <code>func</code> is being called, along with the arguments passed to it.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="4" data-code-annotation="4">Calls the original function <code>func</code> with the provided arguments and stores the result in <code>result</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="5" data-code-annotation="5">Prints a message indicating that <code>func</code> has returned a value, displaying the result.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="7" data-code-annotation="6">Returns the <code>result</code> obtained from calling <code>func</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="9" data-code-annotation="7">Returns the <code>wrapper</code> function, effectively replacing <code>func</code> with <code>wrapper</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="8">8</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="11" data-code-annotation="8">Applies the <code>log_decorator</code> to the <code>add</code> function using the decorator syntax.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="9">9</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="12" data-code-annotation="9">Defines the <code>add</code> function, which takes two arguments <code>a</code> and <code>b</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="10">10</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="13" data-code-annotation="10">Returns the sum of <code>a</code> and <code>b</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-4" data-target-annotation="11">11</dt>
+<dd>
+<span data-code-cell="annotated-cell-4" data-code-lines="16" data-code-annotation="11">Calls the decorated <code>add</code> function with arguments <code>3</code> and <code>5</code>.</span>
+</dd>
+</dl>
+</section>
+<section id="code" class="level4">
+<h4 class="anchored" data-anchor-id="code">Code</h4>
+<p>To implement the singleton pattern using decorators, we create a decorator function that wraps a class, ensuring that only one instance of that class is created.</p>
+<section id="step-1-create-a-wrapper-class" class="level5">
+<h5 class="anchored" data-anchor-id="step-1-create-a-wrapper-class">Step 1: Create a wrapper class</h5>
+<p>The wrapper class is responsible for storing the instance of the decorated class and ensuring that any subsequent requests return the same instance.</p>
+<div class="sourceCode" id="annotated-cell-5"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-5-1"><a href="#annotated-cell-5-1"></a><span class="kw">class</span> SingletonInstanceWrapper:</span>
+<span id="annotated-cell-5-2"><a href="#annotated-cell-5-2"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cls):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-5-3" class="code-annotation-target"><a href="#annotated-cell-5-3"></a>    <span class="va">self</span>.__wrapped__ <span class="op">=</span> cls</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-5-4" class="code-annotation-target"><a href="#annotated-cell-5-4"></a>    <span class="va">self</span>._instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="annotated-cell-5-5"><a href="#annotated-cell-5-5"></a></span>
+<span id="annotated-cell-5-6"><a href="#annotated-cell-5-6"></a>  <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-5-7" class="code-annotation-target"><a href="#annotated-cell-5-7"></a>    <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-5-8" class="code-annotation-target"><a href="#annotated-cell-5-8"></a>      <span class="va">self</span>._instance <span class="op">=</span> <span class="va">self</span>.__wrapped__(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-5-9"><a href="#annotated-cell-5-9"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-5" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-5-10" class="code-annotation-target"><a href="#annotated-cell-5-10"></a>    <span class="cf">return</span> <span class="va">self</span>._instance</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-5" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="3" data-code-annotation="1">Stores the original class in the <code>__wrapped__</code> attribute.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="4" data-code-annotation="2">Initializes <code>_instance</code> to <code>None</code> to hold the singleton instance.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="7" data-code-annotation="3">Checks if <code>_instance</code> is <code>None</code> to determine if an instance needs to be created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="8" data-code-annotation="4">Creates a new instance of the decorated class and assigns it to <code>_instance</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-5" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-5" data-code-lines="10" data-code-annotation="5">Returns the singleton instance.</span>
+</dd>
+</dl>
+</section>
+<section id="step-2-create-the-decorator-function" class="level5">
+<h5 class="anchored" data-anchor-id="step-2-create-the-decorator-function">Step 2: Create the decorator function</h5>
+<p>Next, we need a decorator function that returns an instance of the wrapper class. This function will make it easy to apply the singleton pattern to any class by simply adding a decorator.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">def</span> ensure_single_instance(cls):</span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="cf">return</span> SingletonInstanceWrapper(cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="step-3-use-the-decorator" class="level5">
+<h5 class="anchored" data-anchor-id="step-3-use-the-decorator">Step 3: Use the decorator</h5>
+<p>We can now use the decorator to enforce singleton behavior on any class. Let’s apply it to a <code>Logger</code> class to see how it works:</p>
+<div class="sourceCode" id="annotated-cell-7"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-7-1"><a href="#annotated-cell-7-1"></a><span class="at">@ensure_single_instance</span></span>
+<span id="annotated-cell-7-2"><a href="#annotated-cell-7-2"></a><span class="kw">class</span> Logger:</span>
+<span id="annotated-cell-7-3"><a href="#annotated-cell-7-3"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="annotated-cell-7-4"><a href="#annotated-cell-7-4"></a>    <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-7-5"><a href="#annotated-cell-7-5"></a></span>
+<span id="annotated-cell-7-6"><a href="#annotated-cell-7-6"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-7-7"><a href="#annotated-cell-7-7"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-7-8"><a href="#annotated-cell-7-8"></a></span>
+<span id="annotated-cell-7-9"><a href="#annotated-cell-7-9"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-7-10"><a href="#annotated-cell-7-10"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-7-11"><a href="#annotated-cell-7-11"></a></span>
+<span id="annotated-cell-7-12"><a href="#annotated-cell-7-12"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-7-13"><a href="#annotated-cell-7-13"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-7-14"><a href="#annotated-cell-7-14"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-7-15"><a href="#annotated-cell-7-15"></a></span>
+<span id="annotated-cell-7-16"><a href="#annotated-cell-7-16"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-7-17" class="code-annotation-target"><a href="#annotated-cell-7-17"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-7-18"><a href="#annotated-cell-7-18"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-7-19" class="code-annotation-target"><a href="#annotated-cell-7-19"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-7" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-lines="17" data-code-annotation="1">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-7" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-lines="19" data-code-annotation="2">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this example, the <code>Logger</code> class is decorated with <code>@ensure_single_instance</code>. As a result, both <code>logger1</code> and <code>logger2</code> refer to the same instance, demonstrating the singleton behavior.</p>
+<p>This approach highlights the power of combining decorators with the singleton pattern. By adding the <code>@ensure_single_instance</code> decorator, we ensure that the <code>Logger</code> class functions as a singleton, with all instances referring to the same underlying object. This simplifies the code and makes the intent explicit, enhancing readability and maintainability.</p>
+</section>
+</section>
+</section>
+<section id="using-a-metaclass" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-metaclass">Using a metaclass</h3>
+<p>A metaclass can also be used to implement the singleton pattern. A <strong>metaclass</strong> is a class of a class, meaning it defines how classes behave. By using a metaclass, you can control the instantiation process of classes, making it a suitable tool for enforcing the singleton pattern.</p>
+<p>Below is an example of how to implement the singleton pattern using a metaclass:</p>
+<div class="sourceCode" id="annotated-cell-8"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-8-1"><a href="#annotated-cell-8-1"></a><span class="kw">class</span> SingletonMeta(<span class="bu">type</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-8-2" class="code-annotation-target"><a href="#annotated-cell-8-2"></a>  _instances <span class="op">=</span> {}</span>
+<span id="annotated-cell-8-3"><a href="#annotated-cell-8-3"></a></span>
+<span id="annotated-cell-8-4"><a href="#annotated-cell-8-4"></a>  <span class="kw">def</span> <span class="fu">__call__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-8-5" class="code-annotation-target"><a href="#annotated-cell-8-5"></a>    <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-8-6" class="code-annotation-target"><a href="#annotated-cell-8-6"></a>      cls._instances[cls] <span class="op">=</span> <span class="bu">super</span>(SingletonMeta, cls).<span class="fu">__call__</span>(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-8-7"><a href="#annotated-cell-8-7"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-8-8" class="code-annotation-target"><a href="#annotated-cell-8-8"></a>    <span class="cf">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-8-9"><a href="#annotated-cell-8-9"></a></span>
+<span id="annotated-cell-8-10"><a href="#annotated-cell-8-10"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-8-11"><a href="#annotated-cell-8-11"></a><span class="kw">class</span> Logger(metaclass<span class="op">=</span>SingletonMeta):</span>
+<span id="annotated-cell-8-12"><a href="#annotated-cell-8-12"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-8-13" class="code-annotation-target"><a href="#annotated-cell-8-13"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):</span>
+<span id="annotated-cell-8-14"><a href="#annotated-cell-8-14"></a>      <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-8-15"><a href="#annotated-cell-8-15"></a></span>
+<span id="annotated-cell-8-16"><a href="#annotated-cell-8-16"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-8-17"><a href="#annotated-cell-8-17"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-8-18"><a href="#annotated-cell-8-18"></a></span>
+<span id="annotated-cell-8-19"><a href="#annotated-cell-8-19"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-8-20"><a href="#annotated-cell-8-20"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-8-21"><a href="#annotated-cell-8-21"></a></span>
+<span id="annotated-cell-8-22"><a href="#annotated-cell-8-22"></a><span class="co"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-8-23"><a href="#annotated-cell-8-23"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-8-24"><a href="#annotated-cell-8-24"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-8-25"><a href="#annotated-cell-8-25"></a></span>
+<span id="annotated-cell-8-26"><a href="#annotated-cell-8-26"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-8-27" class="code-annotation-target"><a href="#annotated-cell-8-27"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-8-28"><a href="#annotated-cell-8-28"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-8" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-8-29" class="code-annotation-target"><a href="#annotated-cell-8-29"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-8" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="2" data-code-annotation="1">Initializes a class-level dictionary <code>_instances</code> to store instances of classes using this metaclass.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="5" data-code-annotation="2">Checks if the class (<code>cls</code>) is not in <code>_instances</code> to see if an instance has been created.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="6" data-code-annotation="3">Creates a new instance using <code>super().__call__</code> and stores it in <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="8" data-code-annotation="4">Returns the singleton instance from <code>_instances</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="13" data-code-annotation="5">Checks if the <code>log</code> attribute is already set to avoid re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="27" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-8" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-8" data-code-lines="29" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The <code>SingletonMeta</code> class is a metaclass that overrides the <code>__call__</code> method. This method is responsible for creating instances of classes.</p></li>
+<li><p>The <code>__call__</code> method checks if an instance already exists in the <code>_instances</code> dictionary. If not, it creates a new instance and stores it. Otherwise, it returns the existing instance.</p></li>
+<li><p>The <code>Logger</code> class uses <code>SingletonMeta</code> as its metaclass, ensuring that only one instance is ever created.</p></li>
+</ul>
+<p>This approach is particularly powerful because it allows you to enforce singleton behavior at the metaclass level, meaning that any class using <code>SingletonMeta</code> as its metaclass will automatically follow the singleton pattern. This approach is also more flexible and reusable compared to other singleton implementations.</p>
+<p>Using metaclasses for singletons allows for a more Pythonic approach to instance management, especially when working with multiple classes that need to follow the singleton pattern.</p>
+</section>
+<section id="comparing-the-three-implementations" class="level3">
+<h3 class="anchored" data-anchor-id="comparing-the-three-implementations">Comparing the three implementations</h3>
+<p>Each of the three implementations of the singleton pattern—using a base class, a decorator, and a metaclass—has its own advantages and use cases:</p>
+<ul>
+<li><p>Base class implementation: This approach is useful when multiple classes need to follow the singleton pattern. It allows for reuse of the singleton logic, as any class inheriting from the base class will automatically follow the singleton behavior. However, it introduces tight coupling with the base class, which might limit flexibility.</p></li>
+<li><p>Decorator implementation: The decorator approach makes the intent to create a singleton explicit in the class definition. It keeps the singleton logic separate from the core functionality of the class, promoting better separation of concerns. This method is highly readable, but requires a decorator function and an additional wrapper class, which can add some complexity.</p></li>
+<li><p>Metaclass implementation: Using a metaclass to enforce the singleton pattern is a powerful and Pythonic solution. It allows multiple classes to follow the singleton pattern without explicit inheritance or decoration. This approach is highly reusable and works well when you need singleton behavior across different classes without modifying each class definition. However, metaclasses can be more difficult to understand, especially for developers who are not familiar with Python’s metaclass system.</p></li>
+</ul>
+</section>
+</section>
+<section id="taking-into-account-thread-safety" class="level2">
+<h2 class="anchored" data-anchor-id="taking-into-account-thread-safety">Taking into account thread-safety</h2>
+<p>It’s crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the Global Interpreter Lock (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.</p>
+<p>To make singleton implementations thread-safe, we need to ensure that multiple threads do not create multiple instances simultaneously. Below are thread-safe versions of the singleton pattern implemented using a base class, a decorator, and a metaclass.</p>
+<section id="using-a-base-class-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-base-class-1">Using a base class</h3>
+<p>In a thread-safe singleton implementation using a base class, we use a lock to ensure that only one thread can create the instance at a time:</p>
+<div class="sourceCode" id="annotated-cell-9"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-9-1" class="code-annotation-target"><a href="#annotated-cell-9-1"></a><span class="im">import</span> threading</span>
+<span id="annotated-cell-9-2"><a href="#annotated-cell-9-2"></a></span>
+<span id="annotated-cell-9-3"><a href="#annotated-cell-9-3"></a><span class="kw">class</span> SingletonBaseThreadSafe:</span>
+<span id="annotated-cell-9-4"><a href="#annotated-cell-9-4"></a>  _instances <span class="op">=</span> {}</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-9-5" class="code-annotation-target"><a href="#annotated-cell-9-5"></a>  _lock <span class="op">=</span> threading.Lock()</span>
+<span id="annotated-cell-9-6"><a href="#annotated-cell-9-6"></a></span>
+<span id="annotated-cell-9-7"><a href="#annotated-cell-9-7"></a>  <span class="kw">def</span> <span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="annotated-cell-9-8"><a href="#annotated-cell-9-8"></a>    <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-9-9" class="code-annotation-target"><a href="#annotated-cell-9-9"></a>      <span class="cf">with</span> cls._lock:</span>
+<span id="annotated-cell-9-10"><a href="#annotated-cell-9-10"></a>        <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-9-11" class="code-annotation-target"><a href="#annotated-cell-9-11"></a>          cls._instances[cls] <span class="op">=</span> <span class="bu">super</span>(SingletonBaseThreadSafe, cls).<span class="fu">__new__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-9-12"><a href="#annotated-cell-9-12"></a></span>
+<span id="annotated-cell-9-13"><a href="#annotated-cell-9-13"></a>    <span class="cf">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-9-14"><a href="#annotated-cell-9-14"></a></span>
+<span id="annotated-cell-9-15"><a href="#annotated-cell-9-15"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-9-16"><a href="#annotated-cell-9-16"></a><span class="kw">class</span> Logger(SingletonBaseThreadSafe):</span>
+<span id="annotated-cell-9-17"><a href="#annotated-cell-9-17"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-9-18" class="code-annotation-target"><a href="#annotated-cell-9-18"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):</span>
+<span id="annotated-cell-9-19"><a href="#annotated-cell-9-19"></a>      <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-9-20"><a href="#annotated-cell-9-20"></a></span>
+<span id="annotated-cell-9-21"><a href="#annotated-cell-9-21"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-9-22"><a href="#annotated-cell-9-22"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-9-23"><a href="#annotated-cell-9-23"></a></span>
+<span id="annotated-cell-9-24"><a href="#annotated-cell-9-24"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-9-25"><a href="#annotated-cell-9-25"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-9-26"><a href="#annotated-cell-9-26"></a></span>
+<span id="annotated-cell-9-27"><a href="#annotated-cell-9-27"></a><span class="co"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-9-28"><a href="#annotated-cell-9-28"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-9-29"><a href="#annotated-cell-9-29"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-9-30"><a href="#annotated-cell-9-30"></a></span>
+<span id="annotated-cell-9-31"><a href="#annotated-cell-9-31"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-9-32" class="code-annotation-target"><a href="#annotated-cell-9-32"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-9-33"><a href="#annotated-cell-9-33"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-9" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-9-34" class="code-annotation-target"><a href="#annotated-cell-9-34"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-9" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module to use threading locks.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="5" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> to ensure thread safety.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="9" data-code-annotation="3">Acquires the lock to prevent multiple threads from entering the critical section.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="11" data-code-annotation="4">Creates the singleton instance inside the locked section if it doesn’t exist.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="18" data-code-annotation="5">Checks if the <code>log</code> attribute is already initialized.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="32" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-9" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-9" data-code-lines="34" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>A class-level lock (<code>_lock</code>) is used to ensure that only one thread can execute the code that creates the singleton instance.</p></li>
+<li><p>The <code>with cls._lock</code> statement prevents multiple threads from entering the critical section where the instance is created, ensuring thread safety.</p></li>
+</ul>
+</section>
+<section id="using-a-decorator-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-decorator-1">Using a decorator</h3>
+<p>The decorator-based singleton can be made thread-safe by adding a lock to ensure only one thread creates the instance:</p>
+<div class="sourceCode" id="annotated-cell-10"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-10-1" class="code-annotation-target"><a href="#annotated-cell-10-1"></a><span class="im">import</span> threading</span>
+<span id="annotated-cell-10-2"><a href="#annotated-cell-10-2"></a></span>
+<span id="annotated-cell-10-3"><a href="#annotated-cell-10-3"></a><span class="kw">class</span> SingletonInstanceWrapperThreadSafe:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-10-4" class="code-annotation-target"><a href="#annotated-cell-10-4"></a>  _lock <span class="op">=</span> threading.Lock()</span>
+<span id="annotated-cell-10-5"><a href="#annotated-cell-10-5"></a></span>
+<span id="annotated-cell-10-6"><a href="#annotated-cell-10-6"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cls):</span>
+<span id="annotated-cell-10-7"><a href="#annotated-cell-10-7"></a>    <span class="va">self</span>.__wrapped__ <span class="op">=</span> cls</span>
+<span id="annotated-cell-10-8"><a href="#annotated-cell-10-8"></a>    <span class="va">self</span>._instance <span class="op">=</span> <span class="va">None</span></span>
+<span id="annotated-cell-10-9"><a href="#annotated-cell-10-9"></a></span>
+<span id="annotated-cell-10-10"><a href="#annotated-cell-10-10"></a>  <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="annotated-cell-10-11"><a href="#annotated-cell-10-11"></a>    <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-10-12" class="code-annotation-target"><a href="#annotated-cell-10-12"></a>      <span class="cf">with</span> <span class="va">self</span>._lock:</span>
+<span id="annotated-cell-10-13"><a href="#annotated-cell-10-13"></a>        <span class="cf">if</span> <span class="va">self</span>._instance <span class="kw">is</span> <span class="va">None</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-10-14" class="code-annotation-target"><a href="#annotated-cell-10-14"></a>          <span class="va">self</span>._instance <span class="op">=</span> <span class="va">self</span>.__wrapped__(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-10-15"><a href="#annotated-cell-10-15"></a></span>
+<span id="annotated-cell-10-16"><a href="#annotated-cell-10-16"></a>    <span class="cf">return</span> <span class="va">self</span>._instance</span>
+<span id="annotated-cell-10-17"><a href="#annotated-cell-10-17"></a></span>
+<span id="annotated-cell-10-18"><a href="#annotated-cell-10-18"></a><span class="kw">def</span> ensure_single_instance_thread_safe(cls):</span>
+<span id="annotated-cell-10-19"><a href="#annotated-cell-10-19"></a>  <span class="cf">return</span> SingletonInstanceWrapperThreadSafe(cls)</span>
+<span id="annotated-cell-10-20"><a href="#annotated-cell-10-20"></a></span>
+<span id="annotated-cell-10-21"><a href="#annotated-cell-10-21"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-10-22"><a href="#annotated-cell-10-22"></a><span class="at">@ensure_single_instance_thread_safe</span></span>
+<span id="annotated-cell-10-23"><a href="#annotated-cell-10-23"></a><span class="kw">class</span> Logger:</span>
+<span id="annotated-cell-10-24"><a href="#annotated-cell-10-24"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="annotated-cell-10-25"><a href="#annotated-cell-10-25"></a>    <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-10-26"><a href="#annotated-cell-10-26"></a></span>
+<span id="annotated-cell-10-27"><a href="#annotated-cell-10-27"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-10-28"><a href="#annotated-cell-10-28"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-10-29"><a href="#annotated-cell-10-29"></a></span>
+<span id="annotated-cell-10-30"><a href="#annotated-cell-10-30"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-10-31"><a href="#annotated-cell-10-31"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-10-32"><a href="#annotated-cell-10-32"></a></span>
+<span id="annotated-cell-10-33"><a href="#annotated-cell-10-33"></a><span class="co"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-10-34"><a href="#annotated-cell-10-34"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-10-35"><a href="#annotated-cell-10-35"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-10-36"><a href="#annotated-cell-10-36"></a></span>
+<span id="annotated-cell-10-37"><a href="#annotated-cell-10-37"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-10-38" class="code-annotation-target"><a href="#annotated-cell-10-38"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-10-39"><a href="#annotated-cell-10-39"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-10" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-10-40" class="code-annotation-target"><a href="#annotated-cell-10-40"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-10" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="4" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> to manage thread access.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="12" data-code-annotation="3">Acquires the lock to enter the critical section safely.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="14" data-code-annotation="4">Creates the singleton instance within the locked section if it doesn’t exist.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="38" data-code-annotation="5">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-10" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-10" data-code-lines="40" data-code-annotation="6">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>A class-level lock (<code>_lock</code>) is used to prevent multiple threads from creating multiple instances simultaneously.</p></li>
+<li><p>The <code>with self._lock</code> statement ensures that only one thread can execute the code that initializes the singleton instance.</p></li>
+</ul>
+</section>
+<section id="using-a-metaclass-1" class="level3">
+<h3 class="anchored" data-anchor-id="using-a-metaclass-1">Using a metaclass</h3>
+<p>For a thread-safe singleton using a metaclass, we add a lock to the metaclass to ensure that only one thread can create the instance:</p>
+<div class="sourceCode" id="annotated-cell-11"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-11-1" class="code-annotation-target"><a href="#annotated-cell-11-1"></a><span class="im">import</span> threading</span>
+<span id="annotated-cell-11-2"><a href="#annotated-cell-11-2"></a></span>
+<span id="annotated-cell-11-3"><a href="#annotated-cell-11-3"></a><span class="kw">class</span> SingletonMetaThreadSafe(<span class="bu">type</span>):</span>
+<span id="annotated-cell-11-4"><a href="#annotated-cell-11-4"></a>  _instances <span class="op">=</span> {}</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-11-5" class="code-annotation-target"><a href="#annotated-cell-11-5"></a>  _lock <span class="op">=</span> threading.Lock()</span>
+<span id="annotated-cell-11-6"><a href="#annotated-cell-11-6"></a></span>
+<span id="annotated-cell-11-7"><a href="#annotated-cell-11-7"></a>  <span class="kw">def</span> <span class="fu">__call__</span>(cls, <span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="annotated-cell-11-8"><a href="#annotated-cell-11-8"></a>    <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-11-9" class="code-annotation-target"><a href="#annotated-cell-11-9"></a>      <span class="cf">with</span> cls._lock:</span>
+<span id="annotated-cell-11-10"><a href="#annotated-cell-11-10"></a>        <span class="cf">if</span> cls <span class="kw">not</span> <span class="kw">in</span> cls._instances:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-11-11" class="code-annotation-target"><a href="#annotated-cell-11-11"></a>          cls._instances[cls] <span class="op">=</span> <span class="bu">super</span>(SingletonMetaThreadSafe, cls).<span class="fu">__call__</span>(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="annotated-cell-11-12"><a href="#annotated-cell-11-12"></a></span>
+<span id="annotated-cell-11-13"><a href="#annotated-cell-11-13"></a>    <span class="cf">return</span> cls._instances[cls]</span>
+<span id="annotated-cell-11-14"><a href="#annotated-cell-11-14"></a></span>
+<span id="annotated-cell-11-15"><a href="#annotated-cell-11-15"></a><span class="co"># Example usage</span></span>
+<span id="annotated-cell-11-16"><a href="#annotated-cell-11-16"></a><span class="kw">class</span> Logger(metaclass<span class="op">=</span>SingletonMetaThreadSafe):</span>
+<span id="annotated-cell-11-17"><a href="#annotated-cell-11-17"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-11-18" class="code-annotation-target"><a href="#annotated-cell-11-18"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(<span class="va">self</span>, <span class="st">'log'</span>):</span>
+<span id="annotated-cell-11-19"><a href="#annotated-cell-11-19"></a>      <span class="va">self</span>.log <span class="op">=</span> []</span>
+<span id="annotated-cell-11-20"><a href="#annotated-cell-11-20"></a></span>
+<span id="annotated-cell-11-21"><a href="#annotated-cell-11-21"></a>  <span class="kw">def</span> write_log(<span class="va">self</span>, message):</span>
+<span id="annotated-cell-11-22"><a href="#annotated-cell-11-22"></a>    <span class="va">self</span>.log.append(message)</span>
+<span id="annotated-cell-11-23"><a href="#annotated-cell-11-23"></a></span>
+<span id="annotated-cell-11-24"><a href="#annotated-cell-11-24"></a>  <span class="kw">def</span> read_log(<span class="va">self</span>):</span>
+<span id="annotated-cell-11-25"><a href="#annotated-cell-11-25"></a>    <span class="cf">return</span> <span class="va">self</span>.log</span>
+<span id="annotated-cell-11-26"><a href="#annotated-cell-11-26"></a></span>
+<span id="annotated-cell-11-27"><a href="#annotated-cell-11-27"></a><span class="co"># Testing the singleton behavior</span></span>
+<span id="annotated-cell-11-28"><a href="#annotated-cell-11-28"></a>logger1 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-11-29"><a href="#annotated-cell-11-29"></a>logger2 <span class="op">=</span> Logger()</span>
+<span id="annotated-cell-11-30"><a href="#annotated-cell-11-30"></a></span>
+<span id="annotated-cell-11-31"><a href="#annotated-cell-11-31"></a>logger1.write_log(<span class="st">"Log message 1"</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-11-32" class="code-annotation-target"><a href="#annotated-cell-11-32"></a><span class="bu">print</span>(logger2.read_log())</span>
+<span id="annotated-cell-11-33"><a href="#annotated-cell-11-33"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-11" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-11-34" class="code-annotation-target"><a href="#annotated-cell-11-34"></a><span class="bu">print</span>(logger1 <span class="kw">is</span> logger2)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-11" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="1" data-code-annotation="1">Imports the <code>threading</code> module.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="5" data-code-annotation="2">Initializes a class-level lock <code>_lock</code> in the metaclass.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="9" data-code-annotation="3">Uses the lock to prevent concurrent instance creation.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="11" data-code-annotation="4">Creates the singleton instance inside the critical section.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="18" data-code-annotation="5">Checks if the <code>log</code> attribute is already set to avoid re-initialization.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="32" data-code-annotation="6">Output: <code>['Log message 1']</code>.</span>
+</dd>
+<dt data-target-cell="annotated-cell-11" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-11" data-code-lines="34" data-code-annotation="7">Output: <code>True</code>.</span>
+</dd>
+</dl>
+<p>In this implementation:</p>
+<ul>
+<li><p>The metaclass <code>SingletonMetaThreadSafe</code> uses a class-level lock (<code>_lock</code>) to prevent multiple threads from creating multiple instances.</p></li>
+<li><p>The <code>with cls._lock</code> statement ensures thread safety by restricting access to the instance creation code to only one thread at a time.</p></li>
+</ul>
+</section>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p>All three implementations ensure that the singleton instance is created in a thread-safe manner by using locks. This prevents multiple threads from creating separate instances, ensuring the singleton property holds even in concurrent environments.</p>
+<p>In CPython, the reference implementation of Python, the GIL ensures that only one thread executes Python bytecode at a time. This means that even without explicit locks, bytecode execution is atomic at the interpreter level, which can mitigate some thread safety concerns for simple operations. However, the GIL does not protect against all threading issues, especially when dealing with non-atomic operations or when interfacing with external systems and I/O operations. Therefore, relying solely on the GIL for thread safety is not advisable.</p>
+<p>Moreover, there are proposals like <strong><a href="https://peps.python.org/pep-0703/">PEP 703</a></strong> titled <em>Making the Global Interpreter Lock Optional in CPython</em>, which aim to make the GIL optional in future versions of Python. If such changes are implemented, threads could execute Python bytecode concurrently, removing the atomicity guarantees currently provided by the GIL. This would increase the importance of explicit thread safety mechanisms in your code.</p>
+<p>Given these considerations, it’s important to implement explicit thread safety measures, such as locks, in your singleton implementations. This ensures that your code is robust not only in the current CPython environment but also in future Python interpreters that may not have a GIL. By proactively managing thread safety, you can prevent subtle bugs and race conditions that could occur in a truly concurrent execution environment.</p>
+<p>While each singleton implementation method—base class, decorator, or metaclass—has its own strengths, the choice depends on the specific requirements of your application, such as readability, reusability, and your familiarity with Python’s advanced features like metaclasses or decorators. Regardless of the method chosen, incorporating explicit thread safety measures is crucial for maintaining the singleton property in multi-threaded applications, both now and in anticipation of future developments in Python’s concurrency model.</p>
+</section>
+</section>
+<section id="final-thoughts" class="level2">
+<h2 class="anchored" data-anchor-id="final-thoughts">Final thoughts</h2>
+<p>The singleton pattern is a powerful tool when used appropriately, particularly for managing shared resources like configuration settings or logging mechanisms. However, it’s important to weigh the benefits of the singleton pattern against its potential downsides. Overusing it or applying it in the wrong context can lead to design issues such as increased coupling, global state management problems, and violations of the Single Responsibility Principle.</p>
+<p>The singleton pattern can be implemented in several ways, each with its pros and cons. The base class implementation is straightforward and easy to reuse but can introduce tight coupling. The decorator implementation provides clear separation of concerns and is highly readable but may add complexity due to the need for additional wrapper classes. The metaclass approach is powerful and reusable across different classes without modifying their definitions, but it may be challenging for developers who are not familiar with metaclasses.</p>
+<p>In summary, while the singleton pattern is useful, its usage should be carefully considered and limited to cases where ensuring a single instance truly adds value to the application. Understanding the trade-offs of different implementations will help you make the best design decisions for your specific needs.</p>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+          // target, if specified
+          link.setAttribute("target", "_blank");
+          if (link.getAttribute("rel") === null) {
+            link.setAttribute("rel", "noopener");
+          }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2024-2025
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">
+<p><img src="https://raw.githubusercontent.com/antomon/antomon.github.io/cd7dbf5f81371c6eb1c3c7e8a32ac35f44b3bbce/by-nc-nd.svg" class="img-fluid"></p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
