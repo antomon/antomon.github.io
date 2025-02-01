@@ -140,7 +140,7 @@ flowchart TD
   end
   subgraph Server["Server"]
     S1[["Step 4: Perform $$\ Eval(f, Enc(m))=Enc(f(m))\ $$"]]
-    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"\]
+    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"$$
   end
   C1 --> C2
   C2 --> C3
@@ -1365,3 +1365,386 @@ A more refined algorithm is the Miller-Rabin primality test[^Miller-Rabin-homomo
 
 [^Miller-Rabin-homomorphic-encryption-developers]: Miller, G. L. (1976). **Riemann's hypothesis and tests for primality**. *Journal of Computer and System Sciences*, 13(3), 300–317. [DOI](https://doi.org/10.1016/S0022-0000(76)80043-8). Rabin, M. O. (1980). **Probabilistic algorithm for testing primality**. *Journal of Number Theory*, 12(1), 128–138. [DOI](https://doi.org/10.1016/0022-314X(80)90084-0)
 
+#### Euler’s theorem
+
+Euler's theorem is a fundamental result in number theory that generalizes Fermat's little theorem. It provides a condition for modular exponentiation when the base and modulus are coprime.
+
+> **Definition (*Euler totient function*)**:
+> Let $n$ be a positive integer, the Euler totient function, denoted as $\phi(n)$, counts the number of positive integers less than $n$ that are relatively prime to $n$[^Cardinality-homomorphic-encryption-developers]:
+$$
+\phi(n) = \# \{ a \in \mathbb{Z} : 1 \leq a < n, \gcd(a, n) = 1 \}.
+$$
+
+Properties of the Euler totient function:
+
+1. If $p$ is a prime number, then:
+   $$
+   \phi(p) = p - 1.
+   $$
+
+2. If $n$ has the prime factorization $n = p_1^{e_1} p_2^{e_2} \dots p_k^{e_k}$, then $\phi(n)$ is given by:
+   $$
+   \phi(n) = n \prod_{i=1}^{k} \left(1 - \frac{1}{p_i} \right).
+   $$
+
+3. The totient function is **multiplicative**, meaning that if $m$ and $n$ are coprime, then:
+   $$
+   \phi(mn) = \phi(m) \phi(n).
+   $$
+
+> **Theorem (*Euler*)**: Let $a$ and $n$ be coprime integers (i.e., $\gcd(a, n) = 1$). Then:
+> $$
+> a^{\phi(n)} \equiv 1 \pmod{n}.
+> $$
+
+This theorem generalizes Fermat's little theorem, which is a special case when $n$ is prime, where $\phi(p) = p - 1$ and thus:
+$$
+ a^{p-1} \equiv 1 \pmod{p}.
+$$
+
+Euler’s theorem is widely used in cryptographic algorithms, particularly in the RSA encryption scheme, where it is employed to compute modular inverses efficiently. The theorem allows us to find the modular inverse of $a$ modulo $n$ when $\gcd(a, n) = 1$, using:
+$$
+ a^{-1} \equiv a^{\phi(n) - 1} \pmod{n}.
+$$
+
+For example, to compute $3^{\phi(25)} \mod 25$:
+
+- First, calculate $\phi(25)$:
+  $$
+  \phi(25) = 25 \left( 1 - \frac{1}{5} \right) = 25 \times \frac{4}{5} = 20.
+  $$
+
+- Then,
+  $$
+  3^{20} \equiv 1 \pmod{25}.
+  $$
+
+Thus, using Euler’s theorem, we can directly conclude that any power of 3 raised to 20 will be congruent to 1 modulo 25.
+
+[^Cardinality-homomorphic-encryption-developers]: The symbol $#$ denotes the **cardinality** (size) of a set, which represents the number of elements in that set. It is commonly used in combinatorics and number theory. An alternative notation for the cardinality of a set $S$ is $|S|$, which is more prevalent in set theory.
+
+#### Carmichael’s theorem
+
+Carmichael’s theorem refines Euler’s theorem by defining the smallest exponent that guarantees modular exponentiation behaves predictably for all coprime bases. This exponent is given by the **Carmichael function**, denoted as $\lambda(n)$.
+
+> **Theorem (*Carmichael*)**: Let $n$ be a positive integer. The function $\lambda(n)$ is the smallest integer such that:
+>
+> $$
+> a^{\lambda(n)} \equiv 1 \pmod{n}
+> $$
+> for all $a \in \mathbb{Z}_n^*$.
+
+This function provides a stricter condition than Euler’s theorem and guarantees that for any integer $a$ coprime to $n$, the smallest exponent $e$ for which $a^e \equiv 1 \pmod{n}$ is always a divisor of $\lambda(n)$. In other words, the values of $e$ that satisfy this condition must be factors of $\lambda(n)$. By definition, $\lambda(n)$ is also always a divisor of $\phi(n)$:
+$$
+\lambda(n) \mid \phi(n).
+$$
+
+To compute $\lambda(n)$, we use the least common multiple (lcm) function, which determines the smallest positive integer that is divisible by a given set of numbers.
+
+> **Definition (*least common multiple)***: The lcm of two integers $a$ and $b$, denoted as $\operatorname{lcm}(a, b)$, is the smallest positive integer that is a multiple of both $a$ and $b$:
+> $$
+> \operatorname{lcm}(a, b) = \frac{|a \cdot b|}{\gcd(a, b)},
+> $$
+> where $\gcd(a, b)$ is the greatest common divisor of $a$ and $b$.
+
+This concept extends naturally to multiple integers, allowing for an efficient computation of $\lambda(n)$ when $n$ has multiple prime factors.
+
+Example: consider $n = 18$, which has the prime factorization $n = 2 \times 3^2$ and we compute:  
+$$
+\lambda(2) = 1, \quad \lambda(3^2) = \phi(3^2) = 3.
+$$
+
+Since $n$ consists of relatively prime factors, we use the least common multiple:
+$$
+\lambda(18) = \operatorname{lcm}(\lambda(2), \lambda(3^2)) = \operatorname{lcm}(1, 3) = 3.
+$$
+This tells us that for any integer $a$ coprime to 18, the smallest exponent satisfying $a^e \equiv 1 \pmod{18}$ must be a multiple of 3.
+
+To compute $\lambda(n)$ efficiently for any integer $n$, we apply the following structured approach, which relies on prime power properties and the least common multiple:
+
+1. If $n$ is a power of a single prime, $p^e$, we compute $\lambda(n)$ as follows:
+   - When $p$ is an **odd prime** or $e \leq 2$, $\lambda(p^e)$ is simply $\phi(p^e)$, the Euler totient function.
+   - When $p = 2$ and $e \geq 3$, the exponent is halved:  
+     $$
+     \lambda(p^e) = \frac{1}{2} \phi(p^e).
+     $$
+   This accounts for the behavior of powers of 2 in modular arithmetic, ensuring that exponentiation remains consistent with Carmichael’s theorem.
+
+2. If $n$ is a product of multiple **pairwise relatively prime numbers** $n_1, n_2, ..., n_r$, the Carmichael function is computed using the least common multiple:
+   $$
+   \lambda(n) = \operatorname{lcm}(\lambda(n_1), ..., \lambda(n_r)).
+   $$
+   This ensures that $\lambda(n)$ is compatible with each individual modulus, making it the smallest exponent that satisfies $a^{\lambda(n)} \equiv 1 \pmod{n}$ for all coprime bases $a$.
+
+3. If $n$ is given in its **prime factorized form**:
+   $$
+   n = p_1^{e_1} p_2^{e_2} \dots p_r^{e_r},
+   $$
+   then $\lambda(n)$ is computed as:
+   $$
+   \lambda(n) = \operatorname{lcm}(\lambda(p_1^{e_1}), ..., \lambda(p_r^{e_r})).
+   $$
+   This approach ensures that we first compute $\lambda$ for each prime power individually (using the prime power rule) and then combine the results using the least common multiple.
+
+By following these structured steps, we can efficiently compute $\lambda(n)$ for any integer $n$, making it a practical function for number theory and cryptographic applications.
+
+Now, let's introduce numbers that pass Fermat’s primality test despite being composite:
+
+> **Definition (*Carmichael number*)**: a Carmichael number is a composite number $n$ that satisfies:
+> $$
+> a^{n-1} \equiv 1 \pmod{n},
+> $$
+> for all $a$ coprime to $n$. 
+
+A number is Carmichael if and only if $\lambda(n)$ divides $n - 1$. For example, consider:
+$$
+\lambda(1105) = \operatorname{lcm}(\lambda(5), \lambda(13), \lambda(17)) = \operatorname{lcm}(4, 12, 16) = 48.
+$$
+Since $48$ divides $1105 - 1 = 1104$, this confirms that **1105 is a Carmichael number**.
+
+Carmichael numbers are important in cryptography because they can deceive certain primality tests, making them crucial in designing secure encryption algorithms.
+
+#### Generators
+
+A **generator** is a number that, when multiplied by itself multiple times (using modular arithmetic), cycles through many or all possible values before repeating. This cycle length is called the **multiplicative order** of the number. In simple terms, it tells us how long it takes for the number to "reset" back to 1 when repeatedly multiplied by itself modulo $n$.
+
+For example, if we take 3 and multiply it repeatedly modulo 7:  
+$$
+3^1 \equiv 3 \pmod{7}, \quad 3^2 \equiv 9 \equiv 2 \pmod{7}, \quad 3^3 \equiv 6 \pmod{7}, \quad 3^4 \equiv 4 \pmod{7}, \quad 3^5 \equiv 5 \pmod{7}, \quad 3^6 \equiv 1 \pmod{7}.
+$$  
+Here, the number 3 cycles through all possible values before repeating, making it a generator modulo 7.
+
+This concept is useful in cryptography because some security systems rely on the fact that **finding how many times you need to multiply a number to get back to 1 (the order) is hard to figure out**. This is used in encryption methods like **Diffie-Hellman key exchange**, which helps people securely share secret keys over public networks.
+
+More formally:
+
+> **Definition (*Multiplicative order*)**: given a positive integer $n$ and an element $a \in \mathbb{Z}_n^*$, the multiplicative order of $a$, denoted as $\operatorname{ord}_n(a)$, is the smallest integer $e > 1$ such that:
+> $$
+>  a^e \equiv 1 \pmod{n}.
+> $$
+
+Properties of the multiplicative order:
+
+1. The order of $a$ always divides $\phi(n)$, a consequence of Euler’s theorem.
+2. For any integer $i$, $a^i \equiv 1 \pmod{n}$ if and only if $\operatorname{ord}_n(a) \mid i$.
+
+> **Definition (*Generator*)**: an element $g \in \mathbb{Z}_n^*$ is called a generator (or a primitive root) of $\mathbb{Z}_n^*$ if its order is maximal, meaning:
+> $$
+>  \operatorname{ord}_n(g) = \phi(n).
+> $$
+
+This implies that $g$ can produce all elements of $\mathbb{Z}_n^*$ through exponentiation.
+
+A generator $a$ of $\mathbb{Z}_n^*$ remains a generator under exponentiation if and only if the exponent $i$ is chosen correctly, as stated in the following theorem.
+
+> **Theorem (*Generator preservation*)**: if $a$ is a generator of $\mathbb{Z}_n^*$, then for any integer $i$, the element $b \equiv a^i \pmod{n}$ is also a generator of $\mathbb{Z}_n^*$ if and only if:
+> $$
+> \gcd(i, \phi(n)) = 1.
+> $$
+
+This property is essential in cryptographic protocols such as Diffie-Hellman key exchange and RSA encryption, where security relies on the fact that, while it is easy to compute exponentiation modulo $n$, finding the original exponent $i$ given only the result $a^i \mod n$ (a problem known as the **discrete logarithm problem**) is computationally difficult.
+
+To illustrate the concept of a generator, consider $\mathbb{Z}_{10}^*$, which consists of the elements:
+$$
+\mathbb{Z}_{10}^* = \{1, 3, 7, 9\}.
+$$
+The totient function gives $\phi(10) = 4$, so a generator $g$ must satisfy $\operatorname{ord}_{10}(g) = 4$.
+
+Checking powers of 3 modulo 10:
+$$
+3^1 \equiv 3 \pmod{10}, \quad 3^2 \equiv 9 \pmod{10}, \quad 3^3 \equiv 7 \pmod{10}, \quad 3^4 \equiv 1 \pmod{10}.
+$$
+Since the order of 3 is 4, it is a generator of $\mathbb{Z}_{10}^*$.
+
+#### Chinese Remainder Theorem
+
+The **Chinese Remainder Theorem (CRT)** is a fundamental result in number theory that provides a way to solve systems of simultaneous congruences when the moduli are pairwise relatively prime.
+
+> **Theorem (*Chinese Remainder*)**: let $n_1, n_2, \dots, n_k$ be pairwise relatively prime positive integers, then for any given integers $r_1, r_2, \dots, r_k$, the system of congruences:
+> $$
+> x \equiv r_i \pmod{n_i}, \quad \text{for } i = 1, \dots, k,
+> $$
+> has a unique solution modulo $n = n_1 n_2 \cdots n_k$.
+
+The solution is given by:
+$$
+ x \equiv \sum_{i=1}^{k} r_i \cdot c_i \cdot m_i \pmod{n},
+$$
+where $m_i = \frac{n}{n_i}$ and $c_i$ is the modular inverse of $m_i$ modulo $n_i$, satisfying $c_i m_i \equiv 1 \pmod{n_i}$.
+
+Solving systems with CRT algorithm:
+
+1. Compute $n = n_1 n_2 \cdots n_k$.
+2. For each $i$, compute $m_i = n / n_i$.
+3. Compute the modular inverse $c_i \equiv m_i^{-1} \pmod{n_i}$.
+4. Compute $x = \sum_{i=1}^{k} r_i \cdot c_i \cdot m_i$ and reduce modulo $n$.
+
+For example, solve the system:
+$$
+ x \equiv 4 \pmod{9}, \quad x \equiv 7 \pmod{13}, \quad x \equiv 2 \pmod{17}.
+$$
+
+Since 9, 13, and 17 are pairwise relatively prime, we compute:
+- $n = 9 \times 13 \times 17 = 1989$.
+- $m_1 = 1989/9 = 221$, $m_2 = 1989/13 = 153$, $m_3 = 1989/17 = 117$.
+- Compute the modular inverses:
+  - $c_1 = 221^{-1} \equiv 4 \pmod{9}$.
+  - $c_2 = 153^{-1} \equiv 12 \pmod{13}$.
+  - $c_3 = 117^{-1} \equiv 10 \pmod{17}$.
+- Compute $x$:
+  $$
+  x \equiv (4 \times 4 \times 221 + 7 \times 12 \times 153 + 2 \times 10 \times 117) \pmod{1989}.
+  $$
+  Evaluating, we find $x \equiv 8776 \equiv 418 \pmod{1989}$.
+
+Thus, the unique solution modulo 1989 is $x \equiv 418 \pmod{1989}$.
+
+This demonstrates the power of the CRT in reconstructing values from modular congruences.
+
+#### Quadratic residues
+
+> **Definition (*Quadratic residue*)**: a number $a \in \mathbb{Z}_n^*$ is a quadratic residue modulo $n$ if there exists an integer $x$ such that:
+> $$
+>  a \equiv x^2 \pmod{n}.
+> $$
+> Otherwise, $a$ is called a **quadratic non-residue** modulo $n$.
+
+This theorem allows us to efficiently determine whether a number is a quadratic residue:
+
+> **Theorem(*Euler's criterion*)**: Let $p$ be an odd prime and $a \in \mathbb{Z}_p^*$. Then:
+>
+> - If $a$ is a quadratic residue modulo $p$:
+>   $$
+>   a^{(p-1)/2} \equiv 1 \pmod{p}.
+>   $$
+> - If $a$ is a quadratic non-residue modulo $p$:
+>   $$
+>   a^{(p-1)/2} \equiv -1 \pmod{p}.
+>   $$
+
+> **Definition (*Legendre symbol*)**: the **Legendre symbol** is a function that determines whether an integer $a$ is a quadratic residue modulo an odd prime $p$; it is defined as:
+> $$
+> \left( \frac{a}{p} \right) = \begin{cases} 
+> 0, & \text{if } p \mid a, \\ 
+> 1, & \text{if } a \text{ is a quadratic residue modulo } p, \\ 
+> -1, & \text{if } a \text{ is a quadratic non-residue modulo } p. 
+> \end{cases}
+> $$
+
+Using Euler’s criterion, we compute:
+$$
+\left( \frac{a}{p} \right) \equiv a^{(p-1)/2} \pmod{p}.
+$$
+
+Then, we can state:
+
+> **Theorem (*Properties of the Legendre symbol*)**: let $p$ be an odd prime and $a, b$ be integers, the Legendre symbol satisfies the following properties:
+>
+> 1. $\left( \frac{a}{p} \right) \equiv a^{(p-1)/2} \pmod{p}$ (Euler’s criterion).
+> 2. If $a \equiv b \pmod{p}$, then $\left( \frac{a}{p} \right) = \left( \frac{b}{p} \right)$.
+> 3. $\left( \frac{a \cdot b}{p} \right) = \left( \frac{a}{p} \right) \times \left( \frac{b}{p} \right)$ (Multiplicative property) .
+> 4. $\left( \frac{2}{p} \right) = (-1)^{(p^2-1)/8}$.
+> 5. If $p$ and $q$ are odd primes (Law of quadratic reciprocity) :
+>    - If $p \equiv 1 \pmod{4}$ or $q \equiv 1 \pmod{4}$, then $\left( \frac{p}{q} \right) = \left( \frac{q}{p} \right)$.
+>    - If $p \equiv q \equiv 3 \pmod{4}$, then $\left( \frac{p}{q} \right) = -\left( \frac{q}{p} \right)$.
+
+As an example, for $p = 19$, determine whether $a = 11$ is a quadratic residue:
+$$
+ 11^{(19-1)/2} = 11^9 \equiv -1 \pmod{19}.
+$$
+Since the result is -1, $11$ is a quadratic non-residue modulo 19.
+
+The **Jacobi symbol** generalizes the Legendre symbol for odd composite moduli:
+
+> **Definition (*Jacobi symbol*)**: 
+$$
+ \left( \frac{a}{n} \right) = \prod_{i=1}^{r} \left( \frac{a}{p_i} \right)^{e_i},
+$$
+where $n = p_1^{e_1} p_2^{e_2} \dots p_r^{e_r}$ is the prime factorization of $n$.
+
+The Jacobi symbol shares properties with the Legendre symbol but does not definitively indicate whether $a$ is a quadratic residue modulo $n$.
+
+If $n$ is an odd composite integer, determining whether $a$ with $\left( \frac{a}{n} \right) = 1$ is a quadratic residue modulo $n$ is called the **Quadratic Residuosity Problem (QR)**. This problem is computationally difficult without knowing the factorization of $n$, linking it to cryptographic security.
+
+The QP is central to probabilistic encryption schemes such as the Goldwasser-Micali cryptosystem, where the difficulty of distinguishing quadratic residues from non-residues provides semantic security. It is also relevant in zero-knowledge proofs and commitment schemes, where proving knowledge of a square root modulo $n$ can be done without revealing the value itself. By leveraging the hardness of the QR problem, cryptographic systems can achieve stronger security guarantees, making it an essential tool in modern cryptography.
+
+#### Higher-order residues
+
+> **Definition (*rth residue modulo*)**: an integer $a \in \mathbb{Z}_n^*$ is called an **rth residue modulo** $n$ if there exists an integer $x \in \mathbb{Z}_n^*$ such that:
+$$
+ a \equiv x^r \pmod{n}.
+$$
+If no such $x$ exists, then $a$ is called an **rth non-residue** modulo $n$.
+
+> **Lemma (*Structure of higher-order residues*)**: 
+> 1. The set of rth residues modulo $n$ that are relatively prime to $n$ forms a subgroup of $\mathbb{Z}_n^*$.
+> 2. Each rth residue modulo $n$ has the same number of rth roots.
+
+Determining whether an element is an rth residue modulo $n$ is known as the **Higher Residuosity Problem (HRP)**. When $n$ is composite and its factorization is unknown, this problem is computationally difficult, making it useful in cryptographic settings. A special case of the HRP occurs when $r$ is replaced by $n$ and $n$ is replaced by $n^2$, where $n = pq$ is a product of two distinct odd primes. This version is called the **Composite Residuosity Problem (CRP)** and is used in cryptographic protocols such as Paillier encryption.
+
+> **Lemma (*Residue completeness condition*)**: if $\gcd(r, \phi(n)) = 1$, then every integer in $\mathbb{Z}_n^*$ is an rth residue modulo $n$.
+
+#### Residue classes
+
+> **Definition (*Residue class*)**: For fixed integers $r, n, y$ with $y \in \mathbb{Z}_n^*$, an element $w \in \mathbb{Z}_n^*$ is said to belong to a residue class if it can be expressed as:
+> $$
+>  w \equiv y^m \cdot u^r \pmod{n},
+> $$
+> for some integer $m$ and some $u \in \mathbb{Z}_n^*$. The residue class of $w$ is denoted as:
+> $$
+>  RC[m] = \{ w \in \mathbb{Z}_n^* : w \equiv y^m u^r \pmod{n} \text{ for some } u \in \mathbb{Z}_n^* \}.
+> $$
+
+In particular, $RC[0]$ represents the set of rth residues modulo $n$.
+
+> **Lemma (*Addition and inversion in residue classes*)**: 
+> 1. If $w_1 \in RC[m_1]$ and $w_2 \in RC[m_2]$, then $w_1 \cdot w_2 \in RC[m_1 + m_2]$.
+> 2. If $w \in RC[m]$, then $w^{-1} \in RC[-m]$.
+
+The problem of determining the residue class of a given $w$ is conjectured to be computationally difficult and is known as the **Residue Class Problem (RCP)**. A special case arises when $n$ is composite, known as the **Composite Residuosity Class Problem (CRP)**, forming the basis of secure cryptographic schemes.
+
+A fundamental question in this context is determining the number of distinct rth roots a given residue has. This is particularly important in cryptographic applications, where knowing the structure of these roots can influence security guarantees. The following theorem establishes a precise condition under which an rth residue has exactly r distinct roots:
+
+> **Theorem (*Uniqueness and count of rth roots*)**: Let $y \in \mathbb{Z}_n^*$ be an rth residue modulo $n$. If $r \mid \phi(n)$ and $\gcd(r, \phi(n)/r) = 1$, then $y$ has exactly $r$ distinct rth roots.
+
+Residue classes provide a structured way to categorize elements of $\mathbb{Z}_n^*$ based on their power relationships, enabling cryptographic operations such as **trapdoor functions**, which allow for efficient decryption while keeping encryption computationally difficult, and **homomorphic encryption** schemes, which enable computations on encrypted data without needing decryption. These concepts are foundational in privacy-preserving cryptographic protocols, such as the **Paillier cryptosystem**, which relies on the Composite Residuosity Problem for encryption, **RSA-based voting schemes**, which utilize quadratic residues for secure tallying, and **homomorphic encryption frameworks** like **ElGamal encryption**, which allow operations on encrypted data without decryption. These methods are crucial in secure voting systems, digital signatures, and confidential data processing.
+
+#### Random number generators
+
+In cryptographic applications, particularly homomorphic encryption, random numbers are essential for security. A function $\text{RANDINT}(a, b)$ is defined to return a uniformly selected integer from the range $[a, b]$. Ensuring unpredictability in random numbers is a fundamental challenge in cryptographic design.
+
+Random number generators (RNGs) are categorized into:
+- **True Random Number Generators (TRNGs)**: Based on physical processes such as thermal noise or electronic circuit randomness, offering high security against prediction.
+- **Deterministic Random Number Generators (DRNGs)**: Algorithmic methods that produce sequences from an initial seed, commonly used in cryptographic protocols.
+
+A DRNGs is fast and efficient but can be predictable if its starting value (seed) is not chosen securely. In contrast, a TRNG relies on physical processes to generate randomness, making it more secure but often slower and requiring specialized hardware. To balance speed and security, many systems use a hybrid approach, where a TRNG provides an initial high-quality seed, and a DRNG expands it to generate more random values efficiently.
+
+When generating a cryptographic key, it’s important to use a secure random number generator (RNG) to ensure unpredictability. A common approach is to use a **Cryptographically Secure Pseudorandom Number Generator (CSPRNG)**, which expands a small amount of highly unpredictable data (called a **seed**) into a long sequence of random values.
+
+A **high-entropy seed** means the initial data used to start the generator is difficult to guess, coming from unpredictable sources like hardware noise, mouse movements, or system timings.
+
+One well-known approach is the **Fortuna**[^Fortuna-homomorphic-encryption-developers] algorithm, a security-focused random number generator that works as follows:
+
+1. **Collect random data** from multiple sources, such as user input timings, network activity, or hardware randomness.
+2. **Mix the collected data** using a cryptographic hash function to update an internal state securely.
+3. **Generate random values** using a block cipher (e.g., AES in counter mode) to ensure strong randomness.
+4. **Periodically refresh the seed** to prevent attackers from predicting future random outputs.
+
+This method ensures that even if part of the system state is exposed, the generated numbers remain secure and unpredictable.
+
+[^Fortuna-homomorphic-encryption-developers]: Fortuna is a CSPRNG designed by cryptographers Bruce Schneier and Niels Ferguson, introduced in their 2003 book Practical Cryptography. It is named after the Roman goddess of chance, Fortuna. Fortuna is designed to be a secure PRNG that can also accept random inputs from analog sources, enhancing its security. It has been adopted in systems like FreeBSD's /dev/random since version 11 and in Apple's operating systems since early 2020. See *Schneier on Security* [blog post](https://www.schneier.com/academic/fortuna/).
+
+For cryptographic security, DRNGs should satisfy:
+1. Uniform distribution: ensuring statistical randomness.
+2. Independence: ensuring no correlation between outputs.
+3. Unpredictability: preventing attackers from inferring future values.
+
+Secure choices for transition functions include cryptographic hash functions and block ciphers, ensuring resistance to attacks. Well-known cryptographic DRNGs include also:
+- **Yarrow**[^Yarrow-homomorphic-encryption-developers]: used in macOS for secure randomness.
+- **NIST SP 800-90A DRBG**[^NIST-SP-800-90A-DRBG-homomorphic-encryption-developers]: a standardized family of deterministic random bit generators.
+
+These RNGs play a crucial role in encryption schemes, key generation, digital signatures, and secure multiparty computation.
+
+[^Yarrow-homomorphic-encryption-developers]: Kelsey, J., Schneier, B., & Ferguson, N. (1999). **Yarrow-160: Notes on the design and analysis of the Yarrow cryptographic pseudorandom number generator**. *Selected Areas in Cryptography*, 13–33. [DOI](https://doi.org/10.1007/3-540-46513-8_2).
+
+[^NIST-SP-800-90A-DRBG-homomorphic-encryption-developers]: Barker, E., & Kelsey, J. (2015). **Recommendation for Random Number Generation Using Deterministic Random Bit Generators**. *SP 800-90A Rev. 1. National Institute of Standards and Technology. [DOI](https://doi.org/10.6028/NIST.SP.800-90Ar1) 
