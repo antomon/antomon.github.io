@@ -5,6 +5,7 @@ format:
   html:
     toc: true
     toc-expand: 5
+  pdf: default
 description: "As data privacy becomes a critical concern in the digital era, cryptographic innovations such as Homomorphic Encryption are paving the way for secure and private data processing. HE allows computations on encrypted data without decryption, enabling privacy-preserving operations across diverse fields like healthcare, finance, cloud computing, and blockchain. This tutorial explores the principles of HE, its different flavors, and its integration with complementary techniques like Differential Privacy, Secure Multiparty Computation, and Zero-Knowledge Proofs. While it holds transformative potential, challenges such as computational overheads, ciphertext expansion, and scalability hinder its widespread adoption. By addressing these barriers and advancing cryptographic research, Homomorphic Encryption can unlock unprecedented opportunities for secure data collaboration and innovation, safeguarding privacy without compromising utility."
 author: 
   - name: Antonio Montano
@@ -31,7 +32,7 @@ comments:
 ---
 
 ::: {.column-margin}
-![](homomorphic-encryption.webp)
+![](homomorphic-encryption.png){fig-format="png,webp"}
 :::
 
 ## Introduction
@@ -124,7 +125,7 @@ flowchart TD
   end
   subgraph Server["Server"]
     S1[["Step 4: Perform $$\ Eval(f, Enc(m))=Enc(f(m))\ $$"]]
-    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"\]
+    S2[\"Step 5: Return $$\ Enc(f(m))\ $$ to Client"$$
   end
   C1 --> C2
   C2 --> C3
@@ -1409,7 +1410,7 @@ For example, to compute $3^{\phi(25)} \mod 25$:
 
 Thus, using Euler’s theorem, we can directly conclude that any power of 3 raised to 20 will be congruent to 1 modulo 25.
 
-[^Cardinality-homomorphic-encryption-developers]: The symbol $#$ denotes the **cardinality** (size) of a set, which represents the number of elements in that set. It is commonly used in combinatorics and number theory. An alternative notation for the cardinality of a set $S$ is $|S|$, which is more prevalent in set theory.
+[^Cardinality-homomorphic-encryption-developers]: The symbol $\#$ denotes the **cardinality** (size) of a set, which represents the number of elements in that set. It is commonly used in combinatorics and number theory. An alternative notation for the cardinality of a set $S$ is $|S|$, which is more prevalent in set theory.
 
 #### Carmichael’s theorem
 
@@ -1738,4 +1739,174 @@ These RNGs play a crucial role in encryption schemes, key generation, digital si
 [^Yarrow-homomorphic-encryption-developers]: Kelsey, J., Schneier, B., & Ferguson, N. (1999). **Yarrow-160: Notes on the design and analysis of the Yarrow cryptographic pseudorandom number generator**. *Selected Areas in Cryptography*, 13–33. [DOI](https://doi.org/10.1007/3-540-46513-8_2).
 
 [^NIST-SP-800-90A-DRBG-homomorphic-encryption-developers]: Barker, E., & Kelsey, J. (2015). **Recommendation for Random Number Generation Using Deterministic Random Bit Generators**. *SP 800-90A Rev. 1. National Institute of Standards and Technology. [DOI](https://doi.org/10.6028/NIST.SP.800-90Ar1) 
+
+### Group theory
+
+Cryptography frequently leverages **groups**, which are sets endowed with an operation that behaves in a mathematically predictable way. This predictability makes them ideal for building secure protocols, ranging from Diffie–Hellman key exchange to advanced homomorphic encryption. In this chapter, we outline core definitions and theorems that underpin these constructions.
+
+#### Definition
+
+A group $(G, \star)$ is a set $G$ equipped with a binary operation “$\star$” satisfying four key properties:
+
+1. **Closure**: For any $a, b \in G$, the result of $a \star b$ is still in $G$.  
+2. **Associativity**: For any $a, b, c \in G$, $(a \star b) \star c = a \star (b \star c)$.  
+3. **Identity element**: There exists an element $e \in G$ such that $e \star a = a \star e = a$ for all $a \in G$.  
+4. **Inverse element**: Each $a \in G$ has an element $a^{-1}$ satisfying $a \star a^{-1} = a^{-1} \star a = e$.
+
+A classic example is the set of integers $\mathbb{Z}$ under addition $(+)$:  
+- $0$ is the identity (adding zero changes nothing).  
+- Every integer $n$ has an inverse $-n$.  
+
+In **multiplicative** notation—common in cryptography—a group might be a set of “invertible” numbers modulo $n$. For instance, $\mathbb{Z}_p^*$ (integers $\{1,2,\dots,p-1\}$ under multiplication mod $p$) forms a group if $p$ is prime.
+
+> **Why it matters**: Groups let us “move around” elements predictably. For a cryptosystem, that often means repeatedly applying an operation—e.g., exponentiation mod $p$—without leaving the safety of the group.
+
+### 2. Multiplicative vs. Additive Notation
+
+Groups used in cryptography often come in two flavors:
+
+- **Multiplicative groups**, denoted $(G, \times)$. We write the identity as $1$ and the inverse of $g$ as $g^{-1}$. An example is $\mathbb{Z}_p^*$, the nonzero integers mod $p$.  
+- **Additive groups**, denoted $(G, +)$. We write the identity as $0$ and the inverse of $a$ as $-a$. An example is $(\mathbb{Z}, +)$ or $(\mathbb{Z}_n, +)$.
+
+Both notations obey the same fundamental group axioms. Cryptographic schemes switch between them depending on context; for instance, elliptic‐curve cryptography usually adopts additive notation, while classical $\mathbb{Z}_p^*$ cryptography uses multiplicative.
+
+### 3. Order of a Group and Order of an Element
+
+1. **Order of a group** $|G|$ (or $\operatorname{ord}(G)$) is the number of elements in $G$ when $G$ is finite. In cryptographic contexts, we often choose large prime‐order groups to avoid certain attacks.  
+
+2. **Order of an element** $g \in G$ is the smallest positive integer $k$ such that
+   $$
+   g^k = e \quad \text{(multiplicative)}, 
+   $$
+   or
+   $$
+   k \cdot g = 0 \quad \text{(additive)},
+   $$
+   where $e$ is the identity. If no finite $k$ satisfies this, we say the element has infinite order (common in some infinite groups, but for cryptography we focus on finite ones).
+
+> **Why it matters**: The element’s order dictates cycles in exponentiation. For instance, in $\mathbb{Z}_p^*$, exponentiating an element $g$ repeatedly will eventually loop back to $1$. Cryptosystems like Diffie–Hellman rely on the difficulty of reversing such exponentiations (the “discrete logarithm problem”).
+
+
+
+## 12. Homomorphisms
+
+A **group homomorphism** from one group $\bigl(G,\star\bigr)$ to another $\bigl(H,\circ\bigr)$ is a map  
+$$
+   f : G \,\to\, H
+$$
+that **preserves** the group operation. Formally, for all $x,y \in G$,
+$$
+   f\bigl(x \star y\bigr) \;=\; f(x)\,\circ\,f(y).
+$$
+In other words, performing the operation in $G$ first—then applying $f$—has the same effect as applying $f$ *individually* to each of $x$ and $y$, and then using the operation in $H$. If $f$ is also bijective (one‐to‐one and onto), we call it an **isomorphism**, and say $G$ and $H$ are *isomorphic*.
+
+### 12.1 Illustrative Examples
+
+Below are several examples that highlight different ways homomorphisms appear:
+
+---
+
+**Example 1: Reduction mod $n$**
+
+- **Groups**: $\bigl(\mathbb{Z}, +\bigr)$ and $\bigl(\mathbb{Z}_n, +\bigr)$.  
+- **Map**: $f(x) = x \bmod n$.  
+
+Check homomorphism:
+
+1. In $\mathbb{Z}$, the operation is integer addition $(+)$.  
+2. In $\mathbb{Z}_n$, the operation is addition modulo $n$.  
+3. For any $x,y \in \mathbb{Z}$,
+   $$
+     f(x + y) = (x + y)\bmod n \quad\text{and}\quad
+     f(x)\;+\;f(y) = (x\bmod n)\;+\;(y\bmod n).
+   $$
+   Since $(x + y)\bmod n = (x\bmod n) + (y\bmod n)\bmod n,$ the two sides match in $\mathbb{Z}_n$.  
+
+Hence $f$ respects addition and is a group homomorphism. This is an extremely common map in modular arithmetic.
+
+---
+
+**Example 2: Exponential map $\exp$**
+
+- **Groups**: $\bigl(\mathbb{R}, +\bigr)$ and $\bigl(\mathbb{R}_{>0}, \times\bigr)$.  
+- **Map**: $f(x) = e^x$.  
+
+Check homomorphism:
+
+1. $\mathbb{R}$ under “$+$” is an additive group; $\mathbb{R}_{>0}$ under “$\times$” is multiplicative.  
+2. For real numbers $x,y$,
+   $$
+     f(x + y) = e^{\,x + y} = e^x \cdot e^y = f(x)\;\times\; f(y).
+   $$
+   
+Hence $\exp$ is a homomorphism from an additive group to a multiplicative group. While $\exp$ is *not* typically used directly as a “cryptographic” function (because $\mathbb{R}$ is infinite‐precision), the idea of mapping addition to multiplication is the same principle that shows up in exponentiation mod $p$.
+
+---
+
+**Example 3: Encryption as a Homomorphism**
+
+Suppose we have a cryptosystem $\Pi = (P,C,K,E,D)$ where:
+
+- $P$ = Plaintext space (a group with operation $\star$).  
+- $C$ = Ciphertext space (a group with operation $\odot$).  
+- $K$ = Key space, from which we draw a key $k$.  
+- $E_k$ = Encryption function.  
+- $D_k$ = Decryption function.
+
+If $\Pi$ is **additively homomorphic**, then for any plaintexts $m_1,m_2\in P$,
+$$
+   D_k\bigl(E_k(m_1)\,\odot\,E_k(m_2)\bigr) 
+   \;=\;
+   m_1 \;\star\; m_2.
+$$
+Such a map $E_k$ is effectively a group homomorphism (up to decryption). Concretely:
+
+1. **Additively homomorphic**:  
+   $\star$ = “$+$” in plaintext, $\odot$ = some “$\oplus$” or “$+$ mod N” in ciphertext.  
+   - **Paillier encryption** is a classic example that supports $E(m_1 + m_2)\equiv E(m_1)\cdot E(m_2)$.  
+2. **Multiplicatively homomorphic**:  
+   $\star$ = “$\times$” in plaintext, $\odot$ = “$\times$” mod $n$ in ciphertext.  
+   - **RSA** in raw form is multiplicatively homomorphic over $\mathbb{Z}_n^*$.
+
+> Real cryptosystems often require additional mechanisms to prevent malicious manipulations. But the fundamental “operation preserved under encryption” is precisely a homomorphism property.
+
+---
+
+### 12.2 Partial vs. Full Homomorphisms
+
+- A **partially homomorphic** scheme supports only one operation homomorphically (e.g., *either* addition *or* multiplication). RSA and Paillier each provide one such property in their simplest form.  
+- A **somewhat homomorphic** scheme supports both addition and multiplication but only for a limited number of times.  
+- A **fully homomorphic** scheme (FHE) allows *arbitrary* sequences of additions and multiplications on ciphertexts without decryption. This is far more advanced and underpins privacy‐preserving computation in the cloud.
+
+**Why it matters**: Homomorphisms formalize how operations on plaintexts get mirrored by operations on ciphertexts—an essential idea in cryptography whenever we want to manipulate data without decrypting it first.
+
+---
+
+### 12.3 Homomorphisms and Isomorphisms
+
+If a homomorphism $f$ is also **injective** (no two distinct elements in $G$ map to the same element in $H$) *and* **surjective** (every element in $H$ is hit by something in $G$), then $f$ is an **isomorphism**. In this scenario, the groups $G$ and $H$ are structurally identical for practical purposes—just written in different “languages.” An isomorphism means:
+
+$$
+   f\bigl(x \star y\bigr) \;=\; f(x) \,\circ\, f(y),
+   \quad\text{and}\quad
+   f^{-1}\text{ exists}.
+$$
+
+**Example**: $\exp: (\mathbb{R}, +) \to (\mathbb{R}_{>0}, \times)$ is a group isomorphism if we allow all real numbers. Indeed, $\ln$ is its inverse map. This underlies many exponentiation-based protocols in cryptography, except we usually replace $\mathbb{R}$ with a finite group $\mathbb{Z}_p^*$.
+
+---
+
+### Key Takeaways
+
+1. **Core Definition**: Homomorphisms preserve a group’s structure across a mapping, ensuring “operation before mapping” equals “mapped elements’ operation.”  
+2. **Cryptographic Relevance**:  
+   - Partially homomorphic schemes (like RSA, Paillier) rely on a single operation being preserved.  
+   - Fully homomorphic encryption extends this to all operations (addition & multiplication), enabling computations on encrypted data.  
+3. **Concrete Illustrations**:  
+   - **Reduction mod $n$** shows how integers $\mathbb{Z}$ project down to $\mathbb{Z}_n$.  
+   - **Exponential** unites an additive domain with a multiplicative codomain.  
+   - **Encryption** as a group homomorphism captures the essence of “privacy‐preserving” transformations.  
+
+Homomorphisms thus tie together abstract algebra and the practical design of encryption protocols. Their ability to “translate” operations from one set to another—without destroying structure—is precisely what makes partially or fully homomorphic encryption feasible, and what makes so many cryptographic primitives both powerful and elegant.
+
 
