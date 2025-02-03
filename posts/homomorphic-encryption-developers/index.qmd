@@ -115,6 +115,14 @@ flowchart TD
   linkStyle 3 stroke:#000000
 ```
 
+::: {.content-visible when-format="pdf"}
+```{=latex}
+\begin{center}
+\includegraphics[width=\textwidth]{index_files/figure-latex/mermaid-figure-1.png}
+\end{center}
+```
+:::
+
 - HE approach: Alice sends an encrypted version of $m$ to Bob, and Bob does the calculations on the encrypted data.
 
 ```{mermaid}
@@ -1916,4 +1924,95 @@ $$
 
 Homomorphisms thus tie together abstract algebra and the practical design of encryption protocols. Their ability to “translate” operations from one set to another—without destroying structure—is precisely what makes partially or fully homomorphic encryption feasible, and what makes so many cryptographic primitives both powerful and elegant.
 
+
+# The RSA Cryptosystem
+
+## Introduction
+
+The RSA cryptosystem, introduced in 1977 by Ronald Rivest, Adi Shamir, and Leonard Adleman, was the first practical public-key encryption scheme. Prior to its development, encryption relied on symmetric-key cryptography, which required secure key exchanges between communicating parties. RSA fundamentally changed cryptographic security by enabling secure communication without requiring a pre-established shared secret.
+
+RSA's security is rooted in the computational difficulty of factoring large composite numbers, a problem for which no efficient classical algorithm exists. This difficulty ensures that, with sufficiently large key sizes, RSA remains secure against adversarial decryption attempts. As a result, RSA has become a foundational algorithm for modern cryptographic applications, including secure online transactions, digital signatures, and encrypted communications.
+
+This document introduces RSA as a stepping stone to understanding **Partially Homomorphic Encryption (PHE)** and, ultimately, **Fully Homomorphic Encryption (FHE)**. By examining RSA's encryption and homomorphic properties, we establish the necessary cryptographic foundations for more advanced encryption paradigms that allow computations on encrypted data.
+
+## 1. Key Generation
+
+The RSA key generation process consists of the following steps:
+
+1. Select two large prime numbers, $p$ and $q$, ensuring they are sufficiently large for security.
+2. Compute the modulus:
+   $$ n = p \times q. $$
+3. Compute Euler's totient function:
+   $$ \varphi(n) = (p - 1) \times (q - 1). $$
+4. Choose an encryption exponent $e$ such that:
+   $$ 1 < e < \varphi(n), \quad \gcd(e, \varphi(n)) = 1. $$
+   A common choice for $e$ is 65537 due to its efficiency and security properties.
+5. Compute the decryption exponent $d$ as the modular inverse of $e$ modulo $\varphi(n)$:
+   $$ d \equiv e^{-1} \mod \varphi(n). $$
+6. The public key is $(n, e)$, while the private key is $d$.
+
+The security of RSA depends on the difficulty of factoring $n$. If $p$ and $q$ are sufficiently large, brute-force factorization remains computationally infeasible.
+
+## 2. Encryption and Decryption
+
+### 2.1 Encryption
+To encrypt a message $m$, first convert it to an integer such that $0 < m < n$. Then compute:
+   $$ c = m^e \mod n. $$
+
+### 2.2 Decryption
+To decrypt a ciphertext $c$, compute:
+   $$ m = c^d \mod n. $$
+
+This restores the original plaintext message $m$.
+
+## 3. RSA as a Partially Homomorphic Encryption (PHE) Scheme
+
+RSA exhibits **Partially Homomorphic Encryption (PHE)** properties because it supports homomorphic multiplication. The key operations in a PHE scheme, as defined in homomorphic encryption, include:
+
+1. **Key Generation (KeyGen):**  
+   The algorithm generates a key pair:
+   $$ (pk, sk) \leftarrow \text{KeyGen}(1^\lambda), $$
+   where $ pk = (n, e) $ is the public key, and $ sk = d $ is the private key.
+
+2. **Encryption (Enc):**  
+   A plaintext message $ m $ is encrypted using the public key:
+   $$ c \leftarrow \text{Enc}(pk, m) = m^e \mod n. $$
+   This produces a ciphertext $ c $, which can be transmitted securely.
+
+3. **Decryption (Dec):**  
+   A ciphertext $ c $ is decrypted using the private key:
+   $$ m \leftarrow \text{Dec}(sk, c) = c^d \mod n. $$
+   This retrieves the original plaintext $ m $.
+
+4. **Evaluation (Eval):**  
+   RSA supports homomorphic multiplication, meaning that multiplying two ciphertexts results in a ciphertext corresponding to the product of the plaintexts:
+   $$ \text{Eval}(f, c_1, c_2) = c_1 \times c_2 \mod n. $$
+   This ensures:
+   $$ \text{Dec}(sk, \text{Eval}(f, c_1, c_2)) = (m_1 \times m_2) \mod n. $$
+
+Because RSA does not support homomorphic addition, it is classified as a **Partially Homomorphic Encryption (PHE)** system rather than a Fully Homomorphic Encryption (FHE) system.
+
+## 4. Security Considerations
+
+### 4.1 Factoring-Based Security
+RSA's security is predicated on the **Integer Factorization Problem (IFP)**. The computational infeasibility of factoring large semiprimes (products of two large primes) ensures that an adversary cannot efficiently derive the private key from the public key.
+
+### 4.2 Attacks on RSA
+While RSA is secure under proper implementation, certain vulnerabilities exist:
+- **Small Exponent Attacks:** Choosing a small encryption exponent (e.g., $e = 3$) can lead to predictable ciphertexts and facilitate decryption.
+- **Padding Oracle Attacks:** RSA without proper padding (e.g., OAEP) is susceptible to chosen-ciphertext attacks.
+- **Quantum Threats:** Shor’s algorithm, if implemented on a sufficiently powerful quantum computer, could break RSA by efficiently factoring $n$.
+
+### 4.3 Digital Signatures
+RSA is widely used for **digital signatures**, ensuring message authenticity and integrity:
+1. The sender computes a signature:
+   $$ S = m^d \mod n. $$
+2. The recipient verifies authenticity by computing:
+   $$ S^e \mod n = m. $$
+
+Digital signatures prevent tampering and enable non-repudiation.
+
+## 5. Conclusion
+
+RSA remains one of the most widely adopted cryptographic algorithms. Its significance extends beyond encryption to authentication and secure communications. However, its reliance on the hardness of factorization means that evolving computational capabilities, particularly quantum computing, may necessitate a shift toward alternative cryptographic approaches, such as lattice-based encryption. As we explore more advanced encryption schemes, including Fully Homomorphic Encryption (FHE), understanding RSA provides a critical foundation for grasping the principles of secure computation on encrypted data.
 

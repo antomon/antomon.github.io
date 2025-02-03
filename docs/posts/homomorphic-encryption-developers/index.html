@@ -335,6 +335,24 @@ window.Quarto = {
   <li><a href="#homomorphisms-and-isomorphisms" id="toc-homomorphisms-and-isomorphisms" class="nav-link" data-scroll-target="#homomorphisms-and-isomorphisms">12.3 Homomorphisms and Isomorphisms</a></li>
   <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways">Key Takeaways</a></li>
   </ul></li>
+  <li><a href="#the-rsa-cryptosystem" id="toc-the-rsa-cryptosystem" class="nav-link" data-scroll-target="#the-rsa-cryptosystem">The RSA Cryptosystem</a>
+  <ul class="collapse">
+  <li><a href="#introduction-1" id="toc-introduction-1" class="nav-link" data-scroll-target="#introduction-1">Introduction</a></li>
+  <li><a href="#key-generation" id="toc-key-generation" class="nav-link" data-scroll-target="#key-generation">1. Key Generation</a></li>
+  <li><a href="#encryption-and-decryption" id="toc-encryption-and-decryption" class="nav-link" data-scroll-target="#encryption-and-decryption">2. Encryption and Decryption</a>
+  <ul class="collapse">
+  <li><a href="#encryption" id="toc-encryption" class="nav-link" data-scroll-target="#encryption">2.1 Encryption</a></li>
+  <li><a href="#decryption" id="toc-decryption" class="nav-link" data-scroll-target="#decryption">2.2 Decryption</a></li>
+  </ul></li>
+  <li><a href="#rsa-as-a-partially-homomorphic-encryption-phe-scheme" id="toc-rsa-as-a-partially-homomorphic-encryption-phe-scheme" class="nav-link" data-scroll-target="#rsa-as-a-partially-homomorphic-encryption-phe-scheme">3. RSA as a Partially Homomorphic Encryption (PHE) Scheme</a></li>
+  <li><a href="#security-considerations" id="toc-security-considerations" class="nav-link" data-scroll-target="#security-considerations">4. Security Considerations</a>
+  <ul class="collapse">
+  <li><a href="#factoring-based-security" id="toc-factoring-based-security" class="nav-link" data-scroll-target="#factoring-based-security">4.1 Factoring-Based Security</a></li>
+  <li><a href="#attacks-on-rsa" id="toc-attacks-on-rsa" class="nav-link" data-scroll-target="#attacks-on-rsa">4.2 Attacks on RSA</a></li>
+  <li><a href="#digital-signatures" id="toc-digital-signatures" class="nav-link" data-scroll-target="#digital-signatures">4.3 Digital Signatures</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">5. Conclusion</a></li>
+  </ul></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
     </div>
@@ -1877,6 +1895,75 @@ k \cdot g = 0 \quad \text{(additive)},
 </ul></li>
 </ol>
 <p>Homomorphisms thus tie together abstract algebra and the practical design of encryption protocols. Their ability to “translate” operations from one set to another—without destroying structure—is precisely what makes partially or fully homomorphic encryption feasible, and what makes so many cryptographic primitives both powerful and elegant.</p>
+</section>
+</section>
+<section id="the-rsa-cryptosystem" class="level1">
+<h1>The RSA Cryptosystem</h1>
+<section id="introduction-1" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-1">Introduction</h2>
+<p>The RSA cryptosystem, introduced in 1977 by Ronald Rivest, Adi Shamir, and Leonard Adleman, was the first practical public-key encryption scheme. Prior to its development, encryption relied on symmetric-key cryptography, which required secure key exchanges between communicating parties. RSA fundamentally changed cryptographic security by enabling secure communication without requiring a pre-established shared secret.</p>
+<p>RSA’s security is rooted in the computational difficulty of factoring large composite numbers, a problem for which no efficient classical algorithm exists. This difficulty ensures that, with sufficiently large key sizes, RSA remains secure against adversarial decryption attempts. As a result, RSA has become a foundational algorithm for modern cryptographic applications, including secure online transactions, digital signatures, and encrypted communications.</p>
+<p>This document introduces RSA as a stepping stone to understanding <strong>Partially Homomorphic Encryption (PHE)</strong> and, ultimately, <strong>Fully Homomorphic Encryption (FHE)</strong>. By examining RSA’s encryption and homomorphic properties, we establish the necessary cryptographic foundations for more advanced encryption paradigms that allow computations on encrypted data.</p>
+</section>
+<section id="key-generation" class="level2">
+<h2 class="anchored" data-anchor-id="key-generation">1. Key Generation</h2>
+<p>The RSA key generation process consists of the following steps:</p>
+<ol type="1">
+<li>Select two large prime numbers, <span class="math inline">p</span> and <span class="math inline">q</span>, ensuring they are sufficiently large for security.</li>
+<li>Compute the modulus: <span class="math display"> n = p \times q. </span></li>
+<li>Compute Euler’s totient function: <span class="math display"> \varphi(n) = (p - 1) \times (q - 1). </span></li>
+<li>Choose an encryption exponent <span class="math inline">e</span> such that: <span class="math display"> 1 &lt; e &lt; \varphi(n), \quad \gcd(e, \varphi(n)) = 1. </span> A common choice for <span class="math inline">e</span> is 65537 due to its efficiency and security properties.</li>
+<li>Compute the decryption exponent <span class="math inline">d</span> as the modular inverse of <span class="math inline">e</span> modulo <span class="math inline">\varphi(n)</span>: <span class="math display"> d \equiv e^{-1} \mod \varphi(n). </span></li>
+<li>The public key is <span class="math inline">(n, e)</span>, while the private key is <span class="math inline">d</span>.</li>
+</ol>
+<p>The security of RSA depends on the difficulty of factoring <span class="math inline">n</span>. If <span class="math inline">p</span> and <span class="math inline">q</span> are sufficiently large, brute-force factorization remains computationally infeasible.</p>
+</section>
+<section id="encryption-and-decryption" class="level2">
+<h2 class="anchored" data-anchor-id="encryption-and-decryption">2. Encryption and Decryption</h2>
+<section id="encryption" class="level3">
+<h3 class="anchored" data-anchor-id="encryption">2.1 Encryption</h3>
+<p>To encrypt a message <span class="math inline">m</span>, first convert it to an integer such that <span class="math inline">0 &lt; m &lt; n</span>. Then compute: <span class="math display"> c = m^e \mod n. </span></p>
+</section>
+<section id="decryption" class="level3">
+<h3 class="anchored" data-anchor-id="decryption">2.2 Decryption</h3>
+<p>To decrypt a ciphertext <span class="math inline">c</span>, compute: <span class="math display"> m = c^d \mod n. </span></p>
+<p>This restores the original plaintext message <span class="math inline">m</span>.</p>
+</section>
+</section>
+<section id="rsa-as-a-partially-homomorphic-encryption-phe-scheme" class="level2">
+<h2 class="anchored" data-anchor-id="rsa-as-a-partially-homomorphic-encryption-phe-scheme">3. RSA as a Partially Homomorphic Encryption (PHE) Scheme</h2>
+<p>RSA exhibits <strong>Partially Homomorphic Encryption (PHE)</strong> properties because it supports homomorphic multiplication. The key operations in a PHE scheme, as defined in homomorphic encryption, include:</p>
+<ol type="1">
+<li><p><strong>Key Generation (KeyGen):</strong><br>
+The algorithm generates a key pair: <span class="math display"> (pk, sk) \leftarrow \text{KeyGen}(1^\lambda), </span> where $ pk = (n, e) $ is the public key, and $ sk = d $ is the private key.</p></li>
+<li><p><strong>Encryption (Enc):</strong><br>
+A plaintext message $ m $ is encrypted using the public key: <span class="math display"> c \leftarrow \text{Enc}(pk, m) = m^e \mod n. </span> This produces a ciphertext $ c $, which can be transmitted securely.</p></li>
+<li><p><strong>Decryption (Dec):</strong><br>
+A ciphertext $ c $ is decrypted using the private key: <span class="math display"> m \leftarrow \text{Dec}(sk, c) = c^d \mod n. </span> This retrieves the original plaintext $ m $.</p></li>
+<li><p><strong>Evaluation (Eval):</strong><br>
+RSA supports homomorphic multiplication, meaning that multiplying two ciphertexts results in a ciphertext corresponding to the product of the plaintexts: <span class="math display"> \text{Eval}(f, c_1, c_2) = c_1 \times c_2 \mod n. </span> This ensures: <span class="math display"> \text{Dec}(sk, \text{Eval}(f, c_1, c_2)) = (m_1 \times m_2) \mod n. </span></p></li>
+</ol>
+<p>Because RSA does not support homomorphic addition, it is classified as a <strong>Partially Homomorphic Encryption (PHE)</strong> system rather than a Fully Homomorphic Encryption (FHE) system.</p>
+</section>
+<section id="security-considerations" class="level2">
+<h2 class="anchored" data-anchor-id="security-considerations">4. Security Considerations</h2>
+<section id="factoring-based-security" class="level3">
+<h3 class="anchored" data-anchor-id="factoring-based-security">4.1 Factoring-Based Security</h3>
+<p>RSA’s security is predicated on the <strong>Integer Factorization Problem (IFP)</strong>. The computational infeasibility of factoring large semiprimes (products of two large primes) ensures that an adversary cannot efficiently derive the private key from the public key.</p>
+</section>
+<section id="attacks-on-rsa" class="level3">
+<h3 class="anchored" data-anchor-id="attacks-on-rsa">4.2 Attacks on RSA</h3>
+<p>While RSA is secure under proper implementation, certain vulnerabilities exist: - <strong>Small Exponent Attacks:</strong> Choosing a small encryption exponent (e.g., <span class="math inline">e = 3</span>) can lead to predictable ciphertexts and facilitate decryption. - <strong>Padding Oracle Attacks:</strong> RSA without proper padding (e.g., OAEP) is susceptible to chosen-ciphertext attacks. - <strong>Quantum Threats:</strong> Shor’s algorithm, if implemented on a sufficiently powerful quantum computer, could break RSA by efficiently factoring <span class="math inline">n</span>.</p>
+</section>
+<section id="digital-signatures" class="level3">
+<h3 class="anchored" data-anchor-id="digital-signatures">4.3 Digital Signatures</h3>
+<p>RSA is widely used for <strong>digital signatures</strong>, ensuring message authenticity and integrity: 1. The sender computes a signature: <span class="math display"> S = m^d \mod n. </span> 2. The recipient verifies authenticity by computing: <span class="math display"> S^e \mod n = m. </span></p>
+<p>Digital signatures prevent tampering and enable non-repudiation.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">5. Conclusion</h2>
+<p>RSA remains one of the most widely adopted cryptographic algorithms. Its significance extends beyond encryption to authentication and secure communications. However, its reliance on the hardness of factorization means that evolving computational capabilities, particularly quantum computing, may necessitate a shift toward alternative cryptographic approaches, such as lattice-based encryption. As we explore more advanced encryption schemes, including Fully Homomorphic Encryption (FHE), understanding RSA provides a critical foundation for grasping the principles of secure computation on encrypted data.</p>
 
 
 </section>
