@@ -1718,7 +1718,9 @@ Residue classes provide a structured way to categorize elements of $\mathbb{Z}_n
 In cryptographic applications, particularly homomorphic encryption, random numbers are essential for security. A function $\text{RANDINT}(a, b)$ is defined to return a uniformly selected integer from the range $[a, b]$. Ensuring unpredictability in random numbers is a fundamental challenge in cryptographic design.
 
 Random number generators (RNGs) are categorized into:
+
 - **True Random Number Generators (TRNGs)**: Based on physical processes such as thermal noise or electronic circuit randomness, offering high security against prediction.
+
 - **Deterministic Random Number Generators (DRNGs)**: Algorithmic methods that produce sequences from an initial seed, commonly used in cryptographic protocols.
 
 A DRNGs is fast and efficient but can be predictable if its starting value (seed) is not chosen securely. In contrast, a TRNG relies on physical processes to generate randomness, making it more secure but often slower and requiring specialized hardware. To balance speed and security, many systems use a hybrid approach, where a TRNG provides an initial high-quality seed, and a DRNG expands it to generate more random values efficiently.
@@ -1729,18 +1731,24 @@ A **high-entropy seed** means the initial data used to start the generator is di
 
 One well-known approach is the **Fortuna**[^Fortuna-homomorphic-encryption-developers] algorithm, a security-focused random number generator that works as follows:
 
-1. **Collect random data** from multiple sources, such as user input timings, network activity, or hardware randomness.
-2. **Mix the collected data** using a cryptographic hash function to update an internal state securely.
-3. **Generate random values** using a block cipher (e.g., AES in counter mode) to ensure strong randomness.
-4. **Periodically refresh the seed** to prevent attackers from predicting future random outputs.
+1. Collect random data from multiple sources, such as user input timings, network activity, or hardware randomness.
+
+2. Mix the collected data using a cryptographic hash function to update an internal state securely.
+
+3. Generate random values using a block cipher (e.g., AES in counter mode) to ensure strong randomness.
+
+4. Periodically refresh the seed to prevent attackers from predicting future random outputs.
 
 This method ensures that even if part of the system state is exposed, the generated numbers remain secure and unpredictable.
 
 [^Fortuna-homomorphic-encryption-developers]: Fortuna is a CSPRNG designed by cryptographers Bruce Schneier and Niels Ferguson, introduced in their 2003 book Practical Cryptography. It is named after the Roman goddess of chance, Fortuna. Fortuna is designed to be a secure PRNG that can also accept random inputs from analog sources, enhancing its security. It has been adopted in systems like FreeBSD's /dev/random since version 11 and in Apple's operating systems since early 2020. See *Schneier on Security* [blog post](https://www.schneier.com/academic/fortuna/).
 
 For cryptographic security, DRNGs should satisfy:
+
 1. Uniform distribution: ensuring statistical randomness.
+
 2. Independence: ensuring no correlation between outputs.
+
 3. Unpredictability: preventing attackers from inferring future values.
 
 Secure choices for transition functions include cryptographic hash functions and block ciphers, ensuring resistance to attacks. Well-known cryptographic DRNGs include also:
@@ -1759,24 +1767,29 @@ These RNGs play a crucial role in encryption schemes, key generation, digital si
 
 Cryptography frequently leverages **groups**, which are sets endowed with an operation that behaves in a mathematically predictable way. This predictability makes them ideal for building secure protocols, ranging from Diffie–Hellman key exchange to advanced homomorphic encryption. In this chapter, we outline core definitions and theorems that underpin these constructions.
 
-#### Definition
+#### Basics
 
-A group $(G, \star)$ is a set $G$ equipped with a binary operation “$\star$” satisfying four key properties:
-
-1. **Closure**: For any $a, b \in G$, the result of $a \star b$ is still in $G$.  
-2. **Associativity**: For any $a, b, c \in G$, $(a \star b) \star c = a \star (b \star c)$.  
-3. **Identity element**: There exists an element $e \in G$ such that $e \star a = a \star e = a$ for all $a \in G$.  
-4. **Inverse element**: Each $a \in G$ has an element $a^{-1}$ satisfying $a \star a^{-1} = a^{-1} \star a = e$.
+> **Definition (*Group*)**: A group $(G, \star)$ is a set $G$ equipped with a binary operation “$\star$” satisfying four key properties:
+> 
+> 1. **Closure**: For any $a, b \in G$, the result of $a \star b$ is still in $G$.
+> 
+> 2. **Associativity**: For any $a, b, c \in G$, $(a \star b) \star c = a \star (b \star c)$.  
+> 
+> 3. **Identity element**: There exists an element $e \in G$ such that $e \star a = a \star e = a$ for all $a \in G$.  
+> 
+> 4. **Inverse element**: Each $a \in G$ has an element $a^{-1}$ satisfying $a \star a^{-1} = a^{-1} \star a = e$.
 
 A classic example is the set of integers $\mathbb{Z}$ under addition $(+)$:  
+
 - $0$ is the identity (adding zero changes nothing).  
+
 - Every integer $n$ has an inverse $-n$.  
 
 In **multiplicative** notation—common in cryptography—a group might be a set of “invertible” numbers modulo $n$. For instance, $\mathbb{Z}_p^*$ (integers $\{1,2,\dots,p-1\}$ under multiplication mod $p$) forms a group if $p$ is prime.
 
 > **Why it matters**: Groups let us “move around” elements predictably. For a cryptosystem, that often means repeatedly applying an operation—e.g., exponentiation mod $p$—without leaving the safety of the group.
 
-### 2. Multiplicative vs. Additive Notation
+#### Multiplicative vs. Additive Notation
 
 Groups used in cryptography often come in two flavors:
 
@@ -1785,7 +1798,7 @@ Groups used in cryptography often come in two flavors:
 
 Both notations obey the same fundamental group axioms. Cryptographic schemes switch between them depending on context; for instance, elliptic‐curve cryptography usually adopts additive notation, while classical $\mathbb{Z}_p^*$ cryptography uses multiplicative.
 
-### 3. Order of a Group and Order of an Element
+#### Order of a Group and Order of an Element
 
 1. **Order of a group** $|G|$ (or $\operatorname{ord}(G)$) is the number of elements in $G$ when $G$ is finite. In cryptographic contexts, we often choose large prime‐order groups to avoid certain attacks.  
 
@@ -1803,7 +1816,7 @@ Both notations obey the same fundamental group axioms. Cryptographic schemes swi
 
 
 
-## 12. Homomorphisms
+#### Homomorphisms
 
 A **group homomorphism** from one group $\bigl(G,\star\bigr)$ to another $\bigl(H,\circ\bigr)$ is a map  
 $$
@@ -1815,7 +1828,7 @@ $$
 $$
 In other words, performing the operation in $G$ first—then applying $f$—has the same effect as applying $f$ *individually* to each of $x$ and $y$, and then using the operation in $H$. If $f$ is also bijective (one‐to‐one and onto), we call it an **isomorphism**, and say $G$ and $H$ are *isomorphic*.
 
-### 12.1 Illustrative Examples
+#### 12.1 Illustrative Examples
 
 Below are several examples that highlight different ways homomorphisms appear:
 
