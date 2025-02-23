@@ -23,10 +23,113 @@
 <meta name="twitter:description" content="Questa guida ti mostra come utilizzare un file Excel per controllare la validità delle Partite IVA tramite il servizio VIES (VAT Information Exchange System).">
 <meta name="twitter:image" content="https://antomon.github.io/posts/controllo-piva-vies-api/spreadsheet-checks.webp">
 <meta name="twitter:card" content="summary_large_image">
-</head><body class="nav-sidebar">{% extends "default" %}
+</head><body class="nav-sidebar">true
 
-{% block body %}
-  {{ super() }}
-  {% include "_partials/related-posts.html" %}
-{% endblock %}
+<section id="introduzione" class="level2">
+<h2 data-anchor-id="introduzione">Introduzione</h2>
+<p>Un cliente aveva qualche migliaia di Partite IVA europee da controllare e la sindrome del buon samaritano mi ha costretto a spolverare il VBA per poter sfruttare lo strumento client più amato nelle aziende: Excel!</p>
+<p>Questa guida, pertanto, ti mostra come utilizzare un file Excel per controllare la validità delle Partite IVA tramite il servizio <a href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"><strong>VIES</strong></a> (VAT Information Exchange System).</p>
+<p>Il post è diviso in due parti: la prima è pensata per gli utenti che non hanno esperienza di programmazione, ma hanno un minimo di conoscenza di Excel e la seconda è per chi ha conoscenze di base in <strong>VBA</strong> e vuole modificare o personalizzare il file Excel o il codice.</p>
+</section>
+<section id="come-utilizzare-il-file-excel" class="level2">
+<h2 data-anchor-id="come-utilizzare-il-file-excel">Come utilizzare il file Excel</h2>
+<p>Questa sezione è per chi vuole semplicemente utilizzare il foglio Excel già predisposto per controllare le Partite IVA senza la necessità di modificare il codice.</p>
+<section id="esecuzione-del-controllo" class="level3">
+<h3 data-anchor-id="esecuzione-del-controllo">Esecuzione del controllo</h3>
+<p>Passaggi per eseguire il controllo delle Partite IVA:</p>
+<ol type="1">
+<li><p><strong>Apri il file Excel</strong>: Assicurati di scaricare e aprire il file <a href="CONTROLLO-PARTITE-IVA-CON-VIES.xlsm">Excel</a>.</p></li>
+<li><p><strong>Inserisci i dati delle Partite IVA</strong>:</p>
+<ul>
+<li><p>Vai al foglio specificato nella cella <strong>B3</strong> del foglio <strong>CONFIGURAZIONE</strong>.</p></li>
+<li><p>In questo foglio troverai le seguenti colonne:</p>
+<ul>
+<li><strong>Colonna A (CODICE PAESE)</strong>: Inserisci il codice del paese (es. IT per Italia, FR per Francia, etc.).</li>
+<li><strong>Colonna B (P.IVA)</strong>: Inserisci il numero di Partita IVA da controllare.</li>
+<li><strong>Colonna C (ESITO CONTROLLO CON VIES)</strong>: I risultati del controllo effettuato tramite il servizio VIES appariranno qui.</li>
+<li><strong>Colonna D (ESITO CONTROLLO SINTATTICO (NON LIMITANTE))</strong>: Qui verrà riportato il risultato del controllo sintattico della Partita IVA, ovvero se il formato è valido o meno, basato su una regex (non blocca l’esecuzione del controllo VIES).</li>
+</ul></li>
+</ul></li>
+<li><p><strong>Clicca sul bottone per eseguire il controllo</strong>:</p>
+<ul>
+<li><p>Nel foglio <strong>CONFIGURAZIONE</strong>, troverai un bottone a forma di <strong>triangolo nero</strong>, simile al tasto “Play” di un lettore multimediale.</p></li>
+<li><p><strong>Clicca sul bottone</strong> per avviare il controllo delle Partite IVA.</p></li>
+</ul></li>
+<li><p><strong>Interpreta i risultati</strong>:</p>
+<ul>
+<li><p>Una volta avviato il controllo, i risultati verranno visualizzati:</p>
+<ul>
+<li><strong>Colonna C</strong>: Mostra il risultato del controllo tramite il servizio VIES.</li>
+<li><strong>Colonna D</strong>: Mostra se il formato della Partita IVA è valido o meno (controllo sintattico). Se il controllo sintattico è positivo, apparirà “Valida”, se è negativo apparirà “Non valida”.</li>
+</ul></li>
+<li><p>Alla fine del processo, comparirà una <strong>finestra di riepilogo</strong> che mostra il numero totale di Partite IVA controllate, quante sono risultate valide o non valide, gli errori riscontrati, e le Partite IVA vuote.</p></li>
+</ul></li>
+</ol>
+</section>
+<section id="riepilogo-dei-messaggi" class="level3">
+<h3 data-anchor-id="riepilogo-dei-messaggi">Riepilogo dei messaggi</h3>
+<p>Al termine dell’esecuzione, il sistema visualizzerà una finestra di dialogo che mostrerà il seguente riepilogo:</p>
+<ul>
+<li><p><strong>Numero di P.IVA controllate</strong>: Numero totale di Partite IVA processate.</p></li>
+<li><p><strong>Valide in VIES</strong>: Partite IVA che risultano valide dopo il controllo con il servizio VIES.</p></li>
+<li><p><strong>Non valide in VIES</strong>: Partite IVA che risultano non valide nel servizio VIES (potrebbero non essere registrate o essere errate).</p></li>
+<li><p><strong>Errori</strong>: Numero di errori riscontrati durante il controllo (ad esempio, problemi con il servizio VIES o con i dati).</p></li>
+<li><p><strong>Vuote</strong>: Numero di righe in cui la Partita IVA non era presente o la cella era vuota.</p></li>
+<li><p><strong>Efficienza</strong>: Velocità di controllo espressa in Partite IVA per minuto.</p></li>
+</ul>
+</section>
+</section>
+<section id="personalizzare-e-modificare-il-codice" class="level2">
+<h2 data-anchor-id="personalizzare-e-modificare-il-codice">Personalizzare e modificare il codice</h2>
+<p>Questa sezione è pensata per chi ha già una conoscenza di base di <strong>VBA</strong> e desidera personalizzare o modificare il codice VBA per adattarlo alle proprie necessità.</p>
+<section id="struttura-del-codice" class="level3">
+<h3 data-anchor-id="struttura-del-codice">Struttura del Codice</h3>
+<p>Il codice VBA esegue principalmente due controlli:</p>
+<ol type="1">
+<li><p><strong>Validazione del formato della Partita IVA</strong>: Utilizza un’espressione regolare (regex) per verificare che il formato della Partita IVA sia conforme alle regole del paese.</p></li>
+<li><p><strong>Controllo tramite VIES</strong>: Invia una richiesta al servizio VIES per verificare se la Partita IVA è valida.</p></li>
+</ol>
+</section>
+<section id="come-modificare-il-codice-vba" class="level3">
+<h3 data-anchor-id="come-modificare-il-codice-vba">Come modificare il codice VBA</h3>
+<ol type="1">
+<li><p><strong>Aprire l’editor VBA</strong>:</p>
+<ul>
+<li><p>Premi <code>ALT + F11</code> per aprire l’editor VBA.</p></li>
+<li><p>Nel pannello a sinistra, troverai un modulo chiamato <strong>Modulo1</strong> o simile. Qui è contenuto tutto il codice.</p></li>
+</ul></li>
+<li><p><strong>Controllo sintattico</strong></p></li>
+</ol>
+<p>Il controllo sintattico del formato della Partita IVA non blocca il controllo tramite VIES. Anche se il controllo fallisce (ad esempio, se il formato è errato), la richiesta al servizio VIES verrà comunque effettuata. Il risultato del controllo sintattico viene inserito nella <strong>Colonna D (ESITO CONTROLLO SINTATTICO (NON LIMITANTE))</strong>. Se il formato è valido, apparirà “Valida”, altrimenti “Non valida”.</p>
+</section>
+<section id="modifica" class="level3">
+<h3 data-anchor-id="modifica">Modifica</h3>
+<p>Se desideri modificare o aggiungere una regex per un nuovo paese, segui questi passaggi:</p>
+<ol type="1">
+<li><p>Vai nel foglio <strong>CONFIGURAZIONE</strong>.</p></li>
+<li><p>Inserisci il <strong>codice del paese</strong> nella colonna A (es. “PT” per il Portogallo).</p></li>
+<li><p>Inserisci il pattern <strong>regex</strong> corretto nella colonna B per validare il formato delle Partite IVA del paese specifico (ad esempio, per il Portogallo, potrebbe essere <code>^\d{9}$</code>).</p></li>
+<li><p>Salva e chiudi.</p></li>
+</ol>
+<p>Il codice VBA utilizzerà automaticamente la regex inserita per validare il formato delle Partite IVA per quel paese.</p>
+<p>Altre configurazioni:</p>
+<ul>
+<li><p><strong>Numero massimo di righe da controllare</strong>: Se nella cella <strong>B1</strong> del foglio <strong>CONFIGURAZIONE</strong> non viene inserito un valore, la macro controllerà tutte le righe con Partite IVA fino alla prima riga vuota. Se viene inserito un numero, controllerà solo quel numero di righe.</p></li>
+<li><p><strong>Codice paese predefinito</strong>: Se una Partita IVA non ha un codice paese associato (colonna A vuota), verrà usato il codice predefinito specificato nella cella <strong>B2</strong> del foglio <strong>CONFIGURAZIONE</strong>.</p></li>
+</ul>
+</section>
+</section>
+<section id="riassumendo" class="level2">
+<h2 data-anchor-id="riassumendo">Riassumendo</h2>
+<p>Questa guida ti permette di utilizzare un file Excel per controllare le Partite IVA europee tramite il servizio VIES. Se sei un utente che non ha familiarità con la programmazione, puoi facilmente utilizzare il file cliccando semplicemente su un bottone. Se hai invece conoscenze di VBA, puoi personalizzare il codice o modificare il file per adattarlo meglio alle tue esigenze specifiche, come l’aggiunta di nuovi paesi o la modifica dei messaggi restituiti.</p>
+<p>In questo modo, puoi automatizzare il controllo delle Partite IVA e risparmiare tempo nella gestione dei dati aziendali.</p>
+
+
+</section>
+
+<section class="related-posts">
+  <h2>Related Posts</h2>
+  <div class="related-posts-grid">
+      </div>
+</section>
 </body></html>
