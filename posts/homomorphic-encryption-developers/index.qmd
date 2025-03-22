@@ -23,7 +23,7 @@ author:
         city: Milano
         country: Italia
 date: "2022-06-23"
-date-modified: "2024-03-24"
+date-modified: "2024-12-30"
 categories: [cryptography, Python, tutorial, 🇬🇧]
 keywords: cryptography, homomorphic encryption, RSA
 license: "CC BY-NC-ND"
@@ -41,6 +41,24 @@ comments:
 ::: {.column-margin}
 ![](homomorphic-encryption.png){fig-format="png,webp"}
 :::
+
+## Roadmap
+
+In this tutorial, you’ll learn:
+
+- Motivation for homomorphic encryption: Why processing on encrypted data matters in real-world scenarios (healthcare, finance, public cloud).
+
+- Fundamental building blocks: We recap the necessary number theory, group theory, and RSA to establish a strong cryptographic foundation.
+
+- Types of homomorphic encryption: We’ll dissect partially, somewhat, and fully homomorphic schemes, clarifying their strengths and limitations.
+
+- Integration with other privacy techniques: You’ll see how HE connects with Differential Privacy, Secure Multiparty Computation, Zero-Knowledge Proofs, and more.
+
+- Use cases and applications: Cloud computing, blockchain, secure data federation, private information retrieval, and advanced cryptographic protocols.
+
+- Challenges, limitations, and future directions: Noise growth, performance overhead, circuit depth, key management, as well as emerging research directions and post-quantum considerations.
+
+By the end, you’ll understand how HE fits into the broader cryptographic ecosystem, and you’ll be ready to start prototyping with existing HE libraries.
 
 ## Introduction
 
@@ -1998,7 +2016,6 @@ Because RSA only supports multiplication homomorphically (not addition), it is c
 
 ### Example
 
-```markdown
 ::: {.callout-note title="Worked Example: RSA Homomorphic Multiplication"}
 
 Let’s walk through a hands-on example of RSA’s multiplicative homomorphism.
@@ -2074,4 +2091,166 @@ print(f"Encrypted product: {c_mul}") # → 45
 print(f"Decrypted product: {m_mul}") # → 35
 ```
 
+## FHE programming example
 
+Below is a simple FHE example using the **Microsoft SEAL** library in Python. Note that this requires installing the Python bindings for SEAL. Depending on your platform, you can either compile them yourself or obtain a precompiled distribution (often referred to as [SEAL-Python](https://github.com/Huelse/seal-python).
+
+### Installation
+
+1. **Install SEAL** (C++ library) by following the official [Microsoft SEAL GitHub](https://github.com/microsoft/SEAL) instructions.
+
+2. **Install Python bindings**. For many environments, you can try:
+   ```bash
+   pip install seal
+   ```
+   or
+   ```bash
+   pip install seal-python
+   ```
+   If you encounter errors, consult the seal-python or pybind_seal repository for build instructions on your specific platform (Windows, macOS, Linux).
+
+### Code
+
+```{.python}
+import seal                                              # <1>
+
+def bfv_demo():                                          # <2>
+    parms = seal.EncryptionParameters(seal.scheme_type.BFV)   # <3>
+    
+    parms.set_poly_modulus_degree(4096)                  # <4>
+    parms.set_coeff_modulus(seal.CoeffModulus.BFVDefault(4096))  # <5>
+    parms.set_plain_modulus(65537)                       # <6>
+    
+    context = seal.SEALContext(parms)                    # <7>
+    keygen = seal.KeyGenerator(context)                  # <8>
+    public_key = keygen.public_key()                     # <9>
+    secret_key = keygen.secret_key()                     # <10>
+    
+    encryptor = seal.Encryptor(context, public_key)       # <11>
+    decryptor = seal.Decryptor(context, secret_key)       # <12>
+    evaluator = seal.Evaluator(context)                   # <13>
+    
+    encoder = seal.IntegerEncoder(context)                # <14>
+    
+    m1, m2 = 12, 23                                       # <15>
+    plain1 = encoder.encode(m1)                          # <16>
+    plain2 = encoder.encode(m2)
+    
+    ciphertext1 = seal.Ciphertext()
+    ciphertext2 = seal.Ciphertext()
+    
+    encryptor.encrypt(plain1, ciphertext1)               # <17>
+    encryptor.encrypt(plain2, ciphertext2)
+    
+    result_add = seal.Ciphertext()
+    evaluator.add(ciphertext1, ciphertext2, result_add)   # <18>
+    
+    result_mul = seal.Ciphertext()
+    evaluator.multiply(ciphertext1, ciphertext2, result_mul)  # <19>
+    
+    dec_add = seal.Plaintext()
+    dec_mul = seal.Plaintext()
+    decryptor.decrypt(result_add, dec_add)                # <20>
+    decryptor.decrypt(result_mul, dec_mul)
+    
+    res_add = encoder.decode_int32(dec_add)               # <21>
+    res_mul = encoder.decode_int32(dec_mul)
+    
+    print(f"Original: m1={m1}, m2={m2}")
+    print(f"Homomorphic sum: {res_add} (expected {m1 + m2})")
+    print(f"Homomorphic product: {res_mul} (expected {m1 * m2})")
+
+if __name__ == "__main__":
+    bfv_demo()                                            # <22>
+```
+1. `import seal`: Loads the Microsoft SEAL Python bindings.  
+2. `bfv_demo()`: Our main function demonstrating the BFV workflow.  
+3. `EncryptionParameters`: Creates a parameter object for BFV.  
+4. `set_poly_modulus_degree(4096)`: Sets the polynomial modulus degree (must be a power of 2).  
+5. `set_coeff_modulus(BFVDefault(4096))`: Sets default coefficient moduli for BFV at degree 4096.  
+6. `set_plain_modulus(65537)`: The plain modulus that defines the max range of plaintext values.  
+7. `SEALContext`: Builds a context object from the chosen parameters.  
+8. `KeyGenerator`: Object that creates public/secret keys.  
+9. `public_key = ...`: Retrieve the encryption (public) key.  
+10. `secret_key = ...`: Retrieve the decryption (secret) key.  
+11. `Encryptor`: Used to encrypt plaintexts with the public key.  
+12. `Decryptor`: Used to decrypt ciphertexts with the secret key.  
+13. `Evaluator`: Executes homomorphic operations (add, multiply, etc.).  
+14. `IntegerEncoder`: Encodes small integers into the BFV plaintext representation.  
+15. `m1, m2 = 12, 23`: Two integers for the demo.  
+16. `encoder.encode(m1)`: Converts integer to a SEAL plaintext polynomial.  
+17. `encryptor.encrypt(...)`: Transforms the plaintext polynomial into a ciphertext.  
+18. `evaluator.add(...)`: Homomorphically add the two ciphertexts.  
+19. `evaluator.multiply(...)`: Homomorphically multiply the ciphertexts.  
+20. `decryptor.decrypt(result_add, dec_add)`: Transforms ciphertext back to a plaintext polynomial.  
+21. `encoder.decode_int32(dec_add)`: Converts the plaintext polynomial to a Python integer.  
+22. `bfv_demo()`: Runs our entire demonstration when the script is invoked directly.
+
+Running this script will print the homomorphic sum and product, confirming that the decrypted results match the original integer arithmetic—even though the intermediate computation was performed on encrypted data.
+
+### Further experiments
+
+Now that you’ve seen a basic BFV demo, here are three advanced topics that can enhance or vary your homomorphic encryption workflows:
+
+1. Circuit depth: If you chain multiple multiplications, the ciphertext “noise” grows. Past a certain depth, you risk decryption failures unless you use larger parameters or bootstrapping.
+2. BatchEncoder: BFV can pack vectors of integers into a single ciphertext, enabling “SIMD” style batch operations. This is crucial for large-scale tasks, like matrix multiplications or simple neural-network layers.
+3. CKKS: For real or floating-point arithmetic, switch to **CKKS**. It’s approximate but often sufficient (and more efficient) for ML or signal-processing tasks.
+
+Below is an example snippet that illustrates chaining multiplications (circuit depth) and using BatchEncoder in BFV. You’ll also see where you’d optionally switch from BFV to CKKS.
+
+```{.python}
+import seal
+
+def further_experiments_demo():                   
+    parms = seal.EncryptionParameters(seal.scheme_type.BFV) # <1>
+    parms.set_poly_modulus_degree(4096)
+    parms.set_coeff_modulus(seal.CoeffModulus.BFVDefault(4096))
+    parms.set_plain_modulus(65537)
+
+    context = seal.SEALContext(parms)
+    keygen = seal.KeyGenerator(context)
+    public_key = keygen.public_key()
+    secret_key = keygen.secret_key()
+    encryptor = seal.Encryptor(context, public_key)
+    decryptor = seal.Decryptor(context, secret_key)
+    evaluator = seal.Evaluator(context)
+       
+    batch_encoder = seal.BatchEncoder(context) # <2>
+    slot_count = batch_encoder.slot_count()
+    print(f"Slot count: {slot_count}")
+
+    # We'll encode a vector of integers [0, 1, 2, ..., slot_count-1].
+    sample_vec = list(range(slot_count))
+    plain_sample = seal.Plaintext()
+    batch_encoder.encode(sample_vec, plain_sample)
+
+    ciph_sample = seal.Ciphertext()
+    encryptor.encrypt(plain_sample, ciph_sample)
+
+    for i in range(3): # <3>
+        evaluator.multiply_inplace(ciph_sample, ciph_sample)
+        evaluator.relinearize_inplace(ciph_sample, keygen.relin_keys())
+        # (Optional) check noise budget with decryptor.invariant_noise_budget()
+        # noise = decryptor.invariant_noise_budget(ciph_sample)
+        # print(f"Multiplication #{i+1}: noise budget = {noise} bits")
+
+    plain_out = seal.Plaintext() # <4>
+    decryptor.decrypt(ciph_sample, plain_out)
+    decoded_vec = []
+    batch_encoder.decode(plain_out, decoded_vec)
+    print("Decoded vector (first 10):", decoded_vec[:10])
+   
+    #   ckks_parms = seal.EncryptionParameters(seal.scheme_type.CKKS) # <5>
+    #   (Set poly_modulus_degree, coeff_modulus, scale, etc.)
+    #   This would allow real-number arithmetic, ideal for ML tasks.
+
+if __name__ == "__main__":
+    further_experiments_demo()
+```
+1. We choose BFV for integer arithmetic. This snippet sets polynomial modulus degree and coefficient moduli. You could scale them up for deeper circuits or bigger integer ranges.
+2. We create a `BatchEncoder` to pack vectors of integers into a single ciphertext. Greatly improves performance in large-scale tasks by exploiting SIMD-like parallelism.
+3. We multiply the ciphertext by itself repeatedly, relinearizing each time. Each multiplication consumes _noise budget_. If you do enough multiplications without large enough parameters or bootstrapping, you’ll eventually exceed the noise limit, causing decryption failures.
+4. We decrypt and decode to confirm that, despite multiple multiplications, the result is still coherent—unless the noise budget is used up.
+5. Shows a placeholder for switching to CKKS, which supports floating-point arithmetic. This scheme is approximate but powerful for neural networks, signal processing, etc.
+
+With these ideas, you can explore how parameter selection, batching, and scheme type impact your homomorphic encryption performance and functionality. This snippet offers a practical launch pad for deeper experimentation in BFV or CKKS.

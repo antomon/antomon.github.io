@@ -309,7 +309,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">March 24, 2024</p>
+        <p class="date-modified">December 30, 2024</p>
       </div>
     </div>
       
@@ -339,7 +339,8 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <li><a href="#roadmap" id="toc-roadmap" class="nav-link active" data-scroll-target="#roadmap">Roadmap</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a>
   <ul class="collapse">
   <li><a href="#the-challenge-with-data-security" id="toc-the-challenge-with-data-security" class="nav-link" data-scroll-target="#the-challenge-with-data-security">The challenge with data security</a></li>
   <li><a href="#computing-on-encrypted-data" id="toc-computing-on-encrypted-data" class="nav-link" data-scroll-target="#computing-on-encrypted-data">Computing on encrypted data</a></li>
@@ -371,6 +372,12 @@ window.Quarto = {
   <li><a href="#homomorphic-evaluation" id="toc-homomorphic-evaluation" class="nav-link" data-scroll-target="#homomorphic-evaluation">Homomorphic evaluation</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
   </ul></li>
+  <li><a href="#fhe-programming-example" id="toc-fhe-programming-example" class="nav-link" data-scroll-target="#fhe-programming-example">FHE programming example</a>
+  <ul class="collapse">
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a></li>
+  <li><a href="#code" id="toc-code" class="nav-link" data-scroll-target="#code">Code</a></li>
+  <li><a href="#further-experiments" id="toc-further-experiments" class="nav-link" data-scroll-target="#further-experiments">Further experiments</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -384,7 +391,20 @@ window.Quarto = {
 
 <div class="no-row-height column-margin column-container"><div class="">
 <p><img src="homomorphic-encryption.png" class="img-fluid" data-fig-format="png,webp"></p>
-</div></div><section id="introduction" class="level2 page-columns page-full">
+</div></div><section id="roadmap" class="level2">
+<h2 class="anchored" data-anchor-id="roadmap">Roadmap</h2>
+<p>In this tutorial, you’ll learn:</p>
+<ul>
+<li><p>Motivation for homomorphic encryption: Why processing on encrypted data matters in real-world scenarios (healthcare, finance, public cloud).</p></li>
+<li><p>Fundamental building blocks: We recap the necessary number theory, group theory, and RSA to establish a strong cryptographic foundation.</p></li>
+<li><p>Types of homomorphic encryption: We’ll dissect partially, somewhat, and fully homomorphic schemes, clarifying their strengths and limitations.</p></li>
+<li><p>Integration with other privacy techniques: You’ll see how HE connects with Differential Privacy, Secure Multiparty Computation, Zero-Knowledge Proofs, and more.</p></li>
+<li><p>Use cases and applications: Cloud computing, blockchain, secure data federation, private information retrieval, and advanced cryptographic protocols.</p></li>
+<li><p>Challenges, limitations, and future directions: Noise growth, performance overhead, circuit depth, key management, as well as emerging research directions and post-quantum considerations.</p></li>
+</ul>
+<p>By the end, you’ll understand how HE fits into the broader cryptographic ecosystem, and you’ll be ready to start prototyping with existing HE libraries.</p>
+</section>
+<section id="introduction" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
 <p>Imagine you’re building a healthcare app that needs to analyze patient data stored in the cloud. Since the data is sensitive, you encrypt it before sending it. However, every time you need to analyze the data, you have to decrypt it, which means the data is exposed and creates a security risk.</p>
 <p>This is the main problem with traditional encryption systems like RSA<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> and AES<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. They protect data while it’s stored or sent, but as soon as you need to use the data, you have to decrypt it. It’s like keeping money in a safe but needing to take it out every time you want to count it. This fundamental limitation makes it challenging to keep sensitive information secure throughout its lifecycle, especially as more applications rely on cloud computing, where the need for remote processing is common.</p>
@@ -1937,79 +1957,336 @@ c = c_1 \cdot c_2 \mod n
 <div class="no-row-height column-margin column-container"><div id="fn31"><p><sup>31</sup>&nbsp;A cryptographic technique that enables a client to outsource a computation to an untrusted server and later verify that the result was computed correctly, without redoing the computation. This is particularly important in cloud computing and delegated data processing.</p></div></div></section>
 <section id="example" class="level3">
 <h3 class="anchored" data-anchor-id="example">Example</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1"></a>::: {.callout-note title="Worked Example: RSA Homomorphic Multiplication"}</span>
+<div class="callout callout-style-default callout-note callout-titled" title="Worked Example: RSA Homomorphic Multiplication">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Worked Example: RSA Homomorphic Multiplication
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Let’s walk through a hands-on example of RSA’s multiplicative homomorphism.</p>
+<p>Suppose we pick two small primes: <span class="math inline">p = 11</span> and <span class="math inline">q = 13</span>, so <span class="math inline">n = pq = 143</span>. Compute Euler’s totient:</p>
+<p><span class="math display">
+\varphi(n) = (p - 1)(q - 1) = 10 \cdot 12 = 120
+</span></p>
+<p>Choose the public exponent <span class="math inline">e = 7</span>, which is coprime with <span class="math inline">\varphi(n)</span>. Compute the private exponent <span class="math inline">d = e^{-1} \mod \varphi(n) = 103</span>.</p>
+<p>Now encrypt two messages, <span class="math inline">m_1 = 5</span> and <span class="math inline">m_2 = 7</span>:</p>
+<ul>
+<li><span class="math inline">c_1 = 5^7 \mod 143 = 78</span></li>
+<li><span class="math inline">c_2 = 7^7 \mod 143 = 47</span></li>
+</ul>
+<p>Multiply the ciphertexts:</p>
+<p><span class="math display">
+c = c_1 \cdot c_2 \mod 143 = 78 \cdot 47 \mod 143 = 45
+</span></p>
+<p>Now decrypt:</p>
+<p><span class="math display">
+m = 45^{103} \mod 143 = 35 = 5 \cdot 7
+</span></p>
+<p>The decrypted result equals the product of the original messages. This confirms that:</p>
+<p><span class="math display">
+\text{Dec}(c_1 \cdot c_2 \mod n) = m_1 \cdot m_2 \mod n
+</span></p>
+</div>
+</div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Python code: RSA multiplicative homomorphism example</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a>Let’s walk through a hands-on example of RSA’s multiplicative homomorphism.</span>
-<span id="cb1-4"><a href="#cb1-4"></a></span>
-<span id="cb1-5"><a href="#cb1-5"></a>Suppose we pick two small primes: $p = 11$ and $q = 13$, so $n = pq = 143$. Compute Euler’s totient:</span>
-<span id="cb1-6"><a href="#cb1-6"></a></span>
-<span id="cb1-7"><a href="#cb1-7"></a>$$</span>
-<span id="cb1-8"><a href="#cb1-8"></a>\varphi(n) = (p - 1)(q - 1) = 10 \cdot 12 = 120</span>
-<span id="cb1-9"><a href="#cb1-9"></a>$$</span>
-<span id="cb1-10"><a href="#cb1-10"></a></span>
-<span id="cb1-11"><a href="#cb1-11"></a>Choose the public exponent $e = 7$, which is coprime with $\varphi(n)$. Compute the private exponent $d = e^{-1} \mod \varphi(n) = 103$.</span>
-<span id="cb1-12"><a href="#cb1-12"></a></span>
-<span id="cb1-13"><a href="#cb1-13"></a>Now encrypt two messages, $m_1 = 5$ and $m_2 = 7$:</span>
-<span id="cb1-14"><a href="#cb1-14"></a></span>
-<span id="cb1-15"><a href="#cb1-15"></a><span class="ss">- </span>$c_1 = 5^7 \mod 143 = 78$</span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="ss">- </span>$c_2 = 7^7 \mod 143 = 47$</span>
-<span id="cb1-17"><a href="#cb1-17"></a></span>
-<span id="cb1-18"><a href="#cb1-18"></a>Multiply the ciphertexts:</span>
-<span id="cb1-19"><a href="#cb1-19"></a></span>
-<span id="cb1-20"><a href="#cb1-20"></a>$$</span>
-<span id="cb1-21"><a href="#cb1-21"></a>c = c_1 \cdot c_2 \mod 143 = 78 \cdot 47 \mod 143 = 45</span>
-<span id="cb1-22"><a href="#cb1-22"></a>$$</span>
-<span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a>Now decrypt:</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">def</span> modinv(a, m):</span>
+<span id="cb1-4"><a href="#cb1-4"></a>    t, new_t <span class="op">=</span> <span class="dv">0</span>, <span class="dv">1</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>    r, new_r <span class="op">=</span> m, a</span>
+<span id="cb1-6"><a href="#cb1-6"></a>    <span class="cf">while</span> new_r <span class="op">!=</span> <span class="dv">0</span>:</span>
+<span id="cb1-7"><a href="#cb1-7"></a>        quotient <span class="op">=</span> r <span class="op">//</span> new_r</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        t, new_t <span class="op">=</span> new_t, t <span class="op">-</span> quotient <span class="op">*</span> new_t</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        r, new_r <span class="op">=</span> new_r, r <span class="op">-</span> quotient <span class="op">*</span> new_r</span>
+<span id="cb1-10"><a href="#cb1-10"></a>    <span class="cf">return</span> t <span class="op">%</span> m <span class="cf">if</span> r <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="co"># RSA setup</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>p, q <span class="op">=</span> <span class="dv">11</span>, <span class="dv">13</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a>n <span class="op">=</span> p <span class="op">*</span> q</span>
+<span id="cb1-15"><a href="#cb1-15"></a>phi_n <span class="op">=</span> (p <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> (q <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb1-16"><a href="#cb1-16"></a>e <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a>d <span class="op">=</span> modinv(e, phi_n)</span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="co"># Plaintexts</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>m1, m2 <span class="op">=</span> <span class="dv">5</span>, <span class="dv">7</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="co"># Encrypt</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a>c1 <span class="op">=</span> <span class="bu">pow</span>(m1, e, n)</span>
+<span id="cb1-24"><a href="#cb1-24"></a>c2 <span class="op">=</span> <span class="bu">pow</span>(m2, e, n)</span>
 <span id="cb1-25"><a href="#cb1-25"></a></span>
-<span id="cb1-26"><a href="#cb1-26"></a>$$</span>
-<span id="cb1-27"><a href="#cb1-27"></a>m = 45^{103} \mod 143 = 35 = 5 \cdot 7</span>
-<span id="cb1-28"><a href="#cb1-28"></a>$$</span>
-<span id="cb1-29"><a href="#cb1-29"></a></span>
-<span id="cb1-30"><a href="#cb1-30"></a>The decrypted result equals the product of the original messages. This confirms that:</span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="co"># Homomorphic multiplication</span></span>
+<span id="cb1-27"><a href="#cb1-27"></a>c_mul <span class="op">=</span> (c1 <span class="op">*</span> c2) <span class="op">%</span> n</span>
+<span id="cb1-28"><a href="#cb1-28"></a></span>
+<span id="cb1-29"><a href="#cb1-29"></a><span class="co"># Decrypt result</span></span>
+<span id="cb1-30"><a href="#cb1-30"></a>m_mul <span class="op">=</span> <span class="bu">pow</span>(c_mul, d, n)</span>
 <span id="cb1-31"><a href="#cb1-31"></a></span>
-<span id="cb1-32"><a href="#cb1-32"></a>$$</span>
-<span id="cb1-33"><a href="#cb1-33"></a>\text{Dec}(c_1 \cdot c_2 \mod n) = m_1 \cdot m_2 \mod n</span>
-<span id="cb1-34"><a href="#cb1-34"></a>$$</span>
-<span id="cb1-35"><a href="#cb1-35"></a></span>
-<span id="cb1-36"><a href="#cb1-36"></a>:::</span>
-<span id="cb1-37"><a href="#cb1-37"></a></span>
-<span id="cb1-38"><a href="#cb1-38"></a><span class="in">```python</span></span>
-<span id="cb1-39"><a href="#cb1-39"></a><span class="co"># Python code: RSA multiplicative homomorphism example</span></span>
-<span id="cb1-40"><a href="#cb1-40"></a></span>
-<span id="cb1-41"><a href="#cb1-41"></a><span class="kw">def</span> modinv(a, m):</span>
-<span id="cb1-42"><a href="#cb1-42"></a>    t, new_t <span class="op">=</span> <span class="dv">0</span>, <span class="dv">1</span></span>
-<span id="cb1-43"><a href="#cb1-43"></a>    r, new_r <span class="op">=</span> m, a</span>
-<span id="cb1-44"><a href="#cb1-44"></a>    <span class="cf">while</span> new_r <span class="op">!=</span> <span class="dv">0</span>:</span>
-<span id="cb1-45"><a href="#cb1-45"></a>        quotient <span class="op">=</span> r <span class="op">//</span> new_r</span>
-<span id="cb1-46"><a href="#cb1-46"></a>        t, new_t <span class="op">=</span> new_t, t <span class="op">-</span> quotient <span class="op">*</span> new_t</span>
-<span id="cb1-47"><a href="#cb1-47"></a>        r, new_r <span class="op">=</span> new_r, r <span class="op">-</span> quotient <span class="op">*</span> new_r</span>
-<span id="cb1-48"><a href="#cb1-48"></a>    <span class="cf">return</span> t <span class="op">%</span> m <span class="cf">if</span> r <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="va">None</span></span>
-<span id="cb1-49"><a href="#cb1-49"></a></span>
-<span id="cb1-50"><a href="#cb1-50"></a><span class="co"># RSA setup</span></span>
-<span id="cb1-51"><a href="#cb1-51"></a>p, q <span class="op">=</span> <span class="dv">11</span>, <span class="dv">13</span></span>
-<span id="cb1-52"><a href="#cb1-52"></a>n <span class="op">=</span> p <span class="op">*</span> q</span>
-<span id="cb1-53"><a href="#cb1-53"></a>phi_n <span class="op">=</span> (p <span class="op">-</span> <span class="dv">1</span>) <span class="op">*</span> (q <span class="op">-</span> <span class="dv">1</span>)</span>
-<span id="cb1-54"><a href="#cb1-54"></a>e <span class="op">=</span> <span class="dv">7</span></span>
-<span id="cb1-55"><a href="#cb1-55"></a>d <span class="op">=</span> modinv(e, phi_n)</span>
-<span id="cb1-56"><a href="#cb1-56"></a></span>
-<span id="cb1-57"><a href="#cb1-57"></a><span class="co"># Plaintexts</span></span>
-<span id="cb1-58"><a href="#cb1-58"></a>m1, m2 <span class="op">=</span> <span class="dv">5</span>, <span class="dv">7</span></span>
-<span id="cb1-59"><a href="#cb1-59"></a></span>
-<span id="cb1-60"><a href="#cb1-60"></a><span class="co"># Encrypt</span></span>
-<span id="cb1-61"><a href="#cb1-61"></a>c1 <span class="op">=</span> <span class="bu">pow</span>(m1, e, n)</span>
-<span id="cb1-62"><a href="#cb1-62"></a>c2 <span class="op">=</span> <span class="bu">pow</span>(m2, e, n)</span>
-<span id="cb1-63"><a href="#cb1-63"></a></span>
-<span id="cb1-64"><a href="#cb1-64"></a><span class="co"># Homomorphic multiplication</span></span>
-<span id="cb1-65"><a href="#cb1-65"></a>c_mul <span class="op">=</span> (c1 <span class="op">*</span> c2) <span class="op">%</span> n</span>
-<span id="cb1-66"><a href="#cb1-66"></a></span>
-<span id="cb1-67"><a href="#cb1-67"></a><span class="co"># Decrypt result</span></span>
-<span id="cb1-68"><a href="#cb1-68"></a>m_mul <span class="op">=</span> <span class="bu">pow</span>(c_mul, d, n)</span>
-<span id="cb1-69"><a href="#cb1-69"></a></span>
-<span id="cb1-70"><a href="#cb1-70"></a><span class="bu">print</span>(<span class="ss">f"Encrypted m1: </span><span class="sc">{</span>c1<span class="sc">}</span><span class="ss">"</span>)         <span class="co"># → 78</span></span>
-<span id="cb1-71"><a href="#cb1-71"></a><span class="bu">print</span>(<span class="ss">f"Encrypted m2: </span><span class="sc">{</span>c2<span class="sc">}</span><span class="ss">"</span>)         <span class="co"># → 47</span></span>
-<span id="cb1-72"><a href="#cb1-72"></a><span class="bu">print</span>(<span class="ss">f"Encrypted product: </span><span class="sc">{</span>c_mul<span class="sc">}</span><span class="ss">"</span>) <span class="co"># → 45</span></span>
-<span id="cb1-73"><a href="#cb1-73"></a><span class="bu">print</span>(<span class="ss">f"Decrypted product: </span><span class="sc">{</span>m_mul<span class="sc">}</span><span class="ss">"</span>) <span class="co"># → 35</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-32"><a href="#cb1-32"></a><span class="bu">print</span>(<span class="ss">f"Encrypted m1: </span><span class="sc">{</span>c1<span class="sc">}</span><span class="ss">"</span>)         <span class="co"># → 78</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a><span class="bu">print</span>(<span class="ss">f"Encrypted m2: </span><span class="sc">{</span>c2<span class="sc">}</span><span class="ss">"</span>)         <span class="co"># → 47</span></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="bu">print</span>(<span class="ss">f"Encrypted product: </span><span class="sc">{</span>c_mul<span class="sc">}</span><span class="ss">"</span>) <span class="co"># → 45</span></span>
+<span id="cb1-35"><a href="#cb1-35"></a><span class="bu">print</span>(<span class="ss">f"Decrypted product: </span><span class="sc">{</span>m_mul<span class="sc">}</span><span class="ss">"</span>) <span class="co"># → 35</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="fhe-programming-example" class="level2">
+<h2 class="anchored" data-anchor-id="fhe-programming-example">FHE programming example</h2>
+<p>Below is a simple FHE example using the <strong>Microsoft SEAL</strong> library in Python. Note that this requires installing the Python bindings for SEAL. Depending on your platform, you can either compile them yourself or obtain a precompiled distribution (often referred to as <a href="https://github.com/Huelse/seal-python">SEAL-Python</a>.</p>
+<section id="installation" class="level3">
+<h3 class="anchored" data-anchor-id="installation">Installation</h3>
+<ol type="1">
+<li><p><strong>Install SEAL</strong> (C++ library) by following the official <a href="https://github.com/microsoft/SEAL">Microsoft SEAL GitHub</a> instructions.</p></li>
+<li><p><strong>Install Python bindings</strong>. For many environments, you can try:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1"></a><span class="ex">pip</span> install seal</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1"></a><span class="ex">pip</span> install seal-python</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>If you encounter errors, consult the seal-python or pybind_seal repository for build instructions on your specific platform (Windows, macOS, Linux).</p></li>
+</ol>
+</section>
+<section id="code" class="level3">
+<h3 class="anchored" data-anchor-id="code">Code</h3>
+<div class="sourceCode" id="annotated-cell-2"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-2-1" class="code-annotation-target"><a href="#annotated-cell-2-1"></a><span class="im">import</span> seal</span>
+<span id="annotated-cell-2-2"><a href="#annotated-cell-2-2"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-2-3" class="code-annotation-target"><a href="#annotated-cell-2-3"></a><span class="kw">def</span> bfv_demo():</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-2-4" class="code-annotation-target"><a href="#annotated-cell-2-4"></a>    parms <span class="op">=</span> seal.EncryptionParameters(seal.scheme_type.BFV)</span>
+<span id="annotated-cell-2-5"><a href="#annotated-cell-2-5"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-2-6" class="code-annotation-target"><a href="#annotated-cell-2-6"></a>    parms.set_poly_modulus_degree(<span class="dv">4096</span>)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-2-7" class="code-annotation-target"><a href="#annotated-cell-2-7"></a>    parms.set_coeff_modulus(seal.CoeffModulus.BFVDefault(<span class="dv">4096</span>))</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="6" onclick="event.preventDefault();">6</a><span id="annotated-cell-2-8" class="code-annotation-target"><a href="#annotated-cell-2-8"></a>    parms.set_plain_modulus(<span class="dv">65537</span>)</span>
+<span id="annotated-cell-2-9"><a href="#annotated-cell-2-9"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="7" onclick="event.preventDefault();">7</a><span id="annotated-cell-2-10" class="code-annotation-target"><a href="#annotated-cell-2-10"></a>    context <span class="op">=</span> seal.SEALContext(parms)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="8" onclick="event.preventDefault();">8</a><span id="annotated-cell-2-11" class="code-annotation-target"><a href="#annotated-cell-2-11"></a>    keygen <span class="op">=</span> seal.KeyGenerator(context)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="9" onclick="event.preventDefault();">9</a><span id="annotated-cell-2-12" class="code-annotation-target"><a href="#annotated-cell-2-12"></a>    public_key <span class="op">=</span> keygen.public_key()</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="10" onclick="event.preventDefault();">10</a><span id="annotated-cell-2-13" class="code-annotation-target"><a href="#annotated-cell-2-13"></a>    secret_key <span class="op">=</span> keygen.secret_key()</span>
+<span id="annotated-cell-2-14"><a href="#annotated-cell-2-14"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="11" onclick="event.preventDefault();">11</a><span id="annotated-cell-2-15" class="code-annotation-target"><a href="#annotated-cell-2-15"></a>    encryptor <span class="op">=</span> seal.Encryptor(context, public_key)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="12" onclick="event.preventDefault();">12</a><span id="annotated-cell-2-16" class="code-annotation-target"><a href="#annotated-cell-2-16"></a>    decryptor <span class="op">=</span> seal.Decryptor(context, secret_key)</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="13" onclick="event.preventDefault();">13</a><span id="annotated-cell-2-17" class="code-annotation-target"><a href="#annotated-cell-2-17"></a>    evaluator <span class="op">=</span> seal.Evaluator(context)</span>
+<span id="annotated-cell-2-18"><a href="#annotated-cell-2-18"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="14" onclick="event.preventDefault();">14</a><span id="annotated-cell-2-19" class="code-annotation-target"><a href="#annotated-cell-2-19"></a>    encoder <span class="op">=</span> seal.IntegerEncoder(context)</span>
+<span id="annotated-cell-2-20"><a href="#annotated-cell-2-20"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="15" onclick="event.preventDefault();">15</a><span id="annotated-cell-2-21" class="code-annotation-target"><a href="#annotated-cell-2-21"></a>    m1, m2 <span class="op">=</span> <span class="dv">12</span>, <span class="dv">23</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="16" onclick="event.preventDefault();">16</a><span id="annotated-cell-2-22" class="code-annotation-target"><a href="#annotated-cell-2-22"></a>    plain1 <span class="op">=</span> encoder.encode(m1)</span>
+<span id="annotated-cell-2-23"><a href="#annotated-cell-2-23"></a>    plain2 <span class="op">=</span> encoder.encode(m2)</span>
+<span id="annotated-cell-2-24"><a href="#annotated-cell-2-24"></a>    </span>
+<span id="annotated-cell-2-25"><a href="#annotated-cell-2-25"></a>    ciphertext1 <span class="op">=</span> seal.Ciphertext()</span>
+<span id="annotated-cell-2-26"><a href="#annotated-cell-2-26"></a>    ciphertext2 <span class="op">=</span> seal.Ciphertext()</span>
+<span id="annotated-cell-2-27"><a href="#annotated-cell-2-27"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="17" onclick="event.preventDefault();">17</a><span id="annotated-cell-2-28" class="code-annotation-target"><a href="#annotated-cell-2-28"></a>    encryptor.encrypt(plain1, ciphertext1)</span>
+<span id="annotated-cell-2-29"><a href="#annotated-cell-2-29"></a>    encryptor.encrypt(plain2, ciphertext2)</span>
+<span id="annotated-cell-2-30"><a href="#annotated-cell-2-30"></a>    </span>
+<span id="annotated-cell-2-31"><a href="#annotated-cell-2-31"></a>    result_add <span class="op">=</span> seal.Ciphertext()</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="18" onclick="event.preventDefault();">18</a><span id="annotated-cell-2-32" class="code-annotation-target"><a href="#annotated-cell-2-32"></a>    evaluator.add(ciphertext1, ciphertext2, result_add)</span>
+<span id="annotated-cell-2-33"><a href="#annotated-cell-2-33"></a>    </span>
+<span id="annotated-cell-2-34"><a href="#annotated-cell-2-34"></a>    result_mul <span class="op">=</span> seal.Ciphertext()</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="19" onclick="event.preventDefault();">19</a><span id="annotated-cell-2-35" class="code-annotation-target"><a href="#annotated-cell-2-35"></a>    evaluator.multiply(ciphertext1, ciphertext2, result_mul)</span>
+<span id="annotated-cell-2-36"><a href="#annotated-cell-2-36"></a>    </span>
+<span id="annotated-cell-2-37"><a href="#annotated-cell-2-37"></a>    dec_add <span class="op">=</span> seal.Plaintext()</span>
+<span id="annotated-cell-2-38"><a href="#annotated-cell-2-38"></a>    dec_mul <span class="op">=</span> seal.Plaintext()</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="20" onclick="event.preventDefault();">20</a><span id="annotated-cell-2-39" class="code-annotation-target"><a href="#annotated-cell-2-39"></a>    decryptor.decrypt(result_add, dec_add)</span>
+<span id="annotated-cell-2-40"><a href="#annotated-cell-2-40"></a>    decryptor.decrypt(result_mul, dec_mul)</span>
+<span id="annotated-cell-2-41"><a href="#annotated-cell-2-41"></a>    </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="21" onclick="event.preventDefault();">21</a><span id="annotated-cell-2-42" class="code-annotation-target"><a href="#annotated-cell-2-42"></a>    res_add <span class="op">=</span> encoder.decode_int32(dec_add)</span>
+<span id="annotated-cell-2-43"><a href="#annotated-cell-2-43"></a>    res_mul <span class="op">=</span> encoder.decode_int32(dec_mul)</span>
+<span id="annotated-cell-2-44"><a href="#annotated-cell-2-44"></a>    </span>
+<span id="annotated-cell-2-45"><a href="#annotated-cell-2-45"></a>    <span class="bu">print</span>(<span class="ss">f"Original: m1=</span><span class="sc">{</span>m1<span class="sc">}</span><span class="ss">, m2=</span><span class="sc">{</span>m2<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="annotated-cell-2-46"><a href="#annotated-cell-2-46"></a>    <span class="bu">print</span>(<span class="ss">f"Homomorphic sum: </span><span class="sc">{</span>res_add<span class="sc">}</span><span class="ss"> (expected </span><span class="sc">{</span>m1 <span class="op">+</span> m2<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="annotated-cell-2-47"><a href="#annotated-cell-2-47"></a>    <span class="bu">print</span>(<span class="ss">f"Homomorphic product: </span><span class="sc">{</span>res_mul<span class="sc">}</span><span class="ss"> (expected </span><span class="sc">{</span>m1 <span class="op">*</span> m2<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="annotated-cell-2-48"><a href="#annotated-cell-2-48"></a></span>
+<span id="annotated-cell-2-49"><a href="#annotated-cell-2-49"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-2" data-target-annotation="22" onclick="event.preventDefault();">22</a><span id="annotated-cell-2-50" class="code-annotation-target"><a href="#annotated-cell-2-50"></a>    bfv_demo()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-2" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="1" data-code-annotation="1"><code>import seal</code>: Loads the Microsoft SEAL Python bindings.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="3" data-code-annotation="2"><code>bfv_demo()</code>: Our main function demonstrating the BFV workflow.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="4" data-code-annotation="3"><code>EncryptionParameters</code>: Creates a parameter object for BFV.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="6" data-code-annotation="4"><code>set_poly_modulus_degree(4096)</code>: Sets the polynomial modulus degree (must be a power of 2).<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="7" data-code-annotation="5"><code>set_coeff_modulus(BFVDefault(4096))</code>: Sets default coefficient moduli for BFV at degree 4096.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="6">6</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="8" data-code-annotation="6"><code>set_plain_modulus(65537)</code>: The plain modulus that defines the max range of plaintext values.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="7">7</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="10" data-code-annotation="7"><code>SEALContext</code>: Builds a context object from the chosen parameters.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="8">8</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="11" data-code-annotation="8"><code>KeyGenerator</code>: Object that creates public/secret keys.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="9">9</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="12" data-code-annotation="9"><code>public_key = ...</code>: Retrieve the encryption (public) key.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="10">10</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="13" data-code-annotation="10"><code>secret_key = ...</code>: Retrieve the decryption (secret) key.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="11">11</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="15" data-code-annotation="11"><code>Encryptor</code>: Used to encrypt plaintexts with the public key.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="12">12</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="16" data-code-annotation="12"><code>Decryptor</code>: Used to decrypt ciphertexts with the secret key.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="13">13</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="17" data-code-annotation="13"><code>Evaluator</code>: Executes homomorphic operations (add, multiply, etc.).<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="14">14</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="19" data-code-annotation="14"><code>IntegerEncoder</code>: Encodes small integers into the BFV plaintext representation.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="15">15</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="21" data-code-annotation="15"><code>m1, m2 = 12, 23</code>: Two integers for the demo.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="16">16</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="22" data-code-annotation="16"><code>encoder.encode(m1)</code>: Converts integer to a SEAL plaintext polynomial.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="17">17</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="28" data-code-annotation="17"><code>encryptor.encrypt(...)</code>: Transforms the plaintext polynomial into a ciphertext.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="18">18</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="32" data-code-annotation="18"><code>evaluator.add(...)</code>: Homomorphically add the two ciphertexts.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="19">19</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="35" data-code-annotation="19"><code>evaluator.multiply(...)</code>: Homomorphically multiply the ciphertexts.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="20">20</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="39" data-code-annotation="20"><code>decryptor.decrypt(result_add, dec_add)</code>: Transforms ciphertext back to a plaintext polynomial.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="21">21</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="42" data-code-annotation="21"><code>encoder.decode_int32(dec_add)</code>: Converts the plaintext polynomial to a Python integer.<br>
+</span>
+</dd>
+<dt data-target-cell="annotated-cell-2" data-target-annotation="22">22</dt>
+<dd>
+<span data-code-cell="annotated-cell-2" data-code-lines="50" data-code-annotation="22"><code>bfv_demo()</code>: Runs our entire demonstration when the script is invoked directly.</span>
+</dd>
+</dl>
+<p>Running this script will print the homomorphic sum and product, confirming that the decrypted results match the original integer arithmetic—even though the intermediate computation was performed on encrypted data.</p>
+</section>
+<section id="further-experiments" class="level3">
+<h3 class="anchored" data-anchor-id="further-experiments">Further experiments</h3>
+<p>Now that you’ve seen a basic BFV demo, here are three advanced topics that can enhance or vary your homomorphic encryption workflows:</p>
+<ol type="1">
+<li>Circuit depth: If you chain multiple multiplications, the ciphertext “noise” grows. Past a certain depth, you risk decryption failures unless you use larger parameters or bootstrapping.</li>
+<li>BatchEncoder: BFV can pack vectors of integers into a single ciphertext, enabling “SIMD” style batch operations. This is crucial for large-scale tasks, like matrix multiplications or simple neural-network layers.</li>
+<li>CKKS: For real or floating-point arithmetic, switch to <strong>CKKS</strong>. It’s approximate but often sufficient (and more efficient) for ML or signal-processing tasks.</li>
+</ol>
+<p>Below is an example snippet that illustrates chaining multiplications (circuit depth) and using BatchEncoder in BFV. You’ll also see where you’d optionally switch from BFV to CKKS.</p>
+<div class="sourceCode" id="annotated-cell-3"><pre class="sourceCode numberSource python code-annotation-code number-lines code-with-copy code-annotated"><code class="sourceCode python"><span id="annotated-cell-3-1"><a href="#annotated-cell-3-1"></a><span class="im">import</span> seal</span>
+<span id="annotated-cell-3-2"><a href="#annotated-cell-3-2"></a></span>
+<span id="annotated-cell-3-3"><a href="#annotated-cell-3-3"></a><span class="kw">def</span> further_experiments_demo():                   </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-3-4" class="code-annotation-target"><a href="#annotated-cell-3-4"></a>    parms <span class="op">=</span> seal.EncryptionParameters(seal.scheme_type.BFV)</span>
+<span id="annotated-cell-3-5"><a href="#annotated-cell-3-5"></a>    parms.set_poly_modulus_degree(<span class="dv">4096</span>)</span>
+<span id="annotated-cell-3-6"><a href="#annotated-cell-3-6"></a>    parms.set_coeff_modulus(seal.CoeffModulus.BFVDefault(<span class="dv">4096</span>))</span>
+<span id="annotated-cell-3-7"><a href="#annotated-cell-3-7"></a>    parms.set_plain_modulus(<span class="dv">65537</span>)</span>
+<span id="annotated-cell-3-8"><a href="#annotated-cell-3-8"></a></span>
+<span id="annotated-cell-3-9"><a href="#annotated-cell-3-9"></a>    context <span class="op">=</span> seal.SEALContext(parms)</span>
+<span id="annotated-cell-3-10"><a href="#annotated-cell-3-10"></a>    keygen <span class="op">=</span> seal.KeyGenerator(context)</span>
+<span id="annotated-cell-3-11"><a href="#annotated-cell-3-11"></a>    public_key <span class="op">=</span> keygen.public_key()</span>
+<span id="annotated-cell-3-12"><a href="#annotated-cell-3-12"></a>    secret_key <span class="op">=</span> keygen.secret_key()</span>
+<span id="annotated-cell-3-13"><a href="#annotated-cell-3-13"></a>    encryptor <span class="op">=</span> seal.Encryptor(context, public_key)</span>
+<span id="annotated-cell-3-14"><a href="#annotated-cell-3-14"></a>    decryptor <span class="op">=</span> seal.Decryptor(context, secret_key)</span>
+<span id="annotated-cell-3-15"><a href="#annotated-cell-3-15"></a>    evaluator <span class="op">=</span> seal.Evaluator(context)</span>
+<span id="annotated-cell-3-16"><a href="#annotated-cell-3-16"></a>       </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-3-17" class="code-annotation-target"><a href="#annotated-cell-3-17"></a>    batch_encoder <span class="op">=</span> seal.BatchEncoder(context)</span>
+<span id="annotated-cell-3-18"><a href="#annotated-cell-3-18"></a>    slot_count <span class="op">=</span> batch_encoder.slot_count()</span>
+<span id="annotated-cell-3-19"><a href="#annotated-cell-3-19"></a>    <span class="bu">print</span>(<span class="ss">f"Slot count: </span><span class="sc">{</span>slot_count<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="annotated-cell-3-20"><a href="#annotated-cell-3-20"></a></span>
+<span id="annotated-cell-3-21"><a href="#annotated-cell-3-21"></a>    <span class="co"># We'll encode a vector of integers [0, 1, 2, ..., slot_count-1].</span></span>
+<span id="annotated-cell-3-22"><a href="#annotated-cell-3-22"></a>    sample_vec <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(slot_count))</span>
+<span id="annotated-cell-3-23"><a href="#annotated-cell-3-23"></a>    plain_sample <span class="op">=</span> seal.Plaintext()</span>
+<span id="annotated-cell-3-24"><a href="#annotated-cell-3-24"></a>    batch_encoder.encode(sample_vec, plain_sample)</span>
+<span id="annotated-cell-3-25"><a href="#annotated-cell-3-25"></a></span>
+<span id="annotated-cell-3-26"><a href="#annotated-cell-3-26"></a>    ciph_sample <span class="op">=</span> seal.Ciphertext()</span>
+<span id="annotated-cell-3-27"><a href="#annotated-cell-3-27"></a>    encryptor.encrypt(plain_sample, ciph_sample)</span>
+<span id="annotated-cell-3-28"><a href="#annotated-cell-3-28"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-3-29" class="code-annotation-target"><a href="#annotated-cell-3-29"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="annotated-cell-3-30"><a href="#annotated-cell-3-30"></a>        evaluator.multiply_inplace(ciph_sample, ciph_sample)</span>
+<span id="annotated-cell-3-31"><a href="#annotated-cell-3-31"></a>        evaluator.relinearize_inplace(ciph_sample, keygen.relin_keys())</span>
+<span id="annotated-cell-3-32"><a href="#annotated-cell-3-32"></a>        <span class="co"># (Optional) check noise budget with decryptor.invariant_noise_budget()</span></span>
+<span id="annotated-cell-3-33"><a href="#annotated-cell-3-33"></a>        <span class="co"># noise = decryptor.invariant_noise_budget(ciph_sample)</span></span>
+<span id="annotated-cell-3-34"><a href="#annotated-cell-3-34"></a>        <span class="co"># print(f"Multiplication #{i+1}: noise budget = {noise} bits")</span></span>
+<span id="annotated-cell-3-35"><a href="#annotated-cell-3-35"></a></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-3-36" class="code-annotation-target"><a href="#annotated-cell-3-36"></a>    plain_out <span class="op">=</span> seal.Plaintext()</span>
+<span id="annotated-cell-3-37"><a href="#annotated-cell-3-37"></a>    decryptor.decrypt(ciph_sample, plain_out)</span>
+<span id="annotated-cell-3-38"><a href="#annotated-cell-3-38"></a>    decoded_vec <span class="op">=</span> []</span>
+<span id="annotated-cell-3-39"><a href="#annotated-cell-3-39"></a>    batch_encoder.decode(plain_out, decoded_vec)</span>
+<span id="annotated-cell-3-40"><a href="#annotated-cell-3-40"></a>    <span class="bu">print</span>(<span class="st">"Decoded vector (first 10):"</span>, decoded_vec[:<span class="dv">10</span>])</span>
+<span id="annotated-cell-3-41"><a href="#annotated-cell-3-41"></a>   </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-3" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-3-42" class="code-annotation-target"><a href="#annotated-cell-3-42"></a>    <span class="co">#   ckks_parms = seal.EncryptionParameters(seal.scheme_type.CKKS)</span></span>
+<span id="annotated-cell-3-43"><a href="#annotated-cell-3-43"></a>    <span class="co">#   (Set poly_modulus_degree, coeff_modulus, scale, etc.)</span></span>
+<span id="annotated-cell-3-44"><a href="#annotated-cell-3-44"></a>    <span class="co">#   This would allow real-number arithmetic, ideal for ML tasks.</span></span>
+<span id="annotated-cell-3-45"><a href="#annotated-cell-3-45"></a></span>
+<span id="annotated-cell-3-46"><a href="#annotated-cell-3-46"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span>:</span>
+<span id="annotated-cell-3-47"><a href="#annotated-cell-3-47"></a>    further_experiments_demo()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-3" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="4" data-code-annotation="1">We choose BFV for integer arithmetic. This snippet sets polynomial modulus degree and coefficient moduli. You could scale them up for deeper circuits or bigger integer ranges.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="17" data-code-annotation="2">We create a <code>BatchEncoder</code> to pack vectors of integers into a single ciphertext. Greatly improves performance in large-scale tasks by exploiting SIMD-like parallelism.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="29" data-code-annotation="3">We multiply the ciphertext by itself repeatedly, relinearizing each time. Each multiplication consumes <em>noise budget</em>. If you do enough multiplications without large enough parameters or bootstrapping, you’ll eventually exceed the noise limit, causing decryption failures.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="36" data-code-annotation="4">We decrypt and decode to confirm that, despite multiple multiplications, the result is still coherent—unless the noise budget is used up.</span>
+</dd>
+<dt data-target-cell="annotated-cell-3" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-3" data-code-lines="42" data-code-annotation="5">Shows a placeholder for switching to CKKS, which supports floating-point arithmetic. This scheme is approximate but powerful for neural networks, signal processing, etc.</span>
+</dd>
+</dl>
+<p>With these ideas, you can explore how parameter selection, batching, and scheme type impact your homomorphic encryption performance and functionality. This snippet offers a practical launch pad for deeper experimentation in BFV or CKKS.</p>
 
 
 </section>
