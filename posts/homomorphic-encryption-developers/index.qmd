@@ -551,7 +551,7 @@ In addition to the limitations outlined above, HE faces several other challenges
 
 Having explored the high-level benefits and use cases of HE, from cloud-based analytics to privacy-preserving computations, we now turn to the mathematical underpinnings that make these capabilities possible. In the sections ahead, we’ll look at the abstract algebra concepts that allow encrypted values to behave almost like ordinary data, so that addition, multiplication, and even more complex operations can be carried out securely.
 
-We’ll begin by examining homomorphisms, the structural “translations” that keep arithmetic consistent between plaintext and ciphertext. Next, we’ll see how groups, rings, and fields fit into HE, and why functional completeness—the ability to both add and multiply encrypted data—is a cornerstone of fully homomorphic schemes. Finally, we’ll dissect the main building blocks of a typical HE setup (KeyGen, Enc, Dec, and Eval) and learn how noise management, parameter selection, and other technical considerations come together to deliver robust security without sacrificing too much performance. By grounding ourselves in these foundational concepts, we’ll gain a clearer sense of how HE works, equipping us to better understand why it is so transformative for secure data processing.
+We’ll begin by examining homomorphisms, the structural _translations_ that keep arithmetic consistent between plaintext and ciphertext. Next, we’ll see how groups, rings, and fields fit into HE, and why functional completeness—the ability to both add and multiply encrypted data—is a cornerstone of fully homomorphic schemes. Finally, we’ll dissect the main building blocks of a typical HE setup (KeyGen, Enc, Dec, and Eval) and learn how noise management, parameter selection, and other technical considerations come together to deliver robust security without sacrificing too much performance. By grounding ourselves in these foundational concepts, we’ll gain a clearer sense of how HE works, equipping us to better understand why it is so transformative for secure data processing.
 
 ### Homomorphisms
 
@@ -1680,7 +1680,7 @@ $$
 $$
 If no such $x$ exists, then $a$ is called an **rth non-residue** modulo $n$.
 
-> **Lemma (*Structure of higher-order residues*)**: 
+> **Lemma (*Structure of higher-order residues*)**:
 > 1. The set of rth residues modulo $n$ that are relatively prime to $n$ forms a subgroup of $\mathbb{Z}_n^*$.
 > 2. Each rth residue modulo $n$ has the same number of rth roots.
 
@@ -1769,7 +1769,7 @@ Cryptography frequently leverages **groups**, which are sets endowed with an ope
 
 #### Basics
 
-> **Definition (*Group*)**: A group $(G, \star)$ is a set $G$ equipped with a binary operation “$\star$” satisfying four key properties:
+> **Definition (*Group*)**: A group $(G, \star)$ is a set $G$ equipped with a binary operation $\star$ satisfying four key properties:
 > 
 > 1. **Closure**: For any $a, b \in G$, the result of $a \star b$ is still in $G$.
 > 
@@ -1785,247 +1785,293 @@ A classic example is the set of integers $\mathbb{Z}$ under addition $(+)$:
 
 - Every integer $n$ has an inverse $-n$.  
 
-In **multiplicative** notation—common in cryptography—a group might be a set of “invertible” numbers modulo $n$. For instance, $\mathbb{Z}_p^*$ (integers $\{1,2,\dots,p-1\}$ under multiplication mod $p$) forms a group if $p$ is prime.
+In **multiplicative** notation, common in cryptography, a group might be a set of _invertible_ numbers modulo $n$. For instance, $\mathbb{Z}_p^*$ (integers $\{1,2,\dots,p-1\}$ under multiplication mod $p$) forms a group if $p$ is prime.
 
-> **Why it matters**: Groups let us “move around” elements predictably. For a cryptosystem, that often means repeatedly applying an operation—e.g., exponentiation mod $p$—without leaving the safety of the group.
+Groups let us _move around_ elements predictably. For a cryptosystem, that often means repeatedly applying an operation, e.g., exponentiation mod $p$, without leaving the safety of the group.
 
-#### Multiplicative vs. Additive Notation
+#### Multiplicative vs. additive notation
 
 Groups used in cryptography often come in two flavors:
 
-- **Multiplicative groups**, denoted $(G, \times)$. We write the identity as $1$ and the inverse of $g$ as $g^{-1}$. An example is $\mathbb{Z}_p^*$, the nonzero integers mod $p$.  
+- **Multiplicative groups**, denoted $(G, \times)$. We write the identity as $1$ and the inverse of $g$ as $g^{-1}$. An example is $\mathbb{Z}_p^*$, the nonzero integers mod $p$.
+
 - **Additive groups**, denoted $(G, +)$. We write the identity as $0$ and the inverse of $a$ as $-a$. An example is $(\mathbb{Z}, +)$ or $(\mathbb{Z}_n, +)$.
 
 Both notations obey the same fundamental group axioms. Cryptographic schemes switch between them depending on context; for instance, elliptic‐curve cryptography usually adopts additive notation, while classical $\mathbb{Z}_p^*$ cryptography uses multiplicative.
 
-#### Order of a Group and Order of an Element
+#### Order of a group and order of an element
 
-1. **Order of a group** $|G|$ (or $\operatorname{ord}(G)$) is the number of elements in $G$ when $G$ is finite. In cryptographic contexts, we often choose large prime‐order groups to avoid certain attacks.  
+> **Definition (*Order of a group*)**: The order of a group $|G|$ (or $\operatorname{ord}(G)$) is the number of elements in $G$ when $G$ is finite. In cryptographic contexts, we often choose large prime‐order groups to avoid certain attacks. 
 
-2. **Order of an element** $g \in G$ is the smallest positive integer $k$ such that
-   $$
-   g^k = e \quad \text{(multiplicative)}, 
-   $$
-   or
-   $$
-   k \cdot g = 0 \quad \text{(additive)},
-   $$
-   where $e$ is the identity. If no finite $k$ satisfies this, we say the element has infinite order (common in some infinite groups, but for cryptography we focus on finite ones).
+> **Definition (*Order of an element*)**: The order of an element** $g \in G$ is the smallest positive integer $k$ such that
+> $$
+> g^k = e \quad \text{(multiplicative)}, 
+> $$
+> or
+> $$
+> k \cdot g = 0 \quad \text{(additive)},
+> $$
+> where $e$ is the identity. If no finite $k$ satisfies this, we say the element has infinite order (common in some infinite groups, but for cryptography we focus on finite ones).
 
-> **Why it matters**: The element’s order dictates cycles in exponentiation. For instance, in $\mathbb{Z}_p^*$, exponentiating an element $g$ repeatedly will eventually loop back to $1$. Cryptosystems like Diffie–Hellman rely on the difficulty of reversing such exponentiations (the “discrete logarithm problem”).
+The order of an element determines how it behaves under repeated application of the group operation. In the multiplicative group $\mathbb{Z}_p^*$, where $p$ is prime, any element $g$ raised to successive powers, that is $g^1, g^2, g^3, \dots$, will eventually cycle back to $1$. The smallest positive integer $k$ such that $g^k \equiv 1 \mod p$ is called the order of $g$. This cyclic property implies that the powers of $g$ form a repeating pattern, which plays a central role in modular arithmetic.
 
-
+Cryptographic schemes like Diffie–Hellman rely on this structure. They use a generator $g$ and compute $g^a \mod p$ for some secret exponent $a$. While computing $g^a$ is easy, recovering $a$ from $g^a$ is computationally hard. This problem, finding the exponent given the base and the result, is known as the **discrete logarithm problem**, and it underpins the security of many cryptographic protocols.
 
 #### Homomorphisms
 
-A **group homomorphism** from one group $\bigl(G,\star\bigr)$ to another $\bigl(H,\circ\bigr)$ is a map  
-$$
-   f : G \,\to\, H
-$$
-that **preserves** the group operation. Formally, for all $x,y \in G$,
+> **Definition (*Group homomorphism*)**: A **group homomorphism** from one group $\bigl(G,\star\bigr)$ to another $\bigl(H,\circ\bigr)$ is a map  
+> $$
+> f : G \,\to\, H
+> $$
+that **preserves** the group operation. 
+
+Formally, for all $x,y \in G$,
 $$
    f\bigl(x \star y\bigr) \;=\; f(x)\,\circ\,f(y).
 $$
-In other words, performing the operation in $G$ first—then applying $f$—has the same effect as applying $f$ *individually* to each of $x$ and $y$, and then using the operation in $H$. If $f$ is also bijective (one‐to‐one and onto), we call it an **isomorphism**, and say $G$ and $H$ are *isomorphic*.
 
-#### 12.1 Illustrative Examples
+This means that applying the operation in $G$ and then mapping the result is the same as first mapping the inputs and then applying the operation in $H$.
 
-Below are several examples that highlight different ways homomorphisms appear:
+If the homomorphism $f$ is also bijective (i.e., both injective and surjective), then $f$ is called an isomorphism, and we say that $G$ and $H$ are isomorphic as groups.
 
----
+Below are some examples that highlight different ways homomorphisms appear:
 
-**Example 1: Reduction mod $n$**
+1. Reduction mod $n$:
 
-- **Groups**: $\bigl(\mathbb{Z}, +\bigr)$ and $\bigl(\mathbb{Z}_n, +\bigr)$.  
-- **Map**: $f(x) = x \bmod n$.  
+  - Groups: $\bigl(\mathbb{Z}, +\bigr)$ and $\bigl(\mathbb{Z}_n, +\bigr)$
+  - Map: $f(x) = x \bmod n$.  
 
-Check homomorphism:
+  Check homomorphism:
 
-1. In $\mathbb{Z}$, the operation is integer addition $(+)$.  
-2. In $\mathbb{Z}_n$, the operation is addition modulo $n$.  
-3. For any $x,y \in \mathbb{Z}$,
-   $$
-     f(x + y) = (x + y)\bmod n \quad\text{and}\quad
-     f(x)\;+\;f(y) = (x\bmod n)\;+\;(y\bmod n).
-   $$
-   Since $(x + y)\bmod n = (x\bmod n) + (y\bmod n)\bmod n,$ the two sides match in $\mathbb{Z}_n$.  
+  1. In $\mathbb{Z}$, the operation is integer addition $(+)$.  
+  2. In $\mathbb{Z}_n$, the operation is addition modulo $n$.  
+  3. For any $x,y \in \mathbb{Z}$,
+    $$
+      f(x + y) = (x + y)\bmod n \quad\text{and}\quad
+      f(x)\;+\;f(y) = (x\bmod n)\;+\;(y\bmod n).
+    $$
+    Since $(x + y)\bmod n = (x\bmod n) + (y\bmod n)\bmod n,$ the two sides match in $\mathbb{Z}_n$.  
 
-Hence $f$ respects addition and is a group homomorphism. This is an extremely common map in modular arithmetic.
+  Hence $f$ respects addition and is a group homomorphism. This is an extremely common map in modular arithmetic.
 
----
+2. Exponential map $\exp$:
 
-**Example 2: Exponential map $\exp$**
+  - Groups: $\bigl(\mathbb{R}, +\bigr)$ and $\bigl(\mathbb{R}_{>0}, \times\bigr)$.  
+  - Map: $f(x) = e^x$.  
 
-- **Groups**: $\bigl(\mathbb{R}, +\bigr)$ and $\bigl(\mathbb{R}_{>0}, \times\bigr)$.  
-- **Map**: $f(x) = e^x$.  
+  Check homomorphism:
 
-Check homomorphism:
+  1. $\mathbb{R}$ under “$+$” is an additive group; $\mathbb{R}_{>0}$ under “$\times$” is multiplicative.  
+  2. For real numbers $x,y$,
+    $$
+      f(x + y) = e^{\,x + y} = e^x \cdot e^y = f(x)\;\times\; f(y).
+    $$
+    
+  Hence $\exp$ is a homomorphism from an additive group to a multiplicative group. While $\exp$ is *not* typically used directly as a _cryptographic_ function (because $\mathbb{R}$ is infinite‐precision), the idea of mapping addition to multiplication is the same principle that shows up in exponentiation mod $p$.
 
-1. $\mathbb{R}$ under “$+$” is an additive group; $\mathbb{R}_{>0}$ under “$\times$” is multiplicative.  
-2. For real numbers $x,y$,
-   $$
-     f(x + y) = e^{\,x + y} = e^x \cdot e^y = f(x)\;\times\; f(y).
-   $$
-   
-Hence $\exp$ is a homomorphism from an additive group to a multiplicative group. While $\exp$ is *not* typically used directly as a “cryptographic” function (because $\mathbb{R}$ is infinite‐precision), the idea of mapping addition to multiplication is the same principle that shows up in exponentiation mod $p$.
+3. Encryption as a homomorphism:
 
----
+  Suppose we have a cryptosystem $\Pi = (P,C,K,E,D)$ where:
 
-**Example 3: Encryption as a Homomorphism**
+  - $P$: plaintext space (a group with operation $\star$).  
+  - $C$: ciphertext space (a group with operation $\odot$).  
+  - $K$: key space, from which we draw a key $k$.  
+  - $E_k$: encryption function.  
+  - $D_k$: decryption function.
 
-Suppose we have a cryptosystem $\Pi = (P,C,K,E,D)$ where:
+  If $\Pi$ is additively homomorphic, then for any plaintexts $m_1,m_2\in P$,
+  $$
+    D_k\bigl(E_k(m_1)\,\odot\,E_k(m_2)\bigr) 
+    \;=\;
+    m_1 \;\star\; m_2.
+  $$
+  Such a map $E_k$ is effectively a group homomorphism (up to decryption). Concretely:
 
-- $P$ = Plaintext space (a group with operation $\star$).  
-- $C$ = Ciphertext space (a group with operation $\odot$).  
-- $K$ = Key space, from which we draw a key $k$.  
-- $E_k$ = Encryption function.  
-- $D_k$ = Decryption function.
+  1. Additively homomorphic: $\star$ = “$+$” in plaintext, $\odot$ = some “$\oplus$” or “$+$ mod N” in ciphertext. Paillier encryption is a classic example that supports $E(m_1 + m_2)\equiv E(m_1)\cdot E(m_2)$.  
+  2. Multiplicatively homomorphic: $\star$ = “$\times$” in plaintext, $\odot$ = “$\times$” mod $n$ in ciphertext. RSA in raw form is multiplicatively homomorphic over $\mathbb{Z}_n^*$.
 
-If $\Pi$ is **additively homomorphic**, then for any plaintexts $m_1,m_2\in P$,
-$$
-   D_k\bigl(E_k(m_1)\,\odot\,E_k(m_2)\bigr) 
-   \;=\;
-   m_1 \;\star\; m_2.
-$$
-Such a map $E_k$ is effectively a group homomorphism (up to decryption). Concretely:
+  Real cryptosystems often require additional mechanisms (like _padding_ in RSA[^RSA-padding-homomorphic-encryption-developers]) to prevent malicious manipulations. But the fundamental _operation preserved under encryption_ is precisely a homomorphism property.
 
-1. **Additively homomorphic**:  
-   $\star$ = “$+$” in plaintext, $\odot$ = some “$\oplus$” or “$+$ mod N” in ciphertext.  
-   - **Paillier encryption** is a classic example that supports $E(m_1 + m_2)\equiv E(m_1)\cdot E(m_2)$.  
-2. **Multiplicatively homomorphic**:  
-   $\star$ = “$\times$” in plaintext, $\odot$ = “$\times$” mod $n$ in ciphertext.  
-   - **RSA** in raw form is multiplicatively homomorphic over $\mathbb{Z}_n^*$.
+[^RSA-padding-homomorphic-encryption-developers]: When we say that RSA is multiplicatively homomorphic in its raw form, we mean the basic mathematical version of RSA without any padding scheme. In this form, encrypting a product of two messages is equivalent to multiplying their individual encryptions. However, this “raw” RSA is not secure in practice because it is deterministic and vulnerable to certain attacks. Real-world RSA implementations include padding (like OAEP) to ensure security, but these padding schemes break the homomorphic property.
 
-> Real cryptosystems often require additional mechanisms to prevent malicious manipulations. But the fundamental “operation preserved under encryption” is precisely a homomorphism property.
+## The RSA cryptosystem
 
----
+The RSA cryptosystem, introduced in 1977 by Ronald Rivest, Adi Shamir, and Leonard Adleman, marked a turning point in the history of cryptography. It was the first widely applicable public-key encryption scheme, enabling secure communication over insecure channels without requiring the sender and receiver to share a secret key in advance. This was revolutionary. Before RSA, virtually all cryptographic systems were symmetric, meaning that both parties had to agree on a shared key, typically through a secure channel—a serious limitation in distributed and open environments like the internet.
 
-### 12.2 Partial vs. Full Homomorphisms
+The concept of public-key cryptography itself had been proposed only a year earlier, in 1976, by Whitfield Diffie and Martin Hellman. Their work introduced the theoretical foundation for asymmetric key exchange but did not include a concrete implementation. RSA was the first practical realization of this idea, immediately demonstrating how public-key systems could be used not just for key exchange but also for encryption and digital signatures, enabling crucial capabilities like authentication, confidentiality, and integrity.
 
-- A **partially homomorphic** scheme supports only one operation homomorphically (e.g., *either* addition *or* multiplication). RSA and Paillier each provide one such property in their simplest form.  
-- A **somewhat homomorphic** scheme supports both addition and multiplication but only for a limited number of times.  
-- A **fully homomorphic** scheme (FHE) allows *arbitrary* sequences of additions and multiplications on ciphertexts without decryption. This is far more advanced and underpins privacy‐preserving computation in the cloud.
+RSA’s security is based on the mathematical challenge of factoring large composite numbers, a problem for which no efficient classical algorithm is known. Specifically, RSA relies on the assumption that it is computationally infeasible to factor a number $n$ that is the product of two large primes. This difficulty underpins the security of RSA keys, making it extremely hard for an attacker to recover the private key from the public one, as long as the key size is sufficiently large.
 
-**Why it matters**: Homomorphisms formalize how operations on plaintexts get mirrored by operations on ciphertexts—an essential idea in cryptography whenever we want to manipulate data without decrypting it first.
+Over the decades, RSA has become one of the most studied and widely deployed cryptographic algorithms in the world. It serves as the backbone of countless security protocols and standards, including SSL/TLS for secure web browsing, PGP for encrypted email, and many digital certificate infrastructures. RSA also introduced a new generation of cryptographic thinking that spurred the development of modern cryptography as a scientific field, leading to innovations such as zero-knowledge proofs, elliptic curve cryptography, and homomorphic encryption.
 
----
+In this tutorial, RSA is used as a stepping stone toward understanding more advanced techniques like PHE and eventually FHE. By studying RSA’s structure, limitations, and homomorphic properties (particularly its ability to multiply encrypted values), we lay the groundwork for exploring encryption systems that support computation on encrypted data—a key enabler for secure cloud computing, privacy-preserving machine learning, and other emerging technologies.
 
-### 12.3 Homomorphisms and Isomorphisms
+### Key generation
 
-If a homomorphism $f$ is also **injective** (no two distinct elements in $G$ map to the same element in $H$) *and* **surjective** (every element in $H$ is hit by something in $G$), then $f$ is an **isomorphism**. In this scenario, the groups $G$ and $H$ are structurally identical for practical purposes—just written in different “languages.” An isomorphism means:
+The RSA algorithm begins with the generation of a key pair: a **public key** that can be shared with anyone, and a **private key** that must be kept secret. The strength of RSA comes from the mathematical properties of prime numbers and modular arithmetic. The key generation process proceeds as follows:
 
-$$
-   f\bigl(x \star y\bigr) \;=\; f(x) \,\circ\, f(y),
-   \quad\text{and}\quad
-   f^{-1}\text{ exists}.
-$$
+1. Select two large prime numbers, $p$ and $q$, at random. These primes should be of similar bit-length and large enough (e.g., 1024 bits each) to resist modern factoring attacks. The security of RSA depends on the fact that, while multiplying $p$ and $q$ is easy, factoring their product is computationally hard.
 
-**Example**: $\exp: (\mathbb{R}, +) \to (\mathbb{R}_{>0}, \times)$ is a group isomorphism if we allow all real numbers. Indeed, $\ln$ is its inverse map. This underlies many exponentiation-based protocols in cryptography, except we usually replace $\mathbb{R}$ with a finite group $\mathbb{Z}_p^*$.
-
----
-
-### Key Takeaways
-
-1. **Core Definition**: Homomorphisms preserve a group’s structure across a mapping, ensuring “operation before mapping” equals “mapped elements’ operation.”  
-2. **Cryptographic Relevance**:  
-   - Partially homomorphic schemes (like RSA, Paillier) rely on a single operation being preserved.  
-   - Fully homomorphic encryption extends this to all operations (addition & multiplication), enabling computations on encrypted data.  
-3. **Concrete Illustrations**:  
-   - **Reduction mod $n$** shows how integers $\mathbb{Z}$ project down to $\mathbb{Z}_n$.  
-   - **Exponential** unites an additive domain with a multiplicative codomain.  
-   - **Encryption** as a group homomorphism captures the essence of “privacy‐preserving” transformations.  
-
-Homomorphisms thus tie together abstract algebra and the practical design of encryption protocols. Their ability to “translate” operations from one set to another—without destroying structure—is precisely what makes partially or fully homomorphic encryption feasible, and what makes so many cryptographic primitives both powerful and elegant.
-
-
-# The RSA Cryptosystem
-
-## Introduction
-
-The RSA cryptosystem, introduced in 1977 by Ronald Rivest, Adi Shamir, and Leonard Adleman, was the first practical public-key encryption scheme. Prior to its development, encryption relied on symmetric-key cryptography, which required secure key exchanges between communicating parties. RSA fundamentally changed cryptographic security by enabling secure communication without requiring a pre-established shared secret.
-
-RSA's security is rooted in the computational difficulty of factoring large composite numbers, a problem for which no efficient classical algorithm exists. This difficulty ensures that, with sufficiently large key sizes, RSA remains secure against adversarial decryption attempts. As a result, RSA has become a foundational algorithm for modern cryptographic applications, including secure online transactions, digital signatures, and encrypted communications.
-
-This document introduces RSA as a stepping stone to understanding **Partially Homomorphic Encryption (PHE)** and, ultimately, **Fully Homomorphic Encryption (FHE)**. By examining RSA's encryption and homomorphic properties, we establish the necessary cryptographic foundations for more advanced encryption paradigms that allow computations on encrypted data.
-
-## 1. Key Generation
-
-The RSA key generation process consists of the following steps:
-
-1. Select two large prime numbers, $p$ and $q$, ensuring they are sufficiently large for security.
 2. Compute the modulus:
-   $$ n = p \times q. $$
-3. Compute Euler's totient function:
-   $$ \varphi(n) = (p - 1) \times (q - 1). $$
+   $$
+   n = p \times q
+   $$
+   The value $n$ will be used as the modulus for both encryption and decryption operations. It defines the finite field over which RSA operates.
+
+3. Compute Euler’s totient function:
+   $$
+   \varphi(n) = (p - 1)(q - 1)
+   $$
+   Since $p$ and $q$ are prime, $\varphi(n)$ simply equals the product of $p-1$ and $q-1$. This value is used to define the multiplicative group structure necessary for decryption.
+
 4. Choose an encryption exponent $e$ such that:
-   $$ 1 < e < \varphi(n), \quad \gcd(e, \varphi(n)) = 1. $$
-   A common choice for $e$ is 65537 due to its efficiency and security properties.
+   $$
+   1 < e < \varphi(n), \quad \gcd(e, \varphi(n)) = 1
+   $$
+   The value $e$ must be coprime with $\varphi(n)$ to ensure that it has a modular inverse. A widely adopted choice is $e = 65537$, which provides a good balance between efficiency and security.
+
 5. Compute the decryption exponent $d$ as the modular inverse of $e$ modulo $\varphi(n)$:
-   $$ d \equiv e^{-1} \mod \varphi(n). $$
-6. The public key is $(n, e)$, while the private key is $d$.
+   $$
+   d \equiv e^{-1} \mod \varphi(n)
+   $$
+   This means that $d$ satisfies $e \cdot d \equiv 1 \mod \varphi(n)$. It can be computed using the extended Euclidean algorithm.
 
-The security of RSA depends on the difficulty of factoring $n$. If $p$ and $q$ are sufficiently large, brute-force factorization remains computationally infeasible.
+6. Publish the public key $(n, e)$ and keep the private key $d$ secret. The public key is used to encrypt messages or verify digital signatures. The private key is used to decrypt messages or sign them. Together, they form the asymmetric key pair.
 
-## 2. Encryption and Decryption
+The security of RSA depends on the computational difficulty of factoring the modulus $n$ into its two prime factors $p$ and $q$. As long as $n$ is large enough (typically at least 2048 bits), and proper cryptographic padding is used, RSA remains secure against known classical attacks.
 
-### 2.1 Encryption
-To encrypt a message $m$, first convert it to an integer such that $0 < m < n$. Then compute:
-   $$ c = m^e \mod n. $$
+### Encryption and decryption
 
-### 2.2 Decryption
-To decrypt a ciphertext $c$, compute:
-   $$ m = c^d \mod n. $$
+Once the RSA keys have been generated, the public key $(n, e)$ can be used to encrypt messages, while the private key $d$ is used to decrypt them. The encryption and decryption processes are mathematical inverses of each other, relying on modular exponentiation.
 
-This restores the original plaintext message $m$.
+#### Encryption
 
-## 3. RSA as a Partially Homomorphic Encryption (PHE) Scheme
+To encrypt a message $m$, it must first be represented as an integer such that:
+$$
+0 < m < n
+$$
 
-RSA exhibits **Partially Homomorphic Encryption (PHE)** properties because it supports homomorphic multiplication. The key operations in a PHE scheme, as defined in homomorphic encryption, include:
+This is usually achieved through a standardized encoding scheme that converts the plaintext (e.g., a string or file) into an integer in the valid range. Once $m$ is obtained, the ciphertext $c$ is computed using the public key exponent $e$:
+$$
+c = m^e \mod n
+$$
 
-1. **Key Generation (KeyGen):**  
-   The algorithm generates a key pair:
-   $$ (pk, sk) \leftarrow \text{KeyGen}(1^\lambda), $$
-   where $ pk = (n, e) $ is the public key, and $ sk = d $ is the private key.
+This operation is efficient due to fast exponentiation algorithms and can be performed by anyone who has access to the public key.
 
-2. **Encryption (Enc):**  
-   A plaintext message $ m $ is encrypted using the public key:
-   $$ c \leftarrow \text{Enc}(pk, m) = m^e \mod n. $$
-   This produces a ciphertext $ c $, which can be transmitted securely.
+#### Decryption
 
-3. **Decryption (Dec):**  
-   A ciphertext $ c $ is decrypted using the private key:
-   $$ m \leftarrow \text{Dec}(sk, c) = c^d \mod n. $$
-   This retrieves the original plaintext $ m $.
+To recover the original message from the ciphertext, the recipient uses their private key $d$ and performs the following operation:
+$$
+m = c^d \mod n
+$$
 
-4. **Evaluation (Eval):**  
-   RSA supports homomorphic multiplication, meaning that multiplying two ciphertexts results in a ciphertext corresponding to the product of the plaintexts:
-   $$ \text{Eval}(f, c_1, c_2) = c_1 \times c_2 \mod n. $$
-   This ensures:
-   $$ \text{Dec}(sk, \text{Eval}(f, c_1, c_2)) = (m_1 \times m_2) \mod n. $$
+Because of how $d$ was computed (as the modular inverse of $e$), this operation correctly reverses the encryption process. That is:
+$$
+(c^d)^e \equiv m \mod n
+$$
 
-Because RSA does not support homomorphic addition, it is classified as a **Partially Homomorphic Encryption (PHE)** system rather than a Fully Homomorphic Encryption (FHE) system.
+This symmetry between encryption and decryption lies at the heart of RSA’s functionality: encrypting with the public key and decrypting with the private key yields the original message, and vice versa (this property also enables RSA digital signatures).
 
-## 4. Security Considerations
+In practice, messages are almost never encrypted _raw_ like this. Real-world RSA implementations use padding schemes such as OAEP (Optimal Asymmetric Encryption Padding) to ensure semantic security and protect against various attacks.
 
-### 4.1 Factoring-Based Security
-RSA's security is predicated on the **Integer Factorization Problem (IFP)**. The computational infeasibility of factoring large semiprimes (products of two large primes) ensures that an adversary cannot efficiently derive the private key from the public key.
+### Homomorphic evaluation
 
-### 4.2 Attacks on RSA
-While RSA is secure under proper implementation, certain vulnerabilities exist:
-- **Small Exponent Attacks:** Choosing a small encryption exponent (e.g., $e = 3$) can lead to predictable ciphertexts and facilitate decryption.
-- **Padding Oracle Attacks:** RSA without proper padding (e.g., OAEP) is susceptible to chosen-ciphertext attacks.
-- **Quantum Threats:** Shor’s algorithm, if implemented on a sufficiently powerful quantum computer, could break RSA by efficiently factoring $n$.
+One notable property of RSA is its support for **homomorphic multiplication**. If two plaintext messages $m_1$ and $m_2$ are encrypted separately to produce ciphertexts $c_1 = m_1^e \mod n$ and $c_2 = m_2^e \mod n$, then their product:
+$$
+c = c_1 \cdot c_2 \mod n
+$$
+is itself a valid ciphertext. Specifically, it decrypts to the product of the original plaintexts:
+$$
+\text{Dec}(c) = (m_1 \cdot m_2) \mod n
+$$
 
-### 4.3 Digital Signatures
-RSA is widely used for **digital signatures**, ensuring message authenticity and integrity:
-1. The sender computes a signature:
-   $$ S = m^d \mod n. $$
-2. The recipient verifies authenticity by computing:
-   $$ S^e \mod n = m. $$
+This means that multiplication on ciphertexts corresponds to multiplication on plaintexts. In homomorphic encryption terminology, this is an $Eval$ operation:
+$$
+\text{Eval}(\times, c_1, c_2) = c_1 \cdot c_2 \mod n
+$$
 
-Digital signatures prevent tampering and enable non-repudiation.
+Because RSA only supports multiplication homomorphically (not addition), it is classified as a PHE scheme. This property, while limited, has important applications in cryptographic protocols such as **blind signatures**[^Blind signatures-homomorphic-encryption-developers] and **verifiable computation**[^Verifiable-computation-encryption-developers].
 
-## 5. Conclusion
+[^Blind signatures-homomorphic-encryption-developers]: A cryptographic protocol that allows a message to be signed by a signer without revealing its content. This is useful in privacy-preserving systems such as electronic voting or anonymous digital cash, where a user wants a valid signature on a message without exposing the message itself.
 
-RSA remains one of the most widely adopted cryptographic algorithms. Its significance extends beyond encryption to authentication and secure communications. However, its reliance on the hardness of factorization means that evolving computational capabilities, particularly quantum computing, may necessitate a shift toward alternative cryptographic approaches, such as lattice-based encryption. As we explore more advanced encryption schemes, including Fully Homomorphic Encryption (FHE), understanding RSA provides a critical foundation for grasping the principles of secure computation on encrypted data.
+[^Verifiable-computation-encryption-developers]: A cryptographic technique that enables a client to outsource a computation to an untrusted server and later verify that the result was computed correctly, without redoing the computation. This is particularly important in cloud computing and delegated data processing.
+
+### Example
+
+```markdown
+::: {.callout-note title="Worked Example: RSA Homomorphic Multiplication"}
+
+Let’s walk through a hands-on example of RSA’s multiplicative homomorphism.
+
+Suppose we pick two small primes: $p = 11$ and $q = 13$, so $n = pq = 143$. Compute Euler’s totient:
+
+$$
+\varphi(n) = (p - 1)(q - 1) = 10 \cdot 12 = 120
+$$
+
+Choose the public exponent $e = 7$, which is coprime with $\varphi(n)$. Compute the private exponent $d = e^{-1} \mod \varphi(n) = 103$.
+
+Now encrypt two messages, $m_1 = 5$ and $m_2 = 7$:
+
+- $c_1 = 5^7 \mod 143 = 78$
+- $c_2 = 7^7 \mod 143 = 47$
+
+Multiply the ciphertexts:
+
+$$
+c = c_1 \cdot c_2 \mod 143 = 78 \cdot 47 \mod 143 = 45
+$$
+
+Now decrypt:
+
+$$
+m = 45^{103} \mod 143 = 35 = 5 \cdot 7
+$$
+
+The decrypted result equals the product of the original messages. This confirms that:
+
+$$
+\text{Dec}(c_1 \cdot c_2 \mod n) = m_1 \cdot m_2 \mod n
+$$
+
+:::
+
+```python
+# Python code: RSA multiplicative homomorphism example
+
+def modinv(a, m):
+    t, new_t = 0, 1
+    r, new_r = m, a
+    while new_r != 0:
+        quotient = r // new_r
+        t, new_t = new_t, t - quotient * new_t
+        r, new_r = new_r, r - quotient * new_r
+    return t % m if r == 1 else None
+
+# RSA setup
+p, q = 11, 13
+n = p * q
+phi_n = (p - 1) * (q - 1)
+e = 7
+d = modinv(e, phi_n)
+
+# Plaintexts
+m1, m2 = 5, 7
+
+# Encrypt
+c1 = pow(m1, e, n)
+c2 = pow(m2, e, n)
+
+# Homomorphic multiplication
+c_mul = (c1 * c2) % n
+
+# Decrypt result
+m_mul = pow(c_mul, d, n)
+
+print(f"Encrypted m1: {c1}")         # → 78
+print(f"Encrypted m2: {c2}")         # → 47
+print(f"Encrypted product: {c_mul}") # → 45
+print(f"Decrypted product: {m_mul}") # → 35
+```
+
 
