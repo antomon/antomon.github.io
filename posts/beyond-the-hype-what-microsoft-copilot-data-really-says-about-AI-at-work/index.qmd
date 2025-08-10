@@ -66,6 +66,49 @@ Two separate datasets are used to balance representativeness with quality signal
 To interpret this usage in the context of labor markets, the study maps each conversation to **Intermediate Work Activities (IWAs)**[^intermediate-work-activities] from the U.S. Department of Labor’s O\*NET 29.0 database. IWAs are an intermediate level in O\*NET’s hierarchy, more granular than “Generalized Work Activities” but less fragmented than the nearly 19,000 occupation-specific “Tasks.”
 
 [^intermediate-work-activities]: In the O*NET occupational taxonomy, Intermediate Work Activities (IWAs) represent mid-level functional groupings of tasks that bridge the granular “detailed work activities” (DWAs) and the broader “generalized work activities” (GWAs). IWAs cluster related DWAs into coherent units of work that are more specific than GWAs but still broad enough to apply across multiple occupations. For example, an IWA such as “Interpreting information for others” may encompass multiple DWAs like “Explaining technical information to non-technical audiences” or “Summarizing research findings for stakeholders.” In Microsoft’s AI Applicability Score methodology, LLM-based evaluations are performed at the IWA level to capture task-context nuances while maintaining statistical robustness across occupations.
+\
+
+```{mermaid}
+%%| label: user-ai-iwa
+%%| fig-cap: Mapping observed conversations to O*NET IWAs
+%%| fig-alt: Flow from user–AI conversations through classifiers to O*NET IWA signals and occupational scoring
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart TD
+  %% Nodes
+  U1[User prompts]
+  U2[AI responses]
+  C1[Binary relevance classification for 332 IWAs UG, AA]
+  O1[Matched IWAs: User Goal UG]
+  O2[Matched IWAs: AI Action AA]
+  C2[Quality signals per IWA: completion, scope, coverage]
+  OUT1[Weighted by O*NET: IWA to Occupation]
+  OUT2[AI Applicability Score per occupation]
+
+  %% Edges
+  U1 --> C1
+  U2 --> C1
+  C1 --> O1
+  C1 --> O2
+  O1 --> C2
+  O2 --> C2
+  C2 --> OUT1
+  OUT1 --> OUT2
+
+  %% Styles (bold 20px + thicker borders)
+  style U1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style U2 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style C1 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+  style O1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style O2 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style C2 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+  style OUT1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style OUT2 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+
+  %% Links (thicker black)
+  linkStyle default stroke:#000000,stroke-width:3px,fill:none
+```
 
 This choice is methodologically important:
 
@@ -107,13 +150,13 @@ $$
 a^{\text{UG}}_i = \sum_{j \in \text{IWAs}(i)} w_{ij} \cdot 1[f_j \geq 0.0005] \cdot c_j \cdot s_j
 $$
 
-* **$w_{ij}$** – O\*NET-derived importance and relevance weight of IWA *j* in occupation *i*.
+* **$w_{ij}$**: O\*NET-derived importance and relevance weight of IWA *j* in occupation *i*.
 
-* **$f_j$** – observed activity share for IWA *j* in the dataset (≥ 0.05% threshold for coverage).
+* **$f_j$**: observed activity share for IWA *j* in the dataset (≥ 0.05% threshold for coverage).
 
-* **$c_j$** – task completion rate for IWA *j*, derived from LLM-based classification of conversation outcomes and cross-validated against thumbs feedback.
+* **$c_j$**: task completion rate for IWA *j*, derived from LLM-based classification of conversation outcomes and cross-validated against thumbs feedback.
 
-* **$s_j$** – “impact scope” rating (fraction of the IWA’s full activity AI can cover), classified on a six-point Likert scale, with “moderate” or above counted as meaningful scope.
+* **$s_j$**: “impact scope” rating (fraction of the IWA’s full activity AI can cover), classified on a six-point Likert scale, with “moderate” or above counted as meaningful scope.
 
 This construction ensures that an occupation scores highly only if:
 

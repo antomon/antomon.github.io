@@ -44,7 +44,53 @@
 <section id="mapping-to-the-onet-work-activity-hierarchy" class="level3 page-columns page-full">
 <h3 class="anchored" data-anchor-id="mapping-to-the-onet-work-activity-hierarchy">Mapping to the O*NET work activity hierarchy</h3>
 <p>To interpret this usage in the context of labor markets, the study maps each conversation to <strong>Intermediate Work Activities (IWAs)</strong><sup>2</sup> from the U.S. Department of Labor’s O*NET 29.0 database. IWAs are an intermediate level in O*NET’s hierarchy, more granular than “Generalized Work Activities” but less fragmented than the nearly 19,000 occupation-specific “Tasks.”</p>
-<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;In the O*NET occupational taxonomy, Intermediate Work Activities (IWAs) represent mid-level functional groupings of tasks that bridge the granular “detailed work activities” (DWAs) and the broader “generalized work activities” (GWAs). IWAs cluster related DWAs into coherent units of work that are more specific than GWAs but still broad enough to apply across multiple occupations. For example, an IWA such as “Interpreting information for others” may encompass multiple DWAs like “Explaining technical information to non-technical audiences” or “Summarizing research findings for stakeholders.” In Microsoft’s AI Applicability Score methodology, LLM-based evaluations are performed at the IWA level to capture task-context nuances while maintaining statistical robustness across occupations.</p></div></div><p>This choice is methodologically important:</p>
+<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;In the O*NET occupational taxonomy, Intermediate Work Activities (IWAs) represent mid-level functional groupings of tasks that bridge the granular “detailed work activities” (DWAs) and the broader “generalized work activities” (GWAs). IWAs cluster related DWAs into coherent units of work that are more specific than GWAs but still broad enough to apply across multiple occupations. For example, an IWA such as “Interpreting information for others” may encompass multiple DWAs like “Explaining technical information to non-technical audiences” or “Summarizing research findings for stakeholders.” In Microsoft’s AI Applicability Score methodology, LLM-based evaluations are performed at the IWA level to capture task-context nuances while maintaining statistical robustness across occupations.<br>
+</p></div></div><div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="user-ai-iwa">
+<div>
+<pre class="mermaid mermaid-js" data-label="user-ai-iwa">%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart TD
+  %% Nodes
+  U1[User prompts]
+  U2[AI responses]
+  C1[Binary relevance classification for 332 IWAs UG, AA]
+  O1[Matched IWAs: User Goal UG]
+  O2[Matched IWAs: AI Action AA]
+  C2[Quality signals per IWA: completion, scope, coverage]
+  OUT1[Weighted by O*NET: IWA to Occupation]
+  OUT2[AI Applicability Score per occupation]
+
+  %% Edges
+  U1 --&gt; C1
+  U2 --&gt; C1
+  C1 --&gt; O1
+  C1 --&gt; O2
+  O1 --&gt; C2
+  O2 --&gt; C2
+  C2 --&gt; OUT1
+  OUT1 --&gt; OUT2
+
+  %% Styles (bold 20px + thicker borders)
+  style U1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style U2 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style C1 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+  style O1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style O2 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style C2 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+  style OUT1 stroke:#1e73be,fill:#e6f0fa,color:#1e73be,stroke-width:3px,font-weight:bold,font-size:20px
+  style OUT2 stroke:#27ae60,fill:#e9f7ef,color:#27ae60,stroke-width:3px,font-weight:bold,font-size:20px
+
+  %% Links (thicker black)
+  linkStyle default stroke:#000000,stroke-width:3px,fill:none
+</pre>
+</div>
+<p>Mapping observed conversations to O*NET IWAs</p>
+</div>
+</div>
+</div>
+<p>This choice is methodologically important:</p>
 <ul>
 <li><p><strong>Reducing classification noise:</strong> IWAs are broad enough to be recognized without knowing the user’s exact occupation, which cannot be reliably inferred from a conversation.</p></li>
 <li><p><strong>Maximizing cross-occupational relevance:</strong> an IWA like <em>Analyze market or industry conditions</em> applies to dozens of occupations, allowing the same observed AI behavior to inform multiple job profiles.</p></li>
@@ -75,10 +121,10 @@
 <p>Where for each perspective (UG and AA):</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0Aa%5E%7B%5Ctext%7BUG%7D%7D_i%20=%20%5Csum_%7Bj%20%5Cin%20%5Ctext%7BIWAs%7D(i)%7D%20w_%7Bij%7D%20%5Ccdot%201%5Bf_j%20%5Cgeq%200.0005%5D%20%5Ccdot%20c_j%20%5Ccdot%20s_j%0A"></p>
 <ul>
-<li><p><strong><img src="https://latex.codecogs.com/png.latex?w_%7Bij%7D"></strong> – O*NET-derived importance and relevance weight of IWA <em>j</em> in occupation <em>i</em>.</p></li>
-<li><p><strong><img src="https://latex.codecogs.com/png.latex?f_j"></strong> – observed activity share for IWA <em>j</em> in the dataset (≥ 0.05% threshold for coverage).</p></li>
-<li><p><strong><img src="https://latex.codecogs.com/png.latex?c_j"></strong> – task completion rate for IWA <em>j</em>, derived from LLM-based classification of conversation outcomes and cross-validated against thumbs feedback.</p></li>
-<li><p><strong><img src="https://latex.codecogs.com/png.latex?s_j"></strong> – “impact scope” rating (fraction of the IWA’s full activity AI can cover), classified on a six-point Likert scale, with “moderate” or above counted as meaningful scope.</p></li>
+<li><p><strong><img src="https://latex.codecogs.com/png.latex?w_%7Bij%7D"></strong>: O*NET-derived importance and relevance weight of IWA <em>j</em> in occupation <em>i</em>.</p></li>
+<li><p><strong><img src="https://latex.codecogs.com/png.latex?f_j"></strong>: observed activity share for IWA <em>j</em> in the dataset (≥ 0.05% threshold for coverage).</p></li>
+<li><p><strong><img src="https://latex.codecogs.com/png.latex?c_j"></strong>: task completion rate for IWA <em>j</em>, derived from LLM-based classification of conversation outcomes and cross-validated against thumbs feedback.</p></li>
+<li><p><strong><img src="https://latex.codecogs.com/png.latex?s_j"></strong>: “impact scope” rating (fraction of the IWA’s full activity AI can cover), classified on a six-point Likert scale, with “moderate” or above counted as meaningful scope.</p></li>
 </ul>
 <p>This construction ensures that an occupation scores highly only if:</p>
 <ol type="1">
