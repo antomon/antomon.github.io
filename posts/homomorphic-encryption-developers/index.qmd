@@ -68,8 +68,7 @@ This is the main problem with traditional encryption systems like RSA[^RSA-homom
 
 [^RSA-homomorphic-encryption-developers]: The RSA algorithm is named after its inventors: Rivest, Shamir, and Adleman, who developed it in 1977. It is a widely-used asymmetric encryption method that relies on the computational difficulty of factoring large integers, currently enabling secure data transmission with a public key for encryption and a private key for decryption. Quantum computers can use Shor’s algorithm to factor integers exponentially faster than classical algorithms, making RSA effectively insecure against quantum attacks. See: Rivest, R. L., Shamir, A., & Adleman, L. (1978). **A method for obtaining digital signatures and public-key cryptosystems**. *Communications of the ACM*, 21(2), 120–126. [DOI](https://doi.org/10.1145/359340.359342), and Shor, P. W. (1994). **Algorithms for quantum computation: Discrete logarithms and factoring**. *Proceedings of the 35th Annual Symposium on Foundations of Computer Science*, 124–134. IEEE. [DOI](https://doi.org/10.1109/SFCS.1994.365700)
 
-[^AES-homomorphic-encryption-developers]: The AES algorithm (Advanced Encryption Standard) is a symmetric encryption standard established by the National Institute of Standards and Technology (NIST) in 2001, based on the Rijndael cipher designed by Joan Daemen and Vincent Rijmen. It is widely used for secure data encryption due to its speed and robustness. See: Daemen, J., & Rijmen, V. (1998). **Advanced Encryption Standard (AES) (FIPS PUB 197)**. _Federal Information Processing Standards Publications_. National
-Institute of Standards and Technology (NIST). [Download](https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf). AES relies on the computational difficulty of brute-forcing keys, which requires trying all possible key combinations. Quantum computers can use **Grover’s algorithm**, which provides a quadratic speedup for searching through possible keys. Instead of taking $2^n$ steps to brute-force an $n$-bit key, Grover’s algorithm reduces it to approximately $2^{n/2}$ steps. This means that AES-128 (128-bit keys) would have the equivalent security of a 64-bit key against a quantum computer, making it potentially vulnerable. AES-256 is considered quantum-resistant for the foreseeable future because Grover’s algorithm would reduce its effective strength to $2^{128}$, which is still computationally infeasible. See: UK National Cyber Security Centre. **On the practical cost of Grover’s algorithm for AES key recovery**. *Fifth PQC Standardization Conference*. [Download](https://csrc.nist.gov/csrc/media/Events/2024/fifth-pqc-standardization-conference/documents/papers/on-practical-cost-of-grover.pdf)
+[^AES-homomorphic-encryption-developers]: The AES algorithm (Advanced Encryption Standard) is a symmetric encryption standard established by the National Institute of Standards and Technology (NIST) in 2001, based on the Rijndael cipher designed by Joan Daemen and Vincent Rijmen. It is widely used for secure data encryption due to its speed and robustness. See: Daemen, J., & Rijmen, V. (2001). **Advanced Encryption Standard (AES) (FIPS PUB 197)**. _Federal Information Processing Standards Publications_. National Institute of Standards and Technology (NIST). [Download](https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf). AES relies on the computational difficulty of brute-forcing keys, which requires trying all possible key combinations. Quantum computers can use **Grover’s algorithm**, which provides a quadratic speedup for searching through possible keys. Instead of taking $2^n$ steps to brute-force an $n$-bit key, Grover’s algorithm reduces it to approximately $2^{n/2}$ steps. This means that AES-128 (128-bit keys) would have the equivalent security of a 64-bit key against a quantum computer, making it potentially vulnerable. AES-256 is considered quantum-resistant for the foreseeable future because Grover’s algorithm would reduce its effective strength to $2^{128}$, which is still computationally infeasible. See: UK National Cyber Security Centre. **On the practical cost of Grover’s algorithm for AES key recovery**. *Fifth PQC Standardization Conference*. [Download](https://csrc.nist.gov/csrc/media/Events/2024/fifth-pqc-standardization-conference/documents/papers/on-practical-cost-of-grover.pdf)
 
 Homomorphic encryption (HE) aims to solve this problem by allowing data to remain encrypted even while it's being processed. It promises to make the cloud much safer for storing and analyzing data, which could have far-reaching impacts on healthcare, finance, and many other fields. Imagine being able to calculate the average income of a group of people without ever knowing how much any individual earns, that's the promise of HE.
 
@@ -181,7 +180,7 @@ flowchart TD
   linkStyle 4 stroke:#000000
 ```
 
-In traditional encryption, encrypted data can’t be processed in any useful way. HE is different, because it keeps the relationships between numbers, even when they’re encrypted. Here’s a simple example:
+Conventional semantically secure schemes are designed to be non-malleable; useful computation is not supported by design. HE intentionally reintroduces carefully controlled malleability. HE is different, because it keeps the relationships between numbers, even when they’re encrypted. Here’s a simple example:
 
 - Let’s say you have two numbers, $a$ and $b$.
 
@@ -197,11 +196,15 @@ HE works by using complex mathematical operations that preserve the structure of
 
 HE is possible thanks to two key cryptographic concepts: **semantic security** and **controlled malleability**. While these might sound technical, they’re not too hard to understand when broken down.  
 
-First, let’s talk about semantic security. This property ensures that encrypted data reveals absolutely nothing about the original data. For example, even if you encrypt the same message twice, the results will look completely different every time, like writing a note and hiding it in different locked boxes that look unique each time. This randomness makes it impossible for someone to guess the original message just by looking at the encrypted result. Semantic security is a cornerstone of most modern encryption schemes, such as AES for secure data storage and RSA for transmitting confidential messages over the internet. In these systems, semantic security ensures that an attacker cannot deduce the plaintext, even if they intercept encrypted messages.
+First, let’s talk about semantic security. This property ensures that encrypted data reveals absolutely nothing about the original data. For example, even if you encrypt the same message twice, the results will look completely different every time, like writing a note and hiding it in different locked boxes that look unique each time. This randomness makes it impossible for someone to guess the original message just by looking at the encrypted result. Semantic security (IND-CPA[^IND-CPA-homomorphic-encryption-developers]) is a cornerstone of most modern encryption schemes, such as AES for secure data storage and RSA for transmitting confidential messages over the internet. [^Sematic-security-homomorphic-encryption-developers] In these systems, semantic security ensures that an attacker cannot deduce the plaintext, even if they intercept encrypted messages.
+
+[^IND-CPA-homomorphic-encryption-developers]: IND-CCA stands for indistinguishability under chosen-ciphertext attack. It strengthens IND-CPA by allowing the adversary to not only choose plaintexts for encryption but also query a decryption oracle on arbitrary ciphertexts (except the challenge one). A scheme is IND-CCA secure if the attacker still cannot distinguish which of two messages was encrypted, even with that extra power. In practice, this rules out malleability attacks such as Bleichenbacher’s on raw RSA. Achieving IND-CCA usually requires carefully designed padding and mode of operation: e.g. RSA with OAEP (for encryption) or schemes like Cramer–Shoup.
+
+[^Sematic-security-homomorphic-encryption-developers]: Strictly speaking, textbook RSA is *not* semantically secure (IND-CPA). Without padding, it is deterministic and leaks information because the same plaintext always yields the same ciphertext. Semantic security in practice is achieved only when RSA is combined with proper padding schemes such as OAEP  (Optimal Asymmetric Encryption Padding), or when used in hybrid constructions where RSA encrypts a symmetric key and the actual message is protected with a semantically secure symmetric cipher in AEAD mode (e.g., AES-GCM or ChaCha20-Poly1305). See Bellare, M., & Rogaway, P. (1995). **Optimal asymmetric encryption—How to encrypt with RSA.** In A. De Santis (Ed.), _Advances in cryptology—EUROCRYPT ’94: Workshop on the theory and application of cryptographic techniques_, Perugia, Italy, May 9–12, 1994, Proceedings (pp. 92–111). Springer. [DOI](https://doi.org/10.1007/BFb0053428)
 
 Now, let’s look at controlled malleability. Normally, encryption schemes are designed to prevent any modification of encrypted data. For example, in secure messaging or financial transactions, tampering with ciphertexts could lead to corruption or malicious alterations. This is why many encryption schemes aim to be non-malleable, ensuring ciphertexts cannot be manipulated in any meaningful way. However, some cryptographic protocols intentionally use a controlled form of malleability. For instance:
 
-- RSA encryption supports a basic level of malleability, enabling certain transformations (e.g., multiplying ciphertexts) that correspond to transformations on the plaintext. This is leveraged in digital signatures and secure voting systems.
+- RSA encryption supports a basic level of malleability, enabling certain transformations (e.g., multiplying ciphertexts) that correspond to transformations on the plaintext.
 
 - Secure Multi-Party Computation (SMC) uses malleable properties to allow multiple parties to jointly compute a function over their inputs without revealing them to each other.
 
@@ -225,8 +228,8 @@ HE encompasses various schemes, each with distinct capabilities, applications, a
 
      - RSA: Supports multiplication as the homomorphic operation.
      - Paillier: Addition.
-     - ElGamal: Multiplication.
-     - Goldwasser-Micali: XOR.
+     - ElGamal is homomorphic multiplicatively
+     - Goldwasser-Micali over bits supports XOR (i.e., additive mod 2).
      - Okamoto-Uchiyama: Addition.
 
 2. **Somewhat Homomorphic Encryption (SWHE):**
@@ -315,7 +318,7 @@ To mitigate these risks, organizations need a comprehensive, multi-layered secur
 
 - In the network security layer, microsegmentation with zero-trust principles limits lateral movement within the network, ensuring that even if an attacker gains access, they cannot reach the nodes performing HE computations. Virtual network encryption ensures data confidentiality across virtual networks, which complements HE by protecting data during transit, even before or after HE-based processing. Network access control with 802.1x enforces authentication for devices on the network, preventing unauthorized devices from accessing data that may be encrypted using HE. SDN security, involving the separation of control and data planes, helps mitigate vulnerabilities within SDN environments, providing a secure pathway for the data to be processed using HE without risking exposure.
 
-- For data in transit, Transport Layer Security (TLS) 1.3 with perfect forward secrecy protects data from interception, while IPsec provides network-level encryption, ensuring that data remains secure during transmission before and after HE operations. For data at rest, AES-256 encryption with secure key management protects stored data from unauthorized access, complementing HE by providing strong encryption when data is not actively being processed. Format-preserving encryption is used for structured data, allowing for HE-based operations to occur without altering the structure of sensitive datasets, which is particularly useful for preserving data integrity while performing encrypted computations.
+- For data in transit, Transport Layer Security (TLS) 1.3 with perfect forward secrecy protects data from interception, while IPsec provides network-level encryption, ensuring that data remains secure during transmission before and after HE operations. For data at rest, AES-256 encryption with secure key management protects stored data from unauthorized access, complementing HE by providing strong encryption when data is not actively being processed. Format-preserving encryption is used to protect structured data without altering its format (e.g., credit card numbers remain digit-strings of the same length), which is valuable for system compatibility and data integrity. Homomorphic encryption, by contrast, enables computations to be performed securely on encrypted data without first decrypting it.
 
 - For data in use, HE is combined with Trusted Execution Environments (TEEs)[^McKeen13-homomorphic-encryption-developers] for enhanced data protection during processing. TEEs provide a secure, isolated hardware environment for executing sensitive operations, protecting against unauthorized access by ensuring that data and computations are shielded from other processes on the system. HE further enhances this by keeping the data encrypted even within the TEE, ensuring that even if the secure environment is compromised, the data remains confidential.
 
@@ -405,9 +408,9 @@ DP works in tandem with HE to ensure privacy by adding random noise to the final
 
 - Adding noise: DP adds noise to the final results of computations so that individual contributions are hidden. This noise is carefully controlled to strike a balance between privacy and accuracy.
 
-- Privacy budget: The privacy budget, represented by $\epsilon$, controls how much noise is added. A smaller $\epsilon$ means more noise and greater privacy, but less accurate results. Conversely, a larger $\epsilon$ means less noise, resulting in more accuracy but reduced privacy.
+- Privacy budget: The privacy budget, represented by $\varepsilon$, controls how much noise is added. A smaller $\varepsilon$ means more noise and greater privacy, but less accurate results. Conversely, a larger $\varepsilon$ means less noise, resulting in more accuracy but reduced privacy.
 
-- Mathematical definition: DP ensures that the results of computations are nearly identical, regardless of whether an individual is included in the dataset. This is achieved through the privacy budget $\epsilon$, which limits the amount of information that can be inferred about any single data point. The smaller the value of $\epsilon$, the stronger the privacy protection, as it reduces the likelihood that an individual's data can be distinguished in the output.
+- Mathematical definition: DP ensures that the results of computations are nearly identical, regardless of whether an individual is included in the dataset. This is achieved through the privacy budget $\varepsilon$, which limits the amount of information that can be inferred about any single data point. The smaller the value of $\varepsilon$, the stronger the privacy protection, as it reduces the likelihood that an individual's data can be distinguished in the output.
 
 The integration of HE and DP technologies creates a multi-layered privacy framework that enhances privacy at different stages of the data lifecycle:
 
@@ -415,7 +418,7 @@ The integration of HE and DP technologies creates a multi-layered privacy framew
 
 2. Secure computation: Using HE, model updates are computed directly on encrypted data. For example, in training a machine learning model, HE allows hospitals to calculate model updates without decrypting patient data. All computations are performed while the data is encrypted, ensuring no sensitive information is exposed.
 
-3. Privacy-preserving output: After computations, DP adds controlled noise to the model updates to prevent inference attacks. The privacy budget $\epsilon$ is tracked across training iterations to ensure cumulative privacy loss remains acceptable, meaning that the privacy of individual data points is still maintained.
+3. Privacy-preserving output: After computations, DP adds controlled noise to the model updates to prevent inference attacks. The privacy budget $\varepsilon$ is tracked across training iterations to ensure cumulative privacy loss remains acceptable, meaning that the privacy of individual data points is still maintained.
 
 ##### Privacy budget management
 
@@ -427,7 +430,10 @@ The privacy budget management becomes more sophisticated when combining HE and D
 
 - Moments accountant: This technique provides even tighter privacy control, especially for scenarios like machine learning, where many computations need to be performed. It allows the privacy budget to be managed more efficiently.
 
-In practice, organizations can achieve strong privacy guarantees while still getting useful results. For example, with , there is strong privacy protection with only a small chance of leaking information, and the resulting analysis typically has an error of 1-10%, which is acceptable for most real-world uses.
+In practice, organizations can achieve strong privacy guarantees while still getting useful results. For example, with differential privacy settings such as $\varepsilon \approx 1$; (with $\delta \approx 10^{-5}$ in the more general $(\varepsilon,\delta)$ definition), the data enjoys strong privacy protection with only a small chance of leakage, and the resulting analysis typically incurs an error in the range of 1–10%—a level generally acceptable for many real-world applications, though the exact tolerance depends on the task.[^delta-homomorphic-encryption-developers]
+
+[^delta-homomorphic-encryption-developers]: The parameter $\delta$ is used in the more general notion of 
+$(\varepsilon,\delta)$-differential privacy, sometimes called *approximate DP*. It allows a very small probability (e.g., $\delta \approx 10^{-5}$) that the privacy guarantee might fail. If $\delta=0$, we recover the pure $\varepsilon$-differential privacy definition given above.
 
 ##### Advanced protocols
 
@@ -579,7 +585,7 @@ Let's break this down with a simple analogy. Imagine we have two different langu
 
 Consider two sets of numbers, $A$ and $B$, where $B$ is derived from $A$ using a homomorphism function. If we take two numbers, $3$ and $5$, from $A$ and add them to get $8$, the homomorphism ensures that their images in $B$, $6$ and $10$, also add up to give the corresponding result, which is $16$.
 
-In formal terms, let $A$ be represented by elements $a_1, a_2 \in A$, and $B$ by their corresponding images under the homomorphism $f: A 	o B$. If $a_1 = 3$ and $a_2 = 5$, then:
+In formal terms, let $A$ be represented by elements $a_1, a_2 \in A$, and $B$ by their corresponding images under the homomorphism $f: A \to B$. If $a_1 = 3$ and $a_2 = 5$, then:
 
 $$
 a_1 + a_2 = 8
@@ -649,13 +655,13 @@ To formally understand functional completeness in HE, it's important to start wi
 
 In HE, we work with these algebraic structures because they provide the foundation for well-defined operations on encrypted data. The key operations, namely addition and multiplication, are defined over these structures in a way that ensures they behave predictably and securely. When we say that an encryption scheme is homomorphic, we mean that it allows addition and multiplication to be performed on encrypted values, and the result, when decrypted, matches what would have been obtained if the operations were performed directly on the plaintext values.
 
-Functional completeness, in this context, refers to the ability of an encryption scheme to support arbitrary computations on encrypted data by leveraging both addition and multiplication. These two operations are fundamental because they form a functionally complete set over finite fields. The latter distinction is important because functional completeness is well-defined in finite fields due to properties like closure under addition and multiplication. In infinite fields, however, the same guarantees may not hold, and constructing certain functions can be more challenging. The finite nature ensures that every combination of addition and multiplication stays within the set, which is a crucial requirement for functional completeness in encryption schemes. Moreover, since physical computations in digital systems are inherently carried out over finite fields, this limitation does not affect practical applications. As a matter of fact, digital systems use finite representations (such as bits), and operations are performed over well-defined finite fields like **GF(2)**[^GF2-homomorphic-encryption-developers]. 
+Functional completeness, in this context, means that an encryption scheme can support arbitrary computations on encrypted data as long as it allows both addition and multiplication. With these two operations, we can construct polynomial functions of any form, and polynomial functions are sufficient to represent any arithmetic circuit. This is directly analogous to Boolean logic, where simple gates such as NAND or NOR are functionally complete because they can be combined to express any Boolean function.
+
+In practice, digital computation takes place in finite rings and fields (e.g., $\mathbb{Z}_q$, GF(2)[^GF2-homomorphic-encryption-developers]), where closure and bounded representation are guaranteed. This modular arithmetic setting is exactly why modern homomorphic encryption schemes are built over polynomial rings with coefficients reduced modulo $q$. By contrast, in continuous domains such as the real numbers, approximation theory, most notably the Stone–Weierstrass theorem[^Rudin76-homomorphic-encryption-developers], shows that polynomials can approximate arbitrary continuous functions to any degree of accuracy. The discrete and continuous cases differ in detail, but both reinforce the universality of addition and multiplication as building blocks of computation.
+
+To connect this to earlier discussion, consider Boolean circuits: these are models of computation where gates such as XOR and AND serve as the basic primitives. XOR and AND form a functionally complete set for Boolean functions, meaning any logical operation can be expressed in terms of them. This should not be confused with Turing completeness, which requires unbounded memory and control flow. Similarly, in arithmetic circuits, addition and multiplication suffice to construct any polynomial, which in turn can represent arbitrarily complex arithmetic processes. In the context of homomorphic encryption, this completeness ensures that by chaining homomorphic additions and multiplications, we can evaluate arbitrary functions on encrypted data while preserving privacy.
 
 [^GF2-homomorphic-encryption-developers]: GF(2), or Galois Field of order 2, is a finite field consisting of just two elements: usually represented as 0 and 1. See: van Lint, J. H., & Wilson, R. M. (2001). **A Course in Combinatorics** (2nd ed.). Cambridge University Press. [DOI](https://doi.org/10.1017/CBO9780511987045)
-
-To clarify the connection with the previous discussion, consider **Boolean circuits**, which are a model of computation used in computer science to represent logical functions. A Boolean circuit consists of logic gates such as XOR and AND, which can be seen as parallels to addition and multiplication, and can be combined to represent any possible computation, as supported by the concept of Turing completeness, which states that any computation can be performed given sufficient resources and the right set of operations, such as XOR and AND, which were previously introduced as parallels to addition and multiplication, and together are sufficient to represent any computable function. 
-
-Similarly, in arithmetic circuits, addition and multiplication serve as the fundamental operations. By chaining these operations together, we can construct any polynomial function. The ability to construct polynomial functions is significant because, according to the **Stone-Weierstrass theorem**[^Rudin76-homomorphic-encryption-developers], any continuous function can be approximated by a polynomial to any desired degree of accuracy. This means that by constructing polynomial functions, we can represent a wide range of complex computations, including those needed for encryption and data processing. In the context of HE, this enables us to perform arbitrary functions on encrypted data, ultimately allowing powerful and flexible operations while preserving data privacy. In the context of HE, this means we can perform a wide variety of operations on encrypted data, ultimately allowing us to evaluate arbitrary functions while preserving data privacy. This explanation builds on the algebraic foundations discussed earlier, demonstrating how addition and multiplication form a functionally complete set for building complex computations, both in logical and arithmetic contexts.
 
 [^Rudin76-homomorphic-encryption-developers]: Rudin, W. (1976). **Principles of Mathematical Analysis** (3rd ed.). McGraw-Hill. ISBN: 978-0070856134
 
@@ -707,7 +713,7 @@ The four core components that make HE functional are discussed in detail below:
 
   - For asymmetric HE: $(pk, sk) \leftarrow KeyGen(1^\lambda)$, where $pk$ is the public key and $sk$ is the secret key. The security parameter $\lambda$ determines the computational hardness of breaking the encryption scheme. Larger values of $\lambda$ provide stronger security but increase computational overhead. The key generation process typically involves:
 
-    - Generation of random numbers: Random numbers are generated from a specified distribution, such as uniform, Gaussian, or discrete Gaussian distributions. For example, uniform distributions ensure equal likelihood across a range, while Gaussian distributions are used to introduce controlled randomness with a specific mean and standard deviation. Discrete Gaussian distributions, common foundational in HE, particularly in lattice-based cryptography, add noise with precision suitable for cryptographic operations. The randomness is crucial for ensuring that every generated key is unique and unpredictable.
+    - Generation of random numbers: Random numbers are generated from a specified distribution, such as uniform, Gaussian, or discrete Gaussian distributions. For example, uniform distributions ensure equal likelihood across a range, while Gaussian distributions are used to introduce controlled randomness with a specific mean and standard deviation. Discrete Gaussian distributions, commonly foundational in HE, particularly in lattice-based cryptography, add noise with precision suitable for cryptographic operations. The randomness is crucial for ensuring that every generated key is unique and unpredictable.
 
     - Mathematical operations: Complex mathematical operations are used based on the scheme's underlying hardness assumptions. For example, mathematical frameworks in HE, such as Ring-LWE (Learning With Errors) and NTRU (Nth degree Truncated Polynomial Ring) are foundational in HE. These frameworks define problems that are computationally infeasible to solve without specific secret information (such as the private or secret key generated during the $KeyGen$ phase), ensuring the security of the encryption scheme. These assumptions make it computationally infeasible for an attacker to derive the private key from the public key or ciphertexts, as they are based on the hardness of specific mathematical problems (e.g., Ring-LWE or NTRU). These problems require secret information, such as the private or secret key generated during the $KeyGen$ phase, to be solvable within a practical timeframe.
 
@@ -851,7 +857,7 @@ The journey into number theory starts with the basic building blocks of integers
 
 > **Definition (*Set of integers*)**: The set of integers is denoted as $\mathbb{Z} = {..., -2, -1, 0, 1, 2, ...}$.
 
-> **Definition (*Divisibility*)**: Two integers $a$ and $b$ are divisible if there exists an integer $c$ such that $b = a \cdot c$. When true, this relationship is written as $a \mid b$. 
+> **Definition (*Divisibility*)**: An integer $a$ is said to divide an integer $b$ if there exists an integer $c$ such that $b = a \cdot c$. In this case, we write $a \mid b$.
 
 For example, $6 \mid 18$ holds because $18 = 6 \cdot 3$. If $a \nmid b$, then $a$ does not divide $b$.
 
@@ -868,7 +874,7 @@ Prime numbers are the building blocks of integers:
 
 For instance, $7$ is prime, while $12$ is composite because $12 = 2 \cdot 6$.
 
-> **Theorem (*Fundamental Theorem of Arithmetic*)**: Every integer $n > 1$ can be uniquely expressed as a product of prime powers:
+> **Theorem (*Fundamental Theorem of Arithmetic*)**: Every integer $n > 1$ can be written as a product of prime powers, and this factorization is unique up to the order of the factors:
 > $$
 > n = p_1^{e_1} \cdot p_2^{e_2} \cdots p_k^{e_k}
 > $$
@@ -1276,7 +1282,11 @@ $$
 
 This theorem provides a more efficient way to compute modular inverses when $n$ is prime compared to the Extended Euclidean Algorithm.
 
-> **Remark**: $p-1$ is the smallest exponent satisfying $a^{p-1} \equiv 1 \pmod{p}$ for prime $p$.
+> **Remark**: By Fermat’s Little Theorem, for any integer $a$ with $\gcd(a,p)=1$, we have 
+$$
+a^{p-1} \equiv 1 \pmod{p}.
+$$ 
+The smallest positive exponent $k$ such that $a^k \equiv 1 \pmod{p}$ is called the _order_ of $a$ modulo $p$. This order always divides $p-1$, but it may be strictly smaller.
 
 By Fermat’s Little Theorem, for any integer $a$ such that $p \nmid a$:
 $$
@@ -1425,12 +1435,12 @@ Thus, using Euler’s theorem, we can directly conclude that any power of 3 rais
 
 Carmichael’s theorem refines Euler’s theorem by defining the smallest exponent that guarantees modular exponentiation behaves predictably for all coprime bases. This exponent is given by the **Carmichael function**, denoted as $\lambda(n)$.
 
-> **Theorem (*Carmichael*)**: Let $n$ be a positive integer. The function $\lambda(n)$ is the smallest integer such that:
->
+> **Theorem (*Carmichael*)**: For a positive integer $n$, the Carmichael function $\lambda(n)$ is defined as the 
+_exponent_ of the multiplicative group $\mathbb{Z}_n^*$. Equivalently, $\lambda(n)$ is the smallest positive integer such that 
 > $$
 > a^{\lambda(n)} \equiv 1 \pmod{n}
 > $$
-> for all $a \in \mathbb{Z}_n^*$.
+> for every $a \in \mathbb{Z}_n^*$.
 
 This function provides a stricter condition than Euler’s theorem and guarantees that for any integer $a$ coprime to $n$, the smallest exponent $e$ for which $a^e \equiv 1 \pmod{n}$ is always a divisor of $\lambda(n)$. In other words, the values of $e$ that satisfy this condition must be factors of $\lambda(n)$. By definition, $\lambda(n)$ is also always a divisor of $\phi(n)$:
 $$
@@ -1540,7 +1550,7 @@ A generator $a$ of $\mathbb{Z}_n^*$ remains a generator under exponentiation if 
 > \gcd(i, \phi(n)) = 1.
 > $$
 
-This property is essential in cryptographic protocols such as Diffie-Hellman key exchange and RSA encryption, where security relies on the fact that, while it is easy to compute exponentiation modulo $n$, finding the original exponent $i$ given only the result $a^i \pmod{n}$ (a problem known as the **discrete logarithm problem**) is computationally difficult.
+This property is essential in cryptographic protocols such as Diffie-Hellman key exchange, where security relies on the fact that, while it is easy to compute exponentiation modulo $n$, finding the original exponent $i$ given only the result $a^i \pmod{n}$ (a problem known as the **discrete logarithm problem**) is computationally difficult.
 
 To illustrate the concept of a generator, consider $\mathbb{Z}_{10}^*$, which consists of the elements:
 $$
@@ -1797,7 +1807,7 @@ Both notations obey the same fundamental group axioms. Cryptographic schemes swi
 
 > **Definition (*Order of a group*)**: The order of a group $|G|$ (or $\operatorname{ord}(G)$) is the number of elements in $G$ when $G$ is finite. In cryptographic contexts, we often choose large prime‐order groups to avoid certain attacks. 
 
-> **Definition (*Order of an element*)**: The order of an element** $g \in G$ is the smallest positive integer $k$ such that
+> **Definition (*Order of an element*)**: The order of an element $g \in G$ is the smallest positive integer $k$ such that
 > $$
 > g^k = e \quad \text{(multiplicative)}, 
 > $$
@@ -1882,9 +1892,9 @@ Below are some examples that highlight different ways homomorphisms appear:
   Such a map $E_k$ is effectively a group homomorphism (up to decryption). Concretely:
 
   1. Additively homomorphic: $\star$ = “$+$” in plaintext, $\odot$ = some “$\oplus$” or “$+$ mod N” in ciphertext. Paillier encryption is a classic example that supports $E(m_1 + m_2)\equiv E(m_1)\cdot E(m_2)$.  
-  2. Multiplicatively homomorphic: $\star$ = “$\times$” in plaintext, $\odot$ = “$\times$” mod $n$ in ciphertext. RSA in raw form is multiplicatively homomorphic over $\mathbb{Z}_n^*$.
+  2. Multiplicatively homomorphic: $\star$ = “$\times$” in plaintext, $\odot$ = “$\times$” mod $n$ in ciphertext. RSA in its raw mathematical form is multiplicatively homomorphic over $\mathbb{Z}_n^*$. However, in practice secure padding schemes (e.g., OAEP or PKCS\#1 v1.5) are always used, and these break the homomorphic property. Therefore, deployed RSA does not support homomorphic operations.
 
-  Real cryptosystems often require additional mechanisms (like _padding_ in RSA[^RSA-padding-homomorphic-encryption-developers]) to prevent malicious manipulations. But the fundamental _operation preserved under encryption_ is precisely a homomorphism property.
+Real cryptosystems often require additional mechanisms (like _padding_ in RSA[^RSA-padding-homomorphic-encryption-developers]) to prevent malicious manipulations. But the fundamental _operation preserved under encryption_ is precisely a homomorphism property.
 
 [^RSA-padding-homomorphic-encryption-developers]: When we say that RSA is multiplicatively homomorphic in its raw form, we mean the basic mathematical version of RSA without any padding scheme. In this form, encrypting a product of two messages is equivalent to multiplying their individual encryptions. However, this “raw” RSA is not secure in practice because it is deterministic and vulnerable to certain attacks. Real-world RSA implementations include padding (like OAEP) to ensure security, but these padding schemes break the homomorphic property.
 
@@ -1910,7 +1920,7 @@ The RSA algorithm begins with the generation of a key pair: a **public key** tha
    $$
    n = p \times q
    $$
-   The value $n$ will be used as the modulus for both encryption and decryption operations. It defines the finite field over which RSA operates.
+   The value $n$ will be used as the modulus for both encryption and decryption operations. It defines the modular arithmetic setting of RSA, namely the ring $\mathbb{Z}_n$ and, for invertible elements, the multiplicative group $\mathbb{Z}_n^*$.
 
 3. Compute Euler’s totient function:
    $$
@@ -1961,7 +1971,7 @@ $$
 
 Because of how $d$ was computed (as the modular inverse of $e$), this operation correctly reverses the encryption process. That is:
 $$
-(c^d)^e \equiv m \pmod{n}
+(m^e)^d \equiv m \pmod{n}
 $$
 
 This symmetry between encryption and decryption lies at the heart of RSA’s functionality: encrypting with the public key and decrypting with the private key yields the original message, and vice versa (this property also enables RSA digital signatures).
