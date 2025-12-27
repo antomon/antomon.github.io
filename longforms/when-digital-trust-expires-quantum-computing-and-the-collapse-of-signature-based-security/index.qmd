@@ -1391,7 +1391,7 @@ This section translates the damage-reduction principles discussed earlier into *
 
 ### Prioritizing efforts
 
-Post-quantum remediation cannot be executed as a blanket migration. Organizations differ widely in data lifetimes, trust dependencies, and upgrade constraints. Attempting to “be quantum-safe everywhere” is neither realistic nor necessary.
+Post-quantum remediation cannot be executed as a blanket migration. Organizations differ widely in data lifetimes, trust dependencies, and upgrade constraints. Attempting to _be quantum-safe everywhere_ is neither realistic nor necessary.
 
 What is required is **structured prioritization based on time, trust, and irreversibility**.
 
@@ -1731,3 +1731,865 @@ Organizations that defer will not fail visibly. They will fail **silently and re
 The choice is therefore stark and time-bound: either **treat cryptographic trust as a decaying asset and manage its lifetime deliberately**, or accept that a future adversary will decide, unilaterally and invisibly, when your past stops being trustworthy.
 
 In a quantum future, survival will not favor those who encrypted more. It will favor those who understood **how long trust must last**, and acted while it still could.
+
+## Appendix — Concrete case study on post-quantum risk analysis for an in-house e-commerce platform integrated with financial circuits
+
+This appendix applies the structural framework developed in the essay to a realistic, fully in-house e-commerce platform, hosted on a public cloud and integrated with external payment and financial systems. The objective is to distinguish what is genuinely at risk today, what is not, and which technical remediation measures are rational and proportionate, using first-principles reasoning. 
+
+This analysis assumes a conventional verification model, in which signature validity is evaluated syntactically and does not incorporate forward-looking cryptographic strength reassessment.
+
+### Reference architecture of the e-commerce stack
+
+This case considers a realistic, internally developed e-commerce platform operated on a major public cloud provider. The system is not simplified or hypothetical. It reflects architectures commonly found in regulated, revenue-critical online commerce environments.
+
+The platform is designed for continuous operation, legal traceability, and financial integration, and therefore makes extensive use of cryptographic mechanisms whose trust consequences are long-lived, even when the cryptographic operations themselves are short-lived.
+
+#### Application and service layer
+
+The customer-facing layer consists of a single-page web application implemented in frameworks such as React or Vue, delivered over HTTPS through a cloud load balancer or CDN. TLS termination typically occurs at a managed edge service such as AWS ALB, CloudFront, Azure Front Door, or Google Cloud HTTPS Load Balancer.
+
+Behind the frontend, the business logic is implemented as a set of microservices, usually containerized and orchestrated using Kubernetes. These services expose REST APIs over HTTPS for external access and gRPC or REST over HTTP/2 for internal communication.
+
+Security and identity mechanisms in this layer typically include:
+
+* TLS 1.2 or TLS 1.3 with ECDHE key exchange and RSA or ECDSA certificates.
+* Mutual TLS between internal services using a service mesh such as Istio or Linkerd, backed by a private PKI.
+* OAuth 2.0 and OpenID Connect for customer authentication, often implemented via:
+  * A managed identity provider (e.g. AWS Cognito, Azure AD B2C, Auth0, Keycloak).
+  * JWT access tokens signed using RSA or ECDSA.
+* Short-lived access tokens, typically valid for minutes.
+* Refresh tokens stored in secure HTTP-only cookies or encrypted storage.
+* User passwords stored using memory-hard key derivation functions such as Argon2id or bcrypt.
+
+From a cryptographic perspective, this layer relies on public-key cryptography for:
+
+* Server authentication.
+* Token signing.
+* Service identity.
+* Secure channel establishment.
+
+Symmetric cryptography is then used for bulk data protection once keys are established.
+
+#### Data layer
+
+The data layer combines transactional storage, document storage, and long-term archives.
+
+Core transactional data is typically stored in relational databases such as PostgreSQL or MySQL, managed either directly or through cloud services such as Amazon RDS or Cloud SQL. This includes:
+
+* Customer records.
+* Orders and order state transitions.
+* Payments references and reconciliation identifiers.
+* Inventory and pricing data.
+
+Unstructured and semi-structured data is stored in object storage systems such as Amazon S3, Azure Blob Storage, or Google Cloud Storage. Typical stored artifacts include:
+
+* Digitally generated invoices and receipts.
+* Order confirmations and contractual documents.
+* System and application audit logs.
+* Regulatory and compliance records.
+
+Data protection mechanisms include:
+
+* Encryption at rest using symmetric encryption, usually AES-256.
+* Envelope encryption with keys managed by cloud KMS services.
+* Optional use of dedicated HSMs for master key protection.
+* Encrypted backups replicated across regions or accounts.
+
+Retention is not uniform and is driven by non-technical constraints, including:
+
+* Statutory accounting retention periods.
+* Tax and fiscal audit requirements.
+* Consumer protection and dispute resolution timelines.
+* Internal fraud detection and analytics needs.
+
+As a result, some encrypted datasets are retained for many years, even when operational use has ended.
+
+#### CI/CD and software supply chain
+
+The software supply chain is fully automated and cryptographically controlled.
+
+Source code is hosted in systems such as GitHub, GitLab, or Bitbucket, with:
+
+* Signed commits using developer GPG keys or platform-managed signing.
+* Protected branches enforcing signature verification.
+
+Build and deployment pipelines are implemented using CI/CD systems such as GitHub Actions, GitLab CI, or Jenkins. These pipelines:
+
+* Produce container images signed using tools such as cosign or Notary.
+* Generate deployment manifests and Helm charts.
+* Produce Infrastructure-as-Code artifacts using Terraform or CloudFormation.
+
+Artifacts are stored in registries such as:
+
+* Amazon ECR.
+* Google Artifact Registry.
+* Azure Container Registry.
+
+Registries retain historical versions to support:
+
+* Rollback during incidents.
+* Audit and compliance.
+* Reproducibility of past deployments.
+
+Rollback procedures explicitly rely on the assumption that previously signed artifacts remain trustworthy indefinitely.
+
+#### Cloud and trust infrastructure
+
+The platform depends heavily on cloud-provided trust infrastructure.
+
+This includes:
+
+* Managed public key infrastructure for TLS certificates.
+* Identity federation systems for service and workload identity.
+* Managed Kubernetes control planes, whose components are authenticated using provider-controlled certificates.
+* Secure boot and image signing for virtual machines and managed node pools.
+
+Several classes of cryptographic trust anchors exist in this layer:
+
+* Root and intermediate certificate authorities operated by the cloud provider.
+* Platform signing keys used to sign:
+  * VM images.
+  * Kubernetes components.
+  * Managed service binaries.
+* Long-lived internal signing keys used for:
+  * Release signing.
+  * Configuration integrity.
+  * Inter-system authentication across environments.
+
+These trust anchors are assumed to remain valid and authoritative for long periods, often exceeding a decade.
+
+#### External integrations
+
+The e-commerce platform integrates with multiple external systems that are legally and financially binding.
+
+These typically include:
+
+* Payment service providers and card networks.
+* Financial settlement and reconciliation systems.
+* Tax authorities and electronic invoicing platforms.
+* Fraud detection and risk scoring services.
+
+Technical characteristics of these integrations include:
+
+* Mutual TLS or certificate-based authentication.
+* Digitally signed messages and payloads.
+* Reliance on X.509 certificate chains for identity.
+* Legal reliance on cryptographic integrity and non-repudiation for dispute resolution.
+
+These integrations often involve artifacts that are:
+
+* Stored long term.
+* Audited years later.
+* Used as legal evidence in financial or regulatory proceedings.
+
+#### Architectural observation
+
+Across all layers, a consistent pattern emerges:
+
+* Cryptographic verification is binary and timeless.
+* Public-key cryptography underpins identity, authority, and provenance.
+* Many assets are designed to remain trusted far longer than the plausible lifetime of the cryptographic assumptions they rely on.
+
+This makes the platform an ideal and realistic subject for post-quantum risk analysis, because it contains **both short-lived operational cryptography and long-lived trust dependencies**, allowing precise distinction between what is exposed, what is not, and why.
+
+### Risk classification using the essay taxonomy
+
+This section answers a very practical question: **given the concrete e-commerce stack described earlier, what is actually at risk today, and what is not**, under each threat class of the essay.
+
+The key move is to reason from bedrock facts:
+
+* A quantum attack is not _magic hacking_. It is a **change in what computations are feasible**.
+* Risk exists only when three conditions simultaneously hold:
+  * **A valuable artifact exists** (data or signature protected by crypto).
+  * **That artifact persists long enough** for a future capability shift to matter.
+  * **An attacker can obtain a copy** of the artifact, now or later.
+
+If any one of these conditions fails, then the threat class is not material for that asset. So, for every category below, we classify by walking the chain:
+
+1. What is the protected asset.
+2. What is its value horizon.
+3. What crypto assumption protects it.
+4. Does the asset persist beyond plausible cryptographic lifetime.
+5. Could an adversary realistically capture it.
+
+#### Delayed decryption of stored data
+
+Delayed decryption concerns **confidentiality**. The attacker’s strategy is temporal: capture ciphertext now, decrypt later.
+
+The fundamental constraint is simple: **you can only decrypt what still exists**. If the ciphertext or its value expires quickly, then delayed decryption yields nothing.
+
+##### What is not a material risk
+
+For the e-commerce platform, most live interactions are designed to be short-lived, and their confidentiality value decays rapidly.
+
+Typical examples:
+
+* TLS sessions for:
+  * Browsing and catalog navigation.
+  * Cart operations.
+  * Checkout page interactions.
+* Session cookies whose validity is bounded and rotated.
+* OAuth 2.0 access tokens and session bound JWTs with short expiry.
+* One-time payment authorizations and ephemeral checkout nonces.
+* Service to service traffic protected by short-lived mTLS certificates in a service mesh, when cert rotation is frequent.
+
+Reasoning step by step:
+
+* The ciphertext for a TLS session is transient. It is not normally retained, and even if an attacker captures it, its value is tied to the session context.
+* Authentication artifacts like access tokens are constructed to stop working after minutes. If decrypted years later, they do not become valid again, because validity is not just a secret. It is also time and server state.
+* Even when some traces exist in logs, the sensitive parts are often minimized by design, or they are operationally irrelevant after short periods.
+
+So the chain breaks at persistence and value:
+
+* Confidentiality lifetime is minutes to months, not years.
+* Many secrets are rotated and invalidated by time-bounded server logic.
+* Decrypting those sessions later produces at most historical browsing traces, typically low marginal value compared to the effort and uncertainty of capture.
+
+> Conclusion: **live customer sessions and short-lived operational secrets are not the core delayed decryption problem** in this case.
+
+##### What is a real risk
+
+Delayed decryption becomes real when the platform stores encrypted datasets whose confidentiality value survives for years, and where retention is intentional.
+
+Concrete examples in this architecture:
+
+* Encrypted backups of relational databases such as PostgreSQL on managed services:
+  * Full order histories.
+  * Customer PII such as names, addresses, phone numbers, sometimes identifiers.
+  * Potentially partial payment related metadata.
+* Object storage archives in S3, Blob Storage, or GCS buckets:
+  * Invoices and receipts.
+  * Customer support transcripts.
+  * Contractual documents and order confirmations.
+* Analytics datasets and data lake exports:
+  * ETL snapshots sent to warehouse systems such as BigQuery, Snowflake, Redshift.
+  * Clickstream data correlated with identity.
+* Regulatory retention stores:
+  * Fiscal records retained for statutory periods.
+  * Audit exports kept to satisfy dispute resolution or compliance.
+
+Reasoning step by step:
+
+* These datasets persist specifically because they remain valuable for accounting, customer support, fraud disputes, and compliance.
+* The platform protects them using symmetric encryption at rest, but the key management and transport often involve public key cryptography somewhere in the chain, including identity, KMS control planes, and secure channels.
+* The attacker does not need to break into the app at capture time. They only need to obtain ciphertext by any means, including:
+  * Cloud misconfiguration or data exfiltration.
+  * Compromise of backup storage.
+  * Third party access path leakage.
+  * Lawful interception or compelled access in some jurisdictions.
+* Once ciphertext is copied, time works for the attacker. Decryption can occur far outside incident response horizons.
+
+The key point is that **the threat today is not that quantum computers exist today**. The threat today is that the organization is continuously creating and retaining ciphertext whose confidentiality horizon exceeds the plausible lifetime of current public key assumptions.
+
+> Conclusion: **delayed decryption is real today for any retained encrypted dataset whose confidentiality value persists for years**.
+
+#### Delayed forgery of signed artifacts
+
+Delayed forgery concerns **integrity and authenticity**. The attacker’s strategy is also temporal: wait until signatures become forgeable, then create new artifacts that verify as legitimate.
+
+A critical first principles distinction:
+
+* Decryption exposes information.
+* Forgery creates authority.
+
+> So delayed forgery is often more operationally dangerous than delayed decryption, because it can change what systems do, not only what attackers learn.
+
+##### What is not a material risk
+
+Many artifacts in the e-commerce identity plane are intentionally ephemeral and cannot authorize actions long term.
+
+Examples:
+
+* Short-lived JWT access tokens.
+* Session bound cookies with rotation and server side invalidation.
+* One-time payment authorization messages.
+* Nonces and anti replay artifacts in checkout flows.
+
+Reasoning step by step:
+
+* Even if an attacker could forge a signature in the future, these artifacts are rejected by time based checks, audience binding, nonce usage, and server maintained state.
+* They do not persist in a form that later forgery can replay as a new authorization.
+
+The chain breaks at _authority lifetime_:
+
+* The artifact is not trusted years after issuance.
+* It cannot authorize new actions once outside its validity window.
+
+> Conclusion: **ephemeral authentication material is not where delayed forgery accumulates**.
+
+##### What is a real risk
+
+Delayed forgery becomes real for artifacts that are treated as durable evidence or durable authorization.
+
+Concrete examples in an e-commerce integrated with finance:
+
+* Digitally signed invoices and fiscal documents, especially where signatures are used to assert legal validity.
+* Order confirmations, settlement records, reconciliation reports: signed exports delivered to ERP or accounting systems
+* Compliance reports and audit packages signed to prove integrity at submission time.
+* Internal approvals or release attestation records: signed build provenance, signed deployment approvals, signed audit trails.
+
+Reasoning step by step:
+
+* These artifacts are retained and later relied upon as evidence.
+* Verification is binary. If the signature verifies, the system or the institution treats the artifact as authentic, without re evaluating whether the underlying scheme remains unforgeable.
+* If a signature scheme becomes forgeable, two outcomes follow:
+  * New fabricated artifacts can be produced that verify under the same trust roots.
+  * Disputes about past authenticity become structurally harder, because cryptographic proof stops being decisive.
+
+This remains true even if keys rotate later, because the attacker’s target is not _the old key still being in use operationally_. The target is that **the verifying ecosystem still treats the signature as meaningful**.
+
+> Conclusion: **delayed forgery is an accumulating risk for any signed document or record that is expected to remain evidentiary for years**.
+
+#### Abuse of long-lived trust anchors
+
+This category is the most structurally severe because the object at risk is not a single document or a single dataset. It is the **authority that makes many other verifications meaningful**.
+
+A trust anchor is a standing authorization: it says, _whoever can sign under this key is the authority_.
+
+##### What is not the primary risk
+
+In day to day cybersecurity operations, teams are used to threats like:
+
+* Customer credential theft.
+* Theft of a single application API key.
+* Compromise of one certificate in one environment.
+
+> These are serious, but they are still incidents with containment patterns: revoke, rotate, isolate, recover. They are not the deep post quantum failure mode.
+
+##### What is a structural risk
+
+In this e-commerce stack, long lived trust anchors exist at several layers:
+
+* Code signing keys for release artifacts:
+  * Container image signing keys used by cosign or Notary.
+  * Signing keys for build provenance and attestations.
+* PKI roots and intermediates:
+  * Public CA roots used for TLS to customers.
+  * Private CAs used for mTLS service identity in a mesh.
+* Cloud and platform roots:
+  * Provider controlled CAs that authenticate managed control planes.
+  * Keys that sign VM images or managed node components.
+* Identity provider signing keys: RSA or ECDSA keys that sign JWT tokens or federation assertions.
+
+While the signing keys may persist for long periods, the JWTs themselves are short-lived and state-bound, and therefore do not constitute a delayed forgery risk. Reasoning step by step:
+
+* A trust anchor differs from a leaf artifact because it does not just prove integrity. It grants the ability to mint new valid objects.
+* Once a trust anchor private key becomes derivable, the attacker does not bypass checks. The attacker passes all checks by behaving as the authority.
+* Verification logic does not detect this, because verification is exactly _does it verify under the anchor_.
+* Therefore the failure mode is governance replacement: the attacker can issue new certificates, new tokens, new signed releases, new signed attestations.
+
+This is why the essay says _authority is replaced, not bypassed_. It follows directly from the definition of verification under a public key.
+
+> Conclusion: **long lived trust anchors create systemic risk because they turn future cryptographic breakage into indefinite impersonation capability**.
+
+#### Retroactive supply-chain compromise
+
+This category is about operational recoverability and forensic reliability once signatures stop being discriminators. It matters most in exactly the situations where organizations believe they are safe: rollback, restore, disaster recovery, incident response.
+
+##### What is not a critical concern
+
+Components that are continuously rebuilt and redeployed, and whose provenance is not relied upon for years, are less exposed here.
+
+Examples:
+
+* Frontend assets that change weekly.
+* Microservices redeployed continuously.
+* Short-lived build artifacts that are not reused.
+
+Reasoning: if old versions are not relied upon, the attacker cannot weaponize _old trust_ in recovery scenarios.
+
+##### What is a real operational risk
+
+The risk concentrates where the organization explicitly keeps _known good_ historical artifacts and expects them to remain trustworthy indefinitely.
+
+Concrete examples in this stack:
+
+* Signed container images retained in ECR or Artifact Registry for rollback.
+* Signed provenance and SBOM artifacts retained for audit and assurance.
+* Historic Infrastructure-as-Code templates used for disaster recovery rebuilds:
+  * Terraform modules and pinned provider versions.
+  * CloudFormation stacks or ARM templates.
+* Cached third party artifacts and dependencies: vendor SDKs, payment plugins, internal package mirrors
+* _Golden images_ for VMs or worker nodes signed and stored long term.
+
+Reasoning step by step:
+
+* In incident response, teams often restore from backups and redeploy from artifact registries because those are treated as a trustworthy baseline.
+* If signature schemes become forgeable, the property _this artifact verifies_ no longer implies _this artifact is the one we produced_.
+* Therefore rollback can become a re infection path: you restore what you think is known good, but the only proof you had was signature validity, which is now non discriminating.
+
+> Conclusion: **retroactive supply chain compromise is a recoverability threat. It does not need day to day exploitation to be catastrophic. It only needs to corrupt the trustworthiness of restoration and audit baselines**.
+
+### Technical remediation measures aligned with the threat model
+
+This section closes the loop between the abstract threat taxonomy and concrete engineering practice. The purpose here is **not** to describe an idealized post-quantum future state, nor to suggest that cryptography alone can be _fixed_. Instead, the objective is to show **how an engineering organization can actively limit damage today**, given that:
+
+* quantum-vulnerable cryptography is still widely deployed,
+* verification logic in real systems is largely static,
+* and cryptographic assumptions are known to be time-bounded.
+
+The unifying principle across all controls is this:
+
+> **Remediation does not try to preserve trust forever. It tries to bound how far trust can propagate once it fails.**
+
+Each subsection below follows the same structure used in the risk analysis:
+
+* what the control actually does at a system level,
+* why it works given the threat mechanics,
+* and what concrete implementation choices matter in practice.
+
+#### Controls against delayed decryption
+
+Delayed decryption is fundamentally a **data lifecycle problem**, not a protocol problem. Once ciphertext has been captured and retained, cryptography alone cannot prevent future exposure. Therefore, effective remediation works by **making future plaintext either unavailable, incomplete, or low value**.
+
+##### Enforce data minimization as an engineering constraint
+
+Data minimization is often framed as compliance hygiene. In a post-quantum context, it becomes a **cryptographic risk control**.
+
+Concretely:
+
+* Do not collect data unless it has a clearly defined operational or legal purpose.
+* Explicitly document why each data field exists, not only where it is stored.
+* Treat _might be useful later_ as an anti-pattern for sensitive data.
+
+From a systems perspective, this means:
+
+* Narrowing database schemas over time instead of only growing them.
+* Removing unused columns and payload fields rather than leaving them encrypted _just in case_.
+* Actively deprecating legacy data models during application evolution.
+
+The key reasoning step is simple:
+
+* Data that never exists cannot be decrypted later.
+* Encryption is not a substitute for deletion.
+
+##### Classify data by confidentiality lifetime, not by data type
+
+Traditional classification schemes group data by category such as PII, financial data, or logs. For delayed decryption, the relevant axis is **time**.
+
+Engineering teams should classify datasets by:
+
+* How long the data remains sensitive if exposed.
+* Whether exposure years later still causes harm.
+
+For example:
+
+* A customer’s shipping address has a confidentiality lifetime measured in years.
+* A checkout session trace has a lifetime measured in minutes.
+* A fraud investigation dataset may have a lifetime tied to statutory limitation periods.
+
+Once classified, retention policies must align with the **longest confidentiality requirement**, not with storage convenience.
+
+This classification directly determines where delayed decryption is a real risk.
+
+##### Shorten retention for high-volume raw data
+
+Raw data is dangerous because it maximizes future optionality for an attacker. Typical examples include:
+
+* Full application logs.
+* Raw HTTP request payloads.
+* Detailed transaction traces.
+* Verbose error and debug logs.
+
+From a post-quantum perspective:
+
+* Raw data retains structure and identifiers.
+* Aggregated data loses reconstructability.
+
+Practical controls include:
+
+* Aggressive log sampling and truncation.
+* Automatic deletion of raw logs after short windows.
+* Replacement of full payload logging with structured summaries.
+
+The goal is not secrecy, but **irreversibility**.
+
+##### Prefer aggregation and irreversible transformation
+
+When deletion is not possible, transformation is the next best control. Effective techniques include:
+
+* One-way tokenization of identifiers.
+* Hashing with salt rotation where reversibility is unnecessary.
+* Aggregation that removes individual traceability.
+* Separating identity data from behavioral data and storing them under different protection regimes.
+
+The test is this: _if decrypted later, can the dataset still be mapped to specific individuals, accounts, or assets?_ If the answer is no, delayed decryption yields little operational or legal damage.
+
+##### Isolate long-term archives from public networks
+
+Delayed decryption requires ciphertext capture. Capture requires access. While public networks cannot be assumed confidential, organizations can **reduce the scale and ease of passive collection**.
+
+Concrete measures:
+
+* Prefer private interconnects for backup replication and archival transfer.
+* Avoid routing long-term backup traffic over public internet paths.
+* Restrict archive access paths to tightly controlled administrative networks.
+
+This does not eliminate the threat. It **raises the bar** and reduces bulk harvesting risk.
+
+##### Deploy hybrid key exchange for long-lived data channels
+
+Where data must persist and cannot be transformed away, cryptographic mitigation still matters Hybrid key establishment:
+
+* Combines classical key exchange with post-quantum KEMs.
+* Ensures that breaking one assumption is insufficient for decryption.
+
+This is especially valuable for:
+
+* Backup pipelines
+* Database replication
+* Administrative and control-plane access
+
+The reasoning is straightforward: even partial resistance is meaningful when the alternative is total retrospective exposure.
+
+> Key principle: reduce future plaintext value, not theoretical secrecy.
+
+#### Controls against delayed forgery
+
+Delayed forgery is not about confidentiality. It is about **authority persistence**. The attack succeeds only if a forged artifact can still authorize actions or assert legitimacy at a later time. Therefore, remediation focuses on **shrinking the temporal and semantic scope of what a signature means**.
+
+##### Shorten validity periods of signed artifacts
+
+The single most effective control is time. Engineering implications:
+
+* Reduce certificate lifetimes aggressively.
+* Avoid multi-year validity for code-signing certificates where operationally possible.
+* Treat long validity as an explicit risk decision, not a default.
+
+A forged signature is only dangerous while it is accepted. Short validity windows directly limit exploitation time.
+
+##### Separate historical authenticity from operational authorization
+
+Many systems implicitly assume: _if something was valid once, it is valid forever_. This assumption must be broken. Practically:
+
+* Historical signatures may be sufficient to prove that something existed at a given time.
+* They must not automatically authorize present-day execution, deployment, or control.
+
+Examples:
+
+* A signed container image from three years ago should not be deployable without re-authorization.
+* A signed configuration snapshot should require contextual validation before reuse.
+
+This separation ensures that **past trust does not become future power**.
+
+##### Introduce contextual checks beyond signatures
+
+Cryptographic verification is binary. Real trust is not. Additional constraints should be embedded into systems, such as:
+
+* Environment binding.
+* Platform or hardware binding.
+* Version or epoch constraints.
+* Deployment context checks.
+
+These controls do not replace signatures. They ensure that **a valid signature alone is insufficient** for high-impact actions.
+
+##### Avoid signatures that imply indefinite authority
+
+Some signed artifacts implicitly say _whoever controls this key controls everything_. This must be avoided by design. Concrete steps include:
+
+* Separate signing keys by function and domain.
+* Avoid keys that can sign both releases and governance artifacts.
+* Limit the scope encoded in signed metadata.
+
+A forged signature should grant **minimal, not maximal, authority**.
+
+##### Preserve auxiliary evidence
+
+When cryptographic non-repudiation weakens, auxiliary evidence becomes essential. Examples include:
+
+* Independent timestamping services
+* External attestations
+* Immutable logs outside the signing trust domain
+
+These do not restore cryptographic certainty, but they **reduce evidentiary collapse**.
+
+> Key principle: limit how long and how much a signature can authorize.
+
+#### Controls against trust anchor abuse
+
+Trust anchor abuse is a governance failure expressed cryptographically. The technical goal is to ensure that **no single key can act as an unbounded authority across time and scope**.
+
+##### Treat all trust anchors as expiring assets
+
+Trust anchors must have lifecycles. Engineering consequences:
+
+* Define explicit expiration horizons for root and intermediate keys.
+* Plan key retirement even in the absence of compromise.
+* Avoid designs that assume keys will outlive cryptographic assumptions.
+
+A key without an end-of-life becomes an indefinite impersonation risk.
+
+##### Partition authority across domains
+
+Centralized authority enables systemic failure. Partitioning strategies include:
+
+* Separate roots for different environments.
+* Separate trust domains for code signing, identity, and infrastructure.
+* Organizational segmentation for subsidiaries and vendors.
+
+This ensures that compromise does not propagate universally.
+
+##### Avoid global roots where possible
+
+Global roots create monocultures of trust. Where unavoidable, they must be surrounded by compensating controls such as:
+
+* Scoped intermediates.
+* Strict issuance policies.
+* Independent governance oversight.
+
+##### Design revocation assuming cryptographic failure
+
+Traditional revocation assumes key theft. Post-quantum failure assumes **key invalidity** Therefore:
+
+* Revocation must not rely solely on signatures from the compromised hierarchy.
+* Out-of-band and human-mediated controls must exist.
+* Physical or procedural controls must be able to override cryptographic authority.
+
+If revocation depends on the same math that has failed, it is ineffective.
+
+##### Require multiple independent signals for high-impact actions
+
+No single trust anchor should be sufficient to authorize:
+
+* Infrastructure provisioning.
+* Software distribution.
+* Identity issuance.
+
+Requiring independent attestations forces attackers to defeat **multiple trust systems**, not just one.
+
+> Key principle: no single key should govern an entire ecosystem indefinitely.
+
+#### Controls against retroactive supply-chain compromise
+
+This class of controls focuses on **recoverability under uncertainty**. The assumption is not that compromise will be detected, but that **proof of legitimacy may become impossible**.
+
+##### Preserve non-cryptographic provenance
+
+When signatures lose discriminative power, other signals must remain. Examples include:
+
+* Build system logs.
+* Deployment pipelines records.
+* Change management documentation.
+* Physical inventory and serial numbers.
+
+These do not prove integrity cryptographically, but they provide **contextual continuity**.
+
+##### Design for graceful degradation
+
+Systems must continue to operate safely even when trust is ambiguous. This implies:
+
+* Fallback modes with reduced functionality.
+* Manual approval paths.
+* Safe operational defaults.
+
+The system should fail **operationally conservative**, not catastrophically.
+
+##### Separate safety enforcement from update authenticity
+
+Safety mechanisms must not depend exclusively on software integrity. Physical interlocks, runtime limits, and independent monitoring ensure that th loss of software authenticity does not immediately translate into physical harm.
+
+##### Maintain re-anchoring mechanisms
+
+Trust must be re-establishable. This requires:
+
+* Secure re-provisioning paths.
+* Physical access methods.
+* Human verification processes.
+
+A system that cannot be re-anchored becomes unmaintainable once trust collapses.
+
+##### Plan explicitly for physical replacement
+
+Some systems cannot be upgraded cryptographically, for those:
+
+* Physical replacement must be acknowledged as a valid remediation path.
+* Costs and timelines must be planned, not treated as exceptional failure.
+
+> Key principle: systems must remain governable even when cryptography stops being authoritative.
+
+Below is a **concluding operational appendix** that turns the entire case study and threat model into **actionable engineering material**.
+It is structured so that a technical reader can use it **as-is** for assessment, planning, and execution.
+
+### Risk matrix and operational checklists
+
+This section distills the abstract taxonomy and the concrete e-commerce case into two practical artifacts:
+
+1. A **risk matrix** mapping concrete assets and technologies to post-quantum threat classes, with an explicit statement of *what is a real risk today and what is not*.
+2. Two **engineering checklists**:
+   * one for **assessment and discovery**,
+   * one for **execution and remediation**.
+
+The intent is to remove ambiguity between:
+
+* theoretical feasibility,
+* realistic present-day exposure,
+* and justified engineering action.
+
+### Risk matrix
+
+The table below assumes a **modern in-house e-commerce platform** as depicted above.
+
+| Asset / Component                        | Typical technologies                      | Threat class             | Is this a real risk **today** | Why / Why not                                                                                                           |
+| ---------------------------------------- | ----------------------------------------- | ------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Customer browser ↔ frontend TLS sessions | TLS 1.2 or 1.3, ECDHE, RSA or ECDSA certs | Delayed decryption       | **Low**                       | Session keys are ephemeral and customer data is short-lived. Keys rotate frequently. Data loses value quickly.          |
+| Historical HTTPS traffic captures        | CDN logs, network telemetry               | Delayed decryption       | **Medium**                    | If full payloads are logged or retained, future decryption could expose PII and credentials. Risk depends on retention. |
+| Payment authorization flows              | PCI DSS channels, tokenization, PSP APIs  | Delayed decryption       | **Low**                       | Card data is tokenized and not retained; retained payment metadata (transaction identifiers, reconciliation records) has limited confidentiality value and short-lived exploitability. Cryptography protects transit only.         |
+| User credentials                         | Password hashes, MFA secrets              | Delayed decryption       | **Low**                       | Password hashes are not encrypted with PKC. Quantum does not help here.                                                 |
+| Order history database                   | Relational DB, encrypted at rest          | Delayed decryption       | **Medium**                    | Long retention plus encrypted backups create future plaintext risk if PKC used in key management.                       |
+| Backup archives                          | Cloud object storage, KMS-wrapped keys    | Delayed decryption       | **High**                      | Long-lived ciphertext stored offsite is the canonical store-now-decrypt-later target.                                   |
+| Application signing keys                 | Code-signing certs, CI pipelines          | Delayed forgery          | **Medium**                    | Keys rotate, but signatures may remain trusted for years in downstream systems.                                         |
+| Container images                         | Docker images, signed manifests           | Delayed forgery          | **Medium**                    | Old images may still verify and be deployable in disaster recovery scenarios.                                           |
+| TLS server certificates                  | Public CA, short-lived leaf certificates under long-lived roots               | Trust anchor abuse       | **Low**                       | Certificates are short-lived and revocable. Abuse window is limited.                                                    |
+| Internal PKI roots                       | Enterprise CA, mTLS                       | Trust anchor abuse       | **Medium**                    | If roots are long-lived and widely trusted, future abuse could enable impersonation.                                    |
+| CI/CD pipeline trust                     | Git commit signing, release signing       | Trust anchor abuse       | **Medium**                    | A compromised signing authority enables silent supply-chain attacks.                                                    |
+| Third-party JS libraries                 | CDN-delivered, signed packages            | Retroactive supply-chain | **Low today**                 | Libraries update frequently. Old versions are deprecated operationally.                                                 |
+| Embedded devices or IoT                  | Signed firmware, rare updates             | Retroactive supply-chain | **High**                      | Long-lived signed firmware with no update path is structurally exposed.                                                 |
+| Legal records and invoices               | Digitally signed PDFs                     | Delayed forgery          | **Medium**                    | Long legal validity combined with future forgery undermines non-repudiation.                                            |
+| Audit logs                               | Signed logs, immutable storage            | Retroactive compromise   | **Medium**                    | Signatures may lose evidentiary value, but operational impact is limited.                                               |
+
+Key interpretation rules:
+
+* **Not every quantum-vulnerable primitive creates a real risk today**.
+* Risk emerges when **cryptographic lifetime < asset trust lifetime**.
+* High risk appears where:
+  * data or authority persists for years or decades,
+  * and cryptography is the only trust signal.
+
+
+### Assessment checklist (before remediation)
+
+This checklist is used to **discover exposure and prioritize action**. It should be executed before any migration or remediation effort.
+
+#### Cryptographic discovery
+
+* Enumerate all uses of public-key cryptography:
+  * TLS endpoints.
+  * VPNs.
+  * mTLS between services.
+  * Code-signing and artifact signing.
+  * Certificate authorities and trust stores.
+* For each instance:
+  * Algorithm used.
+  * Key size.
+  * Key lifetime.
+  * Rotation frequency.
+  * Ownership.
+
+#### Asset lifetime mapping
+
+For each system or dataset:
+
+* What is the **confidentiality lifetime** of the data?
+* What is the **authenticity or authority lifetime** of signatures?
+* Does either lifetime plausibly exceed 10 to 20 years?
+* Is the asset replicated outside the organization’s direct control?
+
+If yes, the asset is **post-quantum relevant**.
+
+#### Retention and replication analysis
+
+* Identify all encrypted backups and archives.
+* Verify:
+  * Retention duration.
+  * Geographic replication.
+  * Encryption key management model.
+* Confirm whether:
+  * ciphertext survives longer than business necessity.
+  * deletion policies apply to backups as well as primary data.
+
+#### Trust anchor inventory
+
+* List all root and intermediate CAs.
+* Identify:
+  * Scope of trust.
+  * Systems relying on each anchor.
+  * Replacement and revocation mechanisms.
+* Ask explicitly: what breaks if this key is no longer trustworthy?
+
+#### Supply-chain trust points
+
+* Identify components that are:
+  * Signed once.
+  * Deployed for years.
+  * Hard or impossible to update.
+* Classify them as:
+  * Replaceable.
+  * Re-anchorable.
+  * Or physically immutable.
+
+### Remediation checklist (during execution)
+
+This checklist governs **concrete engineering actions**. It assumes assessment has already prioritized assets.
+
+#### Controls for delayed decryption
+
+* Enforce data minimization at schema and API level.
+* Reduce retention for:
+  * Raw logs.
+  * Full payload traces.
+  * Verbose telemetry.
+* Replace long-term raw storage with:
+  * Aggregation.
+  * Irreversible transformation.
+* Treat encrypted backups as future breach material.
+* Isolate backup traffic from public networks where possible.
+* Deploy hybrid key exchange for:
+  * Backups.
+  * Replication.
+  * Administrative channels.
+
+#### Controls for delayed forgery
+
+* Shorten validity of:
+  * Code-signing certificates.
+  * Document signatures.
+* Separate:
+  * Archival validation.
+  * Operational authorization.
+* Introduce contextual constraints:
+  * Environment binding.
+  * Platform binding.
+  * Epoch or version limits.
+* Preserve non-cryptographic evidence:
+  * Timestamps.
+  * External attestations.
+* Avoid signatures that imply unlimited authority.
+
+#### Controls for trust anchor abuse
+
+* Define explicit expiration for all trust anchors.
+* Partition trust by:
+  * Environment.
+  * Function.
+  * Organization.
+* Avoid global roots where feasible.
+* Design revocation paths that do not rely solely on cryptography.
+* Require multiple independent trust signals for critical actions.
+
+#### Controls for supply-chain survivability
+
+* Eliminate signed-once trusted-forever designs.
+* Preserve non-cryptographic provenance.
+* Design safe degraded modes.
+* Separate safety mechanisms from update authenticity.
+* Maintain re-provisioning paths.
+* Explicitly plan for physical replacement where unavoidable.
+
+### Operational synthesis
+
+For an e-commerce platform:
+
+* **There is no imminent existential quantum risk today**.
+* There **is** a slow accumulation of latent exposure in:
+  * Backups.
+  * Archives.
+  * Long-lived signatures.
+  * And trust anchors.
+
+The real threat is not customer credential theft or live payment fraud. It is the **future inability to prove authenticity, authority, and historical truth** once cryptographic assumptions expire. The correct posture is therefore:
+
+* not panic-driven migration,
+* not algorithm fetishism,
+* but **systematic bounding of trust lifetimes**.
+
+> **Post-quantum security succeeds when future cryptographic failure becomes boring, local, and legally survivable**.
