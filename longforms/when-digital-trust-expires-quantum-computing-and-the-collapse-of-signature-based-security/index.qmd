@@ -61,6 +61,63 @@ All these threats share a common root cause: **cryptographic verification is tim
 
 This article focuses on the authenticity and integrity dimension of post-quantum risk. It explains why signatures that are valid today can become the foundation for future impersonation and forgery, why this represents a structural threat to digital trust rather than a narrow cryptographic concern, and why organizations that rely on long-lived signed assets must treat post-quantum transition planning as a strategic cybersecurity imperative rather than a future technical upgrade.
 
+```{mermaid}
+%%| label: fig-temporal-decoupling-of-trust
+%%| fig-cap: "Temporal decoupling of cryptographic trust. Assets are created and verified under classical cryptographic assumptions that hold at time of creation. Verification logic remains unchanged over time, while cryptographic hardness decays. Once adversary capability crosses the quantum threshold, past trust decisions become exploitable without any observable system failure."
+%%| fig-alt: "Temporal decoupling between verification logic and cryptographic hardness"
+%%| fig-align: "center"
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart TD
+
+    subgraph TIME["Time progression"]
+        T0["T0<br>Asset creation<br>Signature or encryption applied"]
+        T1["T1<br>Normal operation<br>Signatures verify<br>Data confidential"]
+        TQ["TQ<br>Quantum capability threshold<br>Shor executable at scale"]
+        T2["T2<br>Post-threshold exploitation<br>Forgery or decryption possible"]
+    end
+
+    subgraph ASSETS["Trusted assets"]
+        A1["Signed artifacts<br>Software<br>Firmware<br>Documents"]
+        A2["Encrypted data<br>Traffic<br>Archives<br>Backups"]
+        A3["Trust anchors<br>Root keys<br>Signing authorities"]
+    end
+
+    subgraph LOGIC["Verification logic"]
+        V["Verification rules<br>Binary and timeless<br>Valid signature → trust"]
+    end
+
+    subgraph HARDNESS["Cryptographic hardness"]
+        H0["Hardness holds<br>Classical infeasibility"]
+        H1["Hardness collapses<br>Private key derivation feasible"]
+    end
+
+    %% Temporal flow
+    T0 --> T1 --> TQ --> T2
+
+    %% Asset lifecycle
+    T0 --> A1
+    T0 --> A2
+    T0 --> A3
+
+    %% Verification logic remains unchanged
+    V --> T1
+    V --> T2
+
+    %% Hardness decay
+    H0 --> H1
+    H0 -. Applies during .-> T1
+    H1 -. Applies after .-> T2
+
+    %% Failure modes emerge only after threshold
+    T2 -->|Delayed decryption| A2
+    T2 -->|Delayed forgery| A1
+    T2 -->|Authority replacement| A3
+
+    %% Core asymmetry
+    V -. Unchanged .-> H1
+```
+
 ## A broader post-quantum threat landscape
 
 Post-quantum risk does not manifest as a single failure mode. It emerges from a structural asymmetry at the heart of modern cryptography: **verification mechanisms are timeless, while the hardness assumptions that justify them are not**. Once this asymmetry is made explicit, multiple distinct but tightly related classes of quantum-enabled threats become visible.
@@ -365,63 +422,6 @@ The post-quantum threat landscape described above is not abstract. Each class of
 
 The sections below describe how each threat class materializes, step by step, once quantum capability crosses the cryptographic threshold.
 
-```{mermaid}
-%%| label: fig-temporal-decoupling-of-trust
-%%| fig-cap: "Temporal decoupling of cryptographic trust. Assets are created and verified under classical cryptographic assumptions that hold at time of creation. Verification logic remains unchanged over time, while cryptographic hardness decays. Once adversary capability crosses the quantum threshold, past trust decisions become exploitable without any observable system failure."
-%%| fig-alt: "Temporal decoupling between verification logic and cryptographic hardness"
-%%| fig-align: "center"
-%%{init: {"theme": "neo", "look": "handDrawn"}}%%
-
-flowchart TD
-
-    subgraph TIME["Time progression"]
-        T0["T0<br>Asset creation<br>Signature or encryption applied"]
-        T1["T1<br>Normal operation<br>Signatures verify<br>Data confidential"]
-        TQ["TQ<br>Quantum capability threshold<br>Shor executable at scale"]
-        T2["T2<br>Post-threshold exploitation<br>Forgery or decryption possible"]
-    end
-
-    subgraph ASSETS["Trusted assets"]
-        A1["Signed artifacts<br>Software<br>Firmware<br>Documents"]
-        A2["Encrypted data<br>Traffic<br>Archives<br>Backups"]
-        A3["Trust anchors<br>Root keys<br>Signing authorities"]
-    end
-
-    subgraph LOGIC["Verification logic"]
-        V["Verification rules<br>Binary and timeless<br>Valid signature → trust"]
-    end
-
-    subgraph HARDNESS["Cryptographic hardness"]
-        H0["Hardness holds<br>Classical infeasibility"]
-        H1["Hardness collapses<br>Private key derivation feasible"]
-    end
-
-    %% Temporal flow
-    T0 --> T1 --> TQ --> T2
-
-    %% Asset lifecycle
-    T0 --> A1
-    T0 --> A2
-    T0 --> A3
-
-    %% Verification logic remains unchanged
-    V --> T1
-    V --> T2
-
-    %% Hardness decay
-    H0 --> H1
-    H0 -. Applies during .-> T1
-    H1 -. Applies after .-> T2
-
-    %% Failure modes emerge only after threshold
-    T2 -->|Delayed decryption| A2
-    T2 -->|Delayed forgery| A1
-    T2 -->|Authority replacement| A3
-
-    %% Core asymmetry
-    V -. Unchanged .-> H1
-```
-
 ### Delayed decryption of stored data
 
 #### Phase 1: data generation and passive collection
@@ -556,6 +556,87 @@ The difference lies not in attacker behavior, but in the **expiration of cryptog
 This is why post-quantum threats cannot be managed using conventional breach-response models. There is no intrusion to detect, no anomaly to flag, and no moment at which the system signals loss of trust. The failure is embedded in the mathematics and becomes exploitable the moment adversary capability crosses the required threshold.
 
 For this reason, post-quantum risk is not about reacting to attacks. It is about **anticipating the expiration of trust mechanisms** and migrating away from assumptions that are known, in principle, to fail.
+
+The following diagram summarizes how each threat class connects to specific upstream and downstream controls, framing remediation as a structural containment problem rather than a cryptographic fix.
+
+```{mermaid}
+%%| label: fig-threats-to-remediations
+%%| fig-cap: "Post-quantum threats and the remediation measures that mitigate each failure mode. Each threat class is linked to specific controls discussed in the essay, showing how inventory, governance, lifecycle management, cryptographic agility, and architectural containment interrupt the progression from threat mechanism to systemic failure."
+%%| fig-alt: "Threat classes and their corresponding mitigation controls"
+%%| fig-align: "center"
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart LR
+
+    subgraph ROOT["Structural Root Cause"]
+        R["Timeless verification<br>vs<br>time-bounded hardness"]
+    end
+
+    subgraph PRE["Upstream Controls<br>Exposure & Accumulation"]
+        INV["Inventory & discovery"]
+        AGI["Cryptographic agility"]
+        HYB["Hybrid / post-quantum<br>key establishment"]
+        DRET["Data minimization<br>& retention policy"]
+    end
+
+    subgraph THREATS["Threat Classes"]
+        DD["Delayed Decryption"]
+        DF["Delayed Forgery"]
+        TA["Trust Anchor Abuse"]
+        SC["Retroactive Supply-Chain<br>Compromise"]
+    end
+
+    subgraph POST["Downstream Controls<br>Containment & Recovery"]
+        PKI["PKI hardening<br>& lifetime limitation"]
+        LIF["Shorten validity<br>& scoped authority"]
+        SEG["Segment trust domains"]
+        ARCH["Architectural containment"]
+        PROV["Non-cryptographic provenance"]
+        EV["Evidentiary planning"]
+        GOV["Governance & ownership"]
+    end
+
+    %% Root cause
+    R --> PRE
+    R --> THREATS
+
+    %% Upstream controls shaping threat exposure
+    INV --> DD
+    INV --> DF
+    INV --> TA
+    INV --> SC
+
+    AGI --> DD
+    AGI --> DF
+    AGI --> TA
+    AGI --> SC
+
+    HYB --> DD
+    DRET --> DD
+
+    %% Threats driving downstream damage controls
+    DD -->|Triggers stricter retention| DRET
+    DD --> EV
+
+    DF --> LIF
+    DF --> SEG
+    DF --> ARCH
+    DF --> GOV
+
+    TA --> PKI
+    TA --> SEG
+    TA --> ARCH
+    TA --> GOV
+
+    SC --> PROV
+    SC --> ARCH
+    SC --> EV
+    SC --> PKI
+    SC --> GOV
+
+    %% Governance as a meta-control
+    GOV -. Governs lifetimes & authority .-> PRE
+```
 
 ### Organizational ownership of post-quantum risk
 
@@ -1283,62 +1364,6 @@ Teams must accept:
 * Assume cryptographic trust will eventually fail.
 
 > Post-quantum security is not achieved by a single algorithm change. It is achieved by **designing systems that remain controllable even after cryptography stops being authoritative**.
-
-```{mermaid}
-%%| label: fig-threats-to-remediations
-%%| fig-cap: "Post-quantum threats and the remediation measures that mitigate each failure mode. Each threat class is linked to specific controls discussed in the essay, showing how inventory, governance, lifecycle management, cryptographic agility, and architectural containment interrupt the progression from threat mechanism to systemic failure."
-%%| fig-alt: "Threat classes and their corresponding mitigation controls"
-%%| fig-align: "center"
-%%{init: {"theme": "neo", "look": "handDrawn"}}%%
-
-flowchart LR
- subgraph THREATS["Threats"]
-        DD["Delayed Decryption"]
-        DF["Delayed Forgery"]
-        TA["Trust Anchor Abuse"]
-        SC["Retroactive Supply-Chain Compromise"]
-  end
- subgraph ROOT["Structural Root Cause"]
-        R["Timeless verification vs time-bounded hardness"]
-  end
- subgraph CONTROLS["Remediation Controls"]
-        INV["Inventory & discovery"]
-        AGI["Cryptographic agility"]
-        HYB["Hybrid/post-quantum key establishment"]
-        PKI["PKI hardening & lifetime limitation"]
-        LIF["Shorten validity & scoped authority"]
-        GOV["Governance & ownership"]
-        ARCH["Architectural containment"]
-        PROV["Non-cryptographic provenance"]
-        DATA["Data minimization & retention"]
-        SEG["Segment trust domains"]
-        EV["Evidentiary planning"]
-  end
-    R --> THREATS
-    DD -- Reduces ciphertext exposure --> DATA
-    DD -- "Reduces long-term dependence on public-key key exchange" --> HYB
-    DD -- Inventory enables prioritization --> INV
-    DF -- Limits authorization window --> LIF
-    DF -- Scoped authority and layered trust --> SEG
-    DF -- Governance of signing keys --> GOV
-    DF -- Secondary trust signals --> ARCH
-    TA -- PKI hardening & lifetime limits --> PKI
-    TA -- Segment authority across independent roots --> SEG
-    TA -- Governance & ownership --> GOV
-    TA -- Architectural compartmentalization --> ARCH
-    SC -- "Preserve non-cryptographic provenance" --> PROV
-    SC -- Architectural containment & graceful degradation --> ARCH
-    SC -- Evidentiary planning & incident response --> EV
-    SC -- Lifecycle planning & key sunset --> PKI
-    SC -- Governance & ownership --> GOV
-    INV -- Foundation for all threat prioritization --> GOV
-    AGI -- Enables algorithm migration --> DD
-    AGI -- Enables signature scheme replacement --> DF
-    AGI -- "Enables re-anchoring of trust roots" --> TA
-    AGI -- "Enables supply-chain trust refresh" --> SC
-    HYB -- Reduces future decryptability --> DD
-    PKI -- Limits anchor lifespan --> TA
-```
 
 ## Post-quantum remediation as a security program
 
