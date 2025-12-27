@@ -52,9 +52,7 @@ While much early discussion of post-quantum risk focused on delayed loss of conf
 * **Store now, decrypt later** attacks target confidentiality. Encrypted data captured today may be decrypted in the future once quantum capabilities mature, exposing historical communications, personal data, or intellectual property.
 
 * **Store now, forge later** attacks target authenticity. Signed artifacts that are trusted today may become a basis for future forgery once signature schemes are broken, enabling attackers to create new artifacts that verify as legitimate under existing public keys.
-
 * **Key longevity abuse** attacks exploit long-lived trust anchors such as root certificate authorities, firmware signing keys, and blockchain account keys. Even if original signatures remain intact, the continued trust in a public key becomes a standing authorization that can be abused once private key recovery becomes feasible.
-
 * **Supply-chain retroactive compromise** arises when past trust decisions cannot be invalidated. Software updates, embedded firmware, or contractual artifacts that were accepted years earlier may become indistinguishable from malicious replacements, undermining auditability and forensic reconstruction.
 
 All these threats share a common root cause: **cryptographic verification is timeless, while cryptographic hardness is not**. Verification logic does not degrade gracefully. It continues to accept signatures as valid even after the assumptions that once guaranteed their unforgeability have collapsed.
@@ -164,7 +162,7 @@ flowchart LR
     A --> SC["Retroactive Supply-Chain Compromise<br/><i>Forensic and operational failure</i>"]
 
     SC --> SC1["Phase 1<br/>Signed once, deployed for decades<br/>Firmware, ICS, embedded systems"]
-    SC --> SC2["Phase 2<br/>Post-quantum indistinguishability<br/>Legitimate vs forged unprovable"]
+    SC --> SC2["Phase 2<br/>Cryptographically indistinguishability<br/>Legitimate vs forged unprovable"]
     SC --> SC3["Phase 3<br/>Trust loss without recovery<br/>No reliable remediation"]
 
     SC3 --> SCX["Impact<br/>Audit and incident response failure<br/>Physical replacement required"]
@@ -543,7 +541,7 @@ Audit trails, version histories, and provenance records lose their evidentiary v
 
 Incident response and forensic reconstruction become unreliable. Operators can no longer prove which code was legitimate and which was malicious. In safety-critical environments, the only reliable remediation may be **physical replacement**, not software updates.
 
-### Why these failures are structurally different
+### From cryptographic failure to structural remediation
 
 Across all threat classes, the failure mode is the same:
 
@@ -557,85 +555,113 @@ This is why post-quantum threats cannot be managed using conventional breach-res
 
 For this reason, post-quantum risk is not about reacting to attacks. It is about **anticipating the expiration of trust mechanisms** and migrating away from assumptions that are known, in principle, to fail.
 
-The following diagram summarizes how each threat class connects to specific upstream and downstream controls, framing remediation as a structural containment problem rather than a cryptographic fix.
+At this point, it becomes possible to describe post-quantum remediation not as an algorithmic upgrade, but as a structural intervention on exposure, authority, and irreversibility. The following diagram summarizes how each threat class connects to specific upstream and downstream controls, framing remediation as a structural containment problem rather than a cryptographic fix.
 
 ```{mermaid}
-%%| label: fig-threats-to-remediations
-%%| fig-cap: "Post-quantum threats and the remediation measures that mitigate each failure mode. Each threat class is linked to specific controls discussed in the essay, showing how inventory, governance, lifecycle management, cryptographic agility, and architectural containment interrupt the progression from threat mechanism to systemic failure."
-%%| fig-alt: "Threat classes and their corresponding mitigation controls"
+%%| label: fig-pq-structure-overview
+%%| fig-cap: "Structural overview of post-quantum trust failure. A timeless verification model is applied to cryptographic assumptions that decay over time. Upstream controls influence exposure and accumulation of risk, while downstream controls limit impact once specific post-quantum threat classes materialize."
+%%| fig-alt: "Structural overview of post-quantum threats and controls"
+%%| fig-align: "center"
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart TD
+
+  R["Structural root cause<br><br>Timeless verification<br>vs<br>time-bounded hardness"]
+
+  PRE["Upstream controls<br><br>Exposure & accumulation"]
+  TH["Threat classes<br><br>Post-quantum failure modes"]
+  POST["Downstream controls<br><br>Containment & recovery"]
+
+  R -->|Creates latent risk| PRE
+  R -->|Enables failure modes| TH
+
+  PRE -->|Shapes likelihood and scale| TH
+  TH -->|Triggers damage control| POST
+```
+
+```{mermaid}
+%%| label: fig-upstream-controls-to-threats
+%%| fig-cap: "Upstream controls influence how much cryptographic risk accumulates before quantum capability emerges. Inventory, cryptographic agility, hybrid key establishment, and data retention decisions determine which post-quantum threats are feasible and at what scale."
+%%| fig-alt: "Upstream controls shaping post-quantum threats"
 %%| fig-align: "center"
 %%{init: {"theme": "neo", "look": "handDrawn"}}%%
 
 flowchart LR
 
-    subgraph ROOT["Structural Root Cause"]
-        R["Timeless verification<br>vs<br>time-bounded hardness"]
-    end
+  subgraph PRE["Upstream controls"]
+      INV["Inventory & discovery"]
+      AGI["Cryptographic agility"]
+      HYB["Hybrid / post-quantum<br>key establishment"]
+      DRET["Data minimization<br>& retention policy"]
+  end
 
-    subgraph PRE["Upstream Controls<br>Exposure & Accumulation"]
-        INV["Inventory & discovery"]
-        AGI["Cryptographic agility"]
-        HYB["Hybrid / post-quantum<br>key establishment"]
-        DRET["Data minimization<br>& retention policy"]
-    end
+  subgraph THREATS["Threat classes"]
+      DD["Delayed decryption"]
+      DF["Delayed forgery"]
+      TA["Trust anchor abuse"]
+      SC["Retroactive supply-chain compromise"]
+  end
 
-    subgraph THREATS["Threat Classes"]
-        DD["Delayed Decryption"]
-        DF["Delayed Forgery"]
-        TA["Trust Anchor Abuse"]
-        SC["Retroactive Supply-Chain<br>Compromise"]
-    end
+  INV -->|Enables identification and prioritization| DD
+  INV -->|Reveals long-lived signing authority| DF
+  INV -->|Exposes standing authorizations| TA
+  INV -->|Maps unpatchable components| SC
 
-    subgraph POST["Downstream Controls<br>Containment & Recovery"]
-        PKI["PKI hardening<br>& lifetime limitation"]
-        LIF["Shorten validity<br>& scoped authority"]
-        SEG["Segment trust domains"]
-        ARCH["Architectural containment"]
-        PROV["Non-cryptographic provenance"]
-        EV["Evidentiary planning"]
-        GOV["Governance & ownership"]
-    end
+  AGI -->|Allows key exchange migration| DD
+  AGI -->|Allows signature scheme replacement| DF
+  AGI -->|Allows re-anchoring of trust roots| TA
+  AGI -->|Allows supply-chain refresh| SC
 
-    %% Root cause
-    R --> PRE
-    R --> THREATS
+  HYB -->|Reduces future decryptability| DD
 
-    %% Upstream controls shaping threat exposure
-    INV --> DD
-    INV --> DF
-    INV --> TA
-    INV --> SC
+  DRET -->|Limits stored ciphertext available| DD
+```
 
-    AGI --> DD
-    AGI --> DF
-    AGI --> TA
-    AGI --> SC
+```{mermaid}
+%%| label: fig-threats-to-downstream-controls
+%%| fig-cap: "Each post-quantum threat class activates distinct containment and recovery controls. These measures do not prevent cryptographic breakage but limit authority, scope, irreversibility, and legal exposure once trust assumptions collapse."
+%%| fig-alt: "Post-quantum threats mapped to containment controls"
+%%| fig-align: "center"
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
 
-    HYB --> DD
-    DRET --> DD
+flowchart LR
 
-    %% Threats driving downstream damage controls
-    DD -->|Triggers stricter retention| DRET
-    DD --> EV
+subgraph THREATS["Threat classes"]
+    DD["Delayed decryption"]
+    DF["Delayed forgery"]
+    TA["Trust anchor abuse"]
+    SC["Retroactive supply-chain compromise"]
+end
 
-    DF --> LIF
-    DF --> SEG
-    DF --> ARCH
-    DF --> GOV
+subgraph POST["Downstream controls"]
+    DRET["Retention enforcement<br>& data disposal"]
+    LIF["Shorten validity<br>& scoped authority"]
+    PKI["PKI hardening<br>& lifetime limits"]
+    SEG["Segment trust domains"]
+    ARCH["Architectural containment"]
+    PROV["Non-cryptographic provenance"]
+    EV["Evidentiary planning"]
+    GOV["Governance & ownership"]
+end
 
-    TA --> PKI
-    TA --> SEG
-    TA --> ARCH
-    TA --> GOV
+DD -->|Limits value of recovered plaintext| DRET
+DD -->|Prepares regulatory and legal response| EV
 
-    SC --> PROV
-    SC --> ARCH
-    SC --> EV
-    SC --> PKI
-    SC --> GOV
+DF -->|Limits duration of forged authority| LIF
+DF -->|Prevents cross-domain impersonation| SEG
+DF -->|Adds non-cryptographic checks| ARCH
+DF -->|Assigns accountability for signatures| GOV
 
-    %% Governance as a meta-control
-    GOV -. Governs lifetimes & authority .-> PRE
+TA -->|Bounds authority of trust roots| PKI
+TA -->|Prevents systemic impersonation| SEG
+TA -->|Contains blast radius of compromise| ARCH
+TA -->|Defines ownership and liability| GOV
+
+SC -->|Preserves historical evidence| PROV
+SC -->|Maintains operability under ambiguity| ARCH
+SC -->|Supports forensic and legal response| EV
+SC -->|Enables trust re-anchoring| PKI
+SC -->|Coordinates cross-domain response| GOV
 ```
 
 ### Organizational ownership of post-quantum risk
@@ -669,6 +695,8 @@ Without explicit ownership, post-quantum risk defaults to a future problem. With
 
 ## Reducing damage from _delayed decryption of stored data_
 
+As shown in @fig-upstream-controls-to-threats, delayed decryption risk is shaped almost entirely by upstream decisions. Data retention, exposure of encrypted traffic, and key establishment mechanisms determine whether future quantum capability results in trivial mass disclosure or limited, low value recovery.
+
 Delayed decryption attacks cannot be fully prevented once encrypted data has been captured and quantum-vulnerable key exchange has been used. The only viable strategy is therefore **damage minimization**: reducing the value, scope, and legal impact of any data that becomes readable in the future.
 
 This section provides practical guidance for organizations to reduce the *consequences* of delayed decryption, starting today.
@@ -689,7 +717,7 @@ This is not a cryptographic exercise alone. It is a data governance decision. Da
 
 ### 2. Shorten data lifetimes aggressively
 
-Delayed decryption is only damaging if the decrypted data still exists.
+This control directly reduces the effective attack surface shown in @fig-upstream-controls-to-threats by shrinking the volume of ciphertext that survives until the quantum threshold is crossed. Delayed decryption is only damaging if the decrypted data still exists.
 
 Organizations should:
 
@@ -734,7 +762,7 @@ This is especially relevant for:
 
 ### 4. Isolate long-term secrets from quantum-vulnerable key exchange
 
-Many systems encrypt data using symmetric algorithms whose security remains acceptable under quantum attack, but rely on **public-key cryptography for key exchange**.
+Hybrid and post-quantum key establishment act only on the left side of the causal chain in @fig-upstream-controls-to-threats. They do not restore secrecy retroactively, but they prevent future ciphertext from entering the delayed decryption pipeline. Many systems encrypt data using symmetric algorithms whose security remains acceptable under quantum attack, but rely on **public-key cryptography for key exchange**.
 
 Organizations should:
 
@@ -798,13 +826,15 @@ There is no incident response, no key rotation, and no patch that can undo expos
 
 ## Reducing damage from _delayed forgery of signed artifacts_
 
+@fig-threats-to-downstream-controls illustrates why delayed forgery cannot be mitigated through cryptography alone. Once signatures become forgeable, damage depends on how long authority persists and how broadly it applies, not on detection or key rotation.
+
 Unlike delayed decryption, delayed forgery does not primarily expose past information. It enables **future impersonation under historical trust**. Once vulnerable signature schemes are broken, authenticity failures cannot be detected cryptographically and cannot be remediated retroactively. The objective is therefore to **constrain the authority, scope, and lifetime of what a signature can authorize**, so that future forgery has limited operational and legal impact.
 
 This section focuses on reducing **blast radius and persistence of trust**, not on eliminating the underlying cryptographic risk already described.
 
 ### 1. Shorten the validity of signatures and trust assertions
 
-The most effective control against delayed forgery is **temporal limitation**.
+In @fig-threats-to-downstream-controls, shortened validity directly limits the operational window of forged authority, transforming delayed forgery from a systemic risk into a bounded incident. The most effective control against delayed forgery is **temporal limitation**.
 
 Organizations should:
 
@@ -816,26 +846,25 @@ A forged signature is only damaging while it is accepted. Reducing validity wind
 
 This principle applies to:
 
-* TLS certificates
-* Code-signing certificates
-* API tokens and assertions
-* Regulatory or compliance signatures
+* TLS certificates.
+* Code-signing certificates.
+* API tokens and assertions.
+* Regulatory or compliance signatures.
 
 > Long-lived signatures convert a future cryptographic break into a persistent impersonation capability.
 
 ### 2. Reduce what a signature authorizes by design
 
-Not all signatures need to carry the same authority.
+Scoped authority corresponds to blast radius containment in @fig-threats-to-downstream-controls. Even perfect forgery cannot exceed the authorization encoded into the signed artifact. Not all signatures need to carry the same authority.
 
 Organizations should:
 
 * Separate signing keys by purpose and scope.
 * Avoid single keys that authorize multiple actions, systems, or trust domains.
 * Encode explicit constraints in signed artifacts, such as:
-
-  * Intended use
-  * Target platform or environment
-  * Version or context bounds
+  * Intended use.
+  * Target platform or environment.
+  * Version or context bounds.
 
 > A forged signature should not automatically imply unrestricted authority. Fine-grained authorization reduces damage even when authenticity fails.
 
@@ -846,7 +875,6 @@ As established in earlier sections, cryptographic verification is binary and tim
 Organizations should:
 
 * Combine signatures with contextual verification such as:
-
   * Hardware attestation
   * Secure boot measurement chains
   * Runtime integrity checks
@@ -908,7 +936,6 @@ Organizations should:
 
 * Accept that cryptographic signatures alone may not be sufficient evidence in the post-quantum era.
 * Preserve auxiliary evidence such as:
-
   * Time-stamped logs
   * Independent attestations
   * Out-of-band confirmations
@@ -939,6 +966,8 @@ Organizations should:
 
 ## Reducing damage from _abuse of long-lived trust anchors_
 
+As shown in @fig-threats-to-downstream-controls, trust anchor abuse is the only post-quantum threat class where cryptographic failure directly replaces governance rather than bypassing it. Mitigation therefore depends on architectural partitioning and authority limits, not algorithm strength.
+
 Abuse of long-lived trust anchors represents the most severe post-quantum failure mode. Unlike delayed decryption or isolated forgery, compromise of a trust anchor **replaces legitimate authority with adversarial authority**, while leaving all verification mechanisms intact. Once this occurs, cryptography ceases to function as a control layer.
 
 Damage reduction therefore requires **architectural containment**, not cryptographic hardening. The objective is to ensure that no single key, certificate, or authority can retain unbounded power across time, systems, or organizations.
@@ -957,16 +986,15 @@ Organizations should:
 
 ### 2. Partition authority across multiple, independent roots
 
-Systemic impersonation is possible only when authority is centralized.
+This control directly implements the segmentation principle depicted in @fig-threats-to-downstream-controls, ensuring that compromise of one trust anchor cannot propagate across unrelated systems or organizations. Systemic impersonation is possible only when authority is centralized.
 
 Damage can be reduced by:
 
 * Using multiple independent trust anchors instead of a single global root.
 * Segregating roots by:
-
-  * Environment (production, staging, development)
-  * Function (code signing, identity, firmware)
-  * Organizational domain (subsidiaries, business units, vendors)
+  * Environment (production, staging, development).
+  * Function (code signing, identity, firmware).
+  * Organizational domain (subsidiaries, business units, vendors).
 
 > Compromise of one anchor must not imply compromise of unrelated systems.
 
@@ -996,10 +1024,9 @@ Damage reduction requires:
 
 * Revocation mechanisms that assume the key itself is no longer trustworthy.
 * Architectural ability to disable trust anchors through non-cryptographic means, such as:
-
-  * Physical intervention
-  * Out-of-band governance controls
-  * Human-mediated approval paths
+  * Physical intervention.
+  * Out-of-band governance controls.
+  * Human-mediated approval paths.
 
 > If revocation depends on the same cryptography that has failed, it is ineffective.
 
@@ -1011,10 +1038,9 @@ Organizations should:
 
 * Constrain trust anchors to narrowly defined roles.
 * Avoid roots that can:
-
-  * Issue arbitrary certificates
-  * Sign any software component
-  * Control multiple supply chains simultaneously
+  * Issue arbitrary certificates.
+  * Sign any software component.
+  * Control multiple supply chains simultaneously.
 
 > Authority should be **minimal and contextual**, not universal.
 
@@ -1026,10 +1052,9 @@ Damage reduction measures include:
 
 * Requiring multiple independent attestations for critical operations.
 * Combining cryptographic trust with:
-
-  * Hardware measurements
-  * Runtime integrity checks
-  * Operational approval workflows
+  * Hardware measurements.
+  * Runtime integrity checks.
+  * Operational approval workflows.
 
 > When cryptographic trust collapses, layered controls become the only remaining barrier.
 
@@ -1068,6 +1093,8 @@ Organizations should:
 
 ## Reducing damage from _retroactive supply-chain compromise_
 
+@fig-threats-to-downstream-controls highlights why retroactive supply-chain compromise cannot be fully remediated once cryptographic provenance fails. Controls in this section focus on recoverability and operational continuity rather than proof of authenticity.
+
 Retroactive supply-chain compromise is the most operationally disruptive post-quantum failure mode. It does not merely enable future attacks; it **invalidates the ability to reason about the past**. Once signature schemes fail, systems lose the ability to distinguish legitimate historical components from forged replacements, and forensic certainty collapses.
 
 Damage reduction in this context requires **designing systems that remain recoverable even when cryptographic provenance becomes unreliable**.
@@ -1086,16 +1113,15 @@ Organizations should:
 
 ### 2. Preserve non-cryptographic provenance signals
 
-Once cryptographic signatures become forgeable, **cryptography alone cannot establish historical truth**.
+This measure exists precisely because cryptographic verification becomes non-informative post threshold, as illustrated in @fig-threats-to-downstream-controls. Independent provenance signals provide context when signatures no longer convey truth. Once cryptographic signatures become forgeable, **cryptography alone cannot establish historical truth**.
 
 Organizations should:
 
 * Preserve independent provenance signals such as:
-
-  * Manufacturing records
-  * Physical serial numbers
-  * Deployment logs
-  * Chain-of-custody documentation
+  * Manufacturing records.
+  * Physical serial numbers.
+  * Deployment logs.
+  * Chain-of-custody documentation.
 * Maintain these records outside the same trust domain as the cryptographic system they describe.
 
 > While these signals are not cryptographically strong, they provide **contextual evidence** that survives cryptographic collapse.
@@ -1107,10 +1133,9 @@ Not all components deserve equal protection.
 Organizations should:
 
 * Classify supply-chain components by:
-
-  * Safety impact
-  * Operational criticality
-  * Replaceability
+  * Safety impact.
+  * Operational criticality.
+  * Replaceability.
 * Apply stricter architectural controls and redundancy to components whose compromise would require physical replacement.
 
 > This enables targeted investment rather than uniform hardening.
@@ -1186,6 +1211,8 @@ Organizations should:
 
 ## Technical remediation measures from a cybersecurity perspective
 
+Taken together, @fig-pq-structure-overview, @fig-upstream-controls-to-threats, and @fig-threats-to-downstream-controls show that post-quantum security is not a matter of preventing cryptographic failure, but of bounding authority, exposure, and irreversibility before failure occurs.
+
 The previous sections framed post-quantum threats in terms of damage containment and architectural survivability. This section translates those principles into **practical cybersecurity controls** that can be implemented with current technologies. The objective is not theoretical post-quantum readiness, but **measurable reduction of exposure** in real systems.
 
 These measures assume that quantum-vulnerable cryptography will remain present for some time and focus on **limiting what can be collected, exploited, or impersonated** in the interim.
@@ -1198,7 +1225,6 @@ Concrete actions:
 
 * Enable **hybrid key exchange** in TLS stacks where supported, combining classical ECDHE with post-quantum KEMs.
 * Track and adopt NIST-selected post-quantum algorithms for:
-
   * Key establishment (e.g., lattice-based KEMs).
   * Digital signatures (for non-legacy paths).
 
@@ -1217,7 +1243,6 @@ Technical guidance:
 
 * Use symmetric encryption for bulk data wherever possible.
 * Ensure symmetric keys are:
-
   * Generated locally.
   * Never transmitted in plaintext.
   * Rotated aggressively.
@@ -1237,7 +1262,6 @@ Organizations should:
 
 * Minimize use of public networks for sensitive long-term communications.
 * Prefer:
-
   * Private network interconnects.
   * Dedicated links.
   * Strongly isolated VPNs with short-lived session keys.
@@ -1254,7 +1278,6 @@ Technical requirements:
 
 * Abstract cryptographic algorithms behind configurable interfaces.
 * Avoid hard-coding:
-
   * Algorithms.
   * Key sizes.
   * Certificate formats.
@@ -1269,7 +1292,6 @@ Public-key authentication is the primary post-quantum failure surface.
 Where possible:
 
 * Use short-lived credentials derived from:
-
   * Device identity.
   * Hardware attestation.
   * Session-specific secrets.
@@ -1301,7 +1323,6 @@ Do not allow cryptographic trust to cross boundaries implicitly.
 Technical guidance:
 
 * Avoid trusting the same certificates or keys across:
-
   * IT and OT environments.
   * Production and development.
   * Internal and external systems.
@@ -1315,13 +1336,11 @@ You cannot mitigate what you do not know exists.
 Security teams should:
 
 * Maintain an inventory of:
-
   * Cryptographic algorithms in use.
   * Key sizes.
   * Certificate lifetimes.
   * Signing authorities.
 * Identify:
-
   * Long-lived keys.
   * Hard-coded cryptography.
   * Legacy protocols with no upgrade path.
@@ -1336,7 +1355,6 @@ Practical steps:
 
 * Avoid treating signature verification as absolute proof.
 * Correlate cryptographic checks with:
-
   * Behavioral monitoring.
   * Anomaly detection.
   * Independent integrity signals.
@@ -1407,9 +1425,9 @@ Organizations can classify assets into four practical categories:
 
   Examples:
 
-  * Session tokens
-  * Temporary access credentials
-  * Non-persistent telemetry
+  * Session tokens.
+  * Temporary access credentials.
+  * Non-persistent telemetry.
 
   Action: no immediate post-quantum remediation required beyond cryptographic agility.
 
@@ -1417,9 +1435,9 @@ Organizations can classify assets into four practical categories:
 
   Examples:
 
-  * Archives of personal data
-  * Research datasets
-  * Strategic communications
+  * Archives of personal data.
+  * Research datasets.
+  * Strategic communications.
 
   Primary risk: delayed decryption.
 
@@ -1429,10 +1447,10 @@ Organizations can classify assets into four practical categories:
 
   Examples:
 
-  * Code-signing keys
-  * Firmware signatures
-  * Certificate authorities
-  * Blockchain control keys
+  * Code-signing keys.
+  * Firmware signatures.
+  * Certificate authorities.
+  * Blockchain control keys.
 
   Primary risk: delayed forgery and impersonation.
 
@@ -1493,7 +1511,6 @@ In practice:
 * Accountability should sit at the **enterprise risk or CISO level**, not solely within infrastructure or application teams.
 * Cryptographic lifetime risk should be tracked alongside other long-horizon risks such as safety, regulatory compliance, and supply-chain continuity.
 * Ownership must include authority to:
-
   * Enforce cryptographic standards.
   * Mandate remediation timelines.
   * Decommission systems that cannot be made quantum-resilient.
@@ -1507,10 +1524,9 @@ Cryptographic mechanisms should be governed using the same lifecycle logic appli
 Organizations should:
 
 * Define **maximum acceptable trust lifetimes** for:
-
-  * Confidentiality
-  * Authenticity
-  * Authorization
+  * Confidentiality.
+  * Authenticity.
+  * Authorization.
 * Explicitly map cryptographic mechanisms to these lifetimes.
 * Declare cryptography that cannot meet required lifetimes as **non-compliant by design**, even if it remains technically functional today.
 
@@ -1523,12 +1539,10 @@ Post-quantum risk should be visible at the same level as other strategic risks.
 Practical steps:
 
 * Include post-quantum exposure in:
-
   * Enterprise risk registers.
   * Board-level cybersecurity reporting.
   * Regulatory and audit briefings.
 * Frame the risk in terms of:
-
   * Irreversible integrity loss.
   * Loss of non-repudiation.
   * Supply-chain and safety implications.
@@ -1543,16 +1557,13 @@ Because post-quantum threats are latent, progress must be measured proactively.
 Meaningful indicators include:
 
 * Percentage of systems with:
-
   * Known cryptographic inventory.
   * Defined confidentiality and authenticity lifetimes.
 * Reduction in:
-
   * Long-lived signing keys.
   * Indefinite trust anchors.
   * Hard-coded cryptographic dependencies.
 * Coverage of:
-
   * Hybrid or post-quantum-ready key establishment.
   * Cryptographic agility mechanisms.
 
@@ -1568,7 +1579,6 @@ Organizations should therefore:
 
 * Explicitly fund post-quantum remediation as a **risk-reduction program**, not an IT upgrade.
 * Tie funding to:
-
   * Asset lifetime reduction.
   * Trust-anchor scope reduction.
   * Irreversibility mitigation.
@@ -1584,7 +1594,6 @@ Organizations should:
 
 * Reassess cryptographic exposure on a fixed cadence (e.g., annually).
 * Update assumptions based on:
-
   * Advances in quantum hardware.
   * Updated resource estimates.
   * Standards evolution.
@@ -1601,7 +1610,6 @@ Post-quantum readiness begins with knowing where cryptography is used. NIST SP 1
 Practical actions:
 
 * Maintain a continuously updated inventory covering:
-
   * Protocols and cryptographic algorithms in use.
   * Key types, key lengths, and certificate lifetimes.
   * Cryptographic libraries and dependencies.
@@ -1635,7 +1643,6 @@ Practical actions:
 
 * Enable hybrid key exchange in TLS where supported.
 * Prioritize hybrid deployment on channels with long confidentiality lifetimes:
-
   * Inter-service traffic carrying regulated or sensitive data.
   * Administrative and privileged access channels.
   * Backup, replication, and archival data transfers.
@@ -1666,7 +1673,6 @@ Post-quantum risk is driven by **time**, not asset category.
 Practical actions:
 
 * Score systems along two axes:
-
   * Confidentiality lifetime (delayed decryption exposure).
   * Authenticity lifetime (delayed forgery and impersonation exposure).
 * Prioritize remediation where both lifetimes extend beyond plausible Q-Day windows.
