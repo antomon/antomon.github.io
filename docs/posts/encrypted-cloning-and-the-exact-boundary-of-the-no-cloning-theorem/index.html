@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-01-16">
+<meta name="description" content="The No-Cloning Theorem is a foundational constraint of quantum mechanics, prohibiting the deterministic duplication of arbitrary unknown quantum states. This limitation has profound consequences for quantum computing, shaping how information can be stored, transmitted, protected, and recovered. A recent Physical Review Letters paper, Encrypted Qubits Can Be Cloned, introduces a protocol that appears, at first glance, to challenge this constraint by allowing multiple “clones” of a quantum state to exist simultaneously. This article provides a technical commentary on that result, clarifying why encrypted cloning does not violate the No-Cloning Theorem and instead operates precisely at its boundary. The protocol achieves redundancy by producing multiple encrypted representations of a quantum state whose reduced subsystems are information-theoretically opaque, while enforcing one-time recoverability through unitary dynamics and overlapping access structures. At no point do multiple independent plaintext copies become simultaneously accessible. By revisiting the No-Cloning Theorem from first principles and analyzing the protocol through the lens of quantum channel capacity, antidegradability, and multipartite entanglement, this commentary situates encrypted cloning within the broader landscape of quantum information primitives. It argues that encrypted cloning introduces a new systems-level capability—recoverable redundancy without replication—that expands the design space of quantum architectures without weakening any known no-go theorems. The implications for quantum storage, distributed computation, and security are discussed, highlighting how constraints imposed by unitarity can be respected while still enabling novel operational functionality.">
+
+<title>Encrypted Cloning and the Exact Boundary of the No-Cloning Theorem – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Encrypted Cloning and the Exact Boundary of the No-Cloning Theorem – Random Bits of Knowledge">
+<meta property="og:description" content="The No-Cloning Theorem is a foundational constraint of quantum mechanics, prohibiting the deterministic duplication of arbitrary unknown quantum states. This limitation has profound consequences for quantum computing, shaping how information can be stored, transmitted, protected, and recovered. A recent Physical Review Letters paper, Encrypted Qubits Can Be Cloned, introduces a protocol that appears, at first glance, to challenge this constraint by allowing multiple “clones” of a quantum state to exist simultaneously. This article provides a technical commentary on that result, clarifying why encrypted cloning does not violate the No-Cloning Theorem and instead operates precisely at its boundary. The protocol achieves redundancy by producing multiple encrypted representations of a quantum state whose reduced subsystems are information-theoretically opaque, while enforcing one-time recoverability through unitary dynamics and overlapping access structures. At no point do multiple independent plaintext copies become simultaneously accessible. By revisiting the No-Cloning Theorem from first principles and analyzing the protocol through the lens of quantum channel capacity, antidegradability, and multipartite entanglement, this commentary situates encrypted cloning within the broader landscape of quantum information primitives. It argues that encrypted cloning introduces a new systems-level capability—recoverable redundancy without replication—that expands the design space of quantum architectures without weakening any known no-go theorems. The implications for quantum storage, distributed computation, and security are discussed, highlighting how constraints imposed by unitarity can be respected while still enabling novel operational functionality.">
+<meta property="og:image" content="https://antomon.github.io/posts/encrypted-cloning-and-the-exact-boundary-of-the-no-cloning-theorem/encrypted-cloning-cover.jpeg">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="Encrypted Cloning and the Exact Boundary of the No-Cloning Theorem – Random Bits of Knowledge">
+<meta name="twitter:description" content="The No-Cloning Theorem is a foundational constraint of quantum mechanics, prohibiting the deterministic duplication of arbitrary unknown quantum states. This limitation has profound consequences for quantum computing, shaping how information can be stored, transmitted, protected, and recovered. A recent Physical Review Letters paper, Encrypted Qubits Can Be Cloned, introduces a protocol that appears, at first glance, to challenge this constraint by allowing multiple “clones” of a quantum state to exist simultaneously. This article provides a technical commentary on that result, clarifying why encrypted cloning does not violate the No-Cloning Theorem and instead operates precisely at its boundary. The protocol achieves redundancy by producing multiple encrypted representations of a quantum state whose reduced subsystems are information-theoretically opaque, while enforcing one-time recoverability through unitary dynamics and overlapping access structures. At no point do multiple independent plaintext copies become simultaneously accessible. By revisiting the No-Cloning Theorem from first principles and analyzing the protocol through the lens of quantum channel capacity, antidegradability, and multipartite entanglement, this commentary situates encrypted cloning within the broader landscape of quantum information primitives. It argues that encrypted cloning introduces a new systems-level capability—recoverable redundancy without replication—that expands the design space of quantum architectures without weakening any known no-go theorems. The implications for quantum storage, distributed computation, and security are discussed, highlighting how constraints imposed by unitarity can be respected while still enabling novel operational functionality.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/encrypted-cloning-and-the-exact-boundary-of-the-no-cloning-theorem/encrypted-cloning-cover.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed slimcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Encrypted Cloning and the Exact Boundary of the No-Cloning Theorem</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Encrypted Cloning and the Exact Boundary of the No-Cloning Theorem</h1>
+            <p class="subtitle lead">Redundancy without Replication in Quantum Information Processing</p>
+                  <div>
+        <div class="description">
+          The No-Cloning Theorem is a foundational constraint of quantum mechanics, prohibiting the deterministic duplication of arbitrary unknown quantum states. This limitation has profound consequences for quantum computing, shaping how information can be stored, transmitted, protected, and recovered. A recent Physical Review Letters paper, Encrypted Qubits Can Be Cloned, introduces a protocol that appears, at first glance, to challenge this constraint by allowing multiple “clones” of a quantum state to exist simultaneously. This article provides a technical commentary on that result, clarifying why encrypted cloning does not violate the No-Cloning Theorem and instead operates precisely at its boundary. The protocol achieves redundancy by producing multiple encrypted representations of a quantum state whose reduced subsystems are information-theoretically opaque, while enforcing one-time recoverability through unitary dynamics and overlapping access structures. At no point do multiple independent plaintext copies become simultaneously accessible. By revisiting the No-Cloning Theorem from first principles and analyzing the protocol through the lens of quantum channel capacity, antidegradability, and multipartite entanglement, this commentary situates encrypted cloning within the broader landscape of quantum information primitives. It argues that encrypted cloning introduces a new systems-level capability—recoverable redundancy without replication—that expands the design space of quantum architectures without weakening any known no-go theorems. The implications for quantum storage, distributed computation, and security are discussed, highlighting how constraints imposed by unitarity can be respected while still enabling novel operational functionality.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">quantum computing</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">January 16, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">January 16, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#the-no-cloning-theorem-revisited-what-is-actually-forbidden" id="toc-the-no-cloning-theorem-revisited-what-is-actually-forbidden" class="nav-link" data-scroll-target="#the-no-cloning-theorem-revisited-what-is-actually-forbidden">The No-Cloning Theorem revisited: what is actually forbidden</a></li>
+  <li><a href="#encrypted-cloning-as-physical-encoding-not-state-duplication" id="toc-encrypted-cloning-as-physical-encoding-not-state-duplication" class="nav-link" data-scroll-target="#encrypted-cloning-as-physical-encoding-not-state-duplication">Encrypted cloning as physical encoding, not state duplication</a></li>
+  <li><a href="#why-only-one-decryption-is-possible" id="toc-why-only-one-decryption-is-possible" class="nav-link" data-scroll-target="#why-only-one-decryption-is-possible">Why only one decryption is possible</a></li>
+  <li><a href="#encrypted-cloning-in-relation-to-existing-quantum-primitives" id="toc-encrypted-cloning-in-relation-to-existing-quantum-primitives" class="nav-link" data-scroll-target="#encrypted-cloning-in-relation-to-existing-quantum-primitives">Encrypted cloning in relation to existing quantum primitives</a>
+  <ul class="collapse">
+  <li><a href="#relation-to-quantum-error-correction" id="toc-relation-to-quantum-error-correction" class="nav-link" data-scroll-target="#relation-to-quantum-error-correction">Relation to quantum error correction</a></li>
+  <li><a href="#relation-to-quantum-secret-sharing" id="toc-relation-to-quantum-secret-sharing" class="nav-link" data-scroll-target="#relation-to-quantum-secret-sharing">Relation to quantum secret sharing</a></li>
+  <li><a href="#consistency-with-entanglement-monogamy" id="toc-consistency-with-entanglement-monogamy" class="nav-link" data-scroll-target="#consistency-with-entanglement-monogamy">Consistency with entanglement monogamy</a></li>
+  <li><a href="#consistency-with-quantum-summoning" id="toc-consistency-with-quantum-summoning" class="nav-link" data-scroll-target="#consistency-with-quantum-summoning">Consistency with quantum summoning</a></li>
+  </ul></li>
+  <li><a href="#encrypted-cloning-as-a-systems-primitive-for-quantum-computing" id="toc-encrypted-cloning-as-a-systems-primitive-for-quantum-computing" class="nav-link" data-scroll-target="#encrypted-cloning-as-a-systems-primitive-for-quantum-computing">Encrypted cloning as a systems primitive for quantum computing</a>
+  <ul class="collapse">
+  <li><a href="#redundancy-without-replication" id="toc-redundancy-without-replication" class="nav-link" data-scroll-target="#redundancy-without-replication">Redundancy without replication</a></li>
+  <li><a href="#quantum-encrypted-multicloud-storage" id="toc-quantum-encrypted-multicloud-storage" class="nav-link" data-scroll-target="#quantum-encrypted-multicloud-storage">Quantum encrypted multicloud storage</a></li>
+  <li><a href="#one-time-recovery-as-a-design-constraint" id="toc-one-time-recovery-as-a-design-constraint" class="nav-link" data-scroll-target="#one-time-recovery-as-a-design-constraint">One-time recovery as a design constraint</a></li>
+  <li><a href="#sensitivity-and-robustness-tradeoffs" id="toc-sensitivity-and-robustness-tradeoffs" class="nav-link" data-scroll-target="#sensitivity-and-robustness-tradeoffs">Sensitivity and robustness tradeoffs</a></li>
+  <li><a href="#relationship-to-classical-cryptographic-intuition" id="toc-relationship-to-classical-cryptographic-intuition" class="nav-link" data-scroll-target="#relationship-to-classical-cryptographic-intuition">Relationship to classical cryptographic intuition</a></li>
+  </ul></li>
+  <li><a href="#encrypted-cloning-as-a-pattern-for-working-within-unitarity-constraints" id="toc-encrypted-cloning-as-a-pattern-for-working-within-unitarity-constraints" class="nav-link" data-scroll-target="#encrypted-cloning-as-a-pattern-for-working-within-unitarity-constraints">Encrypted cloning as a pattern for working within unitarity constraints</a>
+  <ul class="collapse">
+  <li><a href="#beyond-storage-potential-extensions" id="toc-beyond-storage-potential-extensions" class="nav-link" data-scroll-target="#beyond-storage-potential-extensions">Beyond storage: potential extensions</a></li>
+  <li><a href="#what-encrypted-cloning-does-not-do" id="toc-what-encrypted-cloning-does-not-do" class="nav-link" data-scroll-target="#what-encrypted-cloning-does-not-do">What encrypted cloning does not do</a></li>
+  <li><a href="#implications-for-quantum-computing-as-a-discipline" id="toc-implications-for-quantum-computing-as-a-discipline" class="nav-link" data-scroll-target="#implications-for-quantum-computing-as-a-discipline">Implications for quantum computing as a discipline</a></li>
+  </ul></li>
+  <li><a href="#implications-for-cybersecurity-when-quantum-data-become-backupable-but-not-copyable" id="toc-implications-for-cybersecurity-when-quantum-data-become-backupable-but-not-copyable" class="nav-link" data-scroll-target="#implications-for-cybersecurity-when-quantum-data-become-backupable-but-not-copyable">Implications for cybersecurity: when quantum data become backupable but not copyable</a>
+  <ul class="collapse">
+  <li><a href="#threat-model-baseline-what-the-attacker-can-physically-access" id="toc-threat-model-baseline-what-the-attacker-can-physically-access" class="nav-link" data-scroll-target="#threat-model-baseline-what-the-attacker-can-physically-access">Threat model baseline: what the attacker can physically access</a></li>
+  <li><a href="#a-new-key-management-regime-quantum-keys-as-consumable-capabilities" id="toc-a-new-key-management-regime-quantum-keys-as-consumable-capabilities" class="nav-link" data-scroll-target="#a-new-key-management-regime-quantum-keys-as-consumable-capabilities">A new key management regime: quantum keys as consumable capabilities</a></li>
+  <li><a href="#confidentiality-is-information-theoretic-but-integrity-becomes-the-dominant-risk" id="toc-confidentiality-is-information-theoretic-but-integrity-becomes-the-dominant-risk" class="nav-link" data-scroll-target="#confidentiality-is-information-theoretic-but-integrity-becomes-the-dominant-risk">Confidentiality is information theoretic, but integrity becomes the dominant risk</a></li>
+  <li><a href="#incident-response-semantics-change-single-restore-means-single-rollback" id="toc-incident-response-semantics-change-single-restore-means-single-rollback" class="nav-link" data-scroll-target="#incident-response-semantics-change-single-restore-means-single-rollback">Incident response semantics change: single restore means single rollback</a></li>
+  <li><a href="#multi-party-control-and-key-splitting-opportunity-and-constraint" id="toc-multi-party-control-and-key-splitting-opportunity-and-constraint" class="nav-link" data-scroll-target="#multi-party-control-and-key-splitting-opportunity-and-constraint">Multi party control and key splitting: opportunity and constraint</a></li>
+  <li><a href="#new-attack-classes-rollback-and-replay-at-the-unitary-level" id="toc-new-attack-classes-rollback-and-replay-at-the-unitary-level" class="nav-link" data-scroll-target="#new-attack-classes-rollback-and-replay-at-the-unitary-level">New attack classes: rollback and replay at the unitary level</a></li>
+  <li><a href="#practical-security-boundary-where-the-classical-world-re-enters" id="toc-practical-security-boundary-where-the-classical-world-re-enters" class="nav-link" data-scroll-target="#practical-security-boundary-where-the-classical-world-re-enters">Practical security boundary: where the classical world re-enters</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><img src="encrypted-cloning-cover.jpeg" class="img-fluid"></p>
+</div></div><section id="introduction" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In classical information theory, replication is an elementary operation. A bit string can be copied arbitrarily many times without altering its informational content or its future usability. This property is not an implementation detail but a structural feature of classical computation, and it underpins redundancy, fault tolerance, checkpointing, and distributed storage.</p>
+<p>Quantum information does not share this property. A quantum state is not a passive container of data but a physical object whose evolution is constrained by linear, unitary dynamics. From these constraints follows the No-Cloning Theorem<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>: there exists no physical operation that can take an <em>arbitrary unknown</em> quantum state and produce two identical, independent copies of that state. This is not a technological limitation but a direct consequence of the mathematical structure of quantum mechanics.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;See: Wootters, W. K., &amp; Zurek, W. H. (1982). <strong>A single quantum cannot be cloned</strong>. <em>Nature</em>, 299(5886), 802–803. <a href="https://doi.org/10.1038/299802a0">DOI</a> and Dieks, D. (1982). <strong>Communication by EPR devices</strong>. <em>Physics Letters A</em>, 92(6), 271–272. <a href="https://doi.org/10.1016/0375-9601(82)90084-6">DOI</a></p></div></div><p>The No-Cloning Theorem has deep and far-reaching consequences for quantum computing. It shapes how error correction must be designed, why quantum teleportation consumes the original state, why quantum cryptography can offer information-theoretic security, and why classical notions such as backups and retries do not directly translate into the quantum domain.</p>
+<p>The purpose of this article is to provide a technical commentary on the recent Physical Review Letters paper <strong>Encrypted Qubits Can Be Cloned</strong><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, which introduces a protocol that, at first sight, appears to challenge this foundational limitation. The paper demonstrates that it is possible to generate multiple <em>encrypted</em> instances of a quantum state, each of which can later be decrypted to recover the original state, but notably, only once.</p>
+<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;See: Yamaguchi, K., &amp; Kempf, A. (2026). <strong>Encrypted qubits can be cloned</strong>. <em>Physical Review Letters</em>, 136(1), 010801. <a href="https://doi.org/10.1103/y4y1-1ll6">DOI</a></p></div></div><p>This commentary does not treat the result as a violation or relaxation of the No-Cloning Theorem. Instead, its goal is to clarify why the protocol remains fully consistent with the theorem, to formalize the distinction between cloning <em>states</em> and cloning <em>encrypted representations</em>, and to analyze what this distinction implies for quantum computing as a discipline.</p>
+<p>In particular, the article aims to:</p>
+<ul>
+<li>Revisit the No-Cloning Theorem from first principles, emphasizing precisely what is forbidden and what is not.</li>
+<li>Explain how the encrypted-cloning protocol avoids contradiction by enforcing one-time recoverability at the physical level.</li>
+<li>Analyze the conceptual and practical implications of this result for quantum architectures, including storage, fault tolerance, and distributed quantum systems.</li>
+</ul>
+<p>By framing the paper as an exploration of what becomes possible <em>because</em> of the no-cloning constraint rather than in spite of it, the commentary positions encrypted cloning as a new primitive that reshapes how redundancy and recovery may be approached in quantum computing, without undermining its foundational limits.</p>
+</section>
+<section id="the-no-cloning-theorem-revisited-what-is-actually-forbidden" class="level2">
+<h2 class="anchored" data-anchor-id="the-no-cloning-theorem-revisited-what-is-actually-forbidden">The No-Cloning Theorem revisited: what is actually forbidden</h2>
+<p>The No-Cloning Theorem is often summarized informally as <em>quantum states cannot be copied</em>. While this statement is directionally correct, it is imprecise in ways that matter for understanding both the theorem itself and the contribution of the encrypted-cloning protocol. To assess what the recent result does and does not change, it is necessary to restate the theorem in its exact operational meaning.</p>
+<p>At its core, the No-Cloning Theorem is a statement about the impossibility of a <em>universal physical process</em> that duplicates arbitrary unknown quantum states. Formally, there exists no unitary operation, and more generally no completely positive trace-preserving map, that implements the transformation</p>
+<p><span class="math display">
+|\psi\rangle \otimes |0\rangle \mapsto |\psi\rangle \otimes |\psi\rangle
+</span></p>
+<p>for all possible input states <span class="math inline">|\psi\rangle</span>.</p>
+<p>This impossibility follows directly from two bedrock properties of quantum mechanics: linearity and the preservation of inner products under physical evolution. If such a universal cloner existed, it would necessarily preserve overlaps between states. However, duplicating states would square those overlaps, producing a contradiction unless all states were mutually orthogonal. Since arbitrary quantum states are not orthogonal in general, universal cloning is ruled out.</p>
+<p>Several clarifications follow immediately from this formulation. First, the theorem applies only to <em>arbitrary unknown</em> states. If a state is known classically, it can be re-prepared as many times as desired. This is not cloning in the physical sense prohibited by the theorem, but repeated state preparation using classical information. The No-Cloning Theorem therefore constrains operations on quantum information that has not already been reduced to classical description.</p>
+<p>Second, the theorem forbids the creation of <em>multiple independent, simultaneously accessible</em> perfect copies. It does not forbid all forms of correlation, redundancy, or encoding. Quantum error-correcting codes, for example, distribute logical information across many physical qubits through entanglement. None of the physical subsystems individually contains the logical state, and no operation produces two standalone instances of it. Error correction works precisely because it respects the no-cloning constraint rather than circumventing it.</p>
+<p>Third, the theorem does not prohibit approximate cloning, probabilistic cloning, or state-dependent cloning. Each of these relaxes at least one of the theorem’s premises. Approximate cloners sacrifice fidelity, probabilistic cloners succeed only with non-unit probability, and state-dependent cloners work only on restricted sets of inputs. These constructions are well understood and do not challenge the fundamental result.</p>
+<p>What the theorem categorically forbids is a deterministic, universal process that yields two or more perfect, reusable copies of an unknown quantum state. This distinction is critical when evaluating the claim that <em>encrypted qubits can be cloned</em>. The result does not assert that multiple usable instances of a quantum state are created. Instead, it demonstrates that multiple <em>representations</em> of a state can exist such that each representation is individually information-theoretically opaque, and such that at most one representation can ever be transformed back into the original state.</p>
+<p>From the perspective of the No-Cloning Theorem, this is not a loophole but a compliant construction. At no point does the protocol allow two independent systems to simultaneously carry the same unknown quantum state in usable form. The constraint that only one decryption can succeed is not an external rule or software policy. It is enforced by the structure of the quantum correlations and by the unitary dynamics of the protocol itself.</p>
+<p>Recasting the No-Cloning Theorem in these precise terms reframes the contribution of the encrypted-cloning protocol. The result does not weaken the theorem. Instead, it exploits the exact boundary of what the theorem forbids to introduce a new operational primitive: redundancy without replicability, and recoverability without reuse. This reframing is essential before turning to the protocol itself. Without it, the result appears paradoxical. With it, the result can be understood as a controlled and principled extension of how quantum information may be distributed and later recovered, fully consistent with the foundational limits of quantum mechanics.</p>
+</section>
+<section id="encrypted-cloning-as-physical-encoding-not-state-duplication" class="level2">
+<h2 class="anchored" data-anchor-id="encrypted-cloning-as-physical-encoding-not-state-duplication">Encrypted cloning as physical encoding, not state duplication</h2>
+<p>The central contribution of <em>Encrypted Qubits Can Be Cloned</em> is not the duplication of quantum states, but the construction of a <strong>unitary encoding that produces multiple encrypted representations of a quantum state</strong>, each of which can later be decrypted exactly once. The authors are explicit that what is generated are not multiple simultaneously accessible copies of an unknown quantum state, but rather <em>redundant, indirectly accessible encrypted clones</em> that remain fully consistent with the No-Cloning Theorem.</p>
+<p>The protocol begins with a precise physical setup. An unknown qubit <span class="math inline">A</span>, held by Alice, is the quantum data to be protected. In addition, Alice prepares <span class="math inline">n</span> pairs of qubits <span class="math inline">(S_i, N_i)</span>, where each pair is initialized in a maximally entangled Bell state. The qubits <span class="math inline">S_i</span> are designated as <strong>signal qubits</strong>, while the qubits <span class="math inline">N_i</span> are designated as <strong>noise qubits</strong>. This initial entanglement is not a side condition; it is the mechanism that provides information-theoretic masking of the quantum state.</p>
+<p>The encrypted cloning step consists of a single unitary operation <span class="math inline">U^{(n)}_{\mathrm{enc}}</span> acting jointly on the plaintext qubit <span class="math inline">A</span> and all signal qubits <span class="math inline">S_1,\dots,S_n</span>. This unitary acts as the identity on all noise qubits <span class="math inline">N_i</span>. As a result, no gate ever couples the plaintext qubit to the noise qubits directly. The authors stress that the noise qubits are not directly coupled to the plaintext qubit during encoding and do not individually contain accessible information about the state of <span class="math inline">A</span>. Their role is instead to participate in the correlations that encode the quantum noise introduced by the initial entanglement and that later enable its removal during decryption.</p>
+<p>After the encoding operation, the information content of qubit <span class="math inline">A</span> has been distributed across the signal qubits <span class="math inline">S_i</span> and the noise qubits through multipartite entanglement. However, each imprint is perfectly masked. The reduced state of every signal qubit is maximally mixed and therefore statistically independent of the original state of <span class="math inline">A</span>. This property is proven explicitly and reiterated in the conclusion: each encrypted clone is <em>perfectly encrypted in the sense that each individually is in a maximally mixed state</em>.</p>
+<p>At this stage, the terminology <em>clone</em> must be interpreted precisely. Each signal qubit is a clone only in the sense that, together with the full set of noise qubits, it contains sufficient information to reconstruct the original state. Taken alone, it contains no usable information whatsoever. There is therefore no violation of the No-Cloning Theorem at the level of accessible quantum states.</p>
+<p>Decryption is implemented by a second unitary <span class="math inline">U^{(n)}_{\mathrm{dec}}</span>, which acts on <strong>one chosen signal qubit</strong> <span class="math inline">S_k</span> and <strong>all noise qubits</strong> <span class="math inline">N_1,\dots,N_n</span>. The authors provide an explicit construction and prove that this operation recovers the original state of qubit <span class="math inline">A</span> in qubit <span class="math inline">S_k</span> with fidelity 1. This establishes that each encrypted clone is individually decryptable, provided the entire noise register is available.</p>
+<p>The essential constraint appears immediately after decryption. The decryption operation consumes the recoverability of the plaintext: after decrypting one signal qubit, the joint state of the remaining signal qubits and noise qubits no longer contains recoverable information about Alice’s original state, unless the system is coherently reverted to its encoded configuration. This fact is not asserted informally but derived directly from the unitary structure of the protocol and made explicit in the paper’s discussion of consistency with the No-Cloning Theorem. As the authors state, <em>after decoding, the state of the unused signal qubits and noise qubits is independent of Alice’s information</em>.</p>
+<p>This structure explains why the protocol does not permit two successful decryptions. Any attempt to decrypt a second signal qubit without reversing the first decryption would necessarily fail, because the physical correlations required for recovery no longer exist. The limitation is enforced by quantum dynamics, not by external control or measurement-based restrictions.</p>
+<p>From a channel-theoretic perspective, the encoding map does not implement <span class="math inline">\rho \mapsto \rho \otimes \rho</span>. Instead, it implements a map from a single-qubit system into a larger system in which <strong>multiple overlapping recovery sets</strong> exist. Each recovery set contains one signal qubit and all noise qubits. Because these sets overlap on the full noise register, they cannot be used simultaneously to recover multiple plaintext copies. The authors explicitly connect this overlap structure to consistency with both the No-Cloning Theorem and entanglement monogamy.</p>
+<p>The result is therefore best understood as a new form of <strong>quantum redundancy without replication</strong>. It enables parallel storage, distribution, and deferred choice of recovery location, while preserving the fundamental prohibition against multiple simultaneous plaintext copies. The paper emphasizes that this paradigm enables functionality that is routine in classical systems, such as redundant off-site storage, but that is otherwise forbidden in quantum mechanics.</p>
+</section>
+<section id="why-only-one-decryption-is-possible" class="level2">
+<h2 class="anchored" data-anchor-id="why-only-one-decryption-is-possible">Why only one decryption is possible</h2>
+<p>The fact that only one encrypted clone can be decrypted is not an informal property of the protocol. It is a precise consequence of the quantum channel structure induced by the encoding unitary and of well-established results in quantum information theory. In the paper, this constraint is formalized using <strong>quantum channel capacity</strong> and <strong>antidegradability</strong>, not merely by appeal to intuition.</p>
+<p>After encrypted cloning, Alice’s original qubit <span class="math inline">A</span> has been mapped into a larger joint system consisting of the signal qubits <span class="math inline">S_1,\dots,S_n</span> and the noise qubits <span class="math inline">N_1,\dots,N_n</span>. To analyze recoverability, the authors define a family of quantum channels</p>
+<p><span class="math display">
+\mathcal{N}^{(n)}_{A \to B}(\rho_A)
+\;\equiv\;
+\operatorname{Tr}_{\bar{B}}
+\!\left[
+U^{(n)}_{\mathrm{enc}}
+\left(
+\rho_A \otimes \bigotimes_{i=1}^{n} \phi_{S_i N_i}
+\right)
+U^{(n)\dagger}_{\mathrm{enc}}
+\right].
+</span></p>
+<p>where <span class="math inline">B</span> denotes the subsystem that Bob chooses to access, and <span class="math inline">\bar{B}</span> denotes its complement.</p>
+<p>The first key result is positive: if Bob chooses <strong>one signal qubit</strong> <span class="math inline">S_i</span> together with <strong>all noise qubits</strong> <span class="math inline">N_1,\dots,N_n</span>, then the channel from <span class="math inline">A</span> to <span class="math inline">B = S_i N_1\dots N_n</span> has <strong>full quantum capacity</strong>:</p>
+<p><span class="math display">
+C_Q\!\left(\mathcal{N}^{(n)}_{A \to S_i N_1 \dots N_n}\right) = 1.
+</span></p>
+<p>This equality means that the channel is capable of transmitting one qubit of quantum information perfectly. The authors prove this by explicitly constructing the decoding unitary <span class="math inline">U^{(n)}_{\mathrm{dec}}</span> and showing that it recovers the original state of <span class="math inline">A</span> with fidelity 1 for arbitrary input states. This is not an asymptotic or approximate statement; it is exact.</p>
+<p>The second key result is negative and is where no-cloning consistency enters in a rigorous way. If Bob omits <strong>even a single noise qubit</strong>, or attempts to recover the state using <strong>only a signal qubit</strong>, the channel capacity collapses to zero:</p>
+<p><span class="math display">
+C_Q\!\left(\mathcal{N}^{(n)}_{A \to S_i}\right) = 0.
+</span></p>
+<p>The authors justify this by showing that the channel <span class="math inline">\mathcal{N}^{(n)}_{A \to S_i}</span> is <strong>antidegradable</strong>, and therefore has zero quantum capacity. Due to the permutation symmetry among signal qubits, the environment of any single signal qubit contains at least as much information as the signal qubit itself. For antidegradable channels, the quantum capacity vanishes identically. This is a standard result in quantum Shannon theory, and the authors explicitly cite it to ground their conclusion.</p>
+<p>This capacity-based argument explains why decryption cannot be repeated. After decrypting one signal qubit, the remaining system consists of <span class="math inline">(n-1)</span> signal qubits together with the same noise qubits. However, the paper shows that after decoding, the joint state of the unused signal qubits and the noise qubits is <strong>independent of Alice’s original information</strong>. In other words, the effective channel from <span class="math inline">A</span> to any remaining subsystem has zero quantum capacity. There is no physical operation that can recover the original state again without reversing the first decryption.</p>
+<p>This point deserves emphasis. The impossibility of a second decryption is not enforced by measurement, classical control, or external assumptions about key destruction. It is enforced by the <strong>structure of the quantum correlations</strong> created by the protocol. The noise qubits function as a one-time resource because their correlations with the signal qubits are reorganized during decryption in such a way that no remaining subsystem retains recoverable quantum information about <span class="math inline">A</span>.</p>
+<p>The authors make this explicit when they note that it would not violate the No-Cloning Theorem if Bob were to <em>reverse</em> the decoding unitary and then decrypt a different signal qubit. In that case, the system is returned to its pre-decryption state, and only one plaintext copy exists at any time. What is forbidden is the simultaneous existence of two independent plaintext copies, and the protocol never allows this configuration to arise.</p>
+<p>From a foundational standpoint, this analysis clarifies why encrypted cloning does not weaken the No-Cloning Theorem. The theorem prohibits the existence of a channel that outputs two perfect, independent copies of an unknown state. Encrypted cloning instead creates a family of overlapping recovery channels, each of which individually has full capacity, but whose simultaneous use is impossible because of their shared dependence on the same noise registers.</p>
+<p>In this sense, the protocol can be viewed as exploiting a sharp boundary condition imposed by unitarity. The system is enlarged with ancillas, quantum noise is deliberately introduced via maximal entanglement, and that noise is later removable—but only once. The No-Cloning Theorem remains intact, but the operational landscape around it is expanded.</p>
+</section>
+<section id="encrypted-cloning-in-relation-to-existing-quantum-primitives" class="level2">
+<h2 class="anchored" data-anchor-id="encrypted-cloning-in-relation-to-existing-quantum-primitives">Encrypted cloning in relation to existing quantum primitives</h2>
+<p>A key strength of <em>Encrypted Qubits Can Be Cloned</em> is that it does not present encrypted cloning as an isolated curiosity, but explicitly situates it within the landscape of known quantum information primitives. The authors carefully demonstrate that encrypted cloning is <strong>consistent with</strong>, yet <strong>operationally distinct from</strong>, quantum error correction, quantum secret sharing, entanglement monogamy, and quantum summoning. This positioning is essential to understanding its implications for quantum computing.</p>
+<section id="relation-to-quantum-error-correction" class="level3">
+<h3 class="anchored" data-anchor-id="relation-to-quantum-error-correction">Relation to quantum error correction</h3>
+<p>At a technical level, encrypted cloning shares tools with quantum error correction. Both rely on multipartite entanglement, ancilla systems, and unitary encoding and decoding operations. However, the operational goals are fundamentally different.</p>
+<p>Quantum error correction is designed to protect quantum information against <em>noise introduced by the environment</em>. Its success criterion is the ability to correct a specified class of errors repeatedly, allowing a logical qubit to survive indefinitely under fault-tolerant operations.</p>
+<p>Encrypted cloning, by contrast, is not designed to protect against computational errors. Instead, it introduces quantum noise deliberately, through maximal entanglement between signal and noise qubits. This noise is not an error to be corrected repeatedly, but an encryption mechanism that can be removed exactly once. The authors explicitly state that encrypted cloning is not meant to replace error correction, but to enable a different functionality: redundancy and recoverability where direct duplication is forbidden.</p>
+<p>That said, encrypted cloning can still be interpreted as an error-correcting code in a limited sense. Because the original state can be recovered even if up to <span class="math inline">n-1</span> signal qubits are lost, the scheme corrects erasure errors on the complementary system to any authorized recovery set. This connection is not metaphorical; it follows directly from the quantum secret sharing structure discussed below.</p>
+</section>
+<section id="relation-to-quantum-secret-sharing" class="level3">
+<h3 class="anchored" data-anchor-id="relation-to-quantum-secret-sharing">Relation to quantum secret sharing</h3>
+<p>The authors explicitly show that encrypted cloning is consistent with the theory of quantum secret sharing. In secret sharing, one defines an <strong>access structure</strong>: a collection of authorized sets from which the secret can be recovered, and unauthorized sets from which it cannot.</p>
+<p>In encrypted cloning, any subsystem consisting of one signal qubit together with all noise qubits is an authorized set. Any subsystem consisting of fewer resources, such as only signal qubits or only noise qubits, is unauthorized. The authors verify that the two necessary and sufficient conditions for quantum secret sharing hold: the complement of any authorized set is unauthorized, and the access structure is monotonic.</p>
+<p>This perspective reinforces why encrypted cloning does not violate the No-Cloning Theorem. Although multiple authorized recovery sets exist, they are not disjoint. All authorized sets overlap on the full noise register. As a result, only one recovery can succeed unless the system is first reverted to its encoded state.</p>
+<p>From a systems viewpoint, this overlap property is the formal reason encrypted cloning provides redundancy without replication. It also clarifies why encrypted cloning can tolerate loss of signal qubits but not loss of the full noise register.</p>
+</section>
+<section id="consistency-with-entanglement-monogamy" class="level3">
+<h3 class="anchored" data-anchor-id="consistency-with-entanglement-monogamy">Consistency with entanglement monogamy</h3>
+<p>A potential source of confusion addressed directly by the authors concerns entanglement monogamy. Suppose the original qubit <span class="math inline">A</span> is maximally entangled with an ancilla <span class="math inline">\tilde{A}</span>. After encrypted cloning, <span class="math inline">\tilde{A}</span> appears to be maximally entangled with multiple different recovery sets.</p>
+<p>This does not violate monogamy because monogamy constraints apply only to <strong>disjoint subsystems</strong>. In encrypted cloning, every recovery set overlaps with every other recovery set on the noise qubits. There are no two disjoint subsystems that can simultaneously recover the state. The apparent proliferation of entanglement is therefore an artifact of overlapping access structures, not a violation of fundamental constraints. This observation is important for quantum computing architectures that rely heavily on entanglement accounting. It shows that encrypted cloning introduces no hidden violations of known entanglement bounds.</p>
+</section>
+<section id="consistency-with-quantum-summoning" class="level3">
+<h3 class="anchored" data-anchor-id="consistency-with-quantum-summoning">Consistency with quantum summoning</h3>
+<p>The authors also relate encrypted cloning to the no-quantum-summoning theorem, which concerns the impossibility of guaranteeing the delivery of an unknown quantum state at spacelike-separated locations.</p>
+<p>Encrypted cloning remains consistent with this theorem, but it enables a <em>restricted variant</em> of summoning. By depositing encrypted clones at multiple spacetime locations and carrying the noise qubits as a decryption key, an agent can later choose where to reconstruct the state, even if the candidate locations are spacelike separated. The crucial constraint is that the key must be physically brought to the chosen location, and only one reconstruction can occur.</p>
+<p>This reinforces a recurring theme of the paper: encrypted cloning does not evade quantum no-go theorems by weakening them, but by reshaping the operational question so that the forbidden configuration never arises.</p>
+</section>
+</section>
+<section id="encrypted-cloning-as-a-systems-primitive-for-quantum-computing" class="level2">
+<h2 class="anchored" data-anchor-id="encrypted-cloning-as-a-systems-primitive-for-quantum-computing">Encrypted cloning as a systems primitive for quantum computing</h2>
+<p>Having established that encrypted cloning is consistent with the No-Cloning Theorem and with existing quantum information frameworks, the paper’s central implication is architectural rather than purely theoretical. Encrypted cloning introduces a <strong>new systems primitive</strong> for quantum computing: one-time recoverable redundancy.</p>
+<p>This primitive sits in a conceptual gap between classical copying and quantum error correction. Classical systems rely on unrestricted replication. Quantum systems, constrained by no-cloning, rely on continuous protection through encoding and syndrome-based correction. Encrypted cloning offers a third option: the ability to create multiple encrypted stand-ins for a quantum state, from which exactly one faithful recovery can later be performed.</p>
+<section id="redundancy-without-replication" class="level3">
+<h3 class="anchored" data-anchor-id="redundancy-without-replication">Redundancy without replication</h3>
+<p>The authors emphasize that encrypted cloning provides redundancy in a setting where replication is forbidden. After encoding, the quantum information originally localized in <span class="math inline">A</span> is distributed across the signal and noise qubits, so retaining <span class="math inline">A</span> is no longer necessary for recovery. The quantum information it carried is no longer localized but distributed across many signal qubits and a noise-based key. Each signal qubit is independently useless, yet any one of them can later serve as the recovery point.</p>
+<p>This form of redundancy is fundamentally different from replication. It does not increase the number of usable copies of the state. Instead, it increases the number of <em>locations</em> from which recovery is possible. In classical terms, it resembles a system with many encrypted backups and a single-use decryption capability.</p>
+<p>From a quantum computing perspective, this reframes how resilience can be achieved. Rather than ensuring that a logical qubit survives arbitrary noise indefinitely, encrypted cloning ensures that a quantum state can be <em>recovered once</em> despite losses in storage or transmission, provided that at least one encrypted clone and the full key remain available.</p>
+</section>
+<section id="quantum-encrypted-multicloud-storage" class="level3">
+<h3 class="anchored" data-anchor-id="quantum-encrypted-multicloud-storage">Quantum encrypted multicloud storage</h3>
+<p>The paper’s primary concrete application is <strong>quantum encrypted multicloud storage</strong>, and it is worth restating its logic precisely, because it captures the architectural significance of the primitive.</p>
+<p>After encrypted cloning, the encrypted clones <span class="math inline">S_1,\dots,S_n</span> can be distributed across independent quantum storage providers. Each provider stores a qubit whose reduced state is maximally mixed and contains no information about the underlying quantum data. The owner retains the noise qubits locally as a key.</p>
+<p>This arrangement satisfies three constraints simultaneously: the data are stored off site, they are stored redundantly, and they are encrypted with a key that never leaves the owner’s possession. Recovery requires physically bringing the key to one chosen storage location, and recovery can succeed only once. The authors stress that this functionality is not achievable by direct quantum copying and does not rely on measurement, classical communication, or probabilistic success.</p>
+<p>From an architectural standpoint, this introduces a notion of <em>quantum backup with single restore semantics</em>. This is weaker than classical backups, but significantly stronger than having no viable backup mechanism at all.</p>
+</section>
+<section id="one-time-recovery-as-a-design-constraint" class="level3">
+<h3 class="anchored" data-anchor-id="one-time-recovery-as-a-design-constraint">One-time recovery as a design constraint</h3>
+<p>A defining feature of encrypted cloning is that recovery is consumptive. The noise qubits function as a one-time key not by convention but by physics. After decryption, the remaining system no longer contains recoverable information about the original state.</p>
+<p>This has direct implications for how such a primitive could be integrated into quantum software and hardware stacks. Encrypted cloning is suitable for scenarios where recovery is expected to be rare, deliberate, and final. It is not suitable for iterative rollback or repeated retries. The paper is explicit on this point by contrasting encrypted cloning with error correction and by emphasizing that decryption consumes the key.</p>
+<p>In system design terms, encrypted cloning aligns with <em>checkpoint and abort</em> semantics rather than <em>checkpoint and resume</em> semantics. This distinction is essential for avoiding overinterpretation of the result.</p>
+</section>
+<section id="sensitivity-and-robustness-tradeoffs" class="level3">
+<h3 class="anchored" data-anchor-id="sensitivity-and-robustness-tradeoffs">Sensitivity and robustness tradeoffs</h3>
+<p>The authors also highlight two complementary properties that emerge as the number of encrypted clones increases.</p>
+<p>On the one hand, robustness improves. If <span class="math inline">n</span> encrypted clones are distributed, it suffices that even one survives intact to enable full recovery. This makes the transmission and storage of signal qubits highly tolerant to loss.</p>
+<p>On the other hand, sensitivity to interactions with the noise qubits increases. For large <span class="math inline">n</span>, the ability to recover the original state becomes extremely sensitive to any disturbance of the noise register. This sensitivity is not presented as a flaw, but as a potential feature for applications such as quantum sensing, where small interactions could be amplified into detectable loss of recoverability.</p>
+</section>
+<section id="relationship-to-classical-cryptographic-intuition" class="level3">
+<h3 class="anchored" data-anchor-id="relationship-to-classical-cryptographic-intuition">Relationship to classical cryptographic intuition</h3>
+<p>The authors explicitly draw an analogy between encrypted cloning and the classical one-time pad. Each encrypted clone is perfectly masked, and the noise qubits function as a pad that enables decryption. However, the analogy is deliberately incomplete.</p>
+<p>In the classical one-time pad, the key cannot be reused without compromising security. In encrypted cloning, the encryption and decryption operations are unitary, and after decryption the maximally entangled pairs can, in principle, be restored and reused. What cannot be reused is the <em>recovery of the same plaintext without reverting the system</em>. This distinction underscores that the one-time nature of the protocol is enforced by recoverability constraints, not by information leakage.</p>
+</section>
+</section>
+<section id="encrypted-cloning-as-a-pattern-for-working-within-unitarity-constraints" class="level2">
+<h2 class="anchored" data-anchor-id="encrypted-cloning-as-a-pattern-for-working-within-unitarity-constraints">Encrypted cloning as a pattern for working within unitarity constraints</h2>
+<p>In its concluding discussion, <em>Encrypted Qubits Can Be Cloned</em> frames encrypted cloning not merely as a new protocol, but as an instance of a broader methodological pattern: <strong>evading constraints imposed by unitarity without violating them</strong>. This perspective is essential for understanding the paper’s significance beyond its immediate application to storage or redundancy.</p>
+<p>The No-Cloning Theorem is a consequence of unitarity and linearity. Encrypted cloning does not weaken these principles. Instead, it enlarges the system by introducing ancillas and deliberately injecting quantum noise through maximal entanglement. This noise masks the information in such a way that the system becomes effectively open, even though the global evolution remains unitary. Later, the noise can be removed—but only under carefully constrained conditions.</p>
+<p>This strategy mirrors a well-known phenomenon in quantum physics: quantum linear amplifiers must introduce noise to preserve unitarity. The authors explicitly draw this analogy and suggest that encrypted cloning may inspire new amplifier architectures in which noise is introduced through entangled ancillas, enabling partial or conditional denoising at a later stage.</p>
+<section id="beyond-storage-potential-extensions" class="level3">
+<h3 class="anchored" data-anchor-id="beyond-storage-potential-extensions">Beyond storage: potential extensions</h3>
+<p>While the paper’s main concrete application is quantum encrypted multicloud storage, the authors outline several broader directions where encrypted cloning could play a role.</p>
+<p>One such direction is <strong>quantum computation on encrypted data</strong>. Because encrypted cloning operates entirely unitarily and without measurements, it is compatible with coherent processing. The authors speculate that encrypted cloning may support forms of quantum multicloud parallel homomorphic or <em>blind</em> computation, where encrypted quantum data are processed across distributed systems without revealing the underlying state. This is presented as an open research direction rather than a solved problem.</p>
+<p>Another direction is <strong>quantum sensing</strong>. The authors note that for large numbers of encrypted clones, the ability to recover the original state becomes extremely sensitive to interactions affecting the noise qubits. This sensitivity could be exploited as a sensing mechanism, where small perturbations manifest as a loss of decryptability. Conversely, encrypted cloning also enhances robustness in the transmission of signal qubits, since only one needs to arrive intact to enable recovery.</p>
+<p>The paper also draws conceptual parallels with the <strong>Hayden–Preskill model</strong> of black hole information recovery. In that model, information thrown into a black hole becomes rapidly scrambled and can later be recovered from emitted radiation given sufficient prior entanglement. The authors emphasize that encrypted cloning shares a similar structure: information is imprinted into many degrees of freedom and can be recovered using a specific auxiliary resource. This analogy is not used to claim equivalence, but to situate encrypted cloning within a broader class of scrambling-and-recovery phenomena.</p>
+</section>
+<section id="what-encrypted-cloning-does-not-do" class="level3">
+<h3 class="anchored" data-anchor-id="what-encrypted-cloning-does-not-do">What encrypted cloning does not do</h3>
+<p>Equally important is what encrypted cloning does not claim to achieve. The protocol does not allow multiple simultaneous recoveries. It does not enable unrestricted copying. It does not replace quantum error correction, nor does it provide ongoing protection against noise. The authors are careful to delimit the scope of their contribution and to avoid overstating its implications.</p>
+<p>Encrypted cloning is therefore best understood as a <strong>one-time recoverability primitive</strong>, not as a general-purpose duplication or resilience mechanism.</p>
+</section>
+<section id="implications-for-quantum-computing-as-a-discipline" class="level3">
+<h3 class="anchored" data-anchor-id="implications-for-quantum-computing-as-a-discipline">Implications for quantum computing as a discipline</h3>
+<p>From the standpoint of quantum computing, the significance of encrypted cloning lies in how it reshapes design space. Classical computing is built on unrestricted copying. Quantum computing is built on entanglement and error correction under strict no-go theorems. Encrypted cloning introduces an intermediate capability: recoverable redundancy without replicability.</p>
+<p>This capability suggests new ways to think about storage, distribution, and lifecycle management of quantum data. It also illustrates a broader lesson: quantum no-go theorems often constrain <em>direct</em> implementations of classical ideas, but they do not necessarily forbid achieving similar operational goals through indirect, carefully structured mechanisms.</p>
+<p>The paper’s contribution is therefore twofold. Technically, it provides a concrete, unitary protocol with proven properties. Conceptually, it demonstrates that unitarity-imposed limits such as no-cloning can be respected while still enabling new forms of functionality that were previously thought inaccessible.</p>
+</section>
+</section>
+<section id="implications-for-cybersecurity-when-quantum-data-become-backupable-but-not-copyable" class="level2">
+<h2 class="anchored" data-anchor-id="implications-for-cybersecurity-when-quantum-data-become-backupable-but-not-copyable">Implications for cybersecurity: when quantum data become backupable but not copyable</h2>
+<p>Encrypted cloning is presented in the paper as a response to a systems problem that classical cybersecurity has already solved many times: how to store sensitive data off site, redundantly, and encrypted, without trusting the storage provider. What is novel here is that the constraint set is quantum mechanical. The plaintext is not a bitstring. It is an unknown quantum state, and direct duplication is forbidden. The protocol therefore creates a new security primitive that is not equivalent to classical encryption, even when it plays a similar architectural role.</p>
+<p>The purpose of this section is to translate the protocol’s guarantees into cybersecurity properties that can be reasoned about at the level of threat models, key management, access control, and incident response.</p>
+<section id="threat-model-baseline-what-the-attacker-can-physically-access" class="level3">
+<h3 class="anchored" data-anchor-id="threat-model-baseline-what-the-attacker-can-physically-access">Threat model baseline: what the attacker can physically access</h3>
+<p>Start from a minimal, falsifiable model. Assume an adversary can compromise one or more quantum cloud providers that store encrypted clones (S_i). The adversary may extract the entire quantum state of those systems, delay measurements, and apply arbitrary quantum operations. Assume also that the owner retains the noise qubits <span class="math inline">N_1,\dots,N_n</span> locally as the decryption key, as in the paper’s multicloud storage scenario.</p>
+<p>In this model, the paper gives an information theoretic security claim: each encrypted clone <span class="math inline">S_i</span> is individually maximally mixed, hence statistically independent of the plaintext state of <span class="math inline">A</span>. A compromised cloud holding any number of <span class="math inline">S_i</span> systems but no access to the full noise register lacks recoverable information about the plaintext. This is stronger than most classical encryption claims, because it does not rest on computational hardness. It is a statement about reduced density matrices. That is the core confidentiality property.</p>
+</section>
+<section id="a-new-key-management-regime-quantum-keys-as-consumable-capabilities" class="level3">
+<h3 class="anchored" data-anchor-id="a-new-key-management-regime-quantum-keys-as-consumable-capabilities">A new key management regime: quantum keys as consumable capabilities</h3>
+<p>Classical key management assumes keys are classical strings. They can be copied, escrowed, split via threshold schemes, and rotated without physically changing the ciphertext. The encrypted cloning protocol changes that regime because the <em>key</em> is a quantum system <span class="math inline">N^n</span> that participates unitarily in decryption. Decryption is consumptive in the sense relevant to recoverability: after decrypting one clone, the remaining system state is independent of the plaintext, so the key cannot be reused to decrypt a second clone without first reversing the operation.</p>
+<p>Cybersecurity implication: authorization becomes a one-time capability enforced by physics rather than by policy. In classical systems, preventing reuse is a control objective implemented via process and logging. Here, the primitive itself enforces <em>one successful open per encoding episode</em>.</p>
+<p>This suggests a novel design for high assurance access to quantum secrets: instead of relying on auditability to prevent illicit duplication, the system can be engineered so that successful access consumes the ability to access again. That is a different security contract than classical decryption.</p>
+</section>
+<section id="confidentiality-is-information-theoretic-but-integrity-becomes-the-dominant-risk" class="level3">
+<h3 class="anchored" data-anchor-id="confidentiality-is-information-theoretic-but-integrity-becomes-the-dominant-risk">Confidentiality is information theoretic, but integrity becomes the dominant risk</h3>
+<p>In classical storage, encryption mostly addresses confidentiality. Integrity is handled by MACs, signatures, and redundancy. In encrypted cloning, confidentiality against a cloud adversary is strong, but integrity risks become comparatively more severe because recoverability depends on coherent quantum correlations.</p>
+<p>The paper states that for large <span class="math inline">n</span>, the ability to recover <span class="math inline">A</span> can become extremely sensitive to interactions with the noise qubits. In security terms, this means a new denial of service surface: an attacker who cannot learn the plaintext may still be able to prevent recovery by inducing decoherence or perturbation in the key register or in stored clones.</p>
+<p>This shifts the risk balance: confidentiality: strong by construction for single clones and generally for unauthorized sets. Availability and integrity of recoverability: fragile unless the key register is protected as a high value quantum asset. For security architecture, that implies the key register must be treated less like a password and more like a hardware protected root of trust. Loss, disturbance, or subtle interaction may be as damaging as theft.</p>
+</section>
+<section id="incident-response-semantics-change-single-restore-means-single-rollback" class="level3">
+<h3 class="anchored" data-anchor-id="incident-response-semantics-change-single-restore-means-single-rollback">Incident response semantics change: single restore means single rollback</h3>
+<p>Classical incident response often relies on repeated restore points and iterative rollback. Encrypted cloning enables something closer to <em>single restore semantics</em>. In the multicloud scenario, the owner can choose any one stored clone to decrypt and recover the plaintext. After that, the system no longer supports recovering an additional plaintext instance from the remaining clones without reverting the global state.</p>
+<p>Cybersecurity implication: recovery planning must assume that a restore is a one-time action. That affects how you would design business continuity and disaster recovery for quantum workloads. You would treat restore as an irreversible event, closer to key material being burned after use, than to a routine restore operation.</p>
+<p>This is novel relative to classical operational security because it merges cryptographic access control with lifecycle constraints on the data itself.</p>
+</section>
+<section id="multi-party-control-and-key-splitting-opportunity-and-constraint" class="level3">
+<h3 class="anchored" data-anchor-id="multi-party-control-and-key-splitting-opportunity-and-constraint">Multi party control and key splitting: opportunity and constraint</h3>
+<p>The paper shows encrypted cloning is consistent with quantum secret sharing via its access structure, and notes that recovery sets overlap. This immediately invites cybersecurity patterns such as split custody and dual control.</p>
+<p>However, unlike classical secret sharing, naively splitting the quantum key is not simply a matter of copying shares. If you distribute parts of (N^n), you introduce transport and storage risks that are physical and coherence dependent. The Appendix also discusses variants where some noise qubits are lost and recovery remains possible with modified authorized sets, but also notes that loss of even one full pair can drop capacity to zero.</p>
+<p>Cybersecurity implication: you can design access control structures, but availability becomes a central design variable. In classical schemes, adding more parties can increase robustness if threshold parameters are chosen. In quantum schemes, more distribution can increase the attack surface for decoherence and denial of recovery. Security engineering becomes a tradeoff between insider risk reduction and physical fragility.</p>
+</section>
+<section id="new-attack-classes-rollback-and-replay-at-the-unitary-level" class="level3">
+<h3 class="anchored" data-anchor-id="new-attack-classes-rollback-and-replay-at-the-unitary-level">New attack classes: rollback and replay at the unitary level</h3>
+<p>The authors explicitly state that it would not violate no-cloning if, after decrypting one signal qubit, Bob runs the decoding unitary in reverse and then decrypts another signal qubit.</p>
+<p>That statement has a cybersecurity reading: if an attacker gains sufficient control of the computation environment to apply unitaries coherently, the system may support a form of <em>state rollback</em> to the pre-decryption state, which restores the ability to choose a different clone to decrypt. This is not cloning, but it is a control surface.</p>
+<p>The implication is that security policies cannot be defined solely by which clone gets decrypted. They must also control who can run inverse operations, where those operations can run, and what constitutes an authorized lifecycle transition. In classical terms, this is analogous to restricting privileged operations that can revert secure enclaves to pre-attestation states. Here, the analogue is coherent reversal of the decryption transformation.</p>
+</section>
+<section id="practical-security-boundary-where-the-classical-world-re-enters" class="level3">
+<h3 class="anchored" data-anchor-id="practical-security-boundary-where-the-classical-world-re-enters">Practical security boundary: where the classical world re-enters</h3>
+<p>All of the above is quantum native. But any real system will interact with classical control planes: authentication, orchestration, scheduling, billing, and monitoring. The most likely security failures will therefore occur at the boundary where classical systems decide when and where to perform the encoding and decoding unitaries, and how the key register is handled operationally.</p>
+<p>Encrypted cloning narrows one class of risks (cloud learns plaintext) and widens another (key mishandling, denial of recoverability, unauthorized unitary control). This is a standard tradeoff pattern in security: strengthening confidentiality often increases sensitivity to availability and key custody.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>This commentary set out to analyze <em>Encrypted Qubits Can Be Cloned</em> as more than a technical construction, treating it instead as a boundary case that clarifies how far quantum information processing can be pushed without violating unitarity and the No-Cloning Theorem. After working through the protocol, its proofs, and its stated relationships to existing quantum primitives, the result can be summarized with precision.</p>
+<p>First, the paper does <strong>not</strong> weaken the No-Cloning Theorem. On the contrary, it sharpens its operational meaning. What is forbidden is the simultaneous existence of multiple, independently accessible plaintext copies of an unknown quantum state. What is permitted is the creation of multiple <em>encrypted representations</em> whose usefulness is gated by a shared quantum resource and whose recovery paths necessarily overlap. The distinction between <em>copying a state</em> and <em>copying an encrypted encoding</em> is not semantic; it is enforced by channel capacity, antidegradability, and the structure of multipartite entanglement.</p>
+<p>Second, encrypted cloning introduces a <strong>new quantum systems primitive</strong>: one-time recoverable redundancy. This primitive is strictly weaker than classical replication and strictly different from quantum error correction. It enables redundancy across space and infrastructure without enabling replication across time. From a computing perspective, this is a meaningful expansion of design space. It allows quantum data to be backed up, distributed, and deferred in ways that were previously assumed impossible under no-cloning constraints, while still preserving all known no-go theorems.</p>
+<p>Third, when viewed through a cybersecurity lens, encrypted cloning implies a <strong>shift in the security contract</strong> for quantum data. Confidentiality against untrusted storage is information-theoretic for unauthorized subsystems, not computational. Authorization is embodied in a quantum key that behaves like a consumable capability rather than a reusable secret. Availability and integrity of recoverability become the dominant risks, because denial of recovery is easier to induce than unauthorized disclosure. This tradeoff is not accidental; it is a direct consequence of enforcing security through physics rather than policy.</p>
+<p>More broadly, the paper exemplifies a recurring pattern in quantum information science: when unitarity forbids a direct analogue of a classical operation, useful functionality can sometimes be recovered by enlarging the system, introducing structured noise via entanglement, and constraining how and when that noise can be removed. The same logic underlies quantum error correction, quantum amplification limits, and several no-programming results. Encrypted cloning adds redundancy and deferred recoverability to that list.</p>
+<p>Finally, the contribution of <em>Encrypted Qubits Can Be Cloned</em> should be read neither as a curiosity nor as an immediate blueprint for deployment, but as an existence proof with architectural consequences. It shows that <em>backup without copying</em> is not a contradiction in quantum mechanics, but a well-defined operational regime. Whether this regime becomes practically relevant will depend on advances in coherent control, fault tolerance, and quantum cloud infrastructure. What the paper establishes decisively is that the conceptual barrier was never the No-Cloning Theorem itself, but an overly narrow interpretation of what redundancy must mean in a quantum world.</p>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
