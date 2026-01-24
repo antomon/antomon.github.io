@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2023-06-23">
+<meta name="description" content="Quantum computing does not break cryptography in general; it selectively collapses the mathematical assumptions underlying modern public key systems. This distinction is frequently obscured in discussions that conflate encryption, authentication, and key distribution, leading to misplaced expectations around so-called quantum-safe solutions. This article clarifies the respective roles of Quantum Key Distribution (QKD) and post-quantum cryptography (PQC), demonstrating that they address fundamentally different problems and operate at different layers of the security stack. By separating confidentiality, authentication, and long-term verifiability, the analysis shows why PQC is structurally necessary to preserve digital trust across time, while QKD remains a niche mechanism for secure key transport under restrictive assumptions. The result is a coherent framework for reasoning about quantum risk that replaces technology selection by architectural necessity.">
+
+<title>Quantum Key Distribution and Post-Quantum Cryptography – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Quantum Key Distribution and Post-Quantum Cryptography – Random Bits of Knowledge">
+<meta property="og:description" content="Quantum computing does not break cryptography in general; it selectively collapses the mathematical assumptions underlying modern public key systems. This distinction is frequently obscured in discussions that conflate encryption, authentication, and key distribution, leading to misplaced expectations around so-called quantum-safe solutions. This article clarifies the respective roles of Quantum Key Distribution (QKD) and post-quantum cryptography (PQC), demonstrating that they address fundamentally different problems and operate at different layers of the security stack. By separating confidentiality, authentication, and long-term verifiability, the analysis shows why PQC is structurally necessary to preserve digital trust across time, while QKD remains a niche mechanism for secure key transport under restrictive assumptions. The result is a coherent framework for reasoning about quantum risk that replaces technology selection by architectural necessity.">
+<meta property="og:image" content="https://antomon.github.io/posts/quantum-key-distribution-and-post-quantum-cryptography/bell-state.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="1024">
+<meta property="og:image:width" content="1536">
+<meta name="twitter:title" content="Quantum Key Distribution and Post-Quantum Cryptography – Random Bits of Knowledge">
+<meta name="twitter:description" content="Quantum computing does not break cryptography in general; it selectively collapses the mathematical assumptions underlying modern public key systems. This distinction is frequently obscured in discussions that conflate encryption, authentication, and key distribution, leading to misplaced expectations around so-called quantum-safe solutions. This article clarifies the respective roles of Quantum Key Distribution (QKD) and post-quantum cryptography (PQC), demonstrating that they address fundamentally different problems and operate at different layers of the security stack. By separating confidentiality, authentication, and long-term verifiability, the analysis shows why PQC is structurally necessary to preserve digital trust across time, while QKD remains a niche mechanism for secure key transport under restrictive assumptions. The result is a coherent framework for reasoning about quantum risk that replaces technology selection by architectural necessity.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/quantum-key-distribution-and-post-quantum-cryptography/bell-state.png">
+<meta name="twitter:image-height" content="1024">
+<meta name="twitter:image-width" content="1536">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed slimcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Quantum Key Distribution and Post-Quantum Cryptography</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Quantum Key Distribution and Post-Quantum Cryptography</h1>
+            <p class="subtitle lead">Concepts, roles, and correct use</p>
+                  <div>
+        <div class="description">
+          Quantum computing does not <em>break cryptography</em> in general; it selectively collapses the mathematical assumptions underlying modern public key systems. This distinction is frequently obscured in discussions that conflate encryption, authentication, and key distribution, leading to misplaced expectations around so-called quantum-safe solutions. This article clarifies the respective roles of Quantum Key Distribution (QKD) and post-quantum cryptography (PQC), demonstrating that they address fundamentally different problems and operate at different layers of the security stack. By separating confidentiality, authentication, and long-term verifiability, the analysis shows why PQC is structurally necessary to preserve digital trust across time, while QKD remains a niche mechanism for secure key transport under restrictive assumptions. The result is a coherent framework for reasoning about quantum risk that replaces technology selection by architectural necessity.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cybersecurity</div>
+                <div class="quarto-category">cryptography</div>
+                <div class="quarto-category">quantum computing</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">June 23, 2023</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">July 1, 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#the-problem-in-plain-terms" id="toc-the-problem-in-plain-terms" class="nav-link" data-scroll-target="#the-problem-in-plain-terms">The problem in plain terms</a>
+  <ul class="collapse">
+  <li><a href="#what-quantum-computing-actually-changes" id="toc-what-quantum-computing-actually-changes" class="nav-link" data-scroll-target="#what-quantum-computing-actually-changes">What quantum computing actually changes</a></li>
+  <li><a href="#two-intuitive-responses" id="toc-two-intuitive-responses" class="nav-link" data-scroll-target="#two-intuitive-responses">Two intuitive responses</a></li>
+  </ul></li>
+  <li><a href="#qkd-and-pqc-in-intuitive-terms" id="toc-qkd-and-pqc-in-intuitive-terms" class="nav-link" data-scroll-target="#qkd-and-pqc-in-intuitive-terms">QKD and PQC in intuitive terms</a></li>
+  <li><a href="#formal-problem-statement" id="toc-formal-problem-statement" class="nav-link" data-scroll-target="#formal-problem-statement">Formal problem statement</a>
+  <ul class="collapse">
+  <li><a href="#formal-definition-of-qkd" id="toc-formal-definition-of-qkd" class="nav-link" data-scroll-target="#formal-definition-of-qkd">Formal definition of QKD</a></li>
+  <li><a href="#formal-definition-of-pqc" id="toc-formal-definition-of-pqc" class="nav-link" data-scroll-target="#formal-definition-of-pqc">Formal definition of PQC</a></li>
+  <li><a href="#relationship-between-qkd-and-pqc" id="toc-relationship-between-qkd-and-pqc" class="nav-link" data-scroll-target="#relationship-between-qkd-and-pqc">Relationship between QKD and PQC</a></li>
+  <li><a href="#correct-usage-scenarios" id="toc-correct-usage-scenarios" class="nav-link" data-scroll-target="#correct-usage-scenarios">Correct usage scenarios</a></li>
+  <li><a href="#completeness-and-coherence-of-a-quantum-safe-strategy" id="toc-completeness-and-coherence-of-a-quantum-safe-strategy" class="nav-link" data-scroll-target="#completeness-and-coherence-of-a-quantum-safe-strategy">Completeness and coherence of a quantum-safe strategy</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#appendix-a-common-myths-about-qkd" id="toc-appendix-a-common-myths-about-qkd" class="nav-link" data-scroll-target="#appendix-a-common-myths-about-qkd">Appendix A – Common myths about QKD</a>
+  <ul class="collapse">
+  <li><a href="#myth-1-qkd-is-unbreakable-security" id="toc-myth-1-qkd-is-unbreakable-security" class="nav-link" data-scroll-target="#myth-1-qkd-is-unbreakable-security">Myth 1: <em>QKD is unbreakable security</em></a></li>
+  <li><a href="#myth-2-qkd-replaces-pqc" id="toc-myth-2-qkd-replaces-pqc" class="nav-link" data-scroll-target="#myth-2-qkd-replaces-pqc">Myth 2: <em>QKD replaces PQC</em></a></li>
+  <li><a href="#myth-3-qkd-solves-the-quantum-threat" id="toc-myth-3-qkd-solves-the-quantum-threat" class="nav-link" data-scroll-target="#myth-3-qkd-solves-the-quantum-threat">Myth 3: <em>QKD solves the quantum threat</em></a></li>
+  <li><a href="#myth-4-qkd-is-more-future-proof-because-it-is-based-on-physics" id="toc-myth-4-qkd-is-more-future-proof-because-it-is-based-on-physics" class="nav-link" data-scroll-target="#myth-4-qkd-is-more-future-proof-because-it-is-based-on-physics">Myth 4: <em>QKD is more future-proof because it is based on physics</em></a></li>
+  <li><a href="#myth-5-qkd-is-necessary-for-high-security-environments" id="toc-myth-5-qkd-is-necessary-for-high-security-environments" class="nav-link" data-scroll-target="#myth-5-qkd-is-necessary-for-high-security-environments">Myth 5: <em>QKD is necessary for high-security environments</em></a></li>
+  <li><a href="#myth-6-qkd-provides-secure-communication-by-itself" id="toc-myth-6-qkd-provides-secure-communication-by-itself" class="nav-link" data-scroll-target="#myth-6-qkd-provides-secure-communication-by-itself">Myth 6: <em>QKD provides secure communication by itself</em></a></li>
+  <li><a href="#myth-7-governments-are-adopting-qkd-so-it-must-be-the-future" id="toc-myth-7-governments-are-adopting-qkd-so-it-must-be-the-future" class="nav-link" data-scroll-target="#myth-7-governments-are-adopting-qkd-so-it-must-be-the-future">Myth 7: <em>Governments are adopting QKD, so it must be the future</em></a></li>
+  <li><a href="#myth-8-pqc-is-weaker-because-it-is-only-computational" id="toc-myth-8-pqc-is-weaker-because-it-is-only-computational" class="nav-link" data-scroll-target="#myth-8-pqc-is-weaker-because-it-is-only-computational">Myth 8: <em>PQC is weaker because it is only computational</em></a></li>
+  <li><a href="#closing-note" id="toc-closing-note" class="nav-link" data-scroll-target="#closing-note">Closing note</a></li>
+  </ul></li>
+  <li><a href="#appendix-b-timeline-view-pqc-hndl-and-the-fate-of-digital-signatures" id="toc-appendix-b-timeline-view-pqc-hndl-and-the-fate-of-digital-signatures" class="nav-link" data-scroll-target="#appendix-b-timeline-view-pqc-hndl-and-the-fate-of-digital-signatures">Appendix B – Timeline view: PQC, HNDL, and the fate of digital signatures</a>
+  <ul class="collapse">
+  <li><a href="#time-as-the-missing-dimension-in-quantum-risk" id="toc-time-as-the-missing-dimension-in-quantum-risk" class="nav-link" data-scroll-target="#time-as-the-missing-dimension-in-quantum-risk">Time as the missing dimension in quantum risk</a></li>
+  <li><a href="#phase-1-today-classical-trust-quantum-adversary-in-the-future" id="toc-phase-1-today-classical-trust-quantum-adversary-in-the-future" class="nav-link" data-scroll-target="#phase-1-today-classical-trust-quantum-adversary-in-the-future">Phase 1 – Today: classical trust, quantum adversary in the future</a></li>
+  <li><a href="#phase-2-near-future-quantum-capability-emerges" id="toc-phase-2-near-future-quantum-capability-emerges" class="nav-link" data-scroll-target="#phase-2-near-future-quantum-capability-emerges">Phase 2 – Near future: quantum capability emerges</a></li>
+  <li><a href="#phase-3-pqc-migration-window-now-before-quantum-break" id="toc-phase-3-pqc-migration-window-now-before-quantum-break" class="nav-link" data-scroll-target="#phase-3-pqc-migration-window-now-before-quantum-break">Phase 3 – PQC migration window (now → before quantum break)</a></li>
+  <li><a href="#phase-4-post-quantum-stable-era" id="toc-phase-4-post-quantum-stable-era" class="nav-link" data-scroll-target="#phase-4-post-quantum-stable-era">Phase 4 – Post-quantum stable era</a></li>
+  <li><a href="#where-qkd-fits-on-the-timeline" id="toc-where-qkd-fits-on-the-timeline" class="nav-link" data-scroll-target="#where-qkd-fits-on-the-timeline">Where QKD fits on the timeline</a></li>
+  <li><a href="#where-pqc-fits-on-the-timeline" id="toc-where-pqc-fits-on-the-timeline" class="nav-link" data-scroll-target="#where-pqc-fits-on-the-timeline">Where PQC fits on the timeline</a></li>
+  <li><a href="#closing-note-1" id="toc-closing-note-1" class="nav-link" data-scroll-target="#closing-note-1">Closing note</a></li>
+  </ul></li>
+  <li><a href="#bibliography" id="toc-bibliography" class="nav-link" data-scroll-target="#bibliography">Bibliography</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><img src="bell-state.png" class="img-fluid"></p>
+</div></div><section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p><strong>Quantum computing</strong> introduces a <em>discontinuity</em> in the security assumptions that underpin modern digital systems. This discontinuity is often described imprecisely as <em>breaking cryptography</em>, a simplification that obscures both the real nature of the threat and the appropriate response.</p>
+<p>Two families of countermeasures dominate the discussion: <strong>Quantum Key Distribution</strong> (QKD) and <strong>post-quantum cryptography</strong> (PQC). They are frequently mentioned together, sometimes even contrasted as competing solutions. In reality, they address <em>different problems</em>, operate at <em>different layers</em> of the security stack, and rely on <em>fundamentally different trust models</em>.</p>
+<p>This article proceeds in two passes. First, the concepts are introduced in intuitive terms, focusing on meaning and practical implications. Second, each concept is formalized and positioned within a coherent security architecture.</p>
+<p>The objective is not advocacy, but <em>conceptual clarity and correct architectural reasoning</em>.</p>
+</section>
+<section id="the-problem-in-plain-terms" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-in-plain-terms">The problem in plain terms</h2>
+<section id="what-quantum-computing-actually-changes" class="level3">
+<h3 class="anchored" data-anchor-id="what-quantum-computing-actually-changes">What quantum computing actually changes</h3>
+<p>Most secure digital interactions rely on <strong>public key cryptography</strong>. This includes HTTPS connections, software updates, digital identities, electronic signatures, and secure boot mechanisms. The security of these systems rests on mathematical problems that are hard for classical computers to solve.</p>
+<p>Quantum computers change this by making <em>some</em> of those problems efficiently solvable. In particular, they undermine widely deployed public key algorithms such as RSA and elliptic curve cryptography.</p>
+<p>However, it is critical to state precisely what <em>does not</em> change. Quantum computers do <em>not</em> break cryptography in general. <em>Symmetric encryption</em> algorithms such as AES are affected only quantitatively, not structurally. Known quantum attacks reduce their effective security but do not invalidate their design. Increasing key sizes restores security margins.</p>
+<p>The damage caused by quantum computing is therefore <em>specific and structural</em>: the collapse of public key assumptions, not the disappearance of encryption as a whole.</p>
+</section>
+<section id="two-intuitive-responses" class="level3">
+<h3 class="anchored" data-anchor-id="two-intuitive-responses">Two intuitive responses</h3>
+<p>From a non specialist perspective, two responses appear natural.</p>
+<p>The first is to use quantum physics itself to secure communications. If physical laws guarantee secrecy, mathematical attacks become irrelevant. This intuition leads to <strong>QKD</strong>.</p>
+<p>The second is to replace broken algorithms with new ones that quantum computers cannot efficiently attack. This leads to <strong>PQC</strong>. At an intuitive level, the two approaches may appear equivalent. They are not.</p>
+</section>
+</section>
+<section id="qkd-and-pqc-in-intuitive-terms" class="level2">
+<h2 class="anchored" data-anchor-id="qkd-and-pqc-in-intuitive-terms">QKD and PQC in intuitive terms</h2>
+<p><strong>QKD</strong> is a method for securely sharing secret keys by transmitting quantum states over a dedicated channel. Any attempt to intercept these states inevitably disturbs them, making eavesdropping detectable.</p>
+<p>The promise is strong: if an attacker listens, the communicating parties can detect it and discard the key.</p>
+<p>However, QKD does exactly one thing. It helps two parties agree on a shared secret.</p>
+<blockquote class="blockquote">
+<p>It does <em>not</em> prove who those parties are. It does <em>not</em> secure software updates. It does <em>not</em> sign documents. It does <em>not</em> allow verification years later.</p>
+</blockquote>
+<p>QKD can therefore be understood as a <em>highly secure courier for short-lived secrets</em>, not as a general mechanism for digital trust.</p>
+<p><strong>PQC</strong>, by contrast, replaces today’s vulnerable public key algorithms with new ones believed to resist quantum attacks. From a user’s perspective, nothing fundamentally changes. Browsers still use TLS. Software is still signed. Certificates still exist. The difference lies entirely in the mathematics beneath.</p>
+<p>PQC is not based on quantum physics. It is classical cryptography designed to remain secure in a world with quantum computers. Unlike QKD, PQC covers <em>all</em> functions currently served by public key cryptography, including authentication, signatures, and long-term verification.</p>
+</section>
+<section id="formal-problem-statement" class="level2">
+<h2 class="anchored" data-anchor-id="formal-problem-statement">Formal problem statement</h2>
+<p>To reason rigorously, the security problem must be decomposed into functions. Modern digital systems rely on public key cryptography for three distinct purposes:</p>
+<ol type="1">
+<li><em>Key establishment</em> over untrusted networks.</li>
+<li><em>Authentication and identity binding</em>.</li>
+<li><em>Long-term verifiability</em> of digital artifacts.</li>
+</ol>
+<p>Quantum computing compromises all three by invalidating the hardness assumptions underlying RSA, DSA, and elliptic curve schemes.</p>
+<p>A complete mitigation strategy must therefore address <em>all three functions simultaneously</em>, not only confidentiality of future communications.</p>
+<section id="formal-definition-of-qkd" class="level3">
+<h3 class="anchored" data-anchor-id="formal-definition-of-qkd">Formal definition of QKD</h3>
+<p>QKD is a family of protocols that allow two parties to generate a shared symmetric key with security derived from quantum mechanical principles. Its defining properties are:</p>
+<ul>
+<li>Information-theoretic security of the generated key, assuming ideal devices.</li>
+<li>Detectability of eavesdropping on the quantum channel.</li>
+<li>Dependence on an authenticated classical channel for correctness.</li>
+</ul>
+<p>The last point is essential. QKD <em>does not authenticate endpoints by itself</em>. Without authentication, an attacker can impersonate both parties and establish independent keys. In a quantum threat model, this authentication must itself be post-quantum secure.</p>
+<p>Operationally, QKD also imposes significant constraints: specialized hardware, distance limitations, sensitivity to implementation flaws, and high cost. Formally, QKD is a <em>secure key distribution mechanism</em>, not a complete cryptographic system.</p>
+</section>
+<section id="formal-definition-of-pqc" class="level3">
+<h3 class="anchored" data-anchor-id="formal-definition-of-pqc">Formal definition of PQC</h3>
+<p>PQC consists of classical cryptographic algorithms believed to resist known quantum attacks. These algorithms support:</p>
+<ul>
+<li>Public key encryption and key exchange.</li>
+<li>Digital signatures.</li>
+<li>Authentication and identity infrastructure.</li>
+<li>Long-lived verification of data and software.</li>
+</ul>
+<p>The security model remains computational. Assumptions are mathematical and subject to revision as knowledge evolves. This is not a weakness but the standard paradigm of cryptography.</p>
+<p>PQC integrates directly into existing protocols and infrastructures. It replaces vulnerable primitives without requiring new physical channels or hardware. Formally, PQC is a <em>complete replacement</em> for current public key cryptography.</p>
+</section>
+<section id="relationship-between-qkd-and-pqc" class="level3">
+<h3 class="anchored" data-anchor-id="relationship-between-qkd-and-pqc">Relationship between QKD and PQC</h3>
+<p>The relationship between QKD and PQC is <em>asymmetric</em>.</p>
+<p>QKD depends on authentication to function securely. In a post-quantum threat model, that authentication must be provided by PQC. PQC does not depend on QKD. It provides secure key exchange, authentication, and signatures independently. Therefore:</p>
+<ul>
+<li>QKD cannot replace PQC.</li>
+<li>PQC can fully replace classical public key cryptography.</li>
+<li>QKD can only act as an optional augmentation within a PQC-based system.</li>
+</ul>
+<p>This asymmetry is fundamental and frequently misunderstood.</p>
+</section>
+<section id="correct-usage-scenarios" class="level3">
+<h3 class="anchored" data-anchor-id="correct-usage-scenarios">Correct usage scenarios</h3>
+<p>PQC is required wherever public key cryptography is used today. This includes enterprise IT, cloud platforms, industrial systems, embedded devices, and public infrastructures. QKD may be justified in narrowly defined scenarios with tightly controlled physical environments, short-lived secrecy requirements, and tolerance for operational complexity.</p>
+<p>Even in those cases, PQC remains necessary for authentication and long-term trust.</p>
+</section>
+<section id="completeness-and-coherence-of-a-quantum-safe-strategy" class="level3">
+<h3 class="anchored" data-anchor-id="completeness-and-coherence-of-a-quantum-safe-strategy">Completeness and coherence of a quantum-safe strategy</h3>
+<p>A coherent quantum-safe strategy must satisfy three conditions:</p>
+<ul>
+<li>Secure future communications.</li>
+<li>Preserve authentication and identity.</li>
+<li>Maintain long-term verifiability of digital artifacts.</li>
+</ul>
+<p>PQC satisfies all three. QKD satisfies only the first, and only under restrictive assumptions.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Quantum computing forces a reevaluation of the mathematical foundations of digital trust. The correct response is not to replace mathematics with physics, but to <em>update the mathematics on which trust depends</em>.</p>
+<p>PQC is the structural solution. It is necessary, sufficient, and unavoidable. QKD is a specialized tool. It can enhance secrecy in specific contexts but cannot carry the burden of digital trust.</p>
+<p>Understanding this distinction is essential for designing systems that remain secure not only against future computers, but <em>across time itself</em>.</p>
+</section>
+<section id="appendix-a-common-myths-about-qkd" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-a-common-myths-about-qkd">Appendix A – Common myths about QKD</h2>
+<p>This appendix addresses recurring claims found in vendor material, policy documents, and public discourse around QKD. Each myth is stated in plain terms, followed by a precise technical clarification.</p>
+<section id="myth-1-qkd-is-unbreakable-security" class="level3">
+<h3 class="anchored" data-anchor-id="myth-1-qkd-is-unbreakable-security">Myth 1: <em>QKD is unbreakable security</em></h3>
+<p>This claim conflates <em>information theoretic secrecy of key material</em> with <em>system security as a whole</em>.</p>
+<p>QKD can provide information theoretic security <em>only for the secrecy of the distributed symmetric key</em>, and only under idealized assumptions about devices, channels, and protocol execution. It does not secure authentication, identity, software integrity, or long term verification.</p>
+<p>A system using QKD can still be fully compromised if its authentication layer is attacked. Security is a property of the entire system, not of one cryptographic primitive.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD can provide information theoretic secrecy for symmetric keys, but does not make a system unbreakable.</p>
+</blockquote>
+</section>
+<section id="myth-2-qkd-replaces-pqc" class="level3">
+<h3 class="anchored" data-anchor-id="myth-2-qkd-replaces-pqc">Myth 2: <em>QKD replaces PQC</em></h3>
+<p>This is a categorical error. QKD distributes keys. It does not provide digital signatures, identity binding, certificate validation, or artifact verification. All modern trust infrastructures rely on these functions.</p>
+<p>Moreover, QKD <em>requires authentication</em> to prevent man in the middle attacks. In a quantum threat model, that authentication must itself be post-quantum secure.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD depends on PQC for authentication and cannot replace it.</p>
+</blockquote>
+</section>
+<section id="myth-3-qkd-solves-the-quantum-threat" class="level3">
+<h3 class="anchored" data-anchor-id="myth-3-qkd-solves-the-quantum-threat">Myth 3: <em>QKD solves the quantum threat</em></h3>
+<p>The quantum threat is not limited to eavesdropping on live communications. It includes:</p>
+<ul>
+<li>Harvest-now-decrypt-later attacks.</li>
+<li>Forgery of historical signatures.</li>
+<li>Compromise of software supply chains.</li>
+<li>Loss of long-term trust in records and logs.</li>
+</ul>
+<p>QKD addresses none of these. It protects only newly generated symmetric keys and only at the time of distribution.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD mitigates a narrow subset of confidentiality risks but does not address the systemic quantum threat to digital trust.</p>
+</blockquote>
+</section>
+<section id="myth-4-qkd-is-more-future-proof-because-it-is-based-on-physics" class="level3">
+<h3 class="anchored" data-anchor-id="myth-4-qkd-is-more-future-proof-because-it-is-based-on-physics">Myth 4: <em>QKD is more future-proof because it is based on physics</em></h3>
+<p>This argument assumes that physical assumptions are inherently more stable than mathematical ones. In practice, the opposite is often true at system level.</p>
+<p>QKD security depends on detailed physical models of devices, detectors, photon sources, timing behavior, and noise. Real-world implementations have repeatedly been shown vulnerable to side-channel and implementation attacks that bypass theoretical guarantees. Mathematical cryptography, by contrast, is explicitly designed to evolve. Algorithms can be replaced, parameters adjusted, and assumptions updated without changing physical infrastructure.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD has strong theoretical foundations but fragile implementations and limited adaptability.</p>
+</blockquote>
+</section>
+<section id="myth-5-qkd-is-necessary-for-high-security-environments" class="level3">
+<h3 class="anchored" data-anchor-id="myth-5-qkd-is-necessary-for-high-security-environments">Myth 5: <em>QKD is necessary for high-security environments</em></h3>
+<p>High security environments require:</p>
+<ul>
+<li>Strong authentication.</li>
+<li>Controlled trust anchors.</li>
+<li>Long-term verifiability.</li>
+<li>Auditability and governance.</li>
+</ul>
+<p>These properties are orthogonal to QKD and are provided by cryptographic systems, not key distribution mechanisms. There is no security property required by high assurance systems that mandates QKD. There are many that mandate post-quantum signatures and authentication.</p>
+<p>Correct statement: PQC is necessary for high-security environments. QKD is optional and contextual.</p>
+</section>
+<section id="myth-6-qkd-provides-secure-communication-by-itself" class="level3">
+<h3 class="anchored" data-anchor-id="myth-6-qkd-provides-secure-communication-by-itself">Myth 6: <em>QKD provides secure communication by itself</em></h3>
+<p>This myth arises from collapsing multiple protocol layers into one mental model. Secure communication requires:</p>
+<ul>
+<li>Key agreement</li>
+<li>Authentication</li>
+<li>Integrity protection</li>
+<li>Replay protection</li>
+<li>Endpoint verification</li>
+</ul>
+<p>QKD provides only the first, and only partially. All other properties must be provided by classical cryptographic protocols.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD is one component in a secure communication stack, not a complete solution.</p>
+</blockquote>
+</section>
+<section id="myth-7-governments-are-adopting-qkd-so-it-must-be-the-future" class="level3">
+<h3 class="anchored" data-anchor-id="myth-7-governments-are-adopting-qkd-so-it-must-be-the-future">Myth 7: <em>Governments are adopting QKD, so it must be the future</em></h3>
+<p>Adoption does not imply necessity, generality, or architectural correctness. Many QKD deployments are experimental, symbolic, or limited to narrow point-to-point scenarios. None replace public key infrastructures, certificate authorities, or signature systems.</p>
+<p>Meanwhile, PQC is being integrated into browsers, operating systems, protocols, and standards precisely because it addresses the full trust surface.</p>
+<blockquote class="blockquote">
+<p>Correct statement: QKD experimentation does not change the structural requirement for PQC.</p>
+</blockquote>
+</section>
+<section id="myth-8-pqc-is-weaker-because-it-is-only-computational" class="level3">
+<h3 class="anchored" data-anchor-id="myth-8-pqc-is-weaker-because-it-is-only-computational">Myth 8: <em>PQC is weaker because it is only computational</em></h3>
+<p>All practical cryptography used today is computational. Absolute security is not a requirement; <em>bounded adversary security</em> is. Moreover, the risk profile of PQC is explicit and manageable: algorithms may be replaced if assumptions weaken. The risk profile of QKD implementations is opaque, hardware-dependent, and difficult to audit at scale.</p>
+<blockquote class="blockquote">
+<p>Correct statement: computational security is not a flaw. It is the foundation of scalable digital trust.</p>
+</blockquote>
+</section>
+<section id="closing-note" class="level3">
+<h3 class="anchored" data-anchor-id="closing-note">Closing note</h3>
+<p>Most misconceptions around QKD arise from treating it as a <em>replacement</em> rather than a <em>specialized tool</em>. When placed correctly within a post-quantum cryptographic architecture, QKD can be understood for what it is: a narrow enhancement, not a paradigm shift.</p>
+<p>The quantum transition is not about choosing physics over mathematics. It is about ensuring that <em>trust survives time, scale, and adversarial progress</em>.</p>
+</section>
+</section>
+<section id="appendix-b-timeline-view-pqc-hndl-and-the-fate-of-digital-signatures" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-b-timeline-view-pqc-hndl-and-the-fate-of-digital-signatures">Appendix B – Timeline view: PQC, HNDL, and the fate of digital signatures</h2>
+<p>This appendix introduces a temporal model to reason about quantum risk. The objective is to make explicit <em>why timing matters</em>, <em>what breaks first</em>, and <em>where QKD and PQC actually sit on the timeline</em>.</p>
+<section id="time-as-the-missing-dimension-in-quantum-risk" class="level3">
+<h3 class="anchored" data-anchor-id="time-as-the-missing-dimension-in-quantum-risk">Time as the missing dimension in quantum risk</h3>
+<p>Most discussions of quantum security implicitly assume a static world. In reality, cryptographic trust is temporal. Data is created at one time, attacked at another, and verified at yet another. Quantum computing breaks this symmetry by enabling <em>deferred attacks</em>.</p>
+<p>To reason correctly, we must distinguish three timelines:</p>
+<ol type="1">
+<li>The time at which data is <em>created or transmitted</em>.</li>
+<li>The time at which data is <em>attacked or collected</em>.</li>
+<li>The time at which data must still be <em>trusted or verified</em>.</li>
+</ol>
+<p>Quantum computing primarily attacks the third.</p>
+</section>
+<section id="phase-1-today-classical-trust-quantum-adversary-in-the-future" class="level3">
+<h3 class="anchored" data-anchor-id="phase-1-today-classical-trust-quantum-adversary-in-the-future">Phase 1 – Today: classical trust, quantum adversary in the future</h3>
+<p>Current state:</p>
+<ul>
+<li>RSA and elliptic curve cryptography are widely deployed.</li>
+<li>Digital signatures are used for software, firmware, contracts, identities, and logs.</li>
+<li>Encrypted traffic is assumed secure for its expected lifetime.</li>
+</ul>
+<p>Hidden risk:</p>
+<ul>
+<li>Adversaries can already collect encrypted traffic and signed artifacts. Even if they cannot decrypt or forge them today, they can store them indefinitely.</li>
+<li>This is the <strong>Harvest Now Decrypt Later</strong> (HNDL) model. At this stage, QKD provides little value because the threat is not interception today, but decryption and forgery tomorrow.</li>
+</ul>
+</section>
+<section id="phase-2-near-future-quantum-capability-emerges" class="level3">
+<h3 class="anchored" data-anchor-id="phase-2-near-future-quantum-capability-emerges">Phase 2 – Near future: quantum capability emerges</h3>
+<p>Once a sufficiently capable quantum computer exists:</p>
+<ul>
+<li>RSA and ECC encrypted traffic can be decrypted retroactively.</li>
+<li>Historical digital signatures can be forged.</li>
+<li>Certificates, signed firmware, and records lose their cryptographic meaning.</li>
+</ul>
+<p>This is not a future event for <em>new</em> data only. It is a retroactive collapse of trust.</p>
+<p>Key insight:</p>
+<ul>
+<li>Encryption failure is damaging.</li>
+<li>Signature failure is catastrophic.</li>
+<li>Loss of signatures means loss of identity, authority, non repudiation, and auditability.</li>
+<li>No amount of QKD can repair this, because QKD does not protect signatures or historical artifacts.</li>
+</ul>
+</section>
+<section id="phase-3-pqc-migration-window-now-before-quantum-break" class="level3">
+<h3 class="anchored" data-anchor-id="phase-3-pqc-migration-window-now-before-quantum-break">Phase 3 – PQC migration window (now → before quantum break)</h3>
+<p>PQC must be deployed <em>before</em> large scale quantum capability exists.</p>
+<p>This includes:</p>
+<ul>
+<li>Post-quantum key exchange to stop HNDL on new traffic.</li>
+<li>Post-quantum digital signatures to protect future trust artifacts.</li>
+<li>Dual-signing and hybrid schemes to bridge trust during transition.</li>
+</ul>
+<p>Critical observation: this is a <em>one way door</em>, because once signatures are issued with broken algorithms, they cannot be retroactively fixed. QKD does not help in this phase, because the dominant risk is not key distribution, but <em>future verifiability</em>.</p>
+</section>
+<section id="phase-4-post-quantum-stable-era" class="level3">
+<h3 class="anchored" data-anchor-id="phase-4-post-quantum-stable-era">Phase 4 – Post-quantum stable era</h3>
+<p>What remains valid:</p>
+<ul>
+<li>Symmetric encryption with sufficient key sizes remains secure.</li>
+<li>Post-quantum public key systems provide authentication and trust.</li>
+<li>Digital signatures remain verifiable over time.</li>
+</ul>
+<p>At this point, QKD may be added for specific links if desired, but it is no longer relevant to the core quantum transition problem. The trust foundation has already shifted.</p>
+</section>
+<section id="where-qkd-fits-on-the-timeline" class="level3">
+<h3 class="anchored" data-anchor-id="where-qkd-fits-on-the-timeline">Where QKD fits on the timeline</h3>
+<p>QKD operates <em>only in the present moment</em>. It protects the secrecy of keys generated <em>now</em>, for communications occurring <em>now</em>. It has no effect on:</p>
+<ul>
+<li>Previously captured data.</li>
+<li>Previously issued signatures.</li>
+<li>Long-term verification requirements.</li>
+</ul>
+<p>Therefore, QKD does not intersect meaningfully with the HNDL timeline. It is orthogonal to the main temporal risk introduced by quantum computing.</p>
+</section>
+<section id="where-pqc-fits-on-the-timeline" class="level3">
+<h3 class="anchored" data-anchor-id="where-pqc-fits-on-the-timeline">Where PQC fits on the timeline</h3>
+<p>PQC spans <em>past, present, and future</em>.</p>
+<ul>
+<li>It prevents HNDL on new traffic.</li>
+<li>It ensures future signatures remain verifiable.</li>
+<li>It preserves long-term trust in records created today.</li>
+</ul>
+<p>This temporal coverage is the decisive factor.</p>
+</section>
+<section id="closing-note-1" class="level3">
+<h3 class="anchored" data-anchor-id="closing-note-1">Closing note</h3>
+<p>Quantum risk is not primarily about secrecy, it is about <em>time</em>. Any solution that does not preserve trust across time cannot be a foundation for digital security in a post-quantum world.</p>
+<p>PQC addresses the temporal dimension, QKD does not. This is why PQC is structurally mandatory, while QKD remains optional, peripheral, and context-dependent.</p>
+</section>
+</section>
+<section id="bibliography" class="level2">
+<h2 class="anchored" data-anchor-id="bibliography">Bibliography</h2>
+<p>Bennett, C. H., &amp; Brassard, G. (1984). <strong>Quantum cryptography: public key distribution and coin tossing</strong>. <em>Proceedings of the IEEE International Conference on Computers, Systems and Signal Processing</em>. IEEE. <a href="https://doi.org/10.1016/j.tcs.2014.05.025">DOI</a></p>
+<p>National Institute of Standards and Technology. (2023). <strong>Digital signature standard (DSS)</strong> (FIPS PUB 186-5). <a href="https://doi.org/10.6028/NIST.FIPS.186-5">URL</a></p>
+<p>Shor, P. W. (1994). <strong>Algorithms for quantum computation: discrete logarithms and factoring</strong>. <em>Proceedings of the 35th Annual Symposium on Foundations of Computer Science</em>. IEEE Computer Society. <a href="https://doi.org/10.1109/SFCS.1994.365700">DOI</a></p>
+
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

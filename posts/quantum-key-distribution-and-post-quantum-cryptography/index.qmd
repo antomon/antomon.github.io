@@ -1,0 +1,338 @@
+---
+title: "Quantum Key Distribution and Post-Quantum Cryptography"
+subtitle: "Concepts, roles, and correct use"
+format:
+  html:
+    toc: true
+    toc-expand: 3
+description: "Quantum computing does not _break cryptography_ in general; it selectively collapses the mathematical assumptions underlying modern public key systems. This distinction is frequently obscured in discussions that conflate encryption, authentication, and key distribution, leading to misplaced expectations around so-called quantum-safe solutions. This article clarifies the respective roles of Quantum Key Distribution (QKD) and post-quantum cryptography (PQC), demonstrating that they address fundamentally different problems and operate at different layers of the security stack. By separating confidentiality, authentication, and long-term verifiability, the analysis shows why PQC is structurally necessary to preserve digital trust across time, while QKD remains a niche mechanism for secure key transport under restrictive assumptions. The result is a coherent framework for reasoning about quantum risk that replaces technology selection by architectural necessity."
+author: "Antonio Montano"
+date: "2023-06-23"
+date-modified: "2023-07-01"
+categories: [cybersecurity, cryptography, quantum computing, 🇬🇧]
+image: "bell-state.png"
+comments: 
+  utterances:
+    repo: antomon/antomon-utterances
+    theme: github-light
+---
+
+::: {.column-margin}
+![](bell-state.png)
+:::
+
+## Introduction
+
+**Quantum computing** introduces a _discontinuity_ in the security assumptions that underpin modern digital systems. This discontinuity is often described imprecisely as *breaking cryptography*, a simplification that obscures both the real nature of the threat and the appropriate response.
+
+Two families of countermeasures dominate the discussion: **Quantum Key Distribution** (QKD) and **post-quantum cryptography** (PQC). They are frequently mentioned together, sometimes even contrasted as competing solutions. In reality, they address _different problems_, operate at _different layers_ of the security stack, and rely on _fundamentally different trust models_.
+
+This article proceeds in two passes.
+First, the concepts are introduced in intuitive terms, focusing on meaning and practical implications.
+Second, each concept is formalized and positioned within a coherent security architecture.
+
+The objective is not advocacy, but _conceptual clarity and correct architectural reasoning_.
+
+## The problem in plain terms
+
+### What quantum computing actually changes
+
+Most secure digital interactions rely on **public key cryptography**. This includes HTTPS connections, software updates, digital identities, electronic signatures, and secure boot mechanisms. The security of these systems rests on mathematical problems that are hard for classical computers to solve.
+
+Quantum computers change this by making *some* of those problems efficiently solvable. In particular, they undermine widely deployed public key algorithms such as RSA and elliptic curve cryptography.
+
+However, it is critical to state precisely what *does not* change. Quantum computers do _not_ break cryptography in general. _Symmetric encryption_ algorithms such as AES are affected only quantitatively, not structurally. Known quantum attacks reduce their effective security but do not invalidate their design. Increasing key sizes restores security margins.
+
+The damage caused by quantum computing is therefore _specific and structural_: the collapse of public key assumptions, not the disappearance of encryption as a whole.
+
+### Two intuitive responses
+
+From a non specialist perspective, two responses appear natural.
+
+The first is to use quantum physics itself to secure communications. If physical laws guarantee secrecy, mathematical attacks become irrelevant. This intuition leads to **QKD**.
+
+The second is to replace broken algorithms with new ones that quantum computers cannot efficiently attack. This leads to **PQC**. At an intuitive level, the two approaches may appear equivalent. They are not.
+
+## QKD and PQC in intuitive terms
+
+**QKD** is a method for securely sharing secret keys by transmitting quantum states over a dedicated channel. Any attempt to intercept these states inevitably disturbs them, making eavesdropping detectable.
+
+The promise is strong: if an attacker listens, the communicating parties can detect it and discard the key.
+
+However, QKD does exactly one thing. It helps two parties agree on a shared secret.
+
+> It does _not_ prove who those parties are.
+> It does _not_ secure software updates.
+> It does _not_ sign documents.
+> It does _not_ allow verification years later.
+
+QKD can therefore be understood as a _highly secure courier for short-lived secrets_, not as a general mechanism for digital trust.
+
+**PQC**, by contrast, replaces today’s vulnerable public key algorithms with new ones believed to resist quantum attacks. From a user’s perspective, nothing fundamentally changes. Browsers still use TLS. Software is still signed. Certificates still exist. The difference lies entirely in the mathematics beneath.
+
+PQC is not based on quantum physics. It is classical cryptography designed to remain secure in a world with quantum computers. Unlike QKD, PQC covers _all_ functions currently served by public key cryptography, including authentication, signatures, and long-term verification.
+
+## Formal problem statement
+
+To reason rigorously, the security problem must be decomposed into functions. Modern digital systems rely on public key cryptography for three distinct purposes:
+
+1. _Key establishment_ over untrusted networks.
+2. _Authentication and identity binding_.
+3. _Long-term verifiability_ of digital artifacts.
+
+Quantum computing compromises all three by invalidating the hardness assumptions underlying RSA, DSA, and elliptic curve schemes.
+
+A complete mitigation strategy must therefore address _all three functions simultaneously_, not only confidentiality of future communications.
+
+### Formal definition of QKD
+
+QKD is a family of protocols that allow two parties to generate a shared symmetric key with security derived from quantum mechanical principles. Its defining properties are:
+
+* Information-theoretic security of the generated key, assuming ideal devices.
+* Detectability of eavesdropping on the quantum channel.
+* Dependence on an authenticated classical channel for correctness.
+
+The last point is essential. QKD _does not authenticate endpoints by itself_. Without authentication, an attacker can impersonate both parties and establish independent keys. In a quantum threat model, this authentication must itself be post-quantum secure.
+
+Operationally, QKD also imposes significant constraints: specialized hardware, distance limitations, sensitivity to implementation flaws, and high cost. Formally, QKD is a _secure key distribution mechanism_, not a complete cryptographic system.
+
+### Formal definition of PQC
+
+PQC consists of classical cryptographic algorithms believed to resist known quantum attacks. These algorithms support:
+
+* Public key encryption and key exchange.
+* Digital signatures.
+* Authentication and identity infrastructure.
+* Long-lived verification of data and software.
+
+The security model remains computational. Assumptions are mathematical and subject to revision as knowledge evolves. This is not a weakness but the standard paradigm of cryptography.
+
+PQC integrates directly into existing protocols and infrastructures. It replaces vulnerable primitives without requiring new physical channels or hardware. Formally, PQC is a _complete replacement_ for current public key cryptography.
+
+### Relationship between QKD and PQC
+
+The relationship between QKD and PQC is _asymmetric_.
+
+QKD depends on authentication to function securely. In a post-quantum threat model, that authentication must be provided by PQC. PQC does not depend on QKD. It provides secure key exchange, authentication, and signatures independently. Therefore:
+
+* QKD cannot replace PQC.
+* PQC can fully replace classical public key cryptography.
+* QKD can only act as an optional augmentation within a PQC-based system.
+
+This asymmetry is fundamental and frequently misunderstood.
+
+### Correct usage scenarios
+
+PQC is required wherever public key cryptography is used today. This includes enterprise IT, cloud platforms, industrial systems, embedded devices, and public infrastructures. QKD may be justified in narrowly defined scenarios with tightly controlled physical environments, short-lived secrecy requirements, and tolerance for operational complexity.
+
+Even in those cases, PQC remains necessary for authentication and long-term trust.
+
+### Completeness and coherence of a quantum-safe strategy
+
+A coherent quantum-safe strategy must satisfy three conditions:
+
+* Secure future communications.
+* Preserve authentication and identity.
+* Maintain long-term verifiability of digital artifacts.
+
+PQC satisfies all three. QKD satisfies only the first, and only under restrictive assumptions.
+
+## Conclusion
+
+Quantum computing forces a reevaluation of the mathematical foundations of digital trust. The correct response is not to replace mathematics with physics, but to _update the mathematics on which trust depends_.
+
+PQC is the structural solution. It is necessary, sufficient, and unavoidable. QKD is a specialized tool. It can enhance secrecy in specific contexts but cannot carry the burden of digital trust.
+
+Understanding this distinction is essential for designing systems that remain secure not only against future computers, but _across time itself_.
+
+## Appendix A – Common myths about QKD
+
+This appendix addresses recurring claims found in vendor material, policy documents, and public discourse around QKD. Each myth is stated in plain terms, followed by a precise technical clarification.
+
+### Myth 1: _QKD is unbreakable security_
+
+This claim conflates *information theoretic secrecy of key material* with *system security as a whole*.
+
+QKD can provide information theoretic security _only for the secrecy of the distributed symmetric key_, and only under idealized assumptions about devices, channels, and protocol execution. It does not secure authentication, identity, software integrity, or long term verification.
+
+A system using QKD can still be fully compromised if its authentication layer is attacked. Security is a property of the entire system, not of one cryptographic primitive. 
+
+> Correct statement: QKD can provide information theoretic secrecy for symmetric keys, but does not make a system unbreakable.
+
+### Myth 2: _QKD replaces PQC_
+
+This is a categorical error. QKD distributes keys. It does not provide digital signatures, identity binding, certificate validation, or artifact verification. All modern trust infrastructures rely on these functions.
+
+Moreover, QKD _requires authentication_ to prevent man in the middle attacks. In a quantum threat model, that authentication must itself be post-quantum secure. 
+
+> Correct statement: QKD depends on PQC for authentication and cannot replace it.
+
+### Myth 3: _QKD solves the quantum threat_
+
+The quantum threat is not limited to eavesdropping on live communications. It includes:
+
+* Harvest-now-decrypt-later attacks.
+* Forgery of historical signatures.
+* Compromise of software supply chains.
+* Loss of long-term trust in records and logs.
+
+QKD addresses none of these. It protects only newly generated symmetric keys and only at the time of distribution.
+
+> Correct statement: QKD mitigates a narrow subset of confidentiality risks but does not address the systemic quantum threat to digital trust.
+
+### Myth 4: _QKD is more future-proof because it is based on physics_
+
+This argument assumes that physical assumptions are inherently more stable than mathematical ones. In practice, the opposite is often true at system level.
+
+QKD security depends on detailed physical models of devices, detectors, photon sources, timing behavior, and noise. Real-world implementations have repeatedly been shown vulnerable to side-channel and implementation attacks that bypass theoretical guarantees. Mathematical cryptography, by contrast, is explicitly designed to evolve. Algorithms can be replaced, parameters adjusted, and assumptions updated without changing physical infrastructure.
+
+> Correct statement: QKD has strong theoretical foundations but fragile implementations and limited adaptability.
+
+### Myth 5: _QKD is necessary for high-security environments_
+
+High security environments require:
+
+* Strong authentication.
+* Controlled trust anchors.
+* Long-term verifiability.
+* Auditability and governance.
+
+These properties are orthogonal to QKD and are provided by cryptographic systems, not key distribution mechanisms. There is no security property required by high assurance systems that mandates QKD. There are many that mandate post-quantum signatures and authentication.
+
+Correct statement: PQC is necessary for high-security environments. QKD is optional and contextual.
+
+### Myth 6: _QKD provides secure communication by itself_
+
+This myth arises from collapsing multiple protocol layers into one mental model. Secure communication requires:
+
+* Key agreement
+* Authentication
+* Integrity protection
+* Replay protection
+* Endpoint verification
+
+QKD provides only the first, and only partially. All other properties must be provided by classical cryptographic protocols.
+
+> Correct statement: QKD is one component in a secure communication stack, not a complete solution.
+
+### Myth 7: _Governments are adopting QKD, so it must be the future_
+
+Adoption does not imply necessity, generality, or architectural correctness. Many QKD deployments are experimental, symbolic, or limited to narrow point-to-point scenarios. None replace public key infrastructures, certificate authorities, or signature systems.
+
+Meanwhile, PQC is being integrated into browsers, operating systems, protocols, and standards precisely because it addresses the full trust surface.
+
+> Correct statement: QKD experimentation does not change the structural requirement for PQC.
+
+### Myth 8: _PQC is weaker because it is only computational_
+
+All practical cryptography used today is computational. Absolute security is not a requirement; *bounded adversary security* is. Moreover, the risk profile of PQC is explicit and manageable: algorithms may be replaced if assumptions weaken. The risk profile of QKD implementations is opaque, hardware-dependent, and difficult to audit at scale.
+
+> Correct statement: computational security is not a flaw. It is the foundation of scalable digital trust.
+
+### Closing note
+
+Most misconceptions around QKD arise from treating it as a *replacement* rather than a *specialized tool*. When placed correctly within a post-quantum cryptographic architecture, QKD can be understood for what it is: a narrow enhancement, not a paradigm shift.
+
+The quantum transition is not about choosing physics over mathematics. It is about ensuring that _trust survives time, scale, and adversarial progress_.
+
+## Appendix B – Timeline view: PQC, HNDL, and the fate of digital signatures
+
+This appendix introduces a temporal model to reason about quantum risk. The objective is to make explicit _why timing matters_, _what breaks first_, and _where QKD and PQC actually sit on the timeline_.
+
+### Time as the missing dimension in quantum risk
+
+Most discussions of quantum security implicitly assume a static world. In reality, cryptographic trust is temporal. Data is created at one time, attacked at another, and verified at yet another. Quantum computing breaks this symmetry by enabling _deferred attacks_.
+
+To reason correctly, we must distinguish three timelines:
+
+1. The time at which data is _created or transmitted_.
+2. The time at which data is _attacked or collected_.
+3. The time at which data must still be _trusted or verified_.
+
+Quantum computing primarily attacks the third.
+
+### Phase 1 – Today: classical trust, quantum adversary in the future
+
+Current state:
+
+* RSA and elliptic curve cryptography are widely deployed.
+* Digital signatures are used for software, firmware, contracts, identities, and logs.
+* Encrypted traffic is assumed secure for its expected lifetime.
+
+Hidden risk:
+
+* Adversaries can already collect encrypted traffic and signed artifacts. Even if they cannot decrypt or forge them today, they can store them indefinitely.
+* This is the **Harvest Now Decrypt Later** (HNDL) model. At this stage, QKD provides little value because the threat is not interception today, but decryption and forgery tomorrow.
+
+### Phase 2 – Near future: quantum capability emerges
+
+Once a sufficiently capable quantum computer exists:
+
+ * RSA and ECC encrypted traffic can be decrypted retroactively.
+ * Historical digital signatures can be forged.
+ * Certificates, signed firmware, and records lose their cryptographic meaning.
+
+This is not a future event for *new* data only. It is a retroactive collapse of trust.
+
+Key insight:
+
+* Encryption failure is damaging.
+* Signature failure is catastrophic.
+* Loss of signatures means loss of identity, authority, non repudiation, and auditability.
+* No amount of QKD can repair this, because QKD does not protect signatures or historical artifacts.
+
+### Phase 3 – PQC migration window (now → before quantum break)
+
+PQC must be deployed _before_ large scale quantum capability exists.
+
+This includes:
+
+* Post-quantum key exchange to stop HNDL on new traffic.
+* Post-quantum digital signatures to protect future trust artifacts.
+* Dual-signing and hybrid schemes to bridge trust during transition.
+
+Critical observation: this is a *one way door*, because once signatures are issued with broken algorithms, they cannot be retroactively fixed. QKD does not help in this phase, because the dominant risk is not key distribution, but _future verifiability_.
+
+### Phase 4 – Post-quantum stable era
+
+What remains valid:
+
+* Symmetric encryption with sufficient key sizes remains secure.
+* Post-quantum public key systems provide authentication and trust.
+* Digital signatures remain verifiable over time.
+
+At this point, QKD may be added for specific links if desired, but it is no longer relevant to the core quantum transition problem. The trust foundation has already shifted.
+
+### Where QKD fits on the timeline
+
+QKD operates _only in the present moment_. It protects the secrecy of keys generated *now*, for communications occurring *now*. It has no effect on:
+
+* Previously captured data.
+* Previously issued signatures.
+* Long-term verification requirements.
+
+Therefore, QKD does not intersect meaningfully with the HNDL timeline. It is orthogonal to the main temporal risk introduced by quantum computing.
+
+### Where PQC fits on the timeline
+
+PQC spans _past, present, and future_.
+
+* It prevents HNDL on new traffic.
+* It ensures future signatures remain verifiable.
+* It preserves long-term trust in records created today.
+
+This temporal coverage is the decisive factor.
+
+### Closing note
+
+Quantum risk is not primarily about secrecy, it is about _time_. Any solution that does not preserve trust across time cannot be a foundation for digital security in a post-quantum world.
+
+PQC addresses the temporal dimension, QKD does not. This is why PQC is structurally mandatory, while QKD remains optional, peripheral, and context-dependent.
+
+## Bibliography
+
+Bennett, C. H., & Brassard, G. (1984). **Quantum cryptography: public key distribution and coin tossing**. _Proceedings of the IEEE International Conference on Computers, Systems and Signal Processing_. IEEE. [DOI](https://doi.org/10.1016/j.tcs.2014.05.025)
+
+National Institute of Standards and Technology. (2023). **Digital signature standard (DSS)** (FIPS PUB 186-5). [URL](https://doi.org/10.6028/NIST.FIPS.186-5)
+
+Shor, P. W. (1994). **Algorithms for quantum computation: discrete logarithms and factoring**. _Proceedings of the 35th Annual Symposium on Foundations of Computer Science_. IEEE Computer Society. [DOI](https://doi.org/10.1109/SFCS.1994.365700)
