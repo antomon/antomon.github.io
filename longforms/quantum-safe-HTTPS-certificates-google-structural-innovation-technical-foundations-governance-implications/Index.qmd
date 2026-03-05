@@ -16,7 +16,7 @@ author:
         country: Italia
 date: "2026-03-05"
 date-modified: "2026-03-05"
-categories: [cybersecurity, cryptography, quantum computing, 🇬🇧]
+categories: [cybersecurity, cryptography, essay, quantum computing, 🇬🇧]
 keywords: post-quantum cryptography, WebPKI, TLS, Merkle trees, certificate transparency, authenticated data structures, Internet security architecture, quantum resistant cryptography, cryptographic scalability, transparency logs
 license: "CC BY-NC-ND"
 copyright: 
@@ -43,7 +43,7 @@ Shor demonstrated in 1994 that a sufficiently large quantum computer could facto
 
 Post-quantum cryptographic algorithms exist and have already been standardized by NIST. However, replacing classical primitives inside the existing certificate architecture introduces an engineering challenge. Post-quantum signatures are much larger than classical ones. If inserted directly into the current PKI structure, they would significantly increase the size of TLS handshakes across billions of daily connections.
 
-Google has proposed a structural solution known as **Merkle Tree Certificates (MTC)**[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-G26]. Rather than simply replacing cryptographic primitives, the proposal modifies how certificates are authenticated and distributed. The objective is to preserve security against future quantum adversaries while maintaining the efficiency required for global scale Internet infrastructure.
+Google has proposed a structural solution known as **Merkle Tree Certificates** (MTC)[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-G26]. Rather than simply replacing cryptographic primitives, the proposal modifies how certificates are authenticated and distributed. The objective is to preserve security against future quantum adversaries while maintaining the efficiency required for global scale Internet infrastructure.
 
 [^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-G26]: See: Chrome Secure Web and Networking Team. (2026, February 27). **Cultivating a robust and efficient quantum-safe HTTPS**. _Google Security Blog_. [URL](https://security.googleblog.com/2026/02/cultivating-robust-and-efficient.html)
 
@@ -315,20 +315,20 @@ end
 
 The diagram is organized around the life cycle of a certificate in a Merkle tree based system:
 
-1. Certificate issuance. A website owner requests a certificate from a CA. The CA verifies the domain ownership and issues a certificate, just as in the classical WebPKI model.
+1. **Certificate issuance**. A website owner requests a certificate from a CA. The CA verifies the domain ownership and issues a certificate, just as in the classical WebPKI model.
 
-2. Log insertion. Instead of directly distributing the certificate as an independently signed object, the CA submits it to a transparency log. The log hashes the certificate and inserts it into a Merkle tree that aggregates many certificates.
+2. **Log insertion**. Instead of directly distributing the certificate as an independently signed object, the CA submits it to a transparency log. The log hashes the certificate and inserts it into a Merkle tree that aggregates many certificates.
 
-3. Tree commitment. The Merkle tree produces a root value that commits to the entire set of certificates currently registered in the log. The log signs this root to produce the STH, which represents the current state of the tree.
+3. **Tree commitment**. The Merkle tree produces a root value that commits to the entire set of certificates currently registered in the log. The log signs this root to produce the STH, which represents the current state of the tree.
 
-4. Distribution to the server. The website server stores its certificate together with the necessary information to produce a Merkle inclusion proof linking the certificate to the tree root.
+4. **Distribution to the server**. The website server stores its certificate together with the necessary information to produce a Merkle inclusion proof linking the certificate to the tree root.
 
-5. First TLS connection. When a user visits the website, the server sends three elements during the TLS handshake:
+5. **First TLS connection**. When a user visits the website, the server sends three elements during the TLS handshake:
   - the certificate,
   - a Merkle inclusion proof,
   - the STH.
 
-6. Browser verification. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.
+6. **Browser verification**. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.
 
 So, a Merkle tree is a method for committing to a large collection of data elements using a single hash value. Each element in the dataset is hashed. Those hashes are paired and hashed again. The process repeats recursively until only one value remains. That value is the root of the tree.
 
@@ -836,7 +836,7 @@ The system must satisfy three primary security properties.
 
 The security of MTCs reduces to the security of two primitives.
 
-1. Digital signature security. The root signature must be existentially unforgeable under chosen message attack (EUF-CMA). Formally, the adversary cannot produce
+1. **Digital signature security**. The root signature must be existentially unforgeable under chosen message attack (EUF-CMA). Formally, the adversary cannot produce
 
   $$
   (R^*, \sigma^*)
@@ -852,7 +852,7 @@ The security of MTCs reduces to the security of two primitives.
 
   This ensures the adversary cannot fabricate a new committed dataset.
 
-2. Hash function collision resistance. Merkle trees rely on the collision resistance of the hash function $H$. An attacker must not find
+2. **Hash function collision resistance**. Merkle trees rely on the collision resistance of the hash function $H$. An attacker must not find
 
   $$
   x \neq y \quad \text{such that} \quad H(x) = H(y)
@@ -964,6 +964,122 @@ The introduction of MTCs does not change the fundamental trust anchor of the Web
 What changes is the **mechanism by which certificates are authenticated during TLS connections**. Instead of verifying multiple signatures attached to each certificate chain, browsers verify membership within a globally committed dataset.
 
 This transformation converts authentication from a linear signature verification problem into a logarithmic set-membership proof problem. The cryptographic foundation remains sound. The primary challenges therefore lie not in mathematics but in operational deployment and governance of the transparency infrastructure that maintains the global certificate dataset.
+
+## Appendix C — Temporal cryptography and the “Harvest Now, Decrypt Later” threat
+
+The previous appendices examined the mathematical and adversarial properties of MTCs. This appendix addresses a different dimension of the problem: time. Quantum computing introduces a threat model in which cryptographic compromise may occur long after the original communication or authentication event. In this context, the deployment of quantum-safe authentication mechanisms becomes not merely a future upgrade but a present necessity.
+
+A central concept in post-quantum security discussions is the strategy known as **Harvest Now, Decrypt Later** (HNDL). The idea is straightforward. An adversary intercepts encrypted communications today, stores them indefinitely, and waits until future computational capabilities allow the underlying cryptography to be broken. At that point the attacker decrypts previously recorded data retroactively. The attack therefore exploits a temporal asymmetry between the time at which data is captured and the time at which it becomes decryptable.
+
+This temporal asymmetry fundamentally alters the threat landscape. In traditional security models, a cryptographic break typically compromises data only at the moment of attack. In the quantum setting, however, compromise can occur years or decades after the data was originally transmitted. The moment of vulnerability therefore shifts from the present into the future.
+
+### Temporal mismatch between data lifetime and cryptographic lifetime
+
+The risk emerges when the lifetime of sensitive data exceeds the lifetime of the cryptographic primitives protecting it. Let
+
+$$
+L_d
+$$
+
+represent the confidentiality lifetime of a dataset and
+
+$$
+L_c
+$$
+
+represent the effective security lifetime of the cryptographic scheme used to protect it.
+
+A system remains secure only when
+
+$$
+L_c \ge L_d .
+$$
+
+In practice this condition is often violated. Many categories of information remain valuable or sensitive for decades. Diplomatic communications, medical records, industrial designs, intelligence archives, and personal identity information frequently require long-term confidentiality. If these data are protected by cryptographic schemes that become vulnerable within that time horizon, retrospective compromise becomes possible.
+
+Quantum computing accelerates this mismatch. The most widely deployed public-key algorithms on the Internet today—RSA and elliptic curve cryptography—derive their security from mathematical problems such as integer factorization and discrete logarithms. Shor’s algorithm demonstrates that a sufficiently large quantum computer could solve these problems efficiently. If such a machine becomes practical, the cryptographic assumptions underlying much of today’s Internet infrastructure would collapse.
+
+In the presence of this capability, the effective lifetime of classical public-key cryptography becomes uncertain. Once quantum computers reach sufficient scale, previously secure public keys could be inverted to recover private keys. The attacker could then decrypt archived communications or forge signatures associated with historical identities.
+
+### Attack sequence
+
+The HNDL attack follows a simple but powerful sequence of steps.
+
+First, encrypted traffic is intercepted. Modern network infrastructure carries enormous volumes of encrypted communications, most of which are protected by TLS. An adversary positioned at major network exchange points, satellite links, or compromised network infrastructure can capture large volumes of encrypted data without needing to decrypt it immediately.
+
+Second, the captured ciphertext is stored. Advances in storage technology have dramatically reduced the cost of large-scale data retention. Archiving vast quantities of encrypted traffic is now economically feasible for well-resourced adversaries.
+
+Third, a future cryptographic breakthrough occurs. At some future time $t_Q$, a quantum computer capable of executing Shor’s algorithm on cryptographically relevant key sizes becomes available. This capability allows the attacker to derive private keys from public keys that were previously believed to be secure.
+
+Finally, the attacker decrypts historical communications. Using the recovered private keys, previously archived ciphertext can be decrypted. Communications that were secure at the time of transmission become readable years later.
+
+Formally, if
+
+$$
+D_t
+$$
+
+represents encrypted data captured at time $t$, the attacker’s objective is to compute
+
+$$
+Decrypt(D_t, t_Q)
+$$
+
+once quantum computational capabilities become available. The attack therefore transforms future technological progress into a present-day vulnerability.
+
+### Implications for digital authentication
+
+The temporal threat model extends beyond confidentiality. It also affects the integrity and authenticity guarantees provided by digital signatures. If the signature schemes used today become vulnerable to quantum attacks, adversaries could produce valid signatures for objects created in the past.
+
+This concern forms the basis of the analysis presented in the author’s earlier essay **When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security**[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-M25]. That work examines how modern digital infrastructures depend heavily on long-lived signatures that act as anchors of trust. Software distribution systems, certificate authorities, document authentication frameworks, and identity systems all rely on the assumption that digital signatures remain secure indefinitely.
+
+[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-M25]: See: [When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security](https://4m4.it/longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/index.html). Abstract: _Digital trust infrastructures are built on the implicit assumption that cryptographic hardness is permanent, while the systems and decisions that rely on it are designed to persist for decades. This assumption no longer holds. Advances in quantum computing do not cause visible system failure, but instead invalidate authenticity, integrity, and authority guarantees retroactively by rendering widely deployed signature schemes forgeable. Because signed artifacts, trust anchors, and encrypted data outlive their operational context, future quantum capability enables delayed forgery, silent impersonation, and retroactive supply-chain compromise at global scale. This article analyzes the structural mechanics of post-quantum trust expiration, distinguishes real present-day exposure from non-issues, and provides concrete technical and governance guidance to bound damage, preserve evidentiary value, and protect long-term knowledge and competitive advantage before cryptographic assumptions decay._
+
+Quantum computing challenges this assumption. Once the underlying mathematical hardness assumptions fail, signatures that were previously trusted may become forgeable. The result is not merely the compromise of future communications but the potential retroactive compromise of historical trust artifacts.
+
+In the context of WebPKI this problem manifests in two ways. First, encrypted TLS traffic that has been archived may become decryptable. Second, certificate signatures could be forged, allowing attackers to impersonate legitimate websites or services. Both outcomes undermine the trust model of the Internet.
+
+### Structural barriers to quantum-safe migration
+
+Recognizing the quantum threat does not automatically solve the problem. The Internet’s cryptographic infrastructure is deeply embedded in protocols, software systems, and hardware devices deployed at global scale. Replacing vulnerable cryptographic primitives therefore involves enormous engineering challenges.
+
+One of the most significant obstacles concerns the size of post-quantum signatures. Many candidate algorithms produce signatures that are several kilobytes in length, substantially larger than classical elliptic-curve signatures. If such signatures were inserted directly into existing certificate infrastructures, the size of TLS handshakes would increase dramatically.
+
+This expansion has practical consequences. Every HTTPS connection would transmit additional kilobytes of authentication data. Given the billions of daily TLS connections across the Internet, the resulting bandwidth consumption and latency overhead would be substantial. Large-scale deployment of post-quantum certificates using the current PKI structure would therefore introduce serious performance challenges.
+
+### MTCs as a structural solution
+
+The innovation proposed by Google addresses precisely this scalability barrier. MTCs reorganize how authentication information is distributed rather than merely replacing cryptographic primitives.
+
+Instead of attaching large post-quantum signatures to each individual certificate, certificates are aggregated within a transparency log that maintains a Merkle tree. Each certificate becomes a leaf node in this tree. The log periodically computes the root of the tree and signs it, producing a Signed Tree Head. This signed root acts as a cryptographic commitment to the entire set of certificates stored in the log.
+
+When a server presents its certificate during a TLS handshake, it does not need to transmit a large signature proving the authenticity of that certificate. Instead it provides three elements: the certificate itself, a Merkle inclusion proof linking the certificate to the tree root, and the Signed Tree Head containing the root commitment.
+
+The browser verifies the inclusion proof and checks the signature on the root. Because the Merkle tree structure allows membership proofs to be constructed using a logarithmic number of hashes, the amount of data transmitted during the TLS handshake remains small even when the underlying root signature uses a large post-quantum algorithm.
+
+### Enabling the transition to quantum-safe authentication
+
+From the perspective of the temporal threat model, the significance of MTCs lies in their ability to enable early deployment of quantum-safe cryptography.
+
+The HNDL threat means that waiting until large-scale quantum computers exist would be too late. By the time quantum capability becomes practical, attackers may already possess vast archives of encrypted communications collected over many years. Protecting future confidentiality therefore requires migrating to quantum-safe authentication mechanisms well in advance of that point.
+
+However, large-scale migration cannot occur if the engineering costs are prohibitive. If post-quantum certificates dramatically increase TLS handshake sizes, global deployment would face significant resistance from network operators, service providers, and software vendors.
+
+MTCs remove this obstacle. By amortizing large signatures across many certificates and transmitting only compact membership proofs during individual connections, the system preserves the performance characteristics required for Internet-scale deployment. In effect, the Merkle tree structure decouples authentication cost from signature size.
+
+This architectural shift transforms what would otherwise be a linear scaling problem into a logarithmic one. As a result, the Internet can adopt quantum-safe signature schemes without dramatically increasing connection overhead.
+
+### Strategic implications for digital trust
+
+The connection between the temporal threat model and the Merkle certificate architecture reveals a broader insight. The quantum transition is not merely a cryptographic upgrade. It is an infrastructural transformation in how trust is distributed across the Internet.
+
+The author’s earlier analysis of the potential collapse of signature-based security highlighted the systemic risks associated with long-lived cryptographic assumptions. Quantum computing threatens to invalidate those assumptions across many layers of digital infrastructure simultaneously.
+
+MTCs do not eliminate that threat. Instead they provide a mechanism that allows the Internet to evolve its authentication architecture before the threat fully materializes. By enabling scalable deployment of quantum-safe signatures, they reduce the risk that the transition to post-quantum security will occur too late.
+
+In this sense the proposal can be viewed as a bridge between present-day cryptographic infrastructure and the future security landscape shaped by quantum computing. It addresses a practical engineering constraint that would otherwise delay migration, thereby helping ensure that the cryptographic lifetime of Internet authentication systems remains aligned with the long-term confidentiality requirements of the data they protect.
+
+The temporal dimension therefore reveals why the Google proposal is significant. MTCs are not simply an optimization of certificate authentication. They are an enabling mechanism that allows the Internet to begin adapting its trust infrastructure before the expiration of the cryptographic assumptions on which that infrastructure currently depends.
 
 ## Bibliography
 
