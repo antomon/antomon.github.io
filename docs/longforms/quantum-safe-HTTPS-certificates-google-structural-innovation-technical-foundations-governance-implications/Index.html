@@ -448,30 +448,30 @@ Figure&nbsp;1: Why post-quantum certificates break classical PKI scaling
 </div>
 <p>The diagram illustrates the three stages of the problem and the solution:</p>
 <ol type="1">
-<li><strong>Classical WebPKI</strong>. In today’s system each certificate carries a small cryptographic signature. The TLS handshake transmits:</li>
-</ol>
+<li><strong>Classical WebPKI</strong>. In today’s system each certificate carries a small cryptographic signature. The TLS handshake transmits:
 <ul>
 <li>the certificate,</li>
 <li>a few small signatures,</li>
 <li>some metadata.</li>
-</ul>
+</ul></li>
+</ol>
 <p>Because elliptic curve signatures are compact, the total handshake remains small.</p>
 <ol start="2" type="1">
-<li><strong>Naive post-quantum replacement</strong>. If we simply replaced classical signatures with post-quantum signatures, each certificate would suddenly contain much larger cryptographic objects. Post-quantum signatures can be tens of times larger than classical ones. Every TLS handshake would therefore carry significantly more data. Given the scale of the web, this would increase:</li>
-</ol>
+<li><strong>Naive post-quantum replacement</strong>. If we simply replaced classical signatures with post-quantum signatures, each certificate would suddenly contain much larger cryptographic objects. Post-quantum signatures can be tens of times larger than classical ones. Every TLS handshake would therefore carry significantly more data. Given the scale of the web, this would increase:
 <ul>
 <li>latency,</li>
 <li>bandwidth consumption,</li>
 <li>server load,</li>
-</ul>
+</ul></li>
+</ol>
 <p>across billions of daily connections.</p>
 <ol start="3" type="1">
-<li><strong>Google’s structural solution</strong>. MTCs change the cost structure. Instead of relying solely on individual certificate signatures during the TLS handshake:</li>
-</ol>
+<li><strong>Google’s structural solution</strong>. MTCs change the cost structure. Instead of relying solely on individual certificate signatures during the TLS handshake:
 <ul>
 <li>all certificates are aggregated into a Merkle tree,</li>
 <li>the transparency log signs the Merkle root and publishes a STH containing the root commitment together with metadata such as the tree size and timestamp.</li>
-</ul>
+</ul></li>
+</ol>
 <p>The TLS handshake then carries: - the certificate, - a small Merkle inclusion proof, - the STH.</p>
 <p>This proof grows only logarithmically with the number of certificates. The heavy post-quantum signature authenticates the Merkle root that commits to millions of certificates, allowing individual connections to transmit only compact membership proofs.</p>
 <p>The Google proposal does not invent new cryptography, but it reorganizes how authentication data is distributed across the Internet, so that the traditional PKI model scales linearly with signature size.</p>
@@ -572,7 +572,7 @@ H4 --&gt; N2
 N1 --&gt; ROOT[Merkle Root]
 N2 --&gt; ROOT
 
-ROOT --&gt; SIG[Signed Tree Head (Log Signature)]
+ROOT --&gt; SIG[Signed Tree Head]
 
 PROOF[Inclusion Proof for Certificate C]
 
@@ -677,15 +677,13 @@ Figure&nbsp;4: Lifecycle of a Merkle Tree Certificate
 <li><p><strong>Log insertion</strong>. Instead of directly distributing the certificate as an independently signed object, the CA submits it to a transparency log. The log hashes the certificate and inserts it into a Merkle tree that aggregates many certificates.</p></li>
 <li><p><strong>Tree commitment</strong>. The Merkle tree produces a root value that commits to the entire set of certificates currently registered in the log. The log signs this root to produce the STH, which represents the current state of the tree.</p></li>
 <li><p><strong>Distribution to the server</strong>. The website server stores its certificate together with the necessary information to produce a Merkle inclusion proof linking the certificate to the tree root.</p></li>
-<li><p><strong>First TLS connection</strong>. When a user visits the website, the server sends three elements during the TLS handshake:</p></li>
-</ol>
+<li><p><strong>First TLS connection</strong>. When a user visits the website, the server sends three elements during the TLS handshake:</p>
 <ul>
 <li>the certificate,</li>
 <li>a Merkle inclusion proof,</li>
 <li>the STH.</li>
-</ul>
-<ol start="6" type="1">
-<li><strong>Browser verification</strong>. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.</li>
+</ul></li>
+<li><p><strong>Browser verification</strong>. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.</p></li>
 </ol>
 <p>So, a Merkle tree is a method for committing to a large collection of data elements using a single hash value. Each element in the dataset is hashed. Those hashes are paired and hashed again. The process repeats recursively until only one value remains. That value is the root of the tree.</p>
 <p>The root acts as a cryptographic commitment to the entire dataset. If any element in the tree changes, the root changes as well. Membership proofs allow a verifier to confirm that a specific element belongs to the dataset without seeing the entire tree. The prover supplies a small set of intermediate hashes linking the element to the root. The verifier recomputes the root from the element and the provided hashes.</p>
@@ -733,8 +731,8 @@ O(\log n)
 <h3 class="anchored" data-anchor-id="security-properties">Security properties</h3>
 <p>Security relies on two main assumptions:</p>
 <ul>
-<li>First, the digital signature scheme protecting the root must be secure against quantum adversaries. Modern lattice based signature schemes such as those standardized by NIST are candidates.</li>
-<li>Second, the hash function used in the Merkle tree must remain collision resistant. Quantum computers can accelerate brute force search using Grover’s algorithm, which provides a quadratic speedup for unstructured search, reducing the computational complexity from <span class="math inline">2^n</span> to <span class="math inline">2^{n/2}</span>. This can be mitigated by doubling the hash output size.</li>
+<li><p>First, the digital signature scheme protecting the root must be secure against quantum adversaries. Modern lattice based signature schemes such as those standardized by NIST are candidates.</p></li>
+<li><p>Second, the hash function used in the Merkle tree must remain collision resistant. Quantum computers can accelerate brute force search using Grover’s algorithm, which provides a quadratic speedup for unstructured search, reducing the computational complexity from <span class="math inline">2^n</span> to <span class="math inline">2^{n/2}</span>. This can be mitigated by doubling the hash output size.</p></li>
 </ul>
 <p>If these conditions hold, forging a certificate requires either forging the root signature or breaking the hash function. Both tasks remain computationally infeasible under current cryptographic assumptions.</p>
 </section>

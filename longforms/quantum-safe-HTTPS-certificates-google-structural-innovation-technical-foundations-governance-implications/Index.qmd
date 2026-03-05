@@ -100,27 +100,27 @@ end
 The diagram illustrates the three stages of the problem and the solution:
 
 1. **Classical WebPKI**. In today’s system each certificate carries a small cryptographic signature. The TLS handshake transmits:
-  - the certificate,
-  - a few small signatures,
-  - some metadata.
+    - the certificate,
+    - a few small signatures,
+    - some metadata.
 
   Because elliptic curve signatures are compact, the total handshake remains small.
 
 2. **Naive post-quantum replacement**. If we simply replaced classical signatures with post-quantum signatures, each certificate would suddenly contain much larger cryptographic objects. Post-quantum signatures can be tens of times larger than classical ones. Every TLS handshake would therefore carry significantly more data. Given the scale of the web, this would increase:
-  - latency,
-  - bandwidth consumption,
-  - server load,
+    - latency,
+    - bandwidth consumption,
+    - server load,
 
   across billions of daily connections.
 
 3. **Google’s structural solution**. MTCs change the cost structure. Instead of relying solely on individual certificate signatures during the TLS handshake:
-  - all certificates are aggregated into a Merkle tree,
-  - the transparency log signs the Merkle root and publishes a STH containing the root commitment together with metadata such as the tree size and timestamp.
+    - all certificates are aggregated into a Merkle tree,
+    - the transparency log signs the Merkle root and publishes a STH containing the root commitment together with metadata such as the tree size and timestamp.
   
   The TLS handshake then carries:
-  - the certificate,
-  - a small Merkle inclusion proof,
-  - the STH.
+    - the certificate,
+    - a small Merkle inclusion proof,
+    - the STH.
 
   This proof grows only logarithmically with the number of certificates. The heavy post-quantum signature authenticates the Merkle root that commits to millions of certificates, allowing individual connections to transmit only compact membership proofs.
 
@@ -229,7 +229,7 @@ H4 --> N2
 N1 --> ROOT[Merkle Root]
 N2 --> ROOT
 
-ROOT --> SIG[Signed Tree Head (Log Signature)]
+ROOT --> SIG[Signed Tree Head]
 
 PROOF[Inclusion Proof for Certificate C]
 
@@ -324,9 +324,9 @@ The diagram is organized around the life cycle of a certificate in a Merkle tree
 4. **Distribution to the server**. The website server stores its certificate together with the necessary information to produce a Merkle inclusion proof linking the certificate to the tree root.
 
 5. **First TLS connection**. When a user visits the website, the server sends three elements during the TLS handshake:
-  - the certificate,
-  - a Merkle inclusion proof,
-  - the STH.
+    - the certificate,
+    - a Merkle inclusion proof,
+    - the STH.
 
 6. **Browser verification**. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.
 
@@ -393,6 +393,7 @@ the communication overhead per connection remains small even if the root signatu
 Security relies on two main assumptions:
 
 - First, the digital signature scheme protecting the root must be secure against quantum adversaries. Modern lattice based signature schemes such as those standardized by NIST are candidates.
+
 - Second, the hash function used in the Merkle tree must remain collision resistant. Quantum computers can accelerate brute force search using Grover’s algorithm, which provides a quadratic speedup for unstructured search, reducing the computational complexity from $2^n$ to $2^{n/2}$. This can be mitigated by doubling the hash output size.
 
 If these conditions hold, forging a certificate requires either forging the root signature or breaking the hash function. Both tasks remain computationally infeasible under current cryptographic assumptions.
