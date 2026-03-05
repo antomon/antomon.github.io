@@ -1,0 +1,988 @@
+---
+title: "Quantum-Safe HTTPS Certificates: Google’s Structural Innovation, Technical Foundations, and Governance Implications"
+subtitle: "Engineering quantum resistant web authentication through Merkle commitments, transparency logs, and scalable trust infrastructure"
+format:
+  html:
+    toc: true
+    toc-expand: 3
+description: "The security of the modern web depends on public key cryptography embedded in the TLS protocol and the Web Public Key Infrastructure. These systems rely primarily on RSA and elliptic curve signatures whose security rests on mathematical problems believed to be hard for classical computers. The emergence of quantum computing challenges these assumptions. Shor’s algorithm shows that sufficiently powerful quantum computers could efficiently solve integer factorization and discrete logarithms, potentially allowing attackers to forge digital signatures and compromise the authentication layer of the Internet. Post-quantum cryptographic algorithms have already been standardized to replace vulnerable primitives. However, deploying them inside the existing certificate architecture introduces a significant engineering problem. Post quantum signatures are substantially larger than classical ones. If integrated directly into X.509 certificates, they would increase TLS handshake sizes across billions of daily HTTPS connections and impose considerable bandwidth and latency overhead on global Internet infrastructure. This article examines a structural proposal introduced by Google known as Merkle Tree Certificates. Instead of attaching large signatures to each certificate, the proposal aggregates certificates into a Merkle tree maintained by a transparency log. The log periodically signs the tree root, and individual TLS connections transmit compact inclusion proofs linking certificates to this signed commitment. This approach transforms certificate authentication from a signature verification problem into a set membership proof problem whose communication cost grows logarithmically with the number of certificates. The paper analyzes the proposal from three complementary perspectives. First, it explains the conceptual innovation and how it changes the distribution of authentication data across the web. Second, it provides a formal mathematical description of the underlying Merkle commitment scheme and evaluates its security under classical and quantum adversary models. Third, it discusses the governance implications of introducing transparency log infrastructure as a structural component of the WebPKI trust model. The analysis shows that Merkle Tree Certificates offer an elegant method for reconciling quantum safe cryptography with the performance constraints of Internet scale systems. At the same time, the approach shifts part of the global authentication infrastructure toward a federated transparency ecosystem. The transition to quantum resistant HTTPS therefore represents not only a cryptographic upgrade but also an architectural transformation in how trust is distributed across the Internet."
+author: 
+  - name: Antonio Montano
+    orcid: 0009-0007-2429-1921
+    email: antonio.montano.contact@gmail.com
+    affiliation:
+      - name: 4M4
+        city: Milano
+        country: Italia
+date: "2026-03-05"
+date-modified: "2026-03-05"
+categories: [cybersecurity, cryptography, quantum computing, 🇬🇧]
+keywords: post-quantum cryptography, WebPKI, TLS, Merkle trees, certificate transparency, authenticated data structures, Internet security architecture, quantum resistant cryptography, cryptographic scalability, transparency logs
+license: "CC BY-NC-ND"
+copyright: 
+  holder: Antonio Montano
+  year: 2022-2026
+citation: true
+image: "merkletreecertificates.jpeg"
+comments: 
+  utterances:
+    repo: antomon/antomon-utterances
+    theme: github-light
+tbl-cap-location: bottom
+---
+
+::: {.column-margin}
+![](merkletreecertificates.jpeg)
+:::
+
+## Introduction
+
+The transition toward quantum-resistant cryptography is one of the most consequential architectural migrations in the history of the Internet. Modern web security relies on public-key cryptography, particularly RSA and elliptic curve schemes, whose security depends on mathematical problems believed to be computationally intractable for classical computers. Quantum computing alters this assumption.
+
+Shor demonstrated in 1994 that a sufficiently large quantum computer could factor integers and compute discrete logarithms in polynomial time. Those two operations underpin most of the authentication infrastructure used in TLS and the WebPKI. If such machines become practical, attackers could derive private keys from public keys and forge certificates, effectively collapsing the authentication layer of the web.
+
+Post-quantum cryptographic algorithms exist and have already been standardized by NIST. However, replacing classical primitives inside the existing certificate architecture introduces an engineering challenge. Post-quantum signatures are much larger than classical ones. If inserted directly into the current PKI structure, they would significantly increase the size of TLS handshakes across billions of daily connections.
+
+Google has proposed a structural solution known as **Merkle Tree Certificates (MTC)**[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-G26]. Rather than simply replacing cryptographic primitives, the proposal modifies how certificates are authenticated and distributed. The objective is to preserve security against future quantum adversaries while maintaining the efficiency required for global scale Internet infrastructure.
+
+[^quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications-G26]: See: Chrome Secure Web and Networking Team. (2026, February 27). **Cultivating a robust and efficient quantum-safe HTTPS**. _Google Security Blog_. [URL](https://security.googleblog.com/2026/02/cultivating-robust-and-efficient.html)
+
+```{mermaid}
+%%| label: fig-post-quantum-certificates-diagram
+%%| fig-cap: Why post-quantum certificates break classical PKI scaling
+%%| fig-alt: Why post-quantum certificates break classical PKI scaling
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart LR
+
+subgraph Classical_TLS
+Browser1[Browser]
+Server1[Server]
+
+Cert1[Certificate]
+Sig1[ECC Signature ~64 bytes]
+
+Server1 --> Cert1
+Cert1 --> Sig1
+
+Server1 -->|TLS handshake ~ 4–8 KB| Browser1
+end
+
+subgraph Post_Quantum_TLS_without_MTC
+Browser2[Browser]
+Server2[Server]
+
+Cert2[Certificate]
+Sig2[Post-Quantum Signature ~ several KB]
+
+Server2 --> Cert2
+Cert2 --> Sig2
+
+Server2 -->|TLS handshake becomes much larger| Browser2
+end
+
+subgraph Google_MTC_Approach
+Browser3[Browser]
+Server3[Server]
+
+Tree[Merkle Tree of Millions of Certificates]
+RootSig[Signed Tree Head]
+
+Proof[Small Merkle Inclusion Proof]
+
+Tree --> RootSig
+Server3 --> Proof
+
+Server3 -->|Certificate + Proof + Signed Tree Head| Browser3
+end
+```
+
+The diagram illustrates the three stages of the problem and the solution:
+
+1. **Classical WebPKI**. In today’s system each certificate carries a small cryptographic signature. The TLS handshake transmits:
+  - the certificate,
+  - a few small signatures,
+  - some metadata.
+
+  Because elliptic curve signatures are compact, the total handshake remains small.
+
+2. **Naive post-quantum replacement**. If we simply replaced classical signatures with post-quantum signatures, each certificate would suddenly contain much larger cryptographic objects. Post-quantum signatures can be tens of times larger than classical ones. Every TLS handshake would therefore carry significantly more data. Given the scale of the web, this would increase:
+  - latency,
+  - bandwidth consumption,
+  - server load,
+
+  across billions of daily connections.
+
+3. **Google’s structural solution**. MTCs change the cost structure. Instead of relying solely on individual certificate signatures during the TLS handshake:
+  - all certificates are aggregated into a Merkle tree,
+  - the transparency log signs the Merkle root and publishes a STH containing the root commitment together with metadata such as the tree size and timestamp.
+  
+  The TLS handshake then carries:
+  - the certificate,
+  - a small Merkle inclusion proof,
+  - the STH.
+
+  This proof grows only logarithmically with the number of certificates. The heavy post-quantum signature authenticates the Merkle root that commits to millions of certificates, allowing individual connections to transmit only compact membership proofs.
+
+  The Google proposal does not invent new cryptography, but it reorganizes how authentication data is distributed across the Internet, so that the traditional PKI model scales linearly with signature size.
+
+  MTCs convert the scaling behavior into a logarithmic model. This structural shift is what makes quantum safe HTTPS practical at global scale.
+
+The significance of this proposal extends beyond cryptography. It introduces a new architecture for distributing trust across the web. Understanding the implications requires examining three perspectives: the conceptual innovation, the technical mechanism that enables it, and the governance implications of deploying such a system at Internet scale.
+
+```{mermaid}
+%%| label: fig-comparing-authentication-structures-diagram
+%%| fig-cap: Comparing authentication structures
+%%| fig-alt: Comparing authentication structures
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart LR
+
+subgraph Merkle Tree Certificates
+S2[Server]
+B2[Browser]
+
+S2 -->|Certificate| B2
+S2 -->|Merkle Inclusion Proof| B2
+S2 -->|Signed Tree Head| B2
+
+B2 --> V2[Reconstruct Merkle Root]
+V2 --> V3[Verify Root PQ Signature]
+end
+
+subgraph Classical Web PKI
+S1[Server]
+B1[Browser]
+
+S1 -->|Certificate + Signature| B1
+S1 -->|Intermediate CA Signature| B1
+S1 -->|Root CA Signature| B1
+
+B1 --> V1[Verify Each Signature]
+end
+```
+
+The second diagram illustrates the architectural shift introduced by MTC. In the classical system every certificate carries its own signature. Authentication is therefore signature centric.
+
+In the Merkle tree model authentication becomes membership centric. Instead of verifying many signatures, the browser verifies:
+
+- a membership proof inside a tree,
+- one signature protecting the entire dataset.
+
+This reduces the amount of cryptographic material transmitted during TLS handshakes.
+
+## Certificate Transparency: the existing foundation
+
+Certificate Transparency (CT) was introduced to increase visibility into certificate issuance and reduce the risk of misissued or fraudulent certificates. In the classical WebPKI, certificate authorities could issue certificates without global visibility, creating the possibility that compromised or malicious authorities could generate certificates for domains they did not control.
+
+CT addresses this problem by requiring certificates to be submitted to publicly auditable append-only logs. Each log maintains a Merkle tree containing all certificates that have been registered. The tree root represents a cryptographic commitment to the entire set of logged certificates.
+
+Periodically the log publishes a Signed Tree Head (STH), which contains the Merkle root together with metadata such as the tree size and timestamp. Because the root commits to the entire dataset, any certificate included in the tree can be proven using a compact Merkle inclusion proof.
+
+Browsers can therefore verify not only that a certificate is signed by a trusted CA but also that it has been publicly logged. This mechanism makes it significantly harder for malicious or compromised certificate authorities to issue certificates without detection.
+
+MTCs extend this infrastructure. Instead of using transparency logs only for auditing, the log commitment becomes part of the authentication process itself.
+
+## The innovation from Google for all of us
+
+At the highest level, Google’s proposal attempts to solve a simple problem: HTTPS must remain secure in a world where quantum computers might exist. But the Internet cannot tolerate dramatic increases in connection overhead.
+
+To understand the innovation, it helps to look at how HTTPS authentication works today. When a browser connects to a website, the server sends a digital certificate. That certificate contains a public key and a signature from a Certification Authority (CA). The browser verifies that signature using a trusted root stored in its operating system or browser.
+
+The certificate itself is small because classical signatures are small. An elliptic curve signature might be around sixty bytes. The certificate chain typically contains several such signatures.
+
+Post-quantum signatures change this picture. They may be several kilobytes long. If every certificate contained such signatures, every TLS handshake would become significantly larger. Multiply this by billions of connections per day and the resulting bandwidth overhead becomes enormous.
+
+Google’s proposal changes the structure of authentication rather than merely replacing the cryptographic algorithm. Instead of relying solely on independent signatures embedded in each certificate, issued certificates are submitted to a transparency log, which organizes them into a Merkle tree. The tree aggregates the certificates into a single commitment value called the root. The transparency log periodically signs this root, producing a STH that commits to the current state of the certificate dataset.
+
+When a website presents its certificate, it sends the certificate itself together with a Merkle inclusion proof and a STH produced by the transparency log. The certificate still contains a CA signature, but the proof demonstrates that the certificate belongs to a globally committed log state represented by the log’s signed root.
+
+This proof is extremely small. Its size grows only logarithmically with the number of certificates. In practical terms this means that one large signature can protect millions of certificates. Each connection transmits only a compact proof rather than a large cryptographic signature.
+
+The expensive signature operation is performed once per log tree state (per STH issuance), amortized across the certificates committed in that state. The lightweight verification occurs during every connection. From the user’s perspective nothing changes. Browsers still verify that the server identity is legitimate. But the underlying trust structure becomes more scalable for the era of post-quantum cryptography.
+
+The core idea is therefore not a new cryptographic primitive. It is a structural reorganization of how authentication information is distributed.
+
+```{mermaid}
+%%| label: fig-visualizing-merkle-tree-structure-diagram
+%%| fig-cap: Visualizing the Merkle Tree structure
+%%| fig-alt: Visualizing the Merkle Tree structure
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart TD
+
+C1[Certificate A]
+C2[Certificate B]
+C3[Certificate C]
+C4[Certificate D]
+
+C1 --> H1[Hash A]
+C2 --> H2[Hash B]
+C3 --> H3[Hash C]
+C4 --> H4[Hash D]
+
+H1 --> N1[Hash AB]
+H2 --> N1
+H3 --> N2[Hash CD]
+H4 --> N2
+
+N1 --> ROOT[Merkle Root]
+N2 --> ROOT
+
+ROOT --> SIG[Signed Tree Head (Log Signature)]
+
+PROOF[Inclusion Proof for Certificate C]
+
+H4 --> PROOF
+N1 --> PROOF
+```
+
+This diagram helps readers intuitively understand the mechanism that enables the Google proposal. Each certificate becomes a leaf node. The leaves are hashed and combined until a single root hash remains.
+
+The transparency log signs the Merkle root, producing the STH. To prove membership, a server sends a Merkle proof consisting of the sibling hashes needed to reconstruct the root. For certificate C, the browser needs:
+
+- hash of certificate C,
+- hash of certificate D,
+- hash of the AB node.
+
+From these values the browser recomputes the root. This proof remains extremely small even when the tree contains millions of certificates. This structure is widely used in distributed systems, most notably Ethereum, where Merkle proofs allow nodes to verify transactions or account balances without downloading the entire blockchain state.
+
+## The innovation from a technical perspective
+
+To understand the technical mechanism behind this proposal we must examine the data structure that makes it possible.
+
+### Merkle trees as cryptographic commitments
+
+```{mermaid}
+%%| label: fig-lifecycle-MTC-diagram
+%%| fig-cap: Lifecycle of a Merkle Tree Certificate
+%%| fig-alt: Lifecycle of a Merkle Tree Certificate
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+flowchart TD
+
+subgraph Issuance
+Owner[Website Owner]
+CA[Certification Authority]
+
+Owner -->|Request certificate| CA
+CA --> Cert[Issued Certificate]
+end
+
+subgraph Transparency_Log
+Log[Transparency Log]
+
+Cert -->|Submit certificate| Log
+
+Log --> Leaf[Hash certificate]
+Leaf --> Tree[Insert into Merkle Tree]
+
+Tree --> Root[Merkle Root]
+Root --> STH[Signed Tree Head (signed by log)]
+end
+
+subgraph Distribution
+Server[Website Server]
+
+Cert --> Server
+STH --> Server
+end
+
+subgraph TLS_Handshake_First_Visit
+Browser[User Browser]
+
+Browser -->|HTTPS request| Server
+
+Server -->|Certificate| Browser
+Server -->|Merkle Inclusion Proof| Browser
+Server -->|Signed Tree Head| Browser
+end
+
+subgraph Verification
+Check1[Hash certificate]
+Check2[Recompute Merkle Root]
+Check3[Verify Root Signature]
+Check4[Verify log trusted by browser policy]
+
+Browser --> Check1
+Check1 --> Check2
+Check2 --> Check3
+Check3 --> Check4
+
+Check4 --> Session[Secure TLS Session Established]
+end
+```
+
+The diagram is organized around the life cycle of a certificate in a Merkle tree based system:
+
+1. Certificate issuance. A website owner requests a certificate from a CA. The CA verifies the domain ownership and issues a certificate, just as in the classical WebPKI model.
+
+2. Log insertion. Instead of directly distributing the certificate as an independently signed object, the CA submits it to a transparency log. The log hashes the certificate and inserts it into a Merkle tree that aggregates many certificates.
+
+3. Tree commitment. The Merkle tree produces a root value that commits to the entire set of certificates currently registered in the log. The log signs this root to produce the STH, which represents the current state of the tree.
+
+4. Distribution to the server. The website server stores its certificate together with the necessary information to produce a Merkle inclusion proof linking the certificate to the tree root.
+
+5. First TLS connection. When a user visits the website, the server sends three elements during the TLS handshake:
+  - the certificate,
+  - a Merkle inclusion proof,
+  - the STH.
+
+6. Browser verification. The browser hashes the certificate and reconstructs the Merkle root using the inclusion proof. It then verifies the signature on the STH using the transparency log’s public key and checks that the log is recognized by the browser’s log policy. If the computed root matches the signed root, the browser concludes that the certificate is authentic and belongs to the committed dataset. The TLS session can then proceed.
+
+So, a Merkle tree is a method for committing to a large collection of data elements using a single hash value. Each element in the dataset is hashed. Those hashes are paired and hashed again. The process repeats recursively until only one value remains. That value is the root of the tree.
+
+The root acts as a cryptographic commitment to the entire dataset. If any element in the tree changes, the root changes as well. Membership proofs allow a verifier to confirm that a specific element belongs to the dataset without seeing the entire tree. The prover supplies a small set of intermediate hashes linking the element to the root. The verifier recomputes the root from the element and the provided hashes.
+
+The proof size grows logarithmically with the number of elements in the tree. Even for millions of entries the proof remains very small.
+
+### Formal description
+
+Let a collision resistant hash function be defined as
+
+$$
+H : \{0,1\}^\* \to \{0,1\}^k.
+$$
+
+Given certificates $c_1, c_2, ..., c_n$, leaf nodes are computed as
+
+$$
+L_i = H(c_i), \quad i = 1,...,n
+$$
+
+and the first internal level is computed as:
+
+$$
+N_i = H(L_{2i-1} \parallel L_{2i}), \quad i = 1,\dots,\lfloor n/2 \rfloor.
+$$
+
+Higher levels are computed recursively
+
+$$
+N_i^{(k)} = H\!\bigl(N_{2i-1}^{(k-1)} \parallel N_{2i}^{(k-1)}\bigr).
+$$
+
+The root of the tree becomes
+
+$$
+R = MerkleRoot(L_1,\dots,L_n).
+$$
+
+The transparency log signs the Merkle root, producing the STH:
+
+$$
+\sigma_R = Sign_{sk_{log}}(R).
+$$
+
+To prove that certificate $c_k$ belongs to the tree the server sends
+
+- the certificate $c_k$,
+- an ordered sequence of sibling hashes forming the authentication path,
+- the STH containing the root $R$ and its signature $\sigma_R$.
+
+The browser recomputes the root using these hashes and verifies the signature. Because the path length is
+
+$$
+O(\log n)
+$$
+
+the communication overhead per connection remains small even if the root signature uses a large post-quantum algorithm.
+
+### Security properties
+
+Security relies on two main assumptions:
+
+- First, the digital signature scheme protecting the root must be secure against quantum adversaries. Modern lattice based signature schemes such as those standardized by NIST are candidates.
+- Second, the hash function used in the Merkle tree must remain collision resistant. Quantum computers can accelerate brute force search using Grover’s algorithm, which provides a quadratic speedup for unstructured search, reducing the computational complexity from $2^n$ to $2^{n/2}$. This can be mitigated by doubling the hash output size.
+
+If these conditions hold, forging a certificate requires either forging the root signature or breaking the hash function. Both tasks remain computationally infeasible under current cryptographic assumptions.
+
+### Relation to Ethereum
+
+Merkle trees are widely used outside the context of PKI. A notable example is the Ethereum blockchain. Ethereum represents its entire system state using a modified Merkle Patricia trie, a key-value authenticated data structure derived from Merkle trees. Each block header contains root hashes committing to:
+
+* all account balances,
+* all smart contract storage,
+* all transactions in the block.
+
+Lightweight nodes can verify the correctness of specific pieces of state by checking Merkle proofs rather than downloading the entire blockchain.
+
+The principle is identical to that used in MTC. A single root value commits to a large dataset. Efficient proofs allow verification of individual elements. The difference lies in the trust anchor. In Ethereum the root is secured by distributed consensus. In certificate systems using MTCs the root is secured by a digital signature from the transparency log.
+
+In both cases Merkle trees provide scalability by decoupling verification cost from dataset size.
+
+## The governance perspective
+
+While MTCs solve a technical scaling problem, they also introduce an architectural shift in the governance of Internet trust.
+
+The mathematics of the system are well understood. However, cryptographic systems operate within institutional frameworks. The deployment model of MTC introduces new dependencies that must be examined.
+
+### Classical WebPKI trust model
+
+In the traditional certificate system a browser verifies a chain of signatures leading to a trusted root. All required data is included in the certificate chain delivered during the TLS handshake. The authentication process can therefore be completed locally without relying on transparency infrastructure.
+
+The trust anchors are CAs recognized by browser vendors. While revocation checks may require online services, the fundamental authentication process can be completed offline.
+
+### Trust model with MTCs
+
+MTCs incorporate transparency logs into the authentication process. Each certificate is inserted into a log which maintains a Merkle tree. The log periodically publishes a signed root known as a STH. Browsers verify inclusion proofs against that root.
+
+Although the inclusion proof itself can be verified locally, the system assumes that a set of trusted logs continuously maintains the append only tree. In practice these logs are operated by a limited number of organizations and recognized by browser vendors.
+
+This introduces a new layer of dependency: the certificate validation process becomes operationally dependent not only on CAs but also on transparency log infrastructure that maintains the global certificate commitment.
+
+### Structural centralization
+
+This does not mean the system is insecure. Cryptographically it remains robust. However, it changes the topology of trust in the WebPKI.
+
+Previously the root of trust consisted primarily of CAs embedded in browser root stores. Under MTCs the infrastructure that maintains and signs transparency log roots becomes an additional operational component of the WebPKI trust ecosystem.
+
+This can lead to a concentration of operational authority within a relatively small ecosystem of log operators. Operating an independent log does not automatically grant global trust. Recognition depends on browser policy decisions.
+
+### Tradeoffs
+
+The introduction of transparency logs has clear advantages. They provide visibility into certificate issuance and make it difficult for malicious or compromised authorities to issue certificates secretly.
+
+MTCs extend these benefits while addressing the scalability challenges of post-quantum cryptography. At the same time they increase reliance on a globally coordinated transparency infrastructure. 
+
+The long term question is therefore not purely technical. It concerns how the Internet should distribute operational responsibility for its authentication layer. Cryptography can guarantee that proofs are valid. It cannot determine who governs the infrastructure that produces those proofs. Understanding this distinction is essential when evaluating the future of quantum safe WebPKI systems.
+
+## Conclusion
+
+The transition to quantum-resistant Internet security is not optional. It follows directly from a basic mathematical observation: the hardness assumptions underlying RSA and elliptic curve cryptography do not survive in the presence of sufficiently powerful quantum computers. Shor’s algorithm makes the underlying problems tractable in principle, which means the authentication layer of the web must evolve before that capability becomes practical.
+
+However, replacing cryptographic primitives alone is not enough. Post-quantum signatures are substantially larger than their classical counterparts. If inserted directly into the existing WebPKI architecture, they would significantly increase the size of TLS handshakes across billions of daily connections. The challenge is therefore not only cryptographic but also infrastructural: the web must become quantum-safe without losing the efficiency that allows it to operate at planetary scale.
+
+Google’s proposal for MTCs addresses this constraint by reorganizing how authentication information is distributed. Instead of attaching large signatures to each certificate, certificates are aggregated into a Merkle tree and authenticated collectively through a signed root. Individual connections carry only compact inclusion proofs, while the expensive post-quantum signature is applied once at the tree level.
+
+From a technical standpoint, the approach is elegant precisely because it relies on established primitives. Merkle trees are decades-old constructions widely used in distributed systems and blockchains such as Ethereum. Their ability to compress large authenticated datasets into a single commitment makes them well suited to the scaling challenges introduced by post-quantum cryptography.
+
+Yet the implications extend beyond cryptography. By integrating transparency logs and Merkle commitments into the certificate validation process, the architecture shifts part of the Internet’s trust infrastructure toward a federated logging ecosystem. CAs remain central, but the transparency layer becomes an additional operational component of the global validation system.
+
+This does not invalidate the proposal. The cryptographic reasoning behind MTCs is sound. What it changes is the **structure of trust distribution** on the Internet. Authentication becomes proof that a certificate belongs to a committed log state rather than verification of an isolated signature.
+
+As the WebPKI evolves toward quantum-safe operation, two dimensions will shape its future. One is mathematical: the strength and efficiency of the cryptographic mechanisms protecting authentication. The other is institutional: how the infrastructure that produces and maintains those cryptographic commitments is governed.
+
+The transition to post-quantum security therefore represents not only a cryptographic migration but also an architectural moment in the evolution of the Internet itself.
+
+Below is a **technical appendix** that formalizes the mathematics implied in Google’s proposal. It expands the engineering reasoning described in the Google Security Blog article and translates it into explicit mathematical structure. ([Google Online Security Blog][1])
+
+## Appendix A — Mathematical model of MTCs
+
+### Motivation: authentication cost in classical PKI
+
+In classical WebPKI, authentication during a TLS handshake requires the browser to verify a sequence of digital signatures forming the certificate chain.
+
+Let
+
+* $c_i$ be the server certificate,
+* $c_{int}$ be the intermediate CA certificate,
+* $c_{root}$ be the root certificate.
+
+Each certificate contains a digital signature:
+
+$$
+\sigma_i = Sign_{sk_{issuer}}(c_i).
+$$
+
+The browser verifies
+
+$$
+Verify_{pk_{issuer}}(c_i,\sigma_i) = 1.
+$$
+
+The TLS handshake must transmit all certificates and signatures in the chain. If the average signature size is $S_{sig}$ and the chain length is $k$, then authentication data size is approximately
+
+$$
+C_{classical} \approx k \cdot S_{sig}
+$$
+
+with classical elliptic curve signatures:
+
+$$
+S_{sig} \approx 64 \text{ bytes}
+$$
+
+thus
+
+$$
+C_{classical} \approx 200\text{–}500 \text{ bytes}
+$$
+
+This is small enough to scale globally. However, post-quantum signatures may be several kilobytes. If used directly inside X.509 certificates, the handshake overhead would increase dramatically. 
+
+### Naive post-quantum PKI scaling problem
+
+Assume a post-quantum signature scheme with signature size
+
+$$
+S_{PQC} \gg S_{classical}.
+$$
+
+for example:
+
+$$
+S_{PQC} \sim 2\text{–}10\text{ KB}
+$$
+
+then the handshake authentication payload becomes
+
+$$
+C_{PQC} = k \cdot S_{PQC}.
+$$
+
+For typical chains:
+
+$$
+C_{PQC} \approx 6\text{–}30\text{ KB}
+$$
+
+at Internet scale this creates measurable overhead because every HTTPS connection would transmit these objects.
+
+Let
+
+$$
+N = \text{daily TLS connections}
+$$
+
+global traffic cost becomes
+
+$$
+T = N \cdot C_{PQC}.
+$$
+
+Since
+
+$$
+N \approx 10^{11}
+$$
+
+the resulting bandwidth overhead is enormous. This motivates the architectural redesign proposed by Google.
+
+### Merkle commitment construction
+
+MTCs aggregate many certificates into a single cryptographic commitment.
+
+Let the certificate set be
+
+$$
+\mathcal{C} = \{c_1, c_2, \dots, c_n\}.
+$$
+
+Define a collision-resistant hash function
+
+$$
+H : \{0,1\}^\* \to \{0,1\}^k.
+$$
+
+Each certificate becomes a leaf
+
+$$
+L_i = H(c_i).
+$$
+
+Nodes of the first internal level are computed as
+
+$$
+N_i = H(L_{2i-1} \parallel L_{2i}), \quad i = 1,\dots,\lfloor n/2 \rfloor.
+$$
+
+Higher levels are computed recursively
+
+$$
+N_i^{(k)} = H(N_{2i-1}^{(k-1)} \parallel N_{2i}^{(k-1)}).
+$$
+
+The root represents the entire set
+
+$$
+R = MerkleRoot(L_1,\dots,L_n).
+$$
+
+The transparency log signs the Merkle root, producing a STH:
+
+$$
+\sigma_R = Sign_{sk_{log}}(R).
+$$
+
+The STH contains the Merkle root $R$, its signature $\sigma_R$, and additional metadata such as the tree size and timestamp. For the purpose of this model we represent its cryptographic core as the tuple
+
+$$
+\mathrm{STH} := (R, \sigma_R).
+$$
+
+### Certificate authentication via inclusion proof
+
+When a server presents certificate $c_k$, it also provides a Merkle inclusion proof
+
+$$
+P_k = (s_1, s_2, \dots, s_h)
+$$
+
+where
+
+$$
+h = \lceil \log_2(n) \rceil.
+$$
+
+Each $s_i$ is a sibling hash along the path to the root.
+
+Verification proceeds as follows:
+
+1. Compute leaf
+
+  $$
+  L_k = H(c_k)
+  $$
+
+2. Reconstruct root
+
+  $$
+  R' = Reconstruct(L_k, P_k)
+  $$
+
+3. Verify signature
+
+  $$
+  Verify_{pk_{log}}(R',\sigma_R) = 1
+  $$
+
+  If
+
+  $$
+  R' = R
+  $$
+
+  then $c_k$ is a member of the committed dataset.
+
+### Complexity analysis
+
+#### Classical PKI
+
+Per-connection cost:
+
+$$
+O(k \cdot S_{sig})
+$$
+
+where $k$ is certificate chain length.
+
+#### MTCs
+
+Per-connection cost is $O(\log n)$ hash values in the Merkle inclusion proof, where $n$ is the number of certificates in the tree. For example if the tree contains one million certificates then
+
+$$
+\log_2(n) \approx 20.
+$$
+
+Thus only ~20 hashes are required in the proof. Even if the root signature is several kilobytes, it is amortized across many certificates because it authenticates the entire committed tree state rather than individual certificates. This is the key property highlighted by Google: authentication data in TLS becomes largely independent of the size of individual certificate signatures and instead depends logarithmically on the number of certificates committed in the transparency log. 
+
+### Security reduction
+
+Forgery requires one of the following:
+
+- **Forging the root signature**. The attacker produces a pair
+
+  $$
+  (R^*, \sigma^*)
+  $$
+
+  such that
+
+  $$
+  Verify_{pk_{log}}(R^*, \sigma^*) = 1
+  $$
+
+  without knowledge of the signing key. Security depends on the post-quantum signature scheme.
+
+- **Finding hash collision**. Attacker finds
+
+  $$
+  H(x) = H(y)
+  $$
+
+  or constructs alternate path
+
+  $$
+  Reconstruct(L',P') = R
+  $$
+
+  Security depends on collision resistance of $H$.
+
+### Quantum considerations
+
+Quantum computers affect cryptographic primitives differently.
+
+- Signature schemes. Classical signatures (RSA, ECC) break under Shor’s algorithm. Thus PQ signatures replace them.
+
+- Hash functions. Grover’s algorithm provides quadratic speedup. Brute force complexity becomes
+
+  $$
+  2^{n/2}
+  $$
+
+  instead of
+
+  $$
+  2^n.
+  $$
+
+  Therefore hash output size must be doubled to preserve equivalent security.
+
+Merkle trees therefore remain quantum resistant if hash sizes are adjusted.
+
+### Key insight
+
+The critical mathematical insight is that Merkle trees convert authentication from a **signature verification problem** into a **set membership proof problem**.
+
+Classical certificate verification model:
+
+$$
+Verify_{pk_{issuer}}(c_i, \sigma_i).
+$$
+
+Merkle model:
+
+$$
+Verify_{pk_{log}}(R, \sigma_R) \land VerifyMerkle(R, L_i, P_i).
+$$
+
+Since the root signature is amortized across the dataset, authentication cost becomes logarithmic in dataset size rather than linear in signature size. This structural change allows quantum safe signatures to be deployed without dramatically increasing TLS handshake size, which is the central design goal described in the Chrome proposal. 
+
+## Appendix B — Adversary model and security analysis of MTCs
+
+This appendix formalizes the adversarial setting in which MTCs operate and analyzes the security properties of the scheme under both classical and quantum adversaries. The goal is not merely to describe the mechanism but to characterize the conditions under which it preserves authentication guarantees for the WebPKI.
+
+The analysis follows the standard cryptographic approach of defining adversary capabilities, identifying the underlying primitives on which security depends, and reducing system integrity to the hardness assumptions associated with those primitives.
+
+### System model
+
+Let the set of valid certificates issued by a CA be
+
+$$
+\mathcal{C} = \{c_1, c_2, \dots, c_n\}
+$$
+
+Each certificate contains a public key and identity binding for a domain.
+
+A transparency log maintains a Merkle tree constructed from this set. The tree root
+
+$$
+R = MerkleRoot(L_1,\dots,L_n)
+$$
+
+acts as a commitment to the dataset.
+
+The log signs the root with a signature scheme
+
+$$
+\sigma_R = Sign_{sk_{log}}(R).
+$$
+
+The pair $(R, \sigma_R)$ represents the cryptographic core of the STH. A server presenting certificate $c_k$ provides
+
+- the certificate $c_k$,
+- a Merkle authentication path $P_k$,
+- the STH $(R,\sigma_R)$.
+
+The browser accepts the certificate if
+
+1. the Merkle proof reconstructs the root $R$,
+2. the signature on $R$ verifies,
+3. the signing key belongs to a trusted authority.
+
+The authentication guarantee is therefore equivalent to verifying
+
+$$
+c_k \in \mathcal{C}
+$$
+
+under a signed commitment $R$.
+
+### Adversary capabilities
+
+We consider an adversary $\mathcal{A}$ attempting to impersonate a domain or inject a fraudulent certificate. The adversary may control:
+
+- network communication,
+- compromised servers,
+- malicious certificate requests,
+- arbitrary certificate presentation during TLS.
+
+The adversary may also attempt to:
+
+- construct fraudulent inclusion proofs,
+- alter Merkle tree structure,
+- replay outdated tree heads,
+- exploit cryptographic weaknesses.
+
+Two adversarial models are relevant:
+
+1. **classical polynomial-time adversary**,
+2. **quantum polynomial-time adversary**.
+
+The objective of the adversary is to cause a browser to accept a certificate $c^*$ that was never legitimately inserted into the tree.
+
+### Security goals
+
+The system must satisfy three primary security properties.
+
+1. **Authenticity**. An attacker cannot produce a certificate that will be accepted as valid unless it was issued by a trusted authority and included in the committed dataset.
+
+2. **Integrity**. The Merkle commitment must uniquely represent the certificate set. An adversary must not be able to generate alternative certificates that produce the same root.
+
+3. **Consistency**. All participants must observe a consistent append-only evolution of the tree state.
+
+### Reduction to cryptographic assumptions
+
+The security of MTCs reduces to the security of two primitives.
+
+1. Digital signature security. The root signature must be existentially unforgeable under chosen message attack (EUF-CMA). Formally, the adversary cannot produce
+
+  $$
+  (R^*, \sigma^*)
+  $$
+
+  such that
+
+  $$
+  Verify_{pk_{log}}(R^*, \sigma^*) = 1
+  $$
+
+  without knowledge of the signing key.
+
+  This ensures the adversary cannot fabricate a new committed dataset.
+
+2. Hash function collision resistance. Merkle trees rely on the collision resistance of the hash function $H$. An attacker must not find
+
+  $$
+  x \neq y \quad \text{such that} \quad H(x) = H(y)
+  $$
+
+  Otherwise the adversary could construct two different datasets producing the same root. Collision resistance ensures that any change to the certificate set modifies the root commitment.
+
+### Forgery scenarios
+
+A successful attack must therefore satisfy at least one of the following.
+
+- **Root signature forgery**. The adversary produces a pair
+
+  $$
+  (R^*, \sigma^*)
+  $$
+
+  such that
+
+  $$
+  Verify_{pk_{log}}(R^*, \sigma^*) = 1
+  $$
+
+  without knowledge of the signing key. This attack is equivalent to breaking the existential unforgeability of the signature scheme.
+
+- **Merkle tree collision**. The adversary constructs an alternative certificate $c'$ and proof $P'$ such that
+
+  $$
+  Reconstruct(L', P') = R
+  $$
+
+  with
+
+  $$
+  L' = H(c')
+  $$
+
+  even though $c'$ is not present in the original dataset. This requires finding collisions in the hash function or constructing a second preimage.
+
+- **Log consistency attack**. An adversary operating a malicious log could attempt to present different tree views to different observers.
+
+Certificate Transparency mitigates this risk using **gossip protocols** and **consistency proofs**, ensuring that logs behave as append-only structures.
+
+### Quantum adversary analysis
+
+Quantum computing alters the difficulty of certain cryptographic problems. RSA and ECC signatures become vulnerable due to Shor’s algorithm. MTCs therefore assume the use of **post-quantum signature schemes**, such as lattice-based signatures standardized by NIST. Security then depends on the hardness of lattice problems like Module Learning With Errors.
+
+Hash functions remain comparatively resilient. Grover’s algorithm provides a quadratic speedup for brute force search. If classical security level is
+
+$$
+2^n
+$$
+
+quantum search complexity becomes
+
+$$
+2^{n/2}.
+$$
+
+Therefore maintaining 128-bit security requires a 256-bit hash output. Modern hash functions already satisfy this requirement.
+
+### Log consistency and global state
+
+Merkle tree security alone does not prevent log equivocation. A malicious log could theoretically produce two different tree roots representing divergent histories. Certificate Transparency addresses this by requiring logs to provide **consistency proofs** linking successive tree heads.
+
+Formally, if
+
+$$
+R_t
+$$
+
+is the root at time $t$ and
+
+$$
+R_{t+1}
+$$
+
+is the next root, the log must produce a proof demonstrating that the earlier tree is a prefix of the later tree. This guarantees append-only evolution.
+
+### Comparison with blockchain state commitments
+
+Merkle commitments are widely used in distributed systems, most notably in blockchains. Ethereum maintains a Merkle-based structure representing the entire global state. A block header contains a state root
+
+$$
+R_{state}
+$$
+
+which commits to all account balances and contract storage.
+
+Light clients verify specific state elements using Merkle proofs against that root. The principle is conceptually similar to the MTC architecture. In both systems, a compact root commitment replaces the need to transmit the entire dataset. The difference lies in the trust model:
+
+- blockchains secure the root through distributed consensus,
+- WebPKI secures the root through a digital signature from a trusted authority.
+
+### Security summary
+
+The authentication guarantees of MTCs reduce to the following assumptions:
+
+1. the post-quantum signature scheme protecting the root is unforgeable,
+2. the hash function used in the Merkle tree is collision resistant,
+3. the transparency log behaves as an append-only structure.
+
+Under these assumptions, forging a valid certificate requires breaking either the signature scheme or the hash function. Both tasks remain computationally infeasible under current classical and quantum security models.
+
+### Implications for WebPKI evolution
+
+The introduction of MTCs does not change the fundamental trust anchor of the WebPKI. CAs remain responsible for identity validation and certificate issuance.
+
+What changes is the **mechanism by which certificates are authenticated during TLS connections**. Instead of verifying multiple signatures attached to each certificate chain, browsers verify membership within a globally committed dataset.
+
+This transformation converts authentication from a linear signature verification problem into a logarithmic set-membership proof problem. The cryptographic foundation remains sound. The primary challenges therefore lie not in mathematics but in operational deployment and governance of the transparency infrastructure that maintains the global certificate dataset.
+
+## Bibliography
+
+Crosby, S. A., & Wallach, D. S. (2009). **Efficient data structures for tamper-evident logging**. In *Proceedings of the 18th USENIX Security Symposium*. USENIX Association.
+
+Laurie, B., Langley, A., & Kasper, E. (2013). *Certificate transparency* (RFC 6962). Internet Engineering Task Force. [DOI](https://doi.org/10.17487/RFC6962)
+
+Merkle, R. C. (1987). **A digital signature based on a conventional encryption function**. In C. Pomerance (Ed.), *Advances in Cryptology — CRYPTO ’87* (pp. 369–378). Springer. [DOI](https://doi.org/10.1007/3-540-48184-2_32)
+
+NIST. (2024). **Post-quantum cryptography: Selected algorithms and standards**. National Institute of Standards and Technology. [URL](https://csrc.nist.gov/projects/post-quantum-cryptography)
+
+Shor, P. W. (1994). **Algorithms for quantum computation: Discrete logarithms and factoring**. In *Proceedings 35th Annual Symposium on Foundations of Computer Science* (pp. 124–134). IEEE. [DOI](https://doi.org/10.1109/SFCS.1994.365700)
+
+Wood, G. (2022). **Ethereum: A secure decentralised generalised transaction ledger (Yellow Paper)**. Ethereum Foundation. [URL](https://ethereum.github.io/yellowpaper/paper.pdf)
+
+Buterin, V. (2014). **A next-generation smart contract and decentralized application platform** (Ethereum white paper). [URL](https://ethereum.org/en/whitepaper/)
+
+Grover, L. K. (1996). **A fast quantum mechanical algorithm for database search**. In *Proceedings of the 28th Annual ACM Symposium on Theory of Computing* (pp. 212–219). ACM. [DOI](https://doi.org/10.1145/237814.237866)
+
+
+
+
