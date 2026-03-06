@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2025-12-07">
+<meta name="description" content="The concept of a world model describes the ability of an intelligent system to internally represent the structure and dynamics of its environment in order to predict future states and evaluate the consequences of actions. Although the term is widely used in contemporary machine learning and robotics, its conceptual origins lie in earlier work in philosophy, psychology, and neuroscience. In 1943, Kenneth Craik proposed that intelligent organisms carry a “small scale model” of external reality that allows them to simulate alternative courses of action before acting in the world. This article traces the intellectual lineage of this idea from philosophical theories of mental representation through early psychological research on perception and cognitive maps, and then connects these foundations to modern machine learning architectures. The article introduces a formal definition of world models using the framework of state transition dynamics and model based reinforcement learning. It then examines how contemporary systems implement world models through latent representations, generative environment simulators, and multimodal predictive architectures. Practical applications such as autonomous driving illustrate how predictive internal models enable agents to anticipate complex environmental interactions. The article also reviews open challenges in the field, including the difficulty of capturing causal structure, integrating multimodal observations, and learning from scalable sources of action conditioned data. Finally, the discussion situates world models within the broader trajectory of artificial intelligence research, highlighting their potential role in the development of embodied systems capable of reasoning about the physical world. More than eighty years after Craik articulated the idea, world models remain one of the most promising conceptual bridges between natural intelligence and the design of autonomous artificial agents.">
+
+<title>What Is a World Model? – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="What Is a World Model? – Random Bits of Knowledge">
+<meta property="og:description" content="The concept of a world model describes the ability of an intelligent system to internally represent the structure and dynamics of its environment in order to predict future states and evaluate the consequences of actions. Although the term is widely used in contemporary machine learning and robotics, its conceptual origins lie in earlier work in philosophy, psychology, and neuroscience. In 1943, Kenneth Craik proposed that intelligent organisms carry a “small scale model” of external reality that allows them to simulate alternative courses of action before acting in the world. This article traces the intellectual lineage of this idea from philosophical theories of mental representation through early psychological research on perception and cognitive maps, and then connects these foundations to modern machine learning architectures. The article introduces a formal definition of world models using the framework of state transition dynamics and model based reinforcement learning. It then examines how contemporary systems implement world models through latent representations, generative environment simulators, and multimodal predictive architectures. Practical applications such as autonomous driving illustrate how predictive internal models enable agents to anticipate complex environmental interactions. The article also reviews open challenges in the field, including the difficulty of capturing causal structure, integrating multimodal observations, and learning from scalable sources of action conditioned data. Finally, the discussion situates world models within the broader trajectory of artificial intelligence research, highlighting their potential role in the development of embodied systems capable of reasoning about the physical world. More than eighty years after Craik articulated the idea, world models remain one of the most promising conceptual bridges between natural intelligence and the design of autonomous artificial agents.">
+<meta property="og:image" content="https://antomon.github.io/posts/what-is-world-model/world-model.jpeg">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="What Is a World Model? – Random Bits of Knowledge">
+<meta name="twitter:description" content="The concept of a world model describes the ability of an intelligent system to internally represent the structure and dynamics of its environment in order to predict future states and evaluate the consequences of actions. Although the term is widely used in contemporary machine learning and robotics, its conceptual origins lie in earlier work in philosophy, psychology, and neuroscience. In 1943, Kenneth Craik proposed that intelligent organisms carry a “small scale model” of external reality that allows them to simulate alternative courses of action before acting in the world. This article traces the intellectual lineage of this idea from philosophical theories of mental representation through early psychological research on perception and cognitive maps, and then connects these foundations to modern machine learning architectures. The article introduces a formal definition of world models using the framework of state transition dynamics and model based reinforcement learning. It then examines how contemporary systems implement world models through latent representations, generative environment simulators, and multimodal predictive architectures. Practical applications such as autonomous driving illustrate how predictive internal models enable agents to anticipate complex environmental interactions. The article also reviews open challenges in the field, including the difficulty of capturing causal structure, integrating multimodal observations, and learning from scalable sources of action conditioned data. Finally, the discussion situates world models within the broader trajectory of artificial intelligence research, highlighting their potential role in the development of embodied systems capable of reasoning about the physical world. More than eighty years after Craik articulated the idea, world models remain one of the most promising conceptual bridges between natural intelligence and the design of autonomous artificial agents.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/what-is-world-model/world-model.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed slimcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">What Is a World Model?</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">What Is a World Model?</h1>
+            <p class="subtitle lead">From psychological theory to machine learning architectures</p>
+                  <div>
+        <div class="description">
+          The concept of a <em>world model</em> describes the ability of an intelligent system to internally represent the structure and dynamics of its environment in order to predict future states and evaluate the consequences of actions. Although the term is widely used in contemporary machine learning and robotics, its conceptual origins lie in earlier work in philosophy, psychology, and neuroscience. In 1943, Kenneth Craik proposed that intelligent organisms carry a “small scale model” of external reality that allows them to simulate alternative courses of action before acting in the world. This article traces the intellectual lineage of this idea from philosophical theories of mental representation through early psychological research on perception and cognitive maps, and then connects these foundations to modern machine learning architectures. The article introduces a formal definition of world models using the framework of state transition dynamics and model based reinforcement learning. It then examines how contemporary systems implement world models through latent representations, generative environment simulators, and multimodal predictive architectures. Practical applications such as autonomous driving illustrate how predictive internal models enable agents to anticipate complex environmental interactions. The article also reviews open challenges in the field, including the difficulty of capturing causal structure, integrating multimodal observations, and learning from scalable sources of action conditioned data. Finally, the discussion situates world models within the broader trajectory of artificial intelligence research, highlighting their potential role in the development of embodied systems capable of reasoning about the physical world. More than eighty years after Craik articulated the idea, world models remain one of the most promising conceptual bridges between natural intelligence and the design of autonomous artificial agents.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">machine learning</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 7, 2025</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">December 8, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#intellectual-origins-of-the-world-model-idea" id="toc-intellectual-origins-of-the-world-model-idea" class="nav-link" data-scroll-target="#intellectual-origins-of-the-world-model-idea">Intellectual origins of the world model idea</a>
+  <ul class="collapse">
+  <li><a href="#kant-and-the-structure-of-mental-representation" id="toc-kant-and-the-structure-of-mental-representation" class="nav-link" data-scroll-target="#kant-and-the-structure-of-mental-representation">Kant and the structure of mental representation</a></li>
+  <li><a href="#helmholtz-and-unconscious-inference" id="toc-helmholtz-and-unconscious-inference" class="nav-link" data-scroll-target="#helmholtz-and-unconscious-inference">Helmholtz and unconscious inference</a></li>
+  <li><a href="#kenneth-craik-and-the-internal-simulator" id="toc-kenneth-craik-and-the-internal-simulator" class="nav-link" data-scroll-target="#kenneth-craik-and-the-internal-simulator">Kenneth Craik and the internal simulator</a></li>
+  <li><a href="#edward-tolman-and-cognitive-maps" id="toc-edward-tolman-and-cognitive-maps" class="nav-link" data-scroll-target="#edward-tolman-and-cognitive-maps">Edward Tolman and cognitive maps</a></li>
+  </ul></li>
+  <li><a href="#what-is-a-world-model" id="toc-what-is-a-world-model" class="nav-link" data-scroll-target="#what-is-a-world-model">What is a world model</a>
+  <ul class="collapse">
+  <li><a href="#reactive-systems-versus-model-based-systems" id="toc-reactive-systems-versus-model-based-systems" class="nav-link" data-scroll-target="#reactive-systems-versus-model-based-systems">Reactive systems versus model based systems</a></li>
+  <li><a href="#world-models-in-modern-machine-learning" id="toc-world-models-in-modern-machine-learning" class="nav-link" data-scroll-target="#world-models-in-modern-machine-learning">World models in modern machine learning</a></li>
+  <li><a href="#world-models-and-autonomous-driving" id="toc-world-models-and-autonomous-driving" class="nav-link" data-scroll-target="#world-models-and-autonomous-driving">World models and autonomous driving</a></li>
+  <li><a href="#world-models-and-predictive-intelligence" id="toc-world-models-and-predictive-intelligence" class="nav-link" data-scroll-target="#world-models-and-predictive-intelligence">World models and predictive intelligence</a></li>
+  <li><a href="#why-the-idea-endures" id="toc-why-the-idea-endures" class="nav-link" data-scroll-target="#why-the-idea-endures">Why the idea endures</a></li>
+  </ul></li>
+  <li><a href="#industrial-and-technical-definitions-of-world-models" id="toc-industrial-and-technical-definitions-of-world-models" class="nav-link" data-scroll-target="#industrial-and-technical-definitions-of-world-models">Industrial and technical definitions of world models</a>
+  <ul class="collapse">
+  <li><a href="#world-models-as-generative-simulators" id="toc-world-models-as-generative-simulators" class="nav-link" data-scroll-target="#world-models-as-generative-simulators">World models as generative simulators</a></li>
+  <li><a href="#critiques-and-open-problems-in-world-model-research" id="toc-critiques-and-open-problems-in-world-model-research" class="nav-link" data-scroll-target="#critiques-and-open-problems-in-world-model-research">Critiques and open problems in world model research</a></li>
+  <li><a href="#the-emerging-research-agenda" id="toc-the-emerging-research-agenda" class="nav-link" data-scroll-target="#the-emerging-research-agenda">The emerging research agenda</a></li>
+  </ul></li>
+  <li><a href="#world-models-large-language-models-and-the-emergence-of-physical-ai" id="toc-world-models-large-language-models-and-the-emergence-of-physical-ai" class="nav-link" data-scroll-target="#world-models-large-language-models-and-the-emergence-of-physical-ai">World models, large language models, and the emergence of physical AI</a>
+  <ul class="collapse">
+  <li><a href="#symbolic-knowledge-versus-physical-dynamics" id="toc-symbolic-knowledge-versus-physical-dynamics" class="nav-link" data-scroll-target="#symbolic-knowledge-versus-physical-dynamics">Symbolic knowledge versus physical dynamics</a></li>
+  <li><a href="#physical-ai" id="toc-physical-ai" class="nav-link" data-scroll-target="#physical-ai">Physical AI</a></li>
+  <li><a href="#toward-integrated-cognitive-architectures" id="toc-toward-integrated-cognitive-architectures" class="nav-link" data-scroll-target="#toward-integrated-cognitive-architectures">Toward integrated cognitive architectures</a></li>
+  </ul></li>
+  <li><a href="#efficient-world-models-and-the-role-of-abstraction" id="toc-efficient-world-models-and-the-role-of-abstraction" class="nav-link" data-scroll-target="#efficient-world-models-and-the-role-of-abstraction">Efficient world models and the role of abstraction</a>
+  <ul class="collapse">
+  <li><a href="#multimodal-world-models" id="toc-multimodal-world-models" class="nav-link" data-scroll-target="#multimodal-world-models">Multimodal world models</a></li>
+  <li><a href="#pixel-models-versus-causal-models" id="toc-pixel-models-versus-causal-models" class="nav-link" data-scroll-target="#pixel-models-versus-causal-models">Pixel models versus causal models</a></li>
+  <li><a href="#abstraction-and-semantic-representations" id="toc-abstraction-and-semantic-representations" class="nav-link" data-scroll-target="#abstraction-and-semantic-representations">Abstraction and semantic representations</a></li>
+  <li><a href="#data-and-the-training-problem" id="toc-data-and-the-training-problem" class="nav-link" data-scroll-target="#data-and-the-training-problem">Data and the training problem</a></li>
+  <li><a href="#the-efficiency-hypothesis" id="toc-the-efficiency-hypothesis" class="nav-link" data-scroll-target="#the-efficiency-hypothesis">The efficiency hypothesis</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#bibliography" id="toc-bibliography" class="nav-link" data-scroll-target="#bibliography">Bibliography</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><img src="world-model.jpeg" class="img-fluid"></p>
+</div></div><section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>One of the most powerful ideas about intelligence emerged not from modern artificial intelligence research, but from mid twentieth century psychology.</p>
+<p>In 1943, the Cambridge psychologist <strong>Kenneth Craik</strong> proposed that intelligent organisms carry a <em>small scale model of the world</em> inside their minds. This internal model allows the organism to simulate possible actions and evaluate their consequences before acting in reality.</p>
+<p>Craik expressed the idea in a formulation that remains strikingly clear:</p>
+<blockquote class="blockquote">
+<p>“If the organism carries a small scale model of external reality and of its own possible actions within its head, it is able to try out various alternatives, conclude which is the best of them, react to future situations before they arise, utilize the knowledge of past events in dealing with the present and future, and in every way react in a fuller, safer and more competent manner.”</p>
+</blockquote>
+<p>This concept is now widely known as a <strong>world model</strong>. Today the idea sits at the center of multiple fields: psychology, neuroscience, reinforcement learning, robotics, and autonomous driving. Modern machine learning systems increasingly attempt to learn internal models of the environment that enable planning, prediction, and reasoning.</p>
+<p>The trajectory from Craik’s theoretical proposal to contemporary machine learning architectures illustrates a broader scientific pattern: ideas about intelligence often originate in cognitive science before reemerging decades later as computational systems.</p>
+</section>
+<section id="intellectual-origins-of-the-world-model-idea" class="level2">
+<h2 class="anchored" data-anchor-id="intellectual-origins-of-the-world-model-idea">Intellectual origins of the world model idea</h2>
+<p>Craik’s work did not emerge in isolation. The intellectual roots of world models extend across centuries of philosophy and science.</p>
+<section id="kant-and-the-structure-of-mental-representation" class="level3">
+<h3 class="anchored" data-anchor-id="kant-and-the-structure-of-mental-representation">Kant and the structure of mental representation</h3>
+<p>In the eighteenth century, <strong>Immanuel Kant</strong> proposed that the human mind does not passively receive reality. Instead, cognition actively organizes sensory inputs through internal conceptual structures. In modern language, Kant argued that perception is mediated by <strong>internal representations</strong>. The mind constructs a structured interpretation of the world rather than simply recording sensory data.</p>
+<p>Although Kant did not frame the idea computationally, his theory introduced a critical premise: intelligent behavior depends on internal models.</p>
+</section>
+<section id="helmholtz-and-unconscious-inference" class="level3">
+<h3 class="anchored" data-anchor-id="helmholtz-and-unconscious-inference">Helmholtz and unconscious inference</h3>
+<p>In the nineteenth century, <strong>Hermann von Helmholtz</strong> described perception as a process of <strong>unconscious inference</strong>. According to Helmholtz, the brain interprets ambiguous sensory signals by making probabilistic inferences about their causes.</p>
+<p>The essential insight is predictive: perception is not merely sensation but an inference about the hidden state of the world. This view anticipates modern theories of <strong>predictive processing</strong> and <strong>Bayesian brain hypotheses</strong>, where perception is framed as probabilistic model inference.</p>
+</section>
+<section id="kenneth-craik-and-the-internal-simulator" class="level3">
+<h3 class="anchored" data-anchor-id="kenneth-craik-and-the-internal-simulator">Kenneth Craik and the internal simulator</h3>
+<p>Craik unified these strands and introduced a sharper formulation. Intelligence arises because an organism can <strong>simulate the consequences of actions internally</strong>.</p>
+<p>His proposal contains three key claims:</p>
+<ol type="1">
+<li>Intelligent systems maintain internal representations of the external world.</li>
+<li>These representations allow hypothetical simulations of actions.</li>
+<li>Decisions are made by evaluating simulated outcomes.</li>
+</ol>
+<p>This idea transforms intelligence from <em>a purely reactive process into a predictive one</em>. Craik died tragically in 1945 at the age of thirty one after being struck by a car while cycling in Cambridge. Despite his short life, his conceptual contribution remains foundational.</p>
+</section>
+<section id="edward-tolman-and-cognitive-maps" class="level3">
+<h3 class="anchored" data-anchor-id="edward-tolman-and-cognitive-maps">Edward Tolman and cognitive maps</h3>
+<p>Later work in psychology reinforced the idea that intelligent organisms maintain internal representations of their environment. In 1948, the psychologist Edward Tolman introduced the concept of <strong>cognitive maps</strong> while studying how rats navigate mazes.</p>
+<p>Tolman observed that animals do not merely learn sequences of stimulus–response actions. Instead, they appear to construct internal spatial representations that allow them to infer new paths when familiar routes are blocked.</p>
+<p>This finding suggested that organisms possess internal models of their environments that support flexible planning and navigation. Cognitive maps therefore represent one of the earliest empirical demonstrations that biological intelligence relies on internal representations of the world.</p>
+<p>Tolman’s work provided experimental support for the broader idea that intelligent behavior depends on internal models of environmental structure, complementing Craik’s earlier theoretical formulation.</p>
+</section>
+</section>
+<section id="what-is-a-world-model" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-a-world-model">What is a world model</h2>
+<p>At the most fundamental level, a <strong>world model</strong> is an internal representation of an environment and its dynamics that allows an agent to infer hidden state, predict future evolution, and evaluate the consequences of actions.</p>
+<p>Formally, consider an environment described by a hidden state variable:</p>
+<p><span class="math display">
+s_t
+</span></p>
+<p>An agent performs actions:</p>
+<p><span class="math display">
+a_t
+</span></p>
+<p>The environment transitions according to unknown dynamics:</p>
+<p><span class="math display">
+s_{t+1} = f(s_t, a_t)
+</span></p>
+<p>A world model attempts to approximate this function.</p>
+<p><span class="math display">
+\hat{f}(s_t, a_t) \approx s_{t+1}
+</span></p>
+<p>In other words, the system learns a <strong>predictive model of environmental dynamics</strong>. With such a model, an agent can simulate possible futures:</p>
+<p><span class="math display">
+s_{t+k} = \hat{f}^k(s_t, a_t)
+</span></p>
+<p>These simulated trajectories enable planning without interacting with the real environment. From a control theory perspective, the world model becomes a <strong>forward model</strong> used for predictive control.</p>
+<section id="reactive-systems-versus-model-based-systems" class="level3">
+<h3 class="anchored" data-anchor-id="reactive-systems-versus-model-based-systems">Reactive systems versus model based systems</h3>
+<p>The importance of world models becomes clear when comparing two categories of agents:</p>
+<ol type="1">
+<li><p><strong>Reactive agents</strong> map observations directly to actions:</p>
+<p><span class="math display">
+a_t = \pi(o_t)
+</span></p>
+<p>This policy function may be complex, but it does not explicitly represent environmental dynamics. Many early reinforcement learning systems relied on such policies. The limitation is structural: reactive agents cannot reason about hypothetical futures.</p></li>
+<li><p><strong>Model based agents</strong> maintain an internal dynamics model:</p>
+<p><span class="math display">
+\hat{s}_{t+1} = \hat{f}_\theta(s_t, a_t)
+</span></p>
+<p>Planning then becomes an optimization problem over predicted trajectories:</p>
+<p><span class="math display">
+a_t = \arg\max_a \mathbb{E}[R(s_{t+k})]
+</span></p>
+<p>The difference is qualitative. Model based agents can imagine outcomes before acting. This property is essential for tasks with delayed consequences, long horizons, or safety constraints. Autonomous driving, robotics, and strategic decision making all fall into this category.</p></li>
+</ol>
+</section>
+<section id="world-models-in-modern-machine-learning" class="level3">
+<h3 class="anchored" data-anchor-id="world-models-in-modern-machine-learning">World models in modern machine learning</h3>
+<p>Machine learning research has increasingly converged on architectures that resemble Craik’s internal simulator. Three research directions illustrate this convergence:</p>
+<ol type="1">
+<li><p><strong>Model based reinforcement learning</strong>:</p>
+<p>Model based reinforcement learning explicitly learns environment dynamics. Instead of interacting with the environment for every experiment, agents can perform simulations inside the learned model. This approach dramatically improves sample efficiency.</p>
+<p>Recent work combines neural networks with planning algorithms such as:</p>
+<ul>
+<li>model predictive control,</li>
+<li>Monte Carlo tree search,</li>
+<li>trajectory optimization.</li>
+</ul>
+<p>The result is a hybrid system combining learned representations and classical control.</p></li>
+<li><p><strong>Latent world models</strong>:</p>
+<p>Modern approaches often learn <strong>latent state representations</strong> rather than explicit physical states. A neural encoder maps observations into a latent space:</p>
+<p><span class="math display">
+z_t = E(o_t)
+</span></p>
+<p>Dynamics are learned in this compressed representation:</p>
+<p><span class="math display">
+z_{t+1} = f(z_t, a_t)
+</span></p>
+<p>This architecture underlies systems such as:</p>
+<ul>
+<li>Dreamer,</li>
+<li>PlaNet,</li>
+<li>MuZero.</li>
+</ul>
+<p>The latent state functions as the internal world model. Planning occurs inside this abstract representation rather than directly in pixel space.</p></li>
+<li><p><strong>Generative video and environment models</strong>:</p>
+<p>A newer direction attempts to learn full <strong>environment simulators</strong> using generative models. Examples include video prediction systems and simulation based training environments.</p>
+<p>These models attempt to predict future frames of the world conditioned on actions. The ambition is to learn a <strong>differentiable simulator of reality</strong>. Such simulators can be used for planning, policy learning, or synthetic data generation.</p></li>
+</ol>
+</section>
+<section id="world-models-and-autonomous-driving" class="level3">
+<h3 class="anchored" data-anchor-id="world-models-and-autonomous-driving">World models and autonomous driving</h3>
+<p>Autonomous driving systems provide a concrete example of why world models matter. A driving agent must reason about:</p>
+<ul>
+<li>future trajectories of vehicles,</li>
+<li>pedestrian behavior,</li>
+<li>traffic rules,</li>
+<li>physical constraints of motion.</li>
+</ul>
+<p>Reactive systems struggle with this complexity. A vehicle must anticipate situations that have not yet occurred. For example:</p>
+<ul>
+<li>predicting that a pedestrian may cross,</li>
+<li>anticipating a vehicle merging into the lane,</li>
+<li>evaluating braking versus lane change maneuvers.</li>
+</ul>
+<p>A world model allows the system to simulate these scenarios before they unfold. Companies developing end to end driving systems increasingly rely on learned world models to capture the structure of dynamic environments. The principle is precisely the one Craik described: an agent evaluates possible futures internally before acting in the physical world.</p>
+</section>
+<section id="world-models-and-predictive-intelligence" class="level3">
+<h3 class="anchored" data-anchor-id="world-models-and-predictive-intelligence">World models and predictive intelligence</h3>
+<p>At the most basic level, prediction is a fundamental requirement for intelligent behavior. Consider the physical constraint. Actions have consequences that unfold over time. An agent that cannot anticipate consequences must learn purely through trial and error. This approach becomes unsafe or inefficient in complex environments. Prediction therefore becomes a structural requirement for intelligence.</p>
+<p>World models implement prediction by learning an approximate causal structure of the environment. In this sense, they represent a convergence between several disciplines:</p>
+<ul>
+<li>control theory,</li>
+<li>probabilistic inference,</li>
+<li>cognitive science,</li>
+<li>machine learning.</li>
+</ul>
+<p>Each field arrived at similar conclusions through different paths.</p>
+</section>
+<section id="why-the-idea-endures" class="level3">
+<h3 class="anchored" data-anchor-id="why-the-idea-endures">Why the idea endures</h3>
+<p>Scientific ideas persist when they capture something structurally true about a system. Craik’s insight survives because it reflects a fundamental property of intelligent agents. An organism that can simulate future outcomes internally has a decisive advantage over one that reacts only after events occur. This principle appears repeatedly across biological intelligence.</p>
+<p>Animals plan movement trajectories before executing them. Humans mentally rehearse actions. Engineers design systems using predictive models. Machine learning is rediscovering the same architecture. Instead of directly mapping inputs to actions, advanced AI systems increasingly build internal predictive models of the world.</p>
+</section>
+</section>
+<section id="industrial-and-technical-definitions-of-world-models" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="industrial-and-technical-definitions-of-world-models">Industrial and technical definitions of world models</h2>
+<p>While the concept of a world model originated in psychology and cognitive science, modern AI research increasingly defines the concept in operational terms.</p>
+<p>A commonly cited definition describes world models as <strong>neural networks that learn the dynamics of the real world</strong>, including spatial relationships, physics, and temporal evolution. These models attempt to capture how environments change over time so that an agent can anticipate the consequences of actions.</p>
+<p>In practical machine learning systems, the dynamics of the environment are typically modeled as a conditional probability distribution over future states:</p>
+<p><span class="math display">
+P(s_{t+1} \mid s_t, a_t)
+</span></p>
+<p>where <span class="math inline">s_t</span> denotes the current state of the environment and <span class="math inline">a_t</span> denotes an action taken by the agent. The distribution specifies the probability of each possible next state <span class="math inline">s_{t+1}</span> given the current state and the action performed.</p>
+<p>Learning this distribution allows the system to approximate the transition dynamics of the environment. Once such a model is available, the agent can simulate possible future trajectories internally by iteratively sampling predicted states. In this way, the system can evaluate the consequences of alternative actions without needing to execute them in the real environment.</p>
+<p>From an engineering perspective, world models are therefore closely related to three technical capabilities:</p>
+<ol type="1">
+<li><p><strong>Learning physical and spatial structure</strong>: systems attempt to capture the causal relationships governing motion, interaction, and environment dynamics.</p></li>
+<li><p><strong>Latent representation learning</strong>: observations such as images, sensor readings, or video are compressed into internal representations that capture essential state variables.</p></li>
+<li><p><strong>Simulation of future trajectories</strong>: the system can generate hypothetical future states conditioned on different possible actions.</p></li>
+</ol>
+<p>Because of these properties, world models are often described as <strong>internal simulators of reality</strong>. Rather than simply recognizing patterns in data, they attempt to reconstruct the underlying structure that generates those patterns.</p>
+<p>This shift represents a major conceptual departure from many current AI systems. Large language models, for example, primarily predict the next token in a sequence. By contrast, world models aim to <strong>predict the next state of the world</strong>.</p>
+<section id="world-models-as-generative-simulators" class="level3">
+<h3 class="anchored" data-anchor-id="world-models-as-generative-simulators">World models as generative simulators</h3>
+<p>Recent research has increasingly framed world models as <strong>generative simulation systems</strong>. Instead of producing a single prediction, these models attempt to generate possible future trajectories of the environment. Such systems are therefore probabilistic simulators of physical and behavioral processes.</p>
+<p>This capability becomes essential for planning under uncertainty. An agent must evaluate multiple possible futures before deciding how to act. In practice, modern world models often combine several modules:</p>
+<ul>
+<li>perception systems that transform sensory input into internal states,</li>
+<li>dynamics models that predict how those states evolve,</li>
+<li>planning modules that search through possible futures,</li>
+<li>reward or cost models that evaluate outcomes.</li>
+</ul>
+<p>Together, these components enable a system to perform <strong>counterfactual reasoning</strong>. The agent can ask questions of the form: <em>what would happen if I performed action <span class="math inline">a</span> instead of <span class="math inline">b</span>?</em> This ability to run internal experiments is precisely what Craik described in 1943.</p>
+</section>
+<section id="critiques-and-open-problems-in-world-model-research" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="critiques-and-open-problems-in-world-model-research">Critiques and open problems in world model research</h3>
+<p>Despite rapid progress, the concept of world models remains contested in the machine learning community. A recent research paper titled <em>Critiques of World Models</em><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> argues that the field still lacks a precise definition of what constitutes a true world model. The authors describe world models as <strong>algorithmic surrogates of real environments that enable intelligent agents to reason and act</strong>.</p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;See: Xing, E., Deng, M., Hou, J., Hou, J., &amp; Hu, Z. (2025). <strong>Critiques of world models</strong>. <em>arXiv</em>. <a href="https://doi.org/10.48550/arXiv.2507.05169">DOI</a></p></div></div><p>However, they also identify several unresolved issues.</p>
+<section id="ambiguity-of-definition" class="level4">
+<h4 class="anchored" data-anchor-id="ambiguity-of-definition">Ambiguity of definition</h4>
+<p>Many systems described as world models differ substantially in architecture and purpose. Some focus on visual prediction. Others emphasize latent dynamics. Still others combine simulation with language reasoning.</p>
+<p>This diversity makes it difficult to determine whether a system genuinely possesses a world model or merely performs sophisticated prediction.</p>
+</section>
+<section id="limited-real-world-validation" class="level4">
+<h4 class="anchored" data-anchor-id="limited-real-world-validation">Limited real world validation</h4>
+<p>Another criticism concerns empirical validation. Many proposed architectures demonstrate impressive results in simplified environments such as video games or synthetic simulations.</p>
+<p>However, transferring these models to complex real world environments remains challenging. Some approaches rely on latent space prediction rather than explicit simulation of observable states, and their practical usefulness in large scale real environments is still uncertain.</p>
+</section>
+<section id="hierarchical-and-multi-level-representations" class="level4">
+<h4 class="anchored" data-anchor-id="hierarchical-and-multi-level-representations">Hierarchical and multi level representations</h4>
+<p>The same research also proposes a more general architecture for world models based on <strong>hierarchical representations combining continuous and discrete structures</strong>. Such architectures aim to capture multiple levels of abstraction simultaneously, from low level physical dynamics to higher level reasoning processes.</p>
+<p>This direction reflects an important insight. Real environments operate across many scales of description. Physics governs motion, but higher level structures such as objects, agents, and intentions also influence outcomes. A comprehensive world model must therefore represent the environment across multiple conceptual layers.</p>
+</section>
+</section>
+<section id="the-emerging-research-agenda" class="level3">
+<h3 class="anchored" data-anchor-id="the-emerging-research-agenda">The emerging research agenda</h3>
+<p>The development of world models is increasingly viewed as one of the central research challenges for artificial intelligence. Current systems such as large language models excel at processing symbolic information but remain limited in their ability to reason about physical environments, spatial dynamics, and causal interactions.</p>
+<p>World models aim to address this gap by learning predictive representations of environments from multimodal data such as video, sensor streams, and interaction logs. These models attempt to capture the structure of reality itself.</p>
+<p>The long term ambition is to construct systems capable of:</p>
+<ul>
+<li>predicting complex environmental dynamics,</li>
+<li>simulating long horizon consequences of actions,</li>
+<li>learning from both real experience and simulated environments,</li>
+<li>transferring knowledge across tasks and domains.</li>
+</ul>
+<p>In effect, the goal is to build machines that possess a computational analogue of the cognitive capability Craik described more than eighty years ago. If this research succeeds, the result will not merely be better pattern recognition systems. It will be artificial agents capable of reasoning about the world they inhabit.</p>
+</section>
+</section>
+<section id="world-models-large-language-models-and-the-emergence-of-physical-ai" class="level2">
+<h2 class="anchored" data-anchor-id="world-models-large-language-models-and-the-emergence-of-physical-ai">World models, large language models, and the emergence of physical AI</h2>
+<p>Recent discussion in the machine learning community increasingly contrasts world models with <strong>large language models (LLMs)</strong>. The distinction is not merely architectural. It concerns the type of reality each system attempts to model.</p>
+<p>Large language models are trained on sequences of symbols. Formally, they approximate the conditional probability:</p>
+<p><span class="math display">
+P(x_{t+1} \mid x_1, x_2, \ldots, x_t)
+</span></p>
+<p>where <span class="math inline">x_t</span> represents a token in a sequence. The learning objective is next token prediction.</p>
+<p>This training objective produces systems that capture statistical regularities in human language. Because human text encodes knowledge about the world, LLMs can demonstrate reasoning ability, factual recall, and structured problem solving.</p>
+<p>However, the underlying model is still a <strong>distribution over text sequences</strong>. World models operate on a different principle. Instead of predicting tokens, they attempt to predict <strong>environmental state transitions</strong>:</p>
+<p><span class="math display">
+P(s_{t+1} \mid s_t, a_t)
+</span></p>
+<p>Here <span class="math inline">s_t</span> represents the state of the environment and <span class="math inline">a_t</span> represents an action performed by an agent. The model learns how the world evolves when actions occur.</p>
+<p>This difference is fundamental. Language models describe <strong>how humans talk about the world</strong>. World models attempt to capture <strong>how the world itself changes</strong>.</p>
+<section id="symbolic-knowledge-versus-physical-dynamics" class="level3">
+<h3 class="anchored" data-anchor-id="symbolic-knowledge-versus-physical-dynamics">Symbolic knowledge versus physical dynamics</h3>
+<p>The distinction becomes clearer when considering the type of knowledge represented by each system.</p>
+<p>Large language models primarily encode:</p>
+<ul>
+<li>linguistic structure,</li>
+<li>conceptual relationships,</li>
+<li>symbolic reasoning patterns,</li>
+<li>factual information expressed in text.</li>
+</ul>
+<p>World models attempt to encode:</p>
+<ul>
+<li>spatial structure,</li>
+<li>physical dynamics,</li>
+<li>causal interactions between objects,</li>
+<li>temporal evolution of environments.</li>
+</ul>
+<p>An LLM may be able to explain the rules of driving. A world model must predict how vehicles, pedestrians, and traffic signals evolve in a real physical environment. For applications involving <strong>embodied agents</strong>, this difference becomes critical.</p>
+<p>Robots, autonomous vehicles, drones, and industrial systems interact with environments governed by physical laws. Decisions must therefore be based on predictive models of those dynamics.</p>
+</section>
+<section id="physical-ai" class="level3">
+<h3 class="anchored" data-anchor-id="physical-ai">Physical AI</h3>
+<p>Some researchers describe the convergence of these ideas as the emergence of <strong>physical AI</strong>. Physical AI refers to systems capable of understanding and predicting the physical world through interaction and observation. The term reflects a shift in focus from purely digital tasks toward systems embedded in real environments.</p>
+<p>Such systems require several capabilities simultaneously:</p>
+<ol type="1">
+<li>perception from raw sensory input such as images, video, lidar, or tactile signals,<br>
+</li>
+<li>internal representations of objects and spatial relationships,</li>
+<li>predictive models of environmental dynamics,</li>
+<li>planning mechanisms that evaluate possible action sequences.</li>
+</ol>
+<p>World models provide the predictive core of such systems. Instead of reacting directly to observations, the system constructs an internal simulation of the environment. Possible actions are evaluated within this simulation before execution in the real world.</p>
+<p>This architecture mirrors the mechanism Craik proposed in 1943: intelligence emerges when an agent can test alternatives internally before committing to real actions.</p>
+</section>
+<section id="toward-integrated-cognitive-architectures" class="level3">
+<h3 class="anchored" data-anchor-id="toward-integrated-cognitive-architectures">Toward integrated cognitive architectures</h3>
+<p>The distinction between language models and world models should not be interpreted as a competition between two incompatible approaches. In practice, many researchers expect future systems to combine both.</p>
+<p>Language models provide powerful tools for reasoning, communication, and knowledge representation. World models provide predictive representations of physical environments.</p>
+<p>An integrated architecture might therefore include:</p>
+<ul>
+<li>a symbolic reasoning system built on language models,</li>
+<li>a predictive environmental simulator implemented as a world model,</li>
+<li>planning algorithms that operate across both representations.</li>
+</ul>
+<p>Such hybrid systems could reason about abstract goals using language while evaluating physical feasibility through simulation. In this sense, world models may represent the missing component required to extend current AI systems from purely informational domains into the physical world.</p>
+<p>If this trajectory continues, Craik’s eighty year old insight may become the conceptual foundation for the next generation of intelligent machines: systems that do not merely process information, but actively model and anticipate the dynamics of the environments they inhabit.</p>
+</section>
+</section>
+<section id="efficient-world-models-and-the-role-of-abstraction" class="level2">
+<h2 class="anchored" data-anchor-id="efficient-world-models-and-the-role-of-abstraction">Efficient world models and the role of abstraction</h2>
+<p>A key challenge in building practical world models is efficiency. A system must be able to represent the dynamics of the environment while remaining computationally tractable for long horizon reasoning.</p>
+<p>Recent work frames the world modeling problem using the formal structure of reinforcement learning environments. In this view, the environment can be described as a <strong>Partially Observable Markov Decision Process (POMDP)</strong>. The world model approximates the transition probability:</p>
+<p><span class="math display">
+P(s' \mid s, a)
+</span></p>
+<p>where <span class="math inline">s</span> represents the current state of the world, <span class="math inline">a</span> represents an action taken by an agent, and <span class="math inline">s'</span> represents the resulting state after the action occurs.</p>
+<p>However, in real environments the true world state <span class="math inline">s</span> is rarely observable. Instead, agents receive partial observations <span class="math inline">o</span> derived from sensors such as vision, audio, or other modalities. The agent must therefore infer the underlying state of the environment from incomplete information.</p>
+<p>This introduces a layered modeling problem:</p>
+<ol type="1">
+<li>infer the hidden world state from observations,</li>
+<li>predict how that state evolves under actions,</li>
+<li>evaluate future trajectories to select optimal actions.</li>
+</ol>
+<p>The world model acts as the predictive core that connects these components.</p>
+<section id="multimodal-world-models" class="level3">
+<h3 class="anchored" data-anchor-id="multimodal-world-models">Multimodal world models</h3>
+<p>Another important direction concerns <strong>multimodal world models</strong>. The world is not experienced through a single data modality. Real environments involve multiple information channels including:</p>
+<ul>
+<li>vision,</li>
+<li>sound,</li>
+<li>physical interaction,</li>
+<li>language,</li>
+<li>symbolic information.</li>
+</ul>
+<p>A comprehensive world model must therefore integrate signals from multiple sources. For example, a language model may implicitly encode knowledge about social interactions and physical events through text. However, the physical world contains information that cannot be fully captured through language alone. Visual signals provide spatial relationships, motion, and physical constraints that are difficult to represent in purely textual form.</p>
+<p>As a result, many researchers expect future world models to combine language, vision, and other modalities into unified predictive systems.</p>
+</section>
+<section id="pixel-models-versus-causal-models" class="level3">
+<h3 class="anchored" data-anchor-id="pixel-models-versus-causal-models">Pixel models versus causal models</h3>
+<p>Many current approaches attempt to construct world models using <strong>video generation systems</strong> that predict future frames of visual data. Such models estimate distributions of the form:</p>
+<p><span class="math display">
+P(o' \mid o, a)
+</span></p>
+<p>where <span class="math inline">o</span> and <span class="math inline">o'</span> represent successive visual observations.</p>
+<p>These systems can generate impressive visual simulations. However, modeling the world purely at the level of pixels can be inefficient and may fail to capture the underlying causal structure of environments.</p>
+<p>For example, a model might generate a realistic video of a car turning a corner. But unless the system understands the causal relationships between steering input, tire friction, and vehicle motion, it cannot reliably reason about the consequences of different actions.</p>
+<p>This distinction highlights a broader challenge in world modeling: high fidelity sensory prediction is not the same as <strong>causal understanding</strong>.</p>
+</section>
+<section id="abstraction-and-semantic-representations" class="level3">
+<h3 class="anchored" data-anchor-id="abstraction-and-semantic-representations">Abstraction and semantic representations</h3>
+<p>One proposed solution is to incorporate <strong>semantic abstractions</strong> into world models.</p>
+<p>Humans rarely represent the world at the level of raw sensory signals. Instead, cognition relies on higher level concepts such as objects, agents, intentions, and causal relationships. These abstractions dramatically compress the complexity of the environment. For example, a person planning how to cross a street does not simulate every pixel in their visual field. Instead, they reason about objects such as vehicles, pedestrians, and traffic signals.</p>
+<p>Symbolic systems such as language, mathematics, and programming provide powerful tools for expressing such abstractions. These representations allow models to focus their computational resources on aspects of the environment that matter for decision making.</p>
+<p>From an information theoretic perspective, abstraction functions as a <strong>compression mechanism</strong> that preserves causal structure while discarding irrelevant sensory detail.</p>
+</section>
+<section id="data-and-the-training-problem" class="level3">
+<h3 class="anchored" data-anchor-id="data-and-the-training-problem">Data and the training problem</h3>
+<p>Another challenge in building world models is obtaining appropriate training data. Large quantities of video data exist, but most of it does not contain explicit records of the actions that caused observed events. Without information about actions, a model cannot learn how interventions change the environment.</p>
+<p>Training world models therefore requires <strong>action conditioned data</strong>. One proposed approach is to use interactive environments such as digital simulations or games. These environments provide large quantities of data where actions and outcomes are explicitly recorded.</p>
+<p>Such environments create a natural data generation loop: agents interact with the environment, generate trajectories of states and actions, and use those trajectories to train predictive models. Over time, these models may generalize from virtual environments to real physical systems.</p>
+</section>
+<section id="the-efficiency-hypothesis" class="level3">
+<h3 class="anchored" data-anchor-id="the-efficiency-hypothesis">The efficiency hypothesis</h3>
+<p>The broader hypothesis emerging from this research is that effective world models must balance three competing objectives:</p>
+<ul>
+<li>represent the causal structure of environments,</li>
+<li>remain computationally efficient for long horizon reasoning,</li>
+<li>learn from scalable data sources.</li>
+</ul>
+<p>Achieving this balance likely requires a combination of sensory perception, abstract symbolic reasoning, and predictive simulation.</p>
+<p>If successful, such systems would embody the principle articulated by Kenneth Craik more than eighty years ago: intelligent behavior emerges when an agent can internally simulate the consequences of its actions before acting in the world.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The idea of a world model began as a psychological hypothesis about how intelligent organisms reason about their environment. Kant argued that perception depends on internal conceptual structures. Helmholtz described perception as a form of unconscious inference. Craik later articulated the idea more explicitly: intelligent systems carry internal models of the world that allow them to simulate possible futures before acting.</p>
+<p>Over time, this intuition became formalized within the mathematical frameworks of control theory and reinforcement learning. In these frameworks, an intelligent agent maintains a predictive model of environmental dynamics and uses that model to evaluate the consequences of potential actions.</p>
+<p>Modern machine learning is now rediscovering this principle at scale. World models appear in model based reinforcement learning, latent state architectures, multimodal predictive systems, and increasingly in the design of autonomous agents operating in complex environments.</p>
+<p>Despite this progress, several challenges remain open. Effective world models must capture causal structure rather than mere statistical correlation. They must integrate multiple modalities such as vision, language, and physical interaction. They must remain computationally efficient while supporting long horizon reasoning. And they must be trained using data sources that reflect the consequences of actions in real environments.</p>
+<p>For these reasons, the development of world models is increasingly viewed as a central research direction for artificial intelligence. If successful, these systems may move AI beyond passive pattern recognition toward agents capable of reasoning about the dynamics of the environments they inhabit.</p>
+<p>More than eighty years after Craik proposed the idea, the notion that intelligence depends on internal simulations of reality continues to shape both scientific theory and technological development. World models represent one of the clearest bridges between the study of natural intelligence and the design of artificial systems.</p>
+</section>
+<section id="bibliography" class="level2">
+<h2 class="anchored" data-anchor-id="bibliography">Bibliography</h2>
+<p>Craik, K. J. W. (1943). <strong>The Nature of Explanation</strong>. <em>Cambridge University Press</em>.</p>
+<p>Friston, K. (2010). <strong>The free energy principle: A unified brain theory?</strong>. <em>Nature Reviews Neuroscience</em>. <a href="https://doi.org/10.1038/nrn2787">DOI</a></p>
+<p>Ha, D., &amp; Schmidhuber, J. (2018). <strong>World models</strong>. <em>arXiv</em>. <a href="https://doi.org/10.48550/arXiv.1803.10122">DOI</a></p>
+<p>Hafner, D. et al.&nbsp;(2020). <strong>Dream to Control: Learning Behaviors by Latent Imagination</strong>. <em>ICLR</em>.</p>
+<p>Helmholtz, H. von. (2005). <strong>Treatise on physiological optics</strong> (J. P. C. Southall, Trans.; Vol. 3). <em>Dover Publications</em>.</p>
+<p>Kant, I. (1998). <strong>Critique of Pure Reason</strong>. (P. Guyer &amp; A. W. Wood, Eds.). <em>Cambridge University Press</em>.</p>
+<p>Schrittwieser, J. et al.&nbsp;(2020). <strong>Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model</strong>. <em>Nature</em>. <a href="https://doi.org/10.1038/s41586-020-03051-4">DOI</a></p>
+<p>Tolman, E. C. (1948). <strong>Cognitive maps in rats and men</strong>. <em>Psychological Review</em>, 55(4), 189–208. <a href="https://doi.org/10.1037/h0061626">DOI</a></p>
+
+
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
