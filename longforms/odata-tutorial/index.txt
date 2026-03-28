@@ -1,0 +1,4437 @@
+---
+title: "OData Tutorial"
+subtitle: ""
+format:
+  html:
+    toc: true
+    toc-expand: 3
+description: ""
+author: 
+  - name: Antonio Montano
+    orcid: 0009-0007-2429-1921
+    email: antonio.montano.contact@gmail.com
+    affiliation:
+      - name: 4M4
+        city: Milano
+        country: Italia
+date: "2026-01-24"
+date-modified: "2026-03-04"
+categories: [tutorial, 🇬🇧]
+keywords: oooo
+license: "CC BY-NC-ND"
+copyright: 
+  holder: Antonio Montano
+  year: 2022-2026
+citation: true
+image: ""
+comments: 
+  utterances:
+    repo: antomon/antomon-utterances
+    theme: github-light
+
+draft: true
+---
+
+::: {.column-margin}
+![]()
+:::
+
+## What is OData in plain language
+
+**Open Data Protocol (OData)** is a formal way to expose data over the web such that a client can **describe what data it wants**, rather than invoke predefined server operations.
+
+Start from a fundamental need that does not depend on any specific technology:
+any system that persists information must provide a mechanism to make that information observable and usable by other systems. There are only three structurally distinct ways to do this:
+
+* **file based exchange**, where the system periodically exports snapshots of its state (for example CSV or XML files),
+* **procedural interfaces**, where the system exposes functions or endpoints that encapsulate both data access and business logic,
+* **data oriented interfaces**, where the system exposes its data model directly and allows external agents to formulate queries over it.
+
+OData belongs to the third category. The critical shift is that the server does not expose *operations*, but *collections of entities*. These collections behave as addressable sets over which the client can define constraints. Consider a typical procedural HTTP API:
+
+```
+GET /products/above-price?threshold=100
+```
+
+Even if syntactically valid, this structure encodes semantics in the endpoint itself. The operation _above price_ is predefined by the server, and the client can only supply parameters within that fixed contract. In contrast, OData exposes the dataset itself:
+
+```
+GET /Products?$filter=Price gt 100
+```
+
+Here the endpoint `/Products` identifies a **set of entities**, and the query option `$filter` allows the client to specify a **condition over that set**. This condition is what in logic and mathematics is called a **predicate**.
+
+A predicate is a function:
+
+$$
+P(x) : \text{Entity} \rightarrow {\text{true}, \text{false}}
+$$
+
+It maps each element of a domain to a boolean value. In this case:
+
+$$
+P(p) = (p.\text{Price} > 100)
+$$
+
+The server evaluates this predicate over the entire collection and returns only the elements for which the predicate is true. This leads to a fundamental distinction in interaction models:
+
+* **imperative interaction**: the client invokes a named procedure whose behavior is defined by the server,
+* **declarative interaction**: the client specifies properties of the desired result, and the server determines how to compute it.
+
+**OData is declarative**. The client does not ask _execute this function_, but rather _return all elements of this set that satisfy this predicate_.
+
+Formally, OData is composed of three orthogonal elements:
+
+* a **data model**, the *Entity Data Model* (EDM), which defines entity types, properties, and relationships as a typed graph,
+* a **query algebra embedded in URLs**, which includes operations equivalent to selection (`$filter`), projection (`$select`), ordering (`$orderby`), and navigation (`$expand`),
+* a **transport binding over HTTP**, which provides a uniform mechanism for addressing resources and transferring representations, typically in JSON.
+
+From a structural perspective, OData can be understood as exposing a **queryable algebra over HTTP**, where:
+
+* URLs identify sets,
+* query parameters encode predicates and transformations,
+* responses are materializations of the resulting subset.
+
+This is not merely a convenience layer. It is a shift from endpoint oriented design to **model driven interaction**, where the primary abstraction is no longer the API method, but the underlying data space itself.
+
+### Historical context
+
+### Formal references
+
+The protocol is formally defined by **OASIS**, which provides the normative specification of both syntax and semantics. The standard[^odata-tutorial-OASIS4] is structured as a set of coordinated documents, each covering a specific layer of the protocol:
+
+* OData v4 protocol specification,
+* OData URL conventions (query algebra and operators),
+* OData JSON format (serialization rules),
+* CSDL, the conceptual schema definition language (data model definition).
+
+Taken together, these documents define OData as a complete formal system: a typed data model, a composable query language, and a deterministic mapping to HTTP interactions.
+
+From a standardization standpoint, the same specification has also been ratified by ISO/IEC as an international standard:
+
+* ISO/IEC 20802-1:2016 (Core specification),
+* ISO/IEC 20802-2:2016 (JSON format).
+
+This dual status is structurally important. OASIS provides the authoritative technical definition, while ISO/IEC provides institutional validation and global interoperability recognition. The underlying protocol remains the same.
+
+[^odata-tutorial-OASIS4]: See: [OData v4.0 OASIS Standard](https://www.oasis-open.org/standard/odatav4-0/)
+
+### Conceptual interpretation
+
+From a computer science standpoint, OData can be understood as a mapping:
+
+$$
+f : \text{URL} \rightarrow \text{query over a data model}
+$$
+
+where the URL encodes a query in a structured form. This makes OData a **declarative query language embedded in HTTP**, analogous in spirit to SQL but transported through web protocols.
+
+## What are CRUD operations
+
+Any system that manages persistent data must support a minimal set of transformations. These transformations are not arbitrary. They arise from the structure of state itself. 
+
+Let a dataset be defined as a set
+
+$$
+E = {e_1, e_2, \dots, e_n}
+$$
+
+where each $e_i$ is an entity. There are only four primitive operations that can change or observe this set:
+
+* add a new element,
+* read existing elements,
+* modify an element,
+* remove an element.
+
+These correspond exactly to **CRUD**:
+
+* create,
+* read,
+* update,
+* delete.
+
+No other operation is strictly necessary to fully manipulate a dataset. Any higher level operation can be decomposed into combinations of these four.
+
+### Why CRUD exists from first principles
+
+Consider the nature of persistent state. A system state at time $t$ can be represented as:
+
+$$
+S_t = E
+$$
+
+At time $t+1$, the system may evolve into:
+
+$$
+S_{t+1}
+$$
+
+The only possible transitions are:
+
+* $E \cup {e}$ → creation,
+* $(E \setminus {e})$ → deletion,
+* substitution $(e \rightarrow e')$ → update,
+* identity $(E = E)$ → read.
+
+These are exhaustive. There is no fifth primitive transformation. This is why CRUD appears across all data systems:
+
+* relational databases (INSERT, SELECT, UPDATE, DELETE),
+* file systems (create file, read file, write file, delete file),
+* object stores,
+* distributed systems.
+
+CRUD is therefore not a convention. It is a **minimal algebra of state manipulation**.
+
+### Mapping CRUD to HTTP
+
+In web systems, CRUD is mapped onto HTTP methods:
+
+* Create → POST,
+* Read → GET,
+* Update → PATCH or PUT,
+* Delete → DELETE.
+
+This mapping is used by REST architectures and adopted directly by **Open Data Protocol**.
+
+### Relevance in computer science
+
+CRUD is central because it defines the boundary between:
+
+* **state** (what exists),
+* **operations on state** (how it changes).
+
+Several important concepts derive from CRUD.
+
+#### Idempotency
+
+Some operations can be repeated without changing the result:
+
+* GET is idempotent,
+* DELETE is idempotent,
+* PUT is idempotent,
+* POST is not.
+
+This property is fundamental in distributed systems.
+
+#### Consistency
+
+Update and delete operations must preserve invariants. Example, if a system enforces uniqueness of keys, then a create operation must ensure:
+
+$$
+\forall e_i, e_j \in E,\ i \neq j \Rightarrow key(e_i) \neq key(e_j)
+$$
+
+#### Concurrency
+
+When multiple agents perform CRUD operations simultaneously, conflicts arise. Example, two updates on the same entity:
+
+$$
+e \rightarrow e_1 \land e \rightarrow e_2
+$$
+
+Without coordination, one update may overwrite the other. This leads to mechanisms such as:
+
+* locking,
+* versioning,
+* optimistic concurrency.
+
+#### Composability
+
+Complex operations can be expressed as sequences of CRUD operations. Example, "duplicate entity" can be decomposed into:
+
+* read entity,
+* create new entity with same attributes.
+
+### CRUD in OData
+
+In OData, CRUD operations are applied to **entities exposed as web resources**. This leads to a uniform model:
+
+* every entity has a URL,
+* operations are expressed through HTTP methods,
+* payloads represent entity state.
+
+This uniformity allows a client to manipulate data without knowing internal implementation details.
+
+CRUD defines the **complete set of primitive operations over persistent state**. OData provides a way to express these operations over HTTP in a structured and standardized way.
+
+## Read operations
+
+A read operation retrieves data without altering system state. From first principles, a read is a function
+
+$$
+R : E \rightarrow V
+$$
+
+where $E$ is the dataset and $V$ is the returned view of that dataset, so
+
+$$
+E' = E
+$$
+
+after execution. No mutation occurs. In **Open Data Protocol**, read operations are expressed using HTTP **GET** and enriched with a declarative query language embedded in the URL.
+
+### Reading a collection
+
+The simplest read retrieves an entire entity set:
+
+```
+GET /Entities
+```
+
+Response
+
+```{json}
+{
+  "value": [
+    { "Id": 1, "Name": "A", "Value": 10 },
+    { "Id": 2, "Name": "B", "Value": 20 }
+  ]
+}
+```
+
+Semantically, this corresponds to
+
+$$
+R(E) = E
+$$
+
+which is rarely useful in large systems due to size.
+
+### Reading a single entity
+
+Entities are uniquely identified by a key:
+
+```
+GET /Entities(1)
+```
+
+This is equivalent to the selection
+
+$$
+{ e \in E \mid key(e) = 1 }
+$$
+
+which returns exactly one element if the key constraint holds.
+
+### Filtering with `$filter`
+
+Filtering restricts the dataset using predicates:
+
+```
+GET /Entities?$filter=Value gt 10
+```
+
+Formal interpretation
+
+$$
+R(E) = { e \in E \mid e.Value > 10 }
+$$
+
+The `$filter` operator defines a predicate logic over entity attributes.
+
+Examples
+
+```
+GET /Entities?$filter=Value gt 10 and Name eq 'B'
+```
+
+String functions
+
+```
+GET /Entities?$filter=contains(Name,'A')
+```
+
+These expressions are translated by the server into equivalent database predicates.
+
+### Projection with `$select`
+
+Projection reduces the dimensionality of the returned data:
+
+```
+GET /Entities?$select=Name,Value
+```
+
+Formal interpretation
+
+$$
+R(E) = { \pi_{Name,Value}(e) \mid e \in E }
+$$
+
+where $\pi$ is the projection operator. This is critical for performance because it reduces data transfer and serialization cost.
+
+### Ordering with `$orderby`
+
+Sorting imposes an order on the result set:
+
+```
+GET /Entities?$orderby=Value desc
+```
+
+Formal interpretation
+
+$$
+R(E) = sort(E, key = Value, order = descending)
+$$
+
+Multiple keys can be used
+
+```
+GET /Entities?$orderby=Name asc,Value desc
+```
+
+### Pagination with `$top` and `$skip`
+
+Pagination restricts the size of the result:
+
+```
+GET /Entities?$top=10
+```
+
+This corresponds to
+
+$$
+R(E) = first\ 10\ elements\ of\ E
+$$
+
+Offset pagination
+
+```
+GET /Entities?$skip=20&$top=10
+```
+
+returns elements 21 to 30. From a computational standpoint, large offsets are expensive because the underlying system must traverse skipped elements.
+
+### Counting with `$count`
+
+```
+GET /Entities/$count
+```
+
+returns a scalar
+
+$$
+|E|
+$$
+
+Filtering can be applied
+
+```
+GET /Entities/$count?$filter=Value gt 10
+```
+
+which computes
+
+$$
+|{ e \in E \mid e.Value > 10 }|
+$$
+
+### Navigation and expansion with `$expand`
+
+Entities often contain relationships. Example structure
+
+$$
+A \rightarrow B
+$$
+
+To retrieve related entities
+
+```
+GET /Entities?$expand=RelatedEntities
+```
+
+Formal interpretation
+
+$$
+R(E) = { (e, related(e)) \mid e \in E }
+$$
+
+Nested expansions
+
+```
+GET /Entities?$expand=RelatedEntities($expand=SubEntities)
+```
+
+This corresponds to multi level joins.
+
+### Combining operations
+
+OData allows composition of operators.
+
+```
+GET /Entities?
+$filter=Value gt 10&
+$select=Name,Value&
+$orderby=Value desc&
+$top=5
+```
+
+This represents a composed function
+
+$$
+R(E) = top_5 \circ sort \circ project \circ filter (E)
+$$
+
+The order of logical operations is:
+
+1. filter,
+2. project,
+3. sort,
+4. limit.
+
+### Conceptual interpretation
+
+A read operation in OData is not a simple retrieval. It is a **query algebra expressed in URL form**.
+
+The client defines a transformation
+
+$$
+Q : E \rightarrow V
+$$
+
+where $V$ is a view derived from $E$. The server is responsible for computing this transformation efficiently, typically by translating it into a database query.
+
+### Practical implication
+
+The power of OData read operations lies in three properties:
+
+* expressiveness: complex queries can be expressed declaratively,
+* composability: operators can be combined arbitrarily,
+* abstraction: the client does not need to know how data is stored.
+
+This makes OData particularly suitable for systems where data must be exposed flexibly but consistently.
+
+## Create operations
+
+A create operation introduces a new entity into a dataset. From first principles, given a set
+
+$$
+E = {e_1, e_2, \dots, e_n}
+$$
+
+a create operation produces
+
+$$
+E' = E \cup {e_{new}}
+$$
+
+where $e_{new}$ must satisfy all structural constraints of the data model.
+
+In **Open Data Protocol**, creation is performed using HTTP **POST** on an entity collection.
+
+### Creating a new entity
+
+The client sends a POST request to the collection endpoint.
+
+```
+POST /Entities
+```
+
+Payload
+
+```{json}
+{
+  "Name": "Example",
+  "Value": 42
+}
+```
+
+Interpretation:
+
+* `/Entities` identifies the target set,
+* the payload describes the new entity,
+* the server validates and inserts the entity.
+
+Resulting state:
+
+$$
+E' = E \cup {e_{new}}
+$$
+
+### Server response
+
+If successful, the server typically returns
+
+* HTTP status **201 Created**,
+* the created entity,
+* the canonical URL of the new resource.
+
+Example
+
+```{json}
+{
+  "Id": 101,
+  "Name": "Example",
+  "Value": 42
+}
+```
+
+The key `Id` is often generated server side.
+
+### Client generated vs server generated keys
+
+Two models exist. Server generated key
+
+* client omits the key,
+* server assigns a unique identifier.
+
+Client generated key
+
+* client provides the key in the payload,
+* server validates uniqueness.
+
+Example
+
+```{json}
+{
+  "Id": 200,
+  "Name": "Example",
+  "Value": 42
+}
+```
+
+This requires the invariant
+
+$$
+\forall e_i \in E,\ key(e_i) \neq 200
+$$
+
+otherwise creation fails.
+
+### Creating related entities
+
+OData allows creation through navigation paths:
+
+```
+POST /Entities(1)/RelatedEntities
+```
+
+Payload
+
+```{json}
+{
+  "Description": "Child entity"
+}
+```
+
+Interpretation
+
+* create a new entity,
+* automatically associate it with entity 1. 
+
+This corresponds to:
+
+$$
+E_{child}' = E_{child} \cup {c}
+$$
+
+and
+
+$$
+relation(1, c) = true
+$$
+
+### Validation and constraints
+
+Creation is subject to constraints defined by the data model. Typical constraints:
+
+* required properties must be present,
+* types must match (string, number, date),
+* keys must be unique,
+* referential integrity must hold.
+
+If constraints are violated, the server rejects the request.
+
+### Idempotency considerations
+
+POST is not idempotent, meaning two identical requests
+
+```
+POST /Entities
+```
+
+may produce
+
+$$
+E' = E \cup {e_1, e_2}
+$$
+
+creating duplicates.
+
+To control this, systems often introduce:
+
+* idempotency keys,
+* uniqueness constraints,
+* pre existence checks.
+
+### Batch creation
+
+OData supports batch requests for multiple creations:
+
+```
+POST /$batch
+```
+
+Conceptually
+
+```
+Create e1
+Create e2
+Create e3
+```
+
+This reduces network overhead and allows transactional grouping.
+
+### Formal interpretation
+
+Creation can be seen as a function
+
+$$
+C : (E, x) \rightarrow E'
+$$
+
+where $x$ is the input payload and
+
+$$
+E' = E \cup {f(x)}
+$$
+
+with $f$ being a validation and transformation function applied by the server.
+
+### Practical implications
+
+Creation is simple in isolation but becomes complex in real systems due to:
+
+* concurrency,
+* validation rules,
+* side effects (triggers, workflows),
+* partial failures in distributed systems.
+
+Because of this, many enterprise systems treat creation not as a trivial insert but as a controlled state transition.
+
+## Update operations
+
+An update operation modifies an existing entity. From first principles, if an entity is represented as a tuple of attributes
+
+$$
+e = (a_1, a_2, \dots, a_k)
+$$
+
+an update produces a new version
+
+$$
+e' = (a_1', a_2', \dots, a_k')
+$$
+
+with at least one attribute changed, while preserving the identity of the entity. At the dataset level
+
+$$
+E' = (E \setminus {e}) \cup {e'}
+$$
+
+In **Open Data Protocol**, updates are performed using HTTP **PATCH** or **PUT** on a specific entity resource.
+
+
+
+### Addressing the entity
+
+An update always targets a specific entity identified by its key.
+
+```
+PATCH /Entities(101)
+```
+
+This denotes the entity
+
+[
+e \in E \mid key(e) = 101
+]
+
+---
+
+### Partial update with PATCH
+
+PATCH modifies only the attributes included in the payload.
+
+```json id="u2"
+{
+  "Value": 50
+}
+```
+
+Interpretation
+
+[
+e = (Name = "Example", Value = 42)
+]
+
+becomes
+
+[
+e' = (Name = "Example", Value = 50)
+]
+
+Only the specified attribute changes.
+
+This is equivalent to a selective assignment:
+
+[
+e'.Value = 50
+]
+
+All other attributes remain invariant.
+
+---
+
+### Full update with PUT
+
+PUT replaces the entire entity representation.
+
+```id="u3"
+PUT /Entities(101)
+```
+
+Payload
+
+```json id="u4"
+{
+  "Id": 101,
+  "Name": "Updated",
+  "Value": 50
+}
+```
+
+Interpretation
+
+[
+e' = payload
+]
+
+All attributes are overwritten.
+
+If a field is omitted, its behavior depends on the implementation:
+
+* set to null
+* left unchanged
+* rejected as invalid
+
+Because of this ambiguity, PUT is more rigid and potentially dangerous.
+
+---
+
+### Formal distinction between PATCH and PUT
+
+PATCH
+
+[
+e' = e \oplus \Delta
+]
+
+where (\Delta) is a partial modification.
+
+PUT
+
+[
+e' = x
+]
+
+where (x) is the full replacement.
+
+---
+
+### Concurrency and consistency
+
+In distributed systems, concurrent updates can lead to lost updates.
+
+Scenario
+
+[
+e \rightarrow e_1 \quad \text{and} \quad e \rightarrow e_2
+]
+
+If applied without coordination, one update overwrites the other.
+
+OData addresses this through **ETags**.
+
+Example
+
+```id="u5"
+If-Match: W/"etag-value"
+```
+
+The update is executed only if
+
+[
+etag_{client} = etag_{server}
+]
+
+Otherwise, the server rejects the request with HTTP **412 Precondition Failed**.
+
+This implements **optimistic concurrency control**.
+
+---
+
+### Updating relationships
+
+Relationships can also be updated.
+
+Example linking two entities
+
+```id="u6"
+POST /Entities(1)/RelatedEntities/$ref
+```
+
+Payload
+
+```json id="u7"
+{
+ "@odata.id": "/RelatedEntities(10)"
+}
+```
+
+Interpretation
+
+[
+relation(1,10) = true
+]
+
+Removing a relationship
+
+```id="u8"
+DELETE /Entities(1)/RelatedEntities(10)/$ref
+```
+
+This does not delete entities, only the association.
+
+---
+
+### Idempotency
+
+Update operations have different idempotency properties.
+
+PUT is idempotent:
+
+[
+PUT(x) \Rightarrow e' = x
+]
+
+Repeated calls produce the same state.
+
+PATCH is not strictly idempotent unless the operation is deterministic and independent of previous state.
+
+---
+
+### Batch updates
+
+Multiple updates can be grouped.
+
+```id="u9"
+POST /$batch
+```
+
+Conceptually
+
+```id="u10"
+update e1
+update e2
+update e3
+```
+
+This is useful for:
+
+* reducing network overhead
+* ensuring consistency across related updates
+
+---
+
+### Formal interpretation
+
+Update can be defined as
+
+[
+U : (E, key, \Delta) \rightarrow E'
+]
+
+where
+
+[
+E' = (E \setminus {e}) \cup {e \oplus \Delta}
+]
+
+This highlights that update is a **state transformation preserving identity**.
+
+---
+
+### Practical implications
+
+Update operations are often the most complex because they must ensure:
+
+* data integrity
+* concurrency control
+* consistency with business rules
+* minimal data transfer
+
+Improper use of updates leads to:
+
+* lost data
+* inconsistent states
+* performance degradation
+
+For this reason, many systems enforce strict validation and concurrency mechanisms.
+
+## Delete operations
+
+A delete operation removes an entity from a dataset. From first principles, given a set
+
+[
+E = {e_1, e_2, \dots, e_n}
+]
+
+deleting an entity (e_i) produces
+
+[
+E' = E \setminus {e_i}
+]
+
+This operation reduces the cardinality of the dataset by one and eliminates the entity’s existence within the system.
+
+In **Open Data Protocol**, deletion is performed using HTTP **DELETE** on a specific entity resource.
+
+---
+
+### Addressing the entity
+
+A delete operation must target a uniquely identifiable entity.
+
+```id="d1"
+DELETE /Entities(101)
+```
+
+This denotes
+
+[
+e \in E \mid key(e) = 101
+]
+
+The operation removes this element from the set.
+
+---
+
+### Server response
+
+If successful, the server typically returns:
+
+* HTTP **204 No Content**
+* no response body
+
+This reflects the fact that the entity no longer exists.
+
+---
+
+### Formal interpretation
+
+Deletion can be defined as a function
+
+[
+D : (E, key) \rightarrow E'
+]
+
+where
+
+[
+E' = E \setminus {e \mid key(e) = key}
+]
+
+If the key does not exist, behavior depends on the implementation:
+
+* return error (404 Not Found)
+* treat as no-op
+
+---
+
+### Idempotency
+
+DELETE is idempotent.
+
+Applying the same operation multiple times:
+
+[
+D(D(E, key), key) = D(E, key)
+]
+
+After the first deletion, the entity no longer exists, so subsequent deletions do not change the state.
+
+This property is critical in distributed systems where retries may occur.
+
+---
+
+### Referential integrity
+
+Deletion is constrained by relationships between entities.
+
+Consider two sets:
+
+[
+A \rightarrow B
+]
+
+If an entity in (A) references an entity in (B), deleting the entity in (B) may violate integrity constraints.
+
+Possible behaviors:
+
+* reject deletion
+* cascade delete related entities
+* remove references (set null)
+
+These behaviors are defined by the data model and server implementation.
+
+---
+
+### Deleting relationships without deleting entities
+
+OData distinguishes between deleting an entity and deleting a relationship.
+
+Example:
+
+```id="d2"
+DELETE /Entities(1)/RelatedEntities(10)/$ref
+```
+
+Interpretation:
+
+[
+relation(1,10) = false
+]
+
+The entities remain, only the association is removed.
+
+This is important in graph like data structures.
+
+---
+
+### Soft delete vs hard delete
+
+Two conceptual deletion models exist.
+
+Hard delete
+
+[
+E' = E \setminus {e}
+]
+
+The entity is physically removed.
+
+Soft delete
+
+[
+e \rightarrow e'
+]
+
+where
+
+[
+e'.deleted = true
+]
+
+The entity remains in the dataset but is marked as inactive.
+
+OData itself does not enforce either model. The behavior depends on the underlying system.
+
+---
+
+### Conditional deletion
+
+Deletion can be made conditional using ETags.
+
+Example
+
+```id="d3"
+If-Match: W/"etag-value"
+```
+
+The delete operation is executed only if
+
+[
+etag_{client} = etag_{server}
+]
+
+Otherwise the server returns HTTP **412 Precondition Failed**.
+
+This prevents deleting an entity that has been modified since it was last read.
+
+---
+
+### Batch deletion
+
+Multiple deletions can be grouped in a batch request.
+
+```id="d4"
+POST /$batch
+```
+
+Conceptually
+
+```id="d5"
+delete e1
+delete e2
+delete e3
+```
+
+This is useful for:
+
+* reducing network overhead
+* ensuring consistency across operations
+
+---
+
+### Practical implications
+
+Deletion is deceptively simple but introduces several challenges:
+
+* cascading effects across related data
+* recovery and audit requirements
+* compliance constraints (for example data retention laws)
+* concurrency issues
+
+Because of this, many enterprise systems restrict deletion or replace it with soft delete strategies.
+
+---
+
+### Conceptual summary
+
+Delete is the only operation that reduces the size of the dataset. It represents an irreversible transformation unless recovery mechanisms are in place.
+
+In OData, deletion is expressed cleanly through HTTP semantics, but its real complexity lies in maintaining consistency of the overall data model.
+
+## Query execution, optimization, and limits in real systems
+
+Up to this point, CRUD operations have been described at the level of semantics. However, in real systems the critical question is not *what a query means*, but *how it is executed*.
+
+From first principles, any OData read operation defines a function
+
+[
+Q : E \rightarrow V
+]
+
+where (E) is the dataset and (V) is the result. The server must compute (Q(E)) efficiently under constraints of time, memory, and concurrency.
+
+The difficulty arises because OData allows clients to construct **arbitrary query compositions**. This means the server is effectively exposing a **remote query engine**.
+
+---
+
+### The execution pipeline
+
+A typical execution pipeline can be formalized as:
+
+[
+\text{URL} \rightarrow \text{AST} \rightarrow \text{logical plan} \rightarrow \text{physical plan} \rightarrow \text{execution}
+]
+
+More explicitly:
+
+Client request
+↓
+OData parser
+↓
+Abstract syntax tree (AST)
+↓
+Query provider
+↓
+Database query (often SQL)
+↓
+Execution engine
+↓
+Result materialization
+↓
+JSON serialization
+
+Each transformation step preserves semantics while changing representation.
+
+---
+
+### Logical vs physical query plan
+
+A critical distinction in query processing is between:
+
+Logical plan
+Describes *what* operations must be performed.
+
+Physical plan
+Describes *how* those operations are executed.
+
+Example OData query
+
+```id="qe1"
+GET /Entities?$filter=Value gt 10&$orderby=Value desc&$top=5
+```
+
+Logical plan
+
+[
+top_5 \circ sort_{desc(Value)} \circ filter_{Value > 10}(E)
+]
+
+Physical plan (example)
+
+* index scan on Value
+* apply filter predicate
+* partial sort
+* limit to 5 rows
+
+The physical plan depends on the database optimizer.
+
+---
+
+### Cost model
+
+Execution efficiency depends on minimizing cost.
+
+A simplified cost model:
+
+[
+Cost(Q) = IO(Q) + CPU(Q) + Memory(Q)
+]
+
+Where:
+
+* IO is disk or network access
+* CPU is computation
+* Memory is intermediate data storage
+
+OData queries influence cost through their structure.
+
+---
+
+### Selectivity and filtering
+
+Filtering reduces the dataset early.
+
+[
+E_{filtered} = { e \in E \mid predicate(e) }
+]
+
+If the predicate is selective, then
+
+[
+|E_{filtered}| \ll |E|
+]
+
+This reduces subsequent cost.
+
+Poor filtering leads to full scans.
+
+Example problematic query
+
+```id="qe2"
+$filter=contains(Name,'A')
+```
+
+If no index supports the predicate, the system must evaluate all elements.
+
+---
+
+### Projection and data width
+
+Projection reduces the number of attributes.
+
+[
+width(e) = number\ of\ attributes
+]
+
+Using `$select` reduces width, which decreases:
+
+* memory usage
+* serialization cost
+* network transfer
+
+Example
+
+```id="qe3"
+$select=Name,Value
+```
+
+This avoids retrieving unnecessary columns.
+
+---
+
+### Join expansion cost
+
+The `$expand` operator introduces joins.
+
+Given:
+
+[
+A \rightarrow B
+]
+
+Expansion produces:
+
+[
+{ (a, related(a)) \mid a \in A }
+]
+
+If each element in (A) relates to many elements in (B), the result size becomes:
+
+[
+|A| \times avg(|B|)
+]
+
+Nested expansions amplify this effect.
+
+Example
+
+```id="qe4"
+$expand=Children($expand=SubChildren)
+```
+
+This can lead to combinatorial growth.
+
+---
+
+### Pagination strategies
+
+Two main pagination strategies exist.
+
+Offset based
+
+```id="qe5"
+$skip=1000&$top=10
+```
+
+Cost:
+
+[
+O(n)
+]
+
+because the system must traverse skipped elements.
+
+Cursor based (server driven)
+
+```id="qe6"
+@odata.nextLink
+```
+
+Cost:
+
+[
+O(k)
+]
+
+where (k) is the page size.
+
+Cursor pagination is more efficient for large datasets.
+
+---
+
+### Index utilization
+
+Efficient execution depends on indexes.
+
+If an index exists on attribute (a), then
+
+[
+filter(a = x) \rightarrow O(\log n)
+]
+
+Otherwise
+
+[
+filter(a = x) \rightarrow O(n)
+]
+
+OData does not control indexes, but query structure determines whether indexes can be used.
+
+---
+
+### Query complexity and limits
+
+Because OData exposes a flexible query interface, systems must impose limits.
+
+Typical constraints:
+
+* maximum page size
+* maximum expansion depth
+* maximum number of returned records
+* restricted functions (for example disabling `$apply`)
+
+These constraints prevent pathological queries.
+
+---
+
+### Concurrency and isolation
+
+Execution occurs in a concurrent environment.
+
+Let two queries operate simultaneously:
+
+[
+Q_1(E), Q_2(E)
+]
+
+If updates occur concurrently, the system must define isolation levels:
+
+* read committed
+* repeatable read
+* snapshot isolation
+
+OData itself does not define isolation. It depends on the underlying data store.
+
+---
+
+### Materialization and serialization
+
+After execution, results must be materialized.
+
+[
+Result = { e_1, e_2, \dots, e_k }
+]
+
+Then serialized into JSON:
+
+```json id="qe7"
+{
+  "value": [...]
+}
+```
+
+Serialization cost is proportional to:
+
+[
+k \times width(e)
+]
+
+Large payloads increase latency.
+
+---
+
+### Fundamental trade-off
+
+OData exposes a trade-off:
+
+Flexibility
+vs
+Predictability
+
+Allowing arbitrary queries gives power to the client but removes control from the server.
+
+Therefore real systems must balance:
+
+* expressiveness
+* performance
+* safety
+
+---
+
+### Conceptual conclusion
+
+From a computer science perspective, OData is not just an API protocol. It is a **distributed query system**.
+
+It exposes:
+
+* a declarative query language
+* a schema model
+* a transport mechanism
+
+The client defines a function over data, and the server is responsible for computing it under real-world constraints.
+
+The complexity of OData does not lie in its syntax, but in the **execution semantics and system level implications**.
+
+## OData vs REST vs GraphQL from first principles
+
+To compare **Open Data Protocol**, REST, and GraphQL rigorously, we must reduce them to their fundamental abstractions.
+
+At the lowest level, all three attempt to solve the same problem:
+
+given a dataset (E), allow a client to obtain a view (V) such that
+
+[
+V = Q(E)
+]
+
+where (Q) is a query defined by the client.
+
+The difference lies in **how (Q) is expressed, constrained, and executed**.
+
+---
+
+### REST as a resource function mapping
+
+REST is not a protocol but an architectural style. In practice, REST APIs expose a finite set of endpoints.
+
+Each endpoint corresponds to a predefined function:
+
+[
+f_i : E \rightarrow V_i
+]
+
+Example
+
+```id="cmp1"
+GET /products
+GET /products/expensive
+GET /products/by-category/tools
+```
+
+Each endpoint encodes both:
+
+* the dataset
+* the transformation
+
+This means:
+
+* the client does not construct queries
+* the server defines all possible queries in advance
+
+#### Implication
+
+REST has **low expressive power at runtime** but **high control at design time**.
+
+The number of possible queries is bounded by the number of endpoints.
+
+---
+
+### OData as a declarative query algebra over HTTP
+
+OData generalizes REST by allowing the client to construct (Q) dynamically.
+
+A request such as
+
+```id="cmp2"
+GET /Products?$filter=Price gt 100&$select=Name
+```
+
+defines a query:
+
+[
+Q = project_{Name} \circ filter_{Price > 100}
+]
+
+OData therefore exposes a **restricted relational algebra** through URLs.
+
+Properties:
+
+* composable operators
+* standardized syntax
+* schema driven through metadata
+
+#### Implication
+
+OData has **moderate to high expressive power** while preserving a structured, constrained query model.
+
+The server still controls:
+
+* which operators are allowed
+* maximum complexity
+* execution limits
+
+---
+
+### GraphQL as a structural query language
+
+GraphQL takes a different approach. Instead of encoding queries in URLs, it defines a **query language** in the request body.
+
+Example
+
+```id="cmp3"
+query {
+  products(filter: { price_gt: 100 }) {
+    name
+    price
+  }
+}
+```
+
+This defines a function:
+
+[
+Q(E) = { (name(e), price(e)) \mid e \in E, e.price > 100 }
+]
+
+GraphQL is structurally closer to:
+
+* a tree traversal language
+* a projection and selection system over a graph
+
+#### Key property
+
+The client specifies exactly the **shape of the response**.
+
+---
+
+### Expressive power comparison
+
+We can compare the three approaches in terms of the class of queries they can express.
+
+REST
+
+[
+Q \in {f_1, f_2, \dots, f_n}
+]
+
+Finite, predefined.
+
+OData
+
+[
+Q \in \text{restricted relational algebra}
+]
+
+Supports:
+
+* selection
+* projection
+* ordering
+* limited joins (via expand)
+* aggregation (in some implementations)
+
+GraphQL
+
+[
+Q \in \text{tree shaped graph queries}
+]
+
+Supports:
+
+* arbitrary nesting
+* precise field selection
+* custom resolvers
+
+---
+
+### Control vs flexibility
+
+A fundamental trade-off emerges.
+
+REST
+
+* maximum control
+* minimal flexibility
+
+OData
+
+* structured flexibility
+* bounded complexity
+
+GraphQL
+
+* maximum flexibility
+* minimal built-in constraints
+
+This can be summarized as:
+
+[
+Control \downarrow \quad \text{as} \quad Expressiveness \uparrow
+]
+
+---
+
+### Query execution implications
+
+REST
+
+* execution is predefined
+* optimized at design time
+* predictable performance
+
+OData
+
+* execution is dynamic
+* translated into database queries
+* performance depends on query shape
+
+GraphQL
+
+* execution is resolver based
+* may involve multiple data sources
+* risk of N+1 query problems
+
+---
+
+### Data transfer efficiency
+
+REST
+
+* often over-fetches or under-fetches
+* requires multiple endpoints
+
+OData
+
+* reduces over-fetching via `$select`
+* still constrained by entity model
+
+GraphQL
+
+* precise data selection
+* minimal over-fetching
+
+---
+
+### Schema and discoverability
+
+OData
+
+* exposes `$metadata`
+* machine readable schema
+* strongly typed
+
+GraphQL
+
+* exposes schema via introspection
+* also strongly typed
+
+REST
+
+* typically relies on external documentation
+* not inherently self describing
+
+---
+
+### Complexity management
+
+OData
+
+* limits through query options
+* predictable algebra
+
+GraphQL
+
+* requires explicit query cost analysis
+* risk of deeply nested expensive queries
+
+REST
+
+* complexity managed at endpoint level
+
+---
+
+### Formal interpretation
+
+All three can be viewed as ways to define a function
+
+[
+Q : E \rightarrow V
+]
+
+But:
+
+REST
+
+[
+Q \in predefined\ set
+]
+
+OData
+
+[
+Q \in constrained\ algebra
+]
+
+GraphQL
+
+[
+Q \in user\ defined\ query\ language
+]
+
+---
+
+### Conceptual conclusion
+
+From a computer science perspective:
+
+REST externalizes computation into **endpoint design**
+OData externalizes computation into **query algebra over HTTP**
+GraphQL externalizes computation into **client defined query programs**
+
+OData occupies a middle ground. It provides a formal, composable query model without giving full control of execution semantics to the client.
+
+This makes it particularly suitable for systems where:
+
+* data is structured and relational
+* queries must be flexible but controlled
+* performance predictability is required
+
+## OData and relational algebra
+
+To understand OData rigorously, the right starting point is not web development but **relational algebra**. Relational algebra is the formal system underlying SQL and, more broadly, the theory of querying structured data.
+
+Let a relation be a set of tuples
+
+[
+R \subseteq D_1 \times D_2 \times \dots \times D_n
+]
+
+where each (D_i) is a domain of values. A database is then a collection of such relations together with integrity constraints.
+
+Relational algebra defines a small set of primitive operators that transform relations into new relations. The most relevant are:
+
+selection
+
+[
+\sigma_{\varphi}(R)
+]
+
+projection
+
+[
+\pi_{A_1,\dots,A_k}(R)
+]
+
+join
+
+[
+R \Join S
+]
+
+ordering is not part of classical relational algebra because relations are sets and therefore unordered, but modern query systems add ordering as an operational layer.
+
+The key observation is that many OData read operators are direct encodings of these constructs.
+
+### Selection
+
+Consider the OData query
+
+```text
+GET /Entities?$filter=Value gt 10
+```
+
+This corresponds to
+
+[
+\sigma_{Value > 10}(R)
+]
+
+The `$filter` clause is therefore a predicate over tuples. It defines a subset of the relation satisfying a logical condition.
+
+If the query is
+
+```text
+GET /Entities?$filter=Value gt 10 and Name eq 'B'
+```
+
+the corresponding expression is
+
+[
+\sigma_{Value > 10 \land Name = 'B'}(R)
+]
+
+This is not merely analogous to relational selection. It is the same abstract operation, encoded in URL syntax rather than symbolic algebra.
+
+### Projection
+
+Now consider
+
+```text
+GET /Entities?$select=Name,Value
+```
+
+This corresponds to
+
+[
+\pi_{Name,Value}(R)
+]
+
+Projection removes attributes from the output without changing the underlying relation itself. In computational terms, it reduces tuple width, which matters for memory, serialization cost, and network transfer.
+
+When `$filter` and `$select` are combined,
+
+```text
+GET /Entities?$filter=Value gt 10&$select=Name,Value
+```
+
+the expression becomes
+
+[
+\pi_{Name,Value}(\sigma_{Value > 10}(R))
+]
+
+This is an ordinary composition of relational operators.
+
+### Navigation and joins
+
+OData also supports relationships between entity sets. Suppose there are two relations, (A) and (B), linked by a foreign key. Then
+
+```text
+GET /A?$expand=B
+```
+
+corresponds conceptually to a join. The exact formalization depends on whether the relationship is one to one or one to many, but the essential idea is:
+
+[
+A \Join B
+]
+
+or, more precisely for nested representations, a join followed by regrouping into hierarchical form.
+
+This is an important distinction. SQL returns flat joined rows, while OData often returns nested JSON objects. So OData is not simply relational algebra at the output layer. It is closer to relational algebra followed by a structural transformation into a tree shaped representation.
+
+### Pagination and limits
+
+Queries such as
+
+```text
+GET /Entities?$top=10&$skip=20
+```
+
+do not belong to classical relational algebra because the latter is set based and does not model ordered slices. These operators belong to the operational layer of modern query processing. They are analogous to SQL `LIMIT` and `OFFSET`, not to the foundational algebra itself.
+
+This reveals something important. OData has two conceptual layers:
+
+a declarative relational core
+an operational transport layer for pagination, ordering, serialization, and navigation
+
+The core explains the semantics. The operational layer explains how results are delivered.
+
+### Aggregation
+
+Some OData implementations support aggregation through `$apply`. For example, a grouping and sum operation is equivalent to an extended relational algebra operator:
+
+[
+\gamma_{Category,;sum(Price)\rightarrow Total}(R)
+]
+
+This is not part of the minimal classical algebra either, but it is part of the standard extensions used to model SQL style grouping and aggregation.
+
+So, from a formal standpoint, OData is best understood as exposing a substantial subset of **extended relational algebra** through HTTP.
+
+### Why this matters
+
+This is not just a theoretical curiosity. It explains why OData behaves the way it does.
+
+If a query language exposes selection, projection, joins, and aggregation, then it is no longer just an API parameterization scheme. It is a bona fide data query language. The fact that it is encoded in URLs does not change its computational meaning.
+
+This also explains why OData performance issues resemble database performance issues. Poor filters, wide projections, expensive joins, and large offsets are not web problems. They are query planning problems.
+
+## A category theoretic interpretation
+
+Category theory provides a more abstract lens. It is useful here not because it is fashionable, but because it lets us describe data access in terms of structure preserving transformations.
+
+A category consists of objects and morphisms. Very roughly:
+
+objects can represent data types, schemas, or states
+morphisms can represent structure preserving mappings between them
+
+This allows us to describe data access not merely as retrieval of values, but as transformation between structured domains.
+
+### Entities as objects, queries as morphisms
+
+Suppose an entity set (E) is treated as an object in a category of datasets. Then a query can be viewed as a morphism
+
+[
+q : E \to V
+]
+
+where (V) is another structured object, the result type of the query.
+
+For example:
+
+a selection maps a dataset to a subset shaped dataset
+a projection maps a wide schema to a narrower schema
+a navigation maps one object to a related object
+
+In this view, OData queries are typed morphisms that preserve enough structure to remain meaningful transformations over data.
+
+### Composition
+
+One of the central ideas in category theory is composition. If
+
+[
+f : A \to B
+\quad \text{and} \quad
+g : B \to C
+]
+
+then
+
+[
+g \circ f : A \to C
+]
+
+must also exist.
+
+This maps directly onto query composition in OData. A filter followed by a projection is simply:
+
+[
+\pi \circ \sigma : E \to V
+]
+
+A more complex OData query such as
+
+```text
+GET /Entities?$filter=Value gt 10&$select=Name
+```
+
+is not best thought of as a string with parameters. It is better understood as a composition of typed transformations.
+
+This is one reason OData feels algebraic rather than procedural. Each operator transforms a dataset into another dataset or view, and these transformations compose.
+
+### Functorial intuition
+
+A functor maps objects and morphisms from one category to another while preserving composition.
+
+This gives a useful interpretation of the server side OData pipeline. The client specifies a query in one representation, namely URL syntax. The server maps it into another representation, such as an abstract syntax tree, then perhaps into an ORM expression tree, and finally into SQL.
+
+Schematically:
+
+[
+\text{OData syntax} \to \text{logical query} \to \text{physical query}
+]
+
+Each stage attempts to preserve semantics while changing representation. In category theoretic language, this is functor like behavior: structure is translated from one domain to another without changing the meaning of composition.
+
+One should not overstate this. A real OData implementation is not literally a category theory engine. But the categorical perspective captures something essential: the system is built around compositional mappings that preserve query semantics across representations.
+
+### Natural transformations and view changes
+
+Suppose two different query backends produce equivalent results from the same logical query. For example, one backend translates the query to SQL, another to a document database query. If both preserve the same high level semantics, their relation can be thought of informally as a natural transformation between two semantic preserving pipelines.
+
+Again, this is a conceptual analogy, not a claim that production OData stacks are formalized this way. But it clarifies why the same OData query can target different storage engines. The protocol is not tied to one implementation. It specifies meaning at a higher level of abstraction.
+
+## Limits of the abstraction
+
+Both relational algebra and category theory illuminate OData, but neither should be mistaken for the whole system.
+
+Relational algebra explains the query core but not HTTP transport, pagination links, media types, or concurrency headers.
+
+Category theory explains composition and structural preservation but abstracts away from operational cost, serialization overhead, and failure modes.
+
+So the correct conclusion is narrower and stronger:
+
+OData is not reducible to web API conventions alone. Its core semantics are best understood through formal models of data transformation. Relational algebra explains its concrete query behavior. Category theoretic language explains its compositional character at a higher level of abstraction.
+
+## Conceptual conclusion
+
+From a computer science perspective, OData occupies an interesting position.
+
+It is more formal than ordinary REST parameter conventions because it exposes a real query algebra.
+
+It is more constrained than GraphQL because its semantics are closer to typed transformations over an entity model than to arbitrary client defined query programs.
+
+And it is deeply connected to the foundations of data theory because its main operators are recognizable instances of long established formal constructs.
+
+This is why OData matters. It is not merely a convenient way to put filters in URLs. It is an attempt to bring the semantics of structured querying into the web architecture without discarding the rigor of formal data models.
+
+## OData as a complete data access model
+
+At this point, all the components are available to treat **Open Data Protocol** not as a feature set, but as a **coherent model of data access**.
+
+From first principles, a data access model must define three things:
+
+* what the data is
+* how it can be queried
+* how it can be modified
+
+OData provides all three in a unified system.
+
+### The three layers of the model
+
+OData can be decomposed into three tightly coupled layers.
+
+Data model
+The Entity Data Model defines entities, attributes, keys, and relationships.
+
+Query model
+A declarative algebra expressed through operators such as filter, projection, ordering, and expansion.
+
+State transition model
+CRUD operations mapped to HTTP methods.
+
+Formally, we can describe OData as a triple
+
+[
+(\mathcal{E}, \mathcal{Q}, \mathcal{U})
+]
+
+where:
+
+(\mathcal{E}) is the entity model
+(\mathcal{Q}) is the query algebra
+(\mathcal{U}) is the set of update functions
+
+A complete data access request is then:
+
+[
+U(Q(E))
+]
+
+or, for read only operations,
+
+[
+Q(E)
+]
+
+This formulation shows that OData is not just transport. It is a **closed system of data definition, transformation, and mutation**.
+
+---
+
+### Strengths of the model
+
+The model has several properties that can be derived directly from its structure.
+
+#### Composability
+
+Queries are built by composing operators.
+
+[
+Q = op_n \circ op_{n-1} \circ \dots \circ op_1
+]
+
+This allows a large space of queries to be expressed with a small set of primitives.
+
+#### Uniform interface
+
+All entities are accessed through the same pattern:
+
+* URL identifies the resource
+* query options refine the result
+* HTTP method defines the operation
+
+This reduces cognitive complexity and enables generic clients.
+
+#### Schema awareness
+
+The presence of metadata means that the system is self describing.
+
+A client can infer:
+
+* available entities
+* relationships
+* data types
+
+This supports automation and tooling.
+
+#### Transport independence of semantics
+
+Although OData uses HTTP, its semantics are not tied to HTTP itself.
+
+The same query algebra could be transported over different protocols without changing meaning.
+
+---
+
+### Weaknesses and limitations
+
+The same properties that give OData its power also introduce constraints.
+
+#### Exposure of query complexity
+
+Because the client can define queries, it can also generate inefficient ones.
+
+This leads to:
+
+* expensive joins
+* large intermediate datasets
+* unpredictable execution time
+
+The server must therefore enforce limits.
+
+#### Tight coupling to data model
+
+The entity model is exposed directly.
+
+This means:
+
+* changes to the model affect clients
+* abstraction layers are reduced
+
+Unlike REST, where endpoints can hide internal structure, OData exposes it.
+
+#### Limited expressiveness compared to full query languages
+
+OData provides a restricted algebra.
+
+It does not naturally express:
+
+* complex recursive queries
+* arbitrary computation
+* cross domain aggregations without extensions
+
+It is more expressive than REST parameters, but less than a full programming or query language.
+
+#### Overloading HTTP semantics
+
+HTTP was designed for resource transfer, not for complex query evaluation.
+
+Using URLs as a query language introduces practical constraints:
+
+* URL length limits
+* encoding complexity
+* readability issues for complex queries
+
+---
+
+### When OData is appropriate
+
+From a structural standpoint, OData is well suited when the following conditions hold.
+
+The data is structured and relational in nature
+Entities and relationships can be clearly defined
+Clients require flexible querying capabilities
+Performance constraints can be controlled through limits and indexing
+There is value in exposing a uniform, discoverable data model
+
+Typical domains include:
+
+* enterprise resource planning systems
+* customer data platforms
+* reporting and analytics backends
+* integration layers between systems
+
+---
+
+### When OData is not appropriate
+
+OData becomes less suitable when the assumptions above break.
+
+Highly unstructured or document oriented data
+Graph like traversals with arbitrary depth
+Business logic driven APIs where operations are not reducible to CRUD
+Strict control over query patterns is required
+Very complex aggregations or computational workflows are needed
+
+In such cases:
+
+* REST with predefined endpoints
+* GraphQL
+* custom APIs
+
+may provide better control or expressiveness.
+
+---
+
+### Trade-off analysis
+
+The core trade-off can be expressed as follows.
+
+Let
+
+[
+Flexibility(Q)
+]
+
+be the space of queries the client can express, and
+
+[
+Control(S)
+]
+
+be the ability of the server to predict and optimize execution.
+
+Then
+
+[
+Flexibility \uparrow \Rightarrow Control \downarrow
+]
+
+OData chooses a middle point:
+
+* more flexible than REST
+* more controlled than GraphQL
+
+---
+
+### Conceptual synthesis
+
+From a computer science perspective, OData can be viewed as:
+
+a typed, declarative interface over a structured dataset, exposing a constrained query algebra and a minimal state transition system.
+
+It is not merely an API style. It is a **data interaction model** that combines:
+
+* relational thinking
+* web architecture
+* compositional query semantics
+
+---
+
+### Final observation
+
+The essential insight is this:
+
+OData externalizes part of the query engine to the client.
+
+The client does not just request resources. It specifies transformations over data.
+
+The server remains responsible for execution, optimization, and consistency, but the **shape of computation is defined at the boundary**.
+
+This is why OData sits between traditional APIs and full query systems. It is a controlled exposure of the internal data model and its algebra.
+
+## Decision framework for using OData
+
+Choosing **Open Data Protocol** is not a stylistic decision. It is a structural decision about how a system exposes and governs access to its data.
+
+From first principles, the decision reduces to evaluating whether exposing a **queryable data algebra over HTTP** is compatible with the constraints of the system.
+
+We formalize the problem.
+
+Let:
+
+* (E) be the internal dataset
+* (Q_{client}) be the space of queries the client can express
+* (C_{system}) be the constraints of the system (performance, security, consistency)
+
+The question is whether
+
+[
+Q_{client} \subseteq Q_{safe}(C_{system})
+]
+
+If the client can express queries outside what the system can safely execute, OData is not appropriate unless constraints are enforced.
+
+---
+
+### Step 1 — Identify the nature of the data
+
+Determine whether the dataset has a stable, structured representation.
+
+Ask:
+
+* can the data be modeled as entities with keys and relationships
+* are relationships relatively stable and well defined
+* is the schema expected to evolve slowly
+
+If the answer is no, then exposing the model directly is unsafe.
+
+Conclusion:
+
+* structured relational data → OData viable
+* highly dynamic or unstructured data → OData unsuitable
+
+---
+
+### Step 2 — Evaluate query requirements
+
+Determine what kinds of queries clients need.
+
+Let the required query space be
+
+[
+Q_{required}
+]
+
+If
+
+[
+Q_{required} \subseteq \text{selection, projection, join, ordering, aggregation}
+]
+
+then OData can express it.
+
+If queries require:
+
+* recursion
+* complex procedural logic
+* graph traversal with arbitrary depth
+
+then OData becomes insufficient or inefficient.
+
+Conclusion:
+
+* algebraic queries → OData suitable
+* algorithmic queries → alternative approaches needed
+
+---
+
+### Step 3 — Assess control over execution
+
+OData allows the client to define queries.
+
+Therefore, the system must be able to bound execution cost.
+
+Define a cost function
+
+[
+Cost(Q)
+]
+
+The system must guarantee
+
+[
+Cost(Q) \leq threshold
+\quad \forall Q \in Q_{client}
+]
+
+If this cannot be guaranteed, the system is exposed to:
+
+* denial of service through expensive queries
+* unpredictable latency
+* resource exhaustion
+
+Mitigation mechanisms include:
+
+* limiting `$expand` depth
+* limiting `$top` values
+* restricting operators
+* enforcing query timeouts
+
+Conclusion:
+
+* strong control mechanisms → OData viable
+* uncontrolled execution → OData risky
+
+---
+
+### Step 4 — Evaluate coupling tolerance
+
+OData exposes the entity model directly.
+
+This implies a coupling:
+
+[
+Client \leftrightarrow Data\ Model
+]
+
+If the model changes, clients may break.
+
+Ask:
+
+* is the data model stable
+* can versioning be enforced
+* are clients controlled or external
+
+Conclusion:
+
+* stable model and controlled clients → acceptable
+* volatile model or public API → high risk
+
+---
+
+### Step 5 — Analyze data volume and access patterns
+
+Large datasets introduce performance constraints.
+
+Let
+
+[
+|E| \rightarrow large
+]
+
+Then:
+
+* full scans become expensive
+* pagination becomes mandatory
+* indexing becomes critical
+
+Check:
+
+* are queries highly selective
+* are indexes aligned with filters
+* is server side paging implemented
+
+Conclusion:
+
+* controlled access patterns → OData scalable
+* arbitrary access patterns → performance degradation
+
+---
+
+### Step 6 — Consider security implications
+
+Allowing arbitrary queries exposes data access surfaces.
+
+Define
+
+[
+Access(Q)
+]
+
+as the data reachable through query (Q).
+
+The system must ensure
+
+[
+Access(Q) \subseteq Authorized\ Data
+]
+
+for all queries.
+
+Risks include:
+
+* data overexposure through expansions
+* inference of hidden data through filtering
+* excessive data extraction
+
+Mitigations:
+
+* field level security
+* query validation
+* role based filtering
+
+Conclusion:
+
+* strong access control → OData acceptable
+* weak controls → OData dangerous
+
+---
+
+### Step 7 — Compare alternatives
+
+At this point, compare OData with alternatives.
+
+REST
+
+* low flexibility
+* high control
+* predictable performance
+
+GraphQL
+
+* high flexibility
+* low inherent control
+* requires custom cost analysis
+
+OData
+
+* balanced flexibility
+* structured constraints
+* moderate complexity
+
+Decision depends on which trade-off is acceptable.
+
+---
+
+### Decision rule
+
+We can summarize the decision as:
+
+Use OData if and only if:
+
+[
+\begin{aligned}
+&Data\ is\ structured \
+\land\ &Queries\ are\ algebraic \
+\land\ &Execution\ can\ be\ bounded \
+\land\ &Model\ coupling\ is\ acceptable \
+\land\ &Security\ constraints\ can\ be\ enforced
+\end{aligned}
+]
+
+If any of these conditions fails, OData should not be the primary interface.
+
+---
+
+### Practical patterns
+
+When OData is used correctly, certain patterns emerge.
+
+Controlled exposure
+
+* expose only selected entity sets
+* hide internal structures
+
+Query constraints
+
+* enforce limits at the API gateway
+* validate query complexity
+
+Hybrid architectures
+
+* use OData for data retrieval
+* use REST for business operations
+
+Pre-aggregated views
+
+* expose simplified entities for common queries
+* avoid expensive runtime aggregations
+
+---
+
+### Anti-patterns
+
+Common failure modes include:
+
+Full exposure of internal schema
+No limits on `$expand` or `$filter`
+Allowing large `$skip` values
+No indexing strategy aligned with query patterns
+Using OData for procedural workflows
+
+These lead to:
+
+* performance collapse
+* data leaks
+* unmaintainable integrations
+
+---
+
+### Final synthesis
+
+The decision to use OData is equivalent to deciding whether to expose a **controlled query engine to external clients**.
+
+If the system can:
+
+* define a stable model
+* constrain query complexity
+* enforce security and performance limits
+
+then OData provides a powerful and consistent interface.
+
+If not, the same flexibility becomes a liability.
+
+The essential principle is therefore:
+
+OData should be used when the system can safely externalize its data algebra.
+
+## OData as a tool for architecture design
+
+From a software architecture perspective, **Open Data Protocol** is not just an integration technology. It is a **design choice about how data, capabilities, and responsibilities are distributed across system boundaries**.
+
+At first principles level, any architecture must answer a fundamental question:
+
+where is computation performed and where is it described
+
+In traditional architectures:
+
+* computation is implemented on the server
+* the client invokes predefined operations
+
+With OData, part of the computation is **described by the client** through query expressions.
+
+This shifts the architecture from:
+
+[
+Server\ defines\ functions
+]
+
+to
+
+[
+Client\ defines\ queries,\ Server\ executes
+]
+
+This shift has deep implications.
+
+---
+
+### OData as an architectural abstraction layer
+
+OData introduces an intermediate abstraction between:
+
+* raw data storage
+* application specific services
+
+It exposes:
+
+a typed data model
+a query algebra
+a uniform access interface
+
+This effectively creates a **logical data access layer**.
+
+Architecture becomes layered as:
+
+```text
+Data storage
+↓
+Query provider
+↓
+OData layer
+↓
+Clients
+```
+
+The OData layer acts as:
+
+* a contract
+* a query engine boundary
+* a semantic interface
+
+It decouples clients from physical storage but couples them to the logical model.
+
+---
+
+### Separation of concerns
+
+In classical layered architecture:
+
+* data layer stores data
+* service layer implements logic
+* presentation layer consumes results
+
+OData modifies this separation.
+
+It moves part of the **query logic** from the service layer to the client.
+
+Instead of:
+
+```text
+Client → Service → Database
+```
+
+the model becomes:
+
+```text
+Client (query definition)
+→ OData layer (query translation)
+→ Database (execution)
+```
+
+This reduces the need for:
+
+* custom query endpoints
+* duplicated filtering logic
+* multiple service variants
+
+But introduces:
+
+* dependency on query semantics
+* need for query governance
+
+---
+
+### OData as a bounded context exposure
+
+In domain driven design, a bounded context defines:
+
+* a model
+* its invariants
+* its language
+
+OData exposes this model directly.
+
+Formally, if a bounded context defines:
+
+[
+M = (Entities, Relations, Constraints)
+]
+
+then OData exposes a projection:
+
+[
+Expose(M)
+]
+
+This has consequences:
+
+* the model becomes part of the external contract
+* internal refactoring becomes harder
+* semantic consistency becomes critical
+
+Therefore, OData is best used when:
+
+* the model is stable
+* the model is meaningful outside the service boundary
+
+---
+
+### Query capability as an architectural decision
+
+Allowing clients to express queries means exposing a **query capability surface**.
+
+Let:
+
+[
+Q_{allowed}
+]
+
+be the set of queries clients can perform.
+
+Architecture must define:
+
+* which operators are allowed
+* how complex queries can be
+* how resources are allocated
+
+This transforms architecture into a **controlled query system** rather than a simple API.
+
+---
+
+### Impact on performance architecture
+
+OData shifts performance concerns.
+
+In endpoint based APIs:
+
+* performance is optimized per endpoint
+
+In OData:
+
+* performance must be optimized for a **class of queries**
+
+This requires:
+
+* indexing strategies aligned with query patterns
+* query cost controls
+* caching strategies based on query shape
+
+The system must handle worst case queries, not just typical ones.
+
+---
+
+### Impact on API design
+
+Traditional API design defines:
+
+* endpoints
+* request and response schemas
+
+OData replaces endpoint proliferation with:
+
+* a small number of generic endpoints
+* a rich query language
+
+This reduces:
+
+* API surface size
+* duplication
+
+But increases:
+
+* complexity of validation
+* need for governance
+
+---
+
+### Integration architecture
+
+OData is particularly effective in integration scenarios.
+
+Instead of defining many specialized integrations:
+
+```text
+System A → custom API → System B
+System C → custom API → System B
+```
+
+OData enables:
+
+```text
+System A → OData → System B
+System C → OData → System B
+```
+
+All consumers use the same interface but with different queries.
+
+This creates:
+
+* uniform integration patterns
+* reduced development effort
+* consistent semantics
+
+---
+
+### Architectural risks
+
+Using OData introduces specific risks.
+
+Model leakage
+
+Internal data structures become externally visible.
+
+Unbounded query complexity
+
+Clients may generate expensive queries.
+
+Tight coupling
+
+Changes in the model affect all clients.
+
+Security surface expansion
+
+More data can be accessed through flexible queries.
+
+These risks must be mitigated through:
+
+* strict model design
+* query constraints
+* access control
+* versioning strategies
+
+---
+
+### OData in modern architectures
+
+OData fits naturally in certain architectural styles.
+
+Data centric architectures
+
+Where data is the primary asset and must be widely accessible.
+
+Enterprise integration layers
+
+Where multiple systems need consistent access to shared data.
+
+Headless architectures
+
+Where frontends or external systems query data dynamically.
+
+It is less suited for:
+
+* event driven systems focused on streams
+* highly procedural domains
+* complex business workflows
+
+---
+
+### Formal architectural interpretation
+
+We can model OData as introducing a function
+
+[
+Expose : System \rightarrow (E, Q)
+]
+
+where:
+
+* (E) is the exposed data model
+* (Q) is the allowed query algebra
+
+The architecture must ensure:
+
+[
+Q \subseteq Q_{safe}
+]
+
+and
+
+[
+Expose(E) \subseteq Data_{allowed}
+]
+
+This formalization highlights that OData is not neutral. It defines what part of the system is externally computable.
+
+---
+
+### Conceptual conclusion
+
+From a software architecture viewpoint, OData is a mechanism to **externalize data access logic in a controlled, declarative form**.
+
+It transforms APIs from:
+
+procedural interfaces
+into
+queryable data surfaces
+
+This enables flexibility and reuse, but requires strong discipline in:
+
+* model design
+* query governance
+* performance control
+
+The architectural question is therefore not “should we use OData”, but:
+
+can we safely expose our data model and its query algebra to external clients without losing control of system behavior
+
+If the answer is yes, OData becomes a powerful architectural tool. If not, it becomes a source of instability.
+
+## OData in the larger context of enterprise architecture
+
+Within enterprise architecture, **Open Data Protocol** should not be viewed as an isolated integration technology. It is more accurately positioned as a **data access paradigm** that interacts with multiple architectural layers: business, application, data, and technology.
+
+From first principles, enterprise architecture attempts to maintain alignment between:
+
+* business capabilities
+* information structures
+* application systems
+* infrastructure
+
+OData sits at the intersection of **application and data architecture**, but its effects propagate upward to business capabilities and downward to infrastructure constraints.
+
+---
+
+### Positioning within architectural layers
+
+A simplified enterprise architecture stack can be represented as:
+
+```text
+Business capabilities
+↓
+Application services
+↓
+Data architecture
+↓
+Technology infrastructure
+```
+
+OData operates primarily between:
+
+```text
+Application services ↔ Data architecture
+```
+
+It exposes data structures directly to consumers, effectively collapsing part of the application layer into a **queryable data interface**.
+
+This has a structural implication:
+
+some application services become unnecessary because their logic is replaced by declarative queries.
+
+---
+
+### OData and the data architecture layer
+
+In enterprise architecture, the data layer defines:
+
+* canonical data models
+* master data entities
+* relationships across domains
+
+OData can be used to expose these models as:
+
+* entity sets
+* relationships
+* queryable datasets
+
+Formally, if the enterprise defines a canonical model
+
+[
+M = (Entities, Relations, Constraints)
+]
+
+OData exposes a projection
+
+[
+Expose(M)
+]
+
+This makes the canonical data model directly consumable.
+
+#### Consequence
+
+The quality of the data model becomes critical. Poor modeling leads to:
+
+* ambiguous queries
+* inconsistent interpretations
+* integration failures
+
+OData amplifies both good and bad data architecture.
+
+---
+
+### OData and application architecture
+
+Traditional application architecture encapsulates data behind services.
+
+Example:
+
+```text
+GetCustomerOrders(customerId)
+```
+
+OData replaces this with:
+
+```text
+GET /Customers(1)/Orders
+```
+
+The difference is structural.
+
+* service based model → operations are predefined
+* OData model → operations are constructed dynamically
+
+This shifts the application layer from:
+
+procedural orchestration
+to
+declarative data exposure
+
+#### Architectural implication
+
+Some application services become redundant, while others become more critical:
+
+* business logic services remain
+* data retrieval services diminish
+
+---
+
+### OData and integration architecture
+
+Enterprise systems require integration across domains.
+
+Common patterns include:
+
+* point to point APIs
+* message queues
+* data replication
+
+OData introduces a different pattern:
+
+shared queryable data surface
+
+Instead of building multiple integrations:
+
+```text
+System A → API → System B
+System C → API → System B
+```
+
+OData enables:
+
+```text
+System A → OData → System B
+System C → OData → System B
+```
+
+Each system retrieves what it needs using queries.
+
+#### Benefit
+
+* reduced number of interfaces
+* consistent semantics
+* faster integration
+
+#### Risk
+
+* centralization of load
+* exposure of internal structures
+
+---
+
+### OData and domain boundaries
+
+In a domain driven design context, each bounded context owns its model.
+
+OData challenges this principle by exposing the model externally.
+
+If a bounded context is defined as:
+
+[
+BC = (Model, Logic, Invariants)
+]
+
+OData exposes:
+
+[
+Model
+]
+
+but not necessarily:
+
+[
+Logic,\ Invariants
+]
+
+This creates a potential mismatch.
+
+Clients may access data without respecting domain rules.
+
+#### Architectural implication
+
+OData should not replace domain logic. It should complement it.
+
+Typical pattern:
+
+* OData for data access
+* services for business operations
+
+---
+
+### OData and governance
+
+Enterprise architecture requires governance mechanisms.
+
+With OData, governance must address:
+
+* which entities are exposed
+* which fields are visible
+* which query operators are allowed
+* how performance is controlled
+
+Define a governance function:
+
+[
+G(Q) = allowed\ queries
+]
+
+The system must ensure:
+
+[
+Q_{client} \subseteq G(Q)
+]
+
+Without governance, OData becomes an uncontrolled query interface.
+
+---
+
+### OData and data ownership
+
+In large enterprises, data ownership is distributed.
+
+Each domain owns a subset of data:
+
+[
+E = E_1 \cup E_2 \cup \dots \cup E_n
+]
+
+OData can expose each subset through domain specific endpoints.
+
+However, cross domain queries introduce complexity:
+
+* data consistency across domains
+* latency between systems
+* duplication of logic
+
+This often leads to:
+
+* federated OData services
+* data virtualization layers
+* composite APIs
+
+---
+
+### OData and performance architecture
+
+At enterprise scale, performance becomes a systemic concern.
+
+OData introduces:
+
+* dynamic query patterns
+* unpredictable workloads
+* dependency on underlying data stores
+
+Architecture must include:
+
+* indexing strategies aligned with query patterns
+* caching mechanisms
+* query throttling
+* monitoring of query cost
+
+Performance is no longer tied to endpoints but to **query shapes**.
+
+---
+
+### OData and security architecture
+
+Security in enterprise architecture includes:
+
+* authentication
+* authorization
+* data protection
+
+OData expands the attack surface.
+
+Instead of fixed endpoints, clients can explore data through queries.
+
+Security must enforce:
+
+[
+Access(Q) \subseteq Authorized\ Data
+]
+
+Mechanisms include:
+
+* role based access control
+* field level security
+* query validation
+* audit logging
+
+---
+
+### OData and technology architecture
+
+At the infrastructure level, OData interacts with:
+
+* databases
+* application servers
+* API gateways
+* network layers
+
+It requires:
+
+* efficient query translation
+* scalable execution
+* network optimization
+
+OData services must be designed with:
+
+* horizontal scalability
+* stateless processing
+* efficient serialization
+
+---
+
+### Strategic role in enterprise architecture
+
+OData plays a specific strategic role.
+
+It is not a universal solution. It is a **data exposure mechanism** optimized for:
+
+* structured data
+* flexible querying
+* integration scenarios
+
+It supports:
+
+* data democratization
+* self service access
+* reduction of integration complexity
+
+But requires:
+
+* strong governance
+* stable models
+* disciplined usage
+
+---
+
+### Conceptual synthesis
+
+In enterprise architecture terms, OData can be seen as:
+
+a controlled exposure of the enterprise data model and its query algebra across system boundaries
+
+This creates a new layer:
+
+```text
+Enterprise data model
+↓
+OData exposure layer
+↓
+Consumers
+```
+
+The exposure layer becomes a strategic asset.
+
+---
+
+### Final observation
+
+The introduction of OData changes the nature of enterprise systems.
+
+Data is no longer accessed only through predefined services. It becomes **queryable at the boundary of the system**.
+
+This increases flexibility and integration speed, but shifts responsibility toward:
+
+* data modeling
+* governance
+* performance control
+
+In enterprise architecture, OData is therefore not just a protocol. It is a decision to treat data as a **first class, externally queryable asset**.
+
+## OData in the larger context of enterprise architecture
+
+Within enterprise architecture, **Open Data Protocol** is best understood as a **data exposure and query layer** that connects application systems with consumers through a structured, declarative interface.
+
+From first principles, enterprise architecture aligns:
+
+* business capabilities
+* application services
+* data structures
+* infrastructure
+
+OData sits at the boundary between **application and data architecture**, but its effects propagate across all layers.
+
+---
+
+### Positioning within architectural layers
+
+A simplified layered view:
+
+```mermaid
+flowchart TB
+    Business["Business capabilities"]
+    App["Application services"]
+    Data["Data architecture"]
+    Tech["Technology infrastructure"]
+
+    Business --> App --> Data --> Tech
+```
+
+OData operates between application services and data architecture:
+
+```mermaid
+flowchart TB
+    Client["Consumers / external systems"]
+    OData["OData layer"]
+    App["Application services"]
+    DB["Data storage"]
+
+    Client --> OData --> App --> DB
+```
+
+This shows that OData acts as a **mediating layer** that exposes structured data while still relying on underlying application and storage logic.
+
+---
+
+### OData as a queryable data surface
+
+Traditional APIs expose predefined operations. OData instead exposes a **queryable surface**.
+
+```mermaid
+flowchart LR
+    Client["Client"]
+    Query["Declarative query"]
+    OData["OData layer"]
+    DB["Database"]
+
+    Client --> Query --> OData --> DB
+```
+
+The key shift:
+
+* client defines the query
+* server executes the query
+
+This transforms the architecture from procedural invocation to **declarative data access**.
+
+---
+
+### Integration architecture simplification
+
+Without OData, integrations tend to multiply:
+
+```mermaid
+flowchart LR
+    A["System A"] --> API1["Custom API"] --> Core["Core system"]
+    B["System B"] --> API2["Custom API"] --> Core
+    C["System C"] --> API3["Custom API"] --> Core
+```
+
+With OData:
+
+```mermaid
+flowchart LR
+    A["System A"] --> OData["OData interface"]
+    B["System B"] --> OData
+    C["System C"] --> OData
+
+    OData --> Core["Core system"]
+```
+
+This reduces:
+
+* number of interfaces
+* duplication of logic
+* maintenance overhead
+
+But centralizes responsibility on the OData layer.
+
+---
+
+### OData and domain exposure
+
+In a domain driven architecture, each bounded context owns a model.
+
+OData exposes that model externally:
+
+```mermaid
+flowchart TB
+    Domain["Bounded context"]
+    Model["Domain model"]
+    Logic["Business logic"]
+    OData["OData exposure"]
+
+    Domain --> Model
+    Domain --> Logic
+    Model --> OData
+```
+
+This highlights a key asymmetry:
+
+* data is exposed
+* logic is not fully exposed
+
+This creates a risk: clients can query data without respecting domain rules.
+
+---
+
+### Query execution pipeline in architecture
+
+OData introduces a structured execution pipeline:
+
+```mermaid
+flowchart LR
+    URL["Client query (URL)"]
+    Parser["OData parser"]
+    Plan["Logical query plan"]
+    SQL["SQL / backend query"]
+    DB["Database"]
+    Result["Result"]
+    JSON["JSON response"]
+
+    URL --> Parser --> Plan --> SQL --> DB --> Result --> JSON
+```
+
+This shows that OData is effectively a **distributed query engine**.
+
+---
+
+### Governance and control layer
+
+Because clients define queries, governance becomes essential.
+
+```mermaid
+flowchart TB
+    Client["Client query"]
+    Gateway["API gateway / validation"]
+    OData["OData service"]
+    DB["Database"]
+
+    Client --> Gateway --> OData --> DB
+```
+
+The gateway enforces:
+
+* query limits
+* authorization
+* complexity constraints
+
+Without this layer, the system becomes vulnerable.
+
+---
+
+### Performance considerations at scale
+
+Performance is driven by query shape rather than endpoint.
+
+```mermaid
+flowchart LR
+    Query["Query shape"]
+    Filter["Filter selectivity"]
+    Join["Join / expand depth"]
+    Width["Projection width"]
+    Cost["Execution cost"]
+
+    Query --> Filter --> Cost
+    Query --> Join --> Cost
+    Query --> Width --> Cost
+```
+
+This shows that performance depends on:
+
+* filtering
+* expansion
+* projection
+
+not simply on which endpoint is called.
+
+---
+
+### Strategic positioning in enterprise architecture
+
+OData introduces a new architectural layer:
+
+```mermaid
+flowchart TB
+    DataModel["Enterprise data model"]
+    ODataLayer["OData exposure layer"]
+    Consumers["Consumers"]
+
+    DataModel --> ODataLayer --> Consumers
+```
+
+This layer becomes:
+
+* a shared integration surface
+* a reusable data access interface
+* a governance boundary
+
+---
+
+### Conceptual synthesis
+
+From an enterprise architecture viewpoint, OData is:
+
+a controlled exposure of the enterprise data model through a composable query interface
+
+It enables:
+
+* flexible integration
+* data reuse
+* reduced API proliferation
+
+But requires:
+
+* strong governance
+* stable data models
+* performance control
+
+---
+
+### Final observation
+
+OData changes the architectural role of data.
+
+Data is no longer passively served through predefined services. It becomes **actively queryable by external actors**.
+
+This shifts enterprise architecture toward:
+
+* data centric design
+* declarative integration patterns
+* shared data interfaces
+
+The architectural challenge is therefore not adopting OData, but **containing its power within safe and predictable boundaries**.
+
+## Sequence diagram for read operations
+
+The following diagram represents the **end to end execution of a read operation in OData**, from the client request to the final response.
+
+It makes explicit the transformation pipeline discussed earlier, showing how a declarative query is progressively translated into executable logic.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway as API Gateway
+    participant OData as OData Service
+    participant Parser as Query Parser
+    participant Provider as Query Provider
+    participant DB as Database
+
+    Client->>Gateway: GET /Entities?$filter=Value gt 10&$select=Name
+    Gateway->>Gateway: Validate auth, limits, query constraints
+    Gateway->>OData: Forward request
+
+    OData->>Parser: Parse URL query
+    Parser->>Parser: Build abstract syntax tree
+
+    Parser->>Provider: Translate to logical query
+    Provider->>Provider: Build execution plan
+
+    Provider->>DB: Execute translated query (e.g. SQL)
+    DB-->>Provider: Result set
+
+    Provider->>OData: Materialize entities
+    OData->>OData: Serialize to JSON
+
+    OData-->>Gateway: Response payload
+    Gateway-->>Client: HTTP 200 + JSON
+```
+
+### Interpretation
+
+The sequence highlights several key architectural facts.
+
+The client does not call a predefined operation. It sends a **query description**.
+
+The API gateway acts as a control point. It enforces:
+
+* authentication
+* authorization
+* query constraints
+
+The OData service does not execute queries directly. It first transforms them:
+
+* URL → abstract syntax tree
+* AST → logical query
+* logical query → physical query
+
+The database performs the actual computation.
+
+The response is then:
+
+* materialized into objects
+* serialized into JSON
+* returned to the client
+
+### Conceptual summary
+
+This sequence diagram formalizes the idea that an OData read operation is not a simple data retrieval.
+
+It is a **multi stage query compilation and execution process**, analogous to how a programming language is compiled and executed, but applied to data queries over HTTP.
+
+## Sequence diagram for create operations
+
+The following diagram represents the **end to end execution of a create operation in OData**, showing how a client request introducing a new entity is validated, transformed, and persisted.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway as API Gateway
+    participant OData as OData Service
+    participant Validator as Validation Layer
+    participant Provider as Query Provider
+    participant DB as Database
+
+    Client->>Gateway: POST /Entities + payload
+    Gateway->>Gateway: Validate auth, schema, limits
+    Gateway->>OData: Forward request
+
+    OData->>Validator: Validate payload against EDM
+    Validator->>Validator: Check constraints (types, required fields, keys)
+
+    Validator->>Provider: Build create command
+    Provider->>Provider: Translate to database operation
+
+    Provider->>DB: INSERT INTO Entities (...)
+    DB-->>Provider: Generated key / result
+
+    Provider->>OData: Materialize created entity
+    OData->>OData: Serialize response
+
+    OData-->>Gateway: HTTP 201 Created + entity
+    Gateway-->>Client: Response
+```
+
+### Interpretation
+
+This sequence differs fundamentally from the read case.
+
+The client does not send a query but a **state description**. The payload represents the entity to be created.
+
+The API gateway performs preliminary checks:
+
+* authentication
+* authorization
+* payload size and format
+
+The validation layer enforces the **data model constraints**:
+
+* required fields
+* type correctness
+* key uniqueness (if client provided)
+* referential integrity
+
+The provider translates the request into a **write operation** on the database.
+
+Unlike reads, this is not a pure function:
+
+[
+E' = E \cup {e_{new}}
+]
+
+The system state changes.
+
+After insertion:
+
+* the database may generate a key
+* the entity is reconstructed
+* the response is returned
+
+### Key architectural differences from read
+
+Read operations:
+
+* declarative query
+* no state change
+* optimization driven
+
+Create operations:
+
+* imperative state mutation
+* strict validation
+* transactional consistency
+
+### Conceptual summary
+
+The create sequence highlights that OData is not only a query interface. It is also a **controlled state transition mechanism**.
+
+The system ensures that any new entity introduced:
+
+* conforms to the data model
+* respects constraints
+* results in a consistent new state
+
+This makes create operations fundamentally about **state integrity rather than query execution**.
+
+## Sequence diagram for update operations
+
+The following diagram represents the **end to end execution of an update operation in OData**, including validation and concurrency control through ETags.
+
+```mermaid id="2n9q7k"
+sequenceDiagram
+    participant Client
+    participant Gateway as API Gateway
+    participant OData as OData Service
+    participant Validator as Validation Layer
+    participant Concurrency as Concurrency Control
+    participant Provider as Query Provider
+    participant DB as Database
+
+    Client->>Gateway: PATCH /Entities(101) + payload + If-Match
+    Gateway->>Gateway: Validate auth, headers, limits
+    Gateway->>OData: Forward request
+
+    OData->>Validator: Validate payload against EDM
+    Validator->>Validator: Check types and constraints
+
+    OData->>Concurrency: Verify ETag (If-Match)
+    Concurrency->>DB: Retrieve current version
+    DB-->>Concurrency: Current ETag
+
+    alt ETag matches
+        Concurrency->>Provider: Proceed with update
+        Provider->>Provider: Translate to update command
+        Provider->>DB: UPDATE Entities SET ...
+        DB-->>Provider: Update result
+
+        Provider->>OData: Materialize updated entity
+        OData->>OData: Serialize response
+        OData-->>Gateway: HTTP 200 OK / 204 No Content
+        Gateway-->>Client: Response
+    else ETag mismatch
+        Concurrency-->>OData: Reject update
+        OData-->>Gateway: HTTP 412 Precondition Failed
+        Gateway-->>Client: Error response
+    end
+```
+
+### Interpretation
+
+The update operation introduces a critical additional step compared to create: **concurrency control**.
+
+The client sends:
+
+* the target entity identifier
+* the modification payload
+* optionally an ETag representing the version it has read
+
+The system performs:
+
+Validation
+
+* payload must conform to the model
+* only valid attributes can be modified
+
+Concurrency check
+
+[
+etag_{client} \stackrel{?}{=} etag_{server}
+]
+
+If the equality holds, the update is safe.
+
+If not, the system detects a concurrent modification and rejects the operation.
+
+Execution
+
+If validation and concurrency checks pass:
+
+[
+E' = (E \setminus {e}) \cup {e'}
+]
+
+The database performs the update.
+
+---
+
+### Key architectural aspects
+
+Update differs from create and read in several ways.
+
+It preserves identity
+
+[
+key(e') = key(e)
+]
+
+It requires consistency with previous state
+
+The operation depends on the current version of the entity.
+
+It introduces conflict handling
+
+Multiple clients may attempt to update the same entity.
+
+---
+
+### Partial vs full update
+
+For PATCH:
+
+* only specified attributes are modified
+* minimal data transfer
+
+For PUT:
+
+* full replacement
+* higher risk of overwriting unintended fields
+
+The sequence diagram applies to both, but PATCH is generally preferred.
+
+---
+
+### Failure modes
+
+Update operations can fail due to:
+
+* validation errors
+* concurrency conflicts
+* constraint violations
+
+The most characteristic failure is:
+
+```text
+412 Precondition Failed
+```
+
+which indicates a version mismatch.
+
+---
+
+### Conceptual summary
+
+The update sequence shows that OData updates are not simple write operations. They are **controlled state transitions with concurrency guarantees**.
+
+The system ensures that:
+
+* the modification is valid
+* the state has not changed unexpectedly
+* the resulting dataset remains consistent
+
+This makes update the most delicate CRUD operation in distributed systems.
+
+## Sequence diagram for delete operations
+
+The following diagram represents the **end to end execution of a delete operation in OData**, including validation, referential integrity checks, and optional concurrency control.
+
+```mermaid id="8k1tqz"
+sequenceDiagram
+    participant Client
+    participant Gateway as API Gateway
+    participant OData as OData Service
+    participant Validator as Validation Layer
+    participant Concurrency as Concurrency Control
+    participant Provider as Query Provider
+    participant DB as Database
+
+    Client->>Gateway: DELETE /Entities(101) + If-Match
+    Gateway->>Gateway: Validate auth, headers, limits
+    Gateway->>OData: Forward request
+
+    OData->>Validator: Validate request (entity exists, permissions)
+    Validator->>Validator: Check business rules
+
+    OData->>Concurrency: Verify ETag (optional)
+    Concurrency->>DB: Retrieve current version
+    DB-->>Concurrency: Current ETag
+
+    alt ETag matches or not provided
+        OData->>Provider: Build delete command
+        Provider->>Provider: Translate to DB operation
+
+        Provider->>DB: DELETE FROM Entities WHERE Id = 101
+
+        alt Referential integrity holds
+            DB-->>Provider: Deletion success
+            Provider-->>OData: Acknowledge
+            OData-->>Gateway: HTTP 204 No Content
+            Gateway-->>Client: Response
+        else Constraint violation
+            DB-->>Provider: Reject delete
+            Provider-->>OData: Error
+            OData-->>Gateway: HTTP 409 Conflict
+            Gateway-->>Client: Error response
+        end
+
+    else ETag mismatch
+        Concurrency-->>OData: Reject delete
+        OData-->>Gateway: HTTP 412 Precondition Failed
+        Gateway-->>Client: Error response
+    end
+```
+
+---
+
+### Interpretation
+
+Delete operations appear simple but involve multiple checks.
+
+The client specifies:
+
+* the entity identifier
+* optionally an ETag for concurrency
+
+The system performs:
+
+Validation
+
+* the entity must exist
+* the caller must have permission
+* business rules must allow deletion
+
+Concurrency check (optional)
+
+[
+etag_{client} \stackrel{?}{=} etag_{server}
+]
+
+If the entity has changed since the client last read it, deletion may be rejected.
+
+Execution
+
+If checks pass, the system attempts:
+
+[
+E' = E \setminus {e}
+]
+
+---
+
+### Referential integrity
+
+The most critical step is verifying relationships.
+
+If another entity depends on the target:
+
+[
+\exists e_j \in E \text{ such that } e_j \rightarrow e
+]
+
+then deletion may violate constraints.
+
+Possible outcomes:
+
+* reject deletion → HTTP 409 Conflict
+* cascade delete related entities
+* remove references
+
+The behavior depends on the data model.
+
+---
+
+### Key architectural aspects
+
+Delete differs from other CRUD operations in several ways.
+
+It reduces the dataset
+
+[
+|E'| = |E| - 1
+]
+
+It may affect multiple entities indirectly due to relationships.
+
+It is often irreversible unless recovery mechanisms exist.
+
+---
+
+### Idempotency
+
+Delete is idempotent.
+
+[
+D(D(E, key), key) = D(E, key)
+]
+
+Repeated deletions do not change the state after the first execution.
+
+This property is important for:
+
+* retries in distributed systems
+* fault tolerance
+
+---
+
+### Failure modes
+
+Typical failure scenarios:
+
+Entity not found
+
+```text id="k8mb5y"
+404 Not Found
+```
+
+Constraint violation
+
+```text id="0fztlq"
+409 Conflict
+```
+
+Concurrency mismatch
+
+```text id="5l9f9d"
+412 Precondition Failed
+```
+
+---
+
+### Soft delete variant
+
+In many enterprise systems, delete is implemented as a transformation:
+
+[
+e \rightarrow e'
+\quad \text{where} \quad e'.deleted = true
+]
+
+In this case:
+
+* the entity remains in the dataset
+* queries filter it out
+
+The sequence diagram remains similar, but the database operation becomes:
+
+```text id="3sqn9q"
+UPDATE Entities SET deleted = true
+```
+
+---
+
+### Conceptual summary
+
+The delete sequence shows that removal of data is not a trivial operation.
+
+It must ensure:
+
+* consistency of relationships
+* correctness under concurrency
+* compliance with business rules
+
+Delete is therefore not just a removal, but a **controlled reduction of system state under constraints**.
+
+## End to end lifecycle and architectural synthesis
+
+Having analyzed CRUD operations individually, the final step is to understand the **system as a whole**, not as separate operations but as a **state machine governed by OData semantics**.
+
+From first principles, any data system evolves through state transitions.
+
+Let:
+
+[
+E_t
+]
+
+be the dataset at time (t).
+
+Each OData operation defines a transition:
+
+* create:
+  [
+  E_{t+1} = E_t \cup {e}
+  ]
+
+* read:
+  [
+  E_{t+1} = E_t
+  ]
+
+* update:
+  [
+  E_{t+1} = (E_t \setminus {e}) \cup {e'}
+  ]
+
+* delete:
+  [
+  E_{t+1} = E_t \setminus {e}
+  ]
+
+This defines a **state transition system**.
+
+---
+
+### OData as a state machine
+
+We can represent the system as:
+
+```mermaid id="lifecyc1"
+stateDiagram-v2
+    [*] --> ExistingState
+
+    ExistingState --> ExistingState: Read (GET)
+    ExistingState --> ExistingState: Update (PATCH/PUT)
+    ExistingState --> ExistingState: Delete (DELETE)
+    ExistingState --> ExistingState: Create (POST)
+```
+
+This diagram shows that:
+
+* the system remains in the same logical space
+* only the internal state evolves
+
+There is no separate "mode" for each operation. All operations act on the same state.
+
+---
+
+### Unified request processing model
+
+All operations share a common processing structure.
+
+```mermaid id="lifecyc2"
+flowchart LR
+    Request["Client request"]
+    Gateway["Gateway / validation"]
+    Model["EDM validation"]
+    Logic["Query or mutation logic"]
+    DB["Database"]
+    Response["Response"]
+
+    Request --> Gateway --> Model --> Logic --> DB --> Response
+```
+
+Differences between CRUD operations occur only in:
+
+* the type of logic applied
+* whether the state changes
+
+This shows that OData is a **uniform interaction model**, not a set of unrelated endpoints.
+
+---
+
+### Data flow vs control flow
+
+Traditional APIs are control flow driven.
+
+```mermaid id="lifecyc3"
+flowchart LR
+    Client --> Service --> Function --> DB
+```
+
+OData is data flow driven.
+
+```mermaid id="lifecyc4"
+flowchart LR
+    Client --> Query --> DataModel --> DB
+```
+
+This distinction is fundamental.
+
+Control flow model:
+
+* server defines behavior
+* client triggers behavior
+
+Data flow model:
+
+* client defines data transformation
+* server executes transformation
+
+---
+
+### Consistency and invariants
+
+All operations must preserve system invariants.
+
+Let:
+
+[
+I(E)
+]
+
+be a set of invariants.
+
+Then for any operation (O):
+
+[
+I(E_t) \Rightarrow I(E_{t+1})
+]
+
+Examples:
+
+* uniqueness of keys
+* referential integrity
+* domain constraints
+
+This requirement explains why:
+
+* validation layers exist
+* updates require concurrency checks
+* deletes may be rejected
+
+---
+
+### Concurrency model
+
+In distributed systems, operations overlap.
+
+```mermaid id="lifecyc5"
+sequenceDiagram
+    participant C1 as Client 1
+    participant C2 as Client 2
+    participant System
+
+    C1->>System: Read entity (version v1)
+    C2->>System: Update entity → v2
+    C1->>System: Update entity (based on v1)
+```
+
+Without control, this leads to inconsistency.
+
+OData introduces mechanisms such as ETags to enforce:
+
+[
+write\ only\ if\ version\ matches
+]
+
+This ensures that state transitions remain valid.
+
+---
+
+### End to end lifecycle example
+
+A typical lifecycle:
+
+```mermaid id="lifecyc6"
+flowchart LR
+    Create["Create entity"]
+    Read1["Read entity"]
+    Update["Update entity"]
+    Read2["Read updated entity"]
+    Delete["Delete entity"]
+
+    Create --> Read1 --> Update --> Read2 --> Delete
+```
+
+This shows how all operations combine into a continuous lifecycle.
+
+---
+
+### Architectural synthesis
+
+We can now define OData as a system:
+
+[
+System = (E, Q, U, I)
+]
+
+where:
+
+* (E) is the dataset
+* (Q) is the query algebra (read)
+* (U) is the set of update operations (create, update, delete)
+* (I) are invariants
+
+The system evolves through:
+
+[
+E_{t+1} = U(Q(E_t))
+]
+
+This formalization captures:
+
+* data
+* queries
+* mutations
+* constraints
+
+---
+
+### Role in enterprise systems
+
+At enterprise scale, this model becomes:
+
+```mermaid id="lifecyc7"
+flowchart TB
+    Systems["External systems"]
+    OData["OData layer"]
+    Domain["Domain model"]
+    DB["Data storage"]
+
+    Systems --> OData --> Domain --> DB
+```
+
+OData becomes the **interaction boundary**.
+
+It exposes:
+
+* data
+* query capabilities
+* controlled mutations
+
+---
+
+### Final conceptual conclusion
+
+OData can be understood as a **complete data interaction system** built on three principles:
+
+* declarative queries
+* minimal state transitions
+* preservation of invariants
+
+It transforms an enterprise system into a **queryable and mutable state machine accessible over HTTP**.
+
+The essential insight is:
+
+OData does not just expose data. It exposes the *rules by which data can be observed and transformed*.
+
+This is why its impact extends beyond integration into the core of system design.
+
+
+
+
+
+
+
+
+
+
+
+
+
