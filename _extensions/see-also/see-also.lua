@@ -52,6 +52,13 @@ local function get_project_root()
   return "."
 end
 
+local function normalize_category(s)
+  s = pandoc.text.lower(s or "")
+  s = trim(s)
+  s = s:gsub("%s+", " ")
+  return s
+end
+
 local function parse_yaml_front_matter(content)
   if not content then
     return nil
@@ -85,7 +92,7 @@ local function parse_yaml_front_matter(content)
           local inline = value:match("^%[(.*)%]$")
           if inline then
             for cat in inline:gmatch("[^,]+") do
-              table.insert(meta.categories, trim(strip_quotes(cat)))
+              table.insert(meta.categories, normalize_category(strip_quotes(cat)))
             end
           end
         end
@@ -93,7 +100,7 @@ local function parse_yaml_front_matter(content)
     else
       local item = line:match("^%s*%-%s*(.-)%s*$")
       if item and current_key == "categories" then
-        table.insert(meta.categories, trim(strip_quotes(item)))
+        table.insert(meta.categories, normalize_category(strip_quotes(item)))
       end
     end
   end
@@ -110,10 +117,10 @@ local function meta_to_categories(meta_categories)
 
   if meta_categories.t == "MetaList" then
     for _, item in ipairs(meta_categories) do
-      table.insert(out, pandoc.utils.stringify(item))
+      table.insert(out, normalize_category(pandoc.utils.stringify(item)))
     end
   else
-    table.insert(out, pandoc.utils.stringify(meta_categories))
+    table.insert(out, normalize_category(pandoc.utils.stringify(meta_categories)))
   end
 
   return out
@@ -122,7 +129,9 @@ end
 local function category_set(categories)
   local set = {}
   for _, c in ipairs(categories or {}) do
-    set[c:lower()] = true
+    if c ~= "" then
+      set[c] = true
+    end
   end
   return set
 end
@@ -131,7 +140,7 @@ local function overlap_score(a, b)
   local sa = category_set(a)
   local score = 0
   for _, c in ipairs(b or {}) do
-    if sa[c:lower()] then
+    if sa[c] then
       score = score + 1
     end
   end
@@ -256,19 +265,23 @@ local function append_related_section(doc, heading, items, max_items)
 
   table.insert(doc.blocks, pandoc.Header(2, heading))
 
+  local list_items = {}
   for i = 1, n do
     local item = items[i]
-
-    table.insert(doc.blocks, pandoc.Para({
-      pandoc.Link(item.title, item.href)
-    }))
+    local blocks = {
+      pandoc.Plain({
+        pandoc.Link(item.title, item.href)
+      })
+    }
 
     if item.description and item.description ~= "" then
-      table.insert(doc.blocks, pandoc.Para({
-        pandoc.Str(item.description)
-      }))
+      table.insert(blocks, pandoc.Plain({ pandoc.Str(item.description) }))
     end
+
+    table.insert(list_items, pandoc.BulletList({ blocks })[1])
   end
+
+  table.insert(doc.blocks, pandoc.BulletList(list_items))
 end
 
 function Pandoc(doc)
@@ -283,8 +296,8 @@ function Pandoc(doc)
   end
 
   local project_root = get_project_root()
-
   local current_categories = meta_to_categories(doc.meta.categories)
+
   if not current_categories or #current_categories == 0 then
     return doc
   end
