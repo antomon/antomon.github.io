@@ -101,6 +101,24 @@ local function parse_yaml_front_matter(content)
   return meta
 end
 
+local function meta_to_categories(meta_categories)
+  local out = {}
+
+  if not meta_categories then
+    return out
+  end
+
+  if meta_categories.t == "MetaList" then
+    for _, item in ipairs(meta_categories) do
+      table.insert(out, pandoc.utils.stringify(item))
+    end
+  else
+    table.insert(out, pandoc.utils.stringify(meta_categories))
+  end
+
+  return out
+end
+
 local function category_set(categories)
   local set = {}
   for _, c in ipairs(categories or {}) do
@@ -194,7 +212,7 @@ local function list_collection_index_files(project_root, collection)
   return files
 end
 
-local function collect_related(project_root, current_key, current_meta, collection)
+local function collect_related(project_root, current_key, current_categories, collection)
   local files = list_collection_index_files(project_root, collection)
   local related = {}
 
@@ -204,7 +222,7 @@ local function collect_related(project_root, current_key, current_meta, collecti
     if key and key ~= current_key then
       local meta = parse_yaml_front_matter(read_file(file))
       if meta and meta.title and meta.categories and #meta.categories > 0 then
-        local score = overlap_score(current_meta.categories, meta.categories)
+        local score = overlap_score(current_categories, meta.categories)
         if score > 0 then
           table.insert(related, {
             key = key,
@@ -259,21 +277,20 @@ function Pandoc(doc)
     return doc
   end
 
-  local project_root = get_project_root()
-  local current_abs = join_fs(project_root, input_file)
   local current_key = canonical_key(input_file)
-
   if not current_key then
     return doc
   end
 
-  local current_meta = parse_yaml_front_matter(read_file(current_abs))
-  if not current_meta or not current_meta.categories or #current_meta.categories == 0 then
+  local project_root = get_project_root()
+
+  local current_categories = meta_to_categories(doc.meta.categories)
+  if not current_categories or #current_categories == 0 then
     return doc
   end
 
-  local related_longforms = collect_related(project_root, current_key, current_meta, "longforms")
-  local related_posts = collect_related(project_root, current_key, current_meta, "posts")
+  local related_longforms = collect_related(project_root, current_key, current_categories, "longforms")
+  local related_posts = collect_related(project_root, current_key, current_categories, "posts")
 
   append_related_section(doc, "See also longforms", related_longforms, 4)
   append_related_section(doc, "See also posts", related_posts, 4)
