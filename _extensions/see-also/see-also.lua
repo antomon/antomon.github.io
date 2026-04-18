@@ -1,11 +1,5 @@
 local sep = package.config:sub(1,1)
 
-local function log(msg)
-  if quarto and quarto.log and quarto.log.output then
-    quarto.log.output("[see-also] " .. tostring(msg))
-  end
-end
-
 local function trim(s)
   return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
@@ -98,8 +92,11 @@ local function parse_yaml_front_matter(content)
 
   local meta = {
     title = nil,
+    subtitle = nil,
     date = nil,
+    date_modified = nil,
     description = nil,
+    image = nil,
     categories = {}
   }
 
@@ -113,10 +110,16 @@ local function parse_yaml_front_matter(content)
 
       if key == "title" then
         meta.title = strip_quotes(value)
+      elseif key == "subtitle" then
+        meta.subtitle = strip_quotes(value)
       elseif key == "date" then
         meta.date = strip_quotes(value)
+      elseif key == "date-modified" then
+        meta.date_modified = strip_quotes(value)
       elseif key == "description" then
         meta.description = strip_quotes(value)
+      elseif key == "image" then
+        meta.image = strip_quotes(value)
       elseif key == "categories" then
         if value ~= "" then
           local inline = value:match("^%[(.*)%]$")
@@ -142,72 +145,6 @@ local function parse_yaml_front_matter(content)
   end
 
   return meta
-end
-
-local function append_unique(out, seen, value)
-  local c = normalize_category(value)
-  if c ~= "" and not is_language_tag(c) and not seen[c] then
-    seen[c] = true
-    table.insert(out, c)
-  end
-end
-
-local function meta_to_categories(meta_categories)
-  local out = {}
-  local seen = {}
-
-  local function walk(x)
-    if x == nil then
-      return
-    end
-
-    local x_type = type(x)
-
-    if x_type == "string" then
-      append_unique(out, seen, x)
-      return
-    end
-
-    if x_type ~= "table" then
-      local s = pandoc.utils.stringify(x)
-      append_unique(out, seen, s)
-      return
-    end
-
-    if x.t == "MetaList" then
-      for _, item in ipairs(x) do
-        walk(item)
-      end
-      return
-    end
-
-    if x.t == "MetaInlines" or x.t == "MetaBlocks" or x.t == "Inlines" or x.t == "Blocks" then
-      append_unique(out, seen, pandoc.utils.stringify(x))
-      return
-    end
-
-    if x.t == "MetaString" or x.t == "MetaBool" then
-      append_unique(out, seen, pandoc.utils.stringify(x))
-      return
-    end
-
-    if x.t == "MetaMap" then
-      append_unique(out, seen, pandoc.utils.stringify(x))
-      return
-    end
-
-    if #x > 0 then
-      for _, item in ipairs(x) do
-        walk(item)
-      end
-      return
-    end
-
-    append_unique(out, seen, pandoc.utils.stringify(x))
-  end
-
-  walk(meta_categories)
-  return out
 end
 
 local function category_set(categories)
@@ -283,11 +220,8 @@ local function list_collection_index_files(project_root, collection)
   local files = {}
   local collection_root = join_fs(project_root, collection)
 
-  log("Scanning collection root: " .. collection_root)
-
   local ok, entries = pcall(pandoc.system.list_directory, collection_root)
   if not ok or type(entries) ~= "table" then
-    log("Cannot list collection root: " .. collection_root)
     return files
   end
 
@@ -298,57 +232,46 @@ local function list_collection_index_files(project_root, collection)
         local index_path = join_fs(subdir, "index.qmd")
         if file_exists(index_path) then
           table.insert(files, index_path)
-          log("Found candidate file: " .. index_path)
         end
       end
     end
   end
 
-  log("Collection " .. collection .. " candidate files count: " .. tostring(#files))
   return files
+end
+
+local function html_escape(s)
+  s = s or ""
+  s = s:gsub("&", "&amp;")
+  s = s:gsub("<", "&lt;")
+  s = s:gsub(">", "&gt;")
+  s = s:gsub('"', "&quot;")
+  return s
 end
 
 local function collect_related(project_root, current_key, current_categories, collection)
   local files = list_collection_index_files(project_root, collection)
   local related = {}
 
-  log("Current key: " .. tostring(current_key))
-  log("Current categories: " .. table.concat(current_categories, ", "))
-
   for _, file in ipairs(files) do
     local key = canonical_key(file)
-    log("Processing file: " .. tostring(file))
-    log("Canonical key: " .. tostring(key))
 
     if key and key ~= current_key then
       local content = read_file(file)
-      if not content then
-        log("Could not read file: " .. tostring(file))
-      else
+      if content then
         local meta = parse_yaml_front_matter(content)
-        if not meta then
-          log("No parseable front matter: " .. tostring(file))
-        else
-          log("Parsed title: " .. tostring(meta.title))
-          log("Parsed categories count: " .. tostring(#meta.categories))
-          if #meta.categories > 0 then
-            log("Parsed categories: " .. table.concat(meta.categories, ", "))
-          end
+        if meta and meta.title and trim(meta.title) ~= "" and meta.categories and #meta.categories > 0 then
+          local score = overlap_score(current_categories, meta.categories)
 
-          if meta.title and trim(meta.title) ~= "" and meta.categories and #meta.categories > 0 then
-            local score = overlap_score(current_categories, meta.categories)
-            log("Score versus current page: " .. tostring(score))
-
-            if score > 0 then
-              table.insert(related, {
-                title = meta.title,
-                href = href_from_key(key),
-                description = meta.description,
-                date = meta.date or "",
-                score = score
-              })
-              log("Added related item: " .. tostring(meta.title))
-            end
+          if score > 0 then
+            table.insert(related, {
+              title = meta.title,
+              subtitle = meta.subtitle,
+              href = href_from_key(key),
+              date = meta.date or "",
+              date_modified = meta.date_modified or "",
+              score = score
+            })
           end
         end
       end
@@ -356,44 +279,66 @@ local function collect_related(project_root, current_key, current_categories, co
   end
 
   table.sort(related, function(x, y)
+    local x_sort = x.date_modified ~= "" and x.date_modified or x.date
+    local y_sort = y.date_modified ~= "" and y.date_modified or y.date
+
+    if x_sort ~= y_sort then
+      return x_sort > y_sort
+    end
+
     if x.score ~= y.score then
       return x.score > y.score
     end
-    return x.date > y.date
+
+    return x.title < y.title
   end)
 
-  log("Collection " .. collection .. " related matches count: " .. tostring(#related))
   return related
 end
 
-local function append_related_section(doc, heading, items, max_items)
+local function render_cards_html(heading, items, max_items)
   if not items or #items == 0 then
-    return
+    return nil
   end
 
-  table.insert(doc.blocks, pandoc.Header(2, heading))
-
   local n = math.min(max_items or 4, #items)
-  local bullet_items = {}
+  local html = {}
+
+  table.insert(html, '<section class="see-also-section">')
+  table.insert(html, '<h2>' .. html_escape(heading) .. '</h2>')
+  table.insert(html, '<div class="see-also-grid">')
 
   for i = 1, n do
     local item = items[i]
-    local blocks = {
-      pandoc.Plain({
-        pandoc.Link(item.title, item.href)
-      })
-    }
+    table.insert(html, '<article class="see-also-card card h-100">')
+    table.insert(html, '<a class="see-also-card-link" href="' .. html_escape(item.href) .. '">')
+    table.insert(html, '<div class="card-body">')
+    table.insert(html, '<h5 class="card-title see-also-card-title">' .. html_escape(item.title) .. '</h5>')
 
-    if item.description and item.description ~= "" then
-      table.insert(blocks, pandoc.Plain({
-        pandoc.Str(item.description)
-      }))
+    if item.subtitle and trim(item.subtitle) ~= "" then
+      table.insert(html,
+        '<div class="card-subtitle see-also-card-subtitle">' .. html_escape(item.subtitle) .. '</div>'
+      )
     end
 
-    table.insert(bullet_items, blocks)
+    table.insert(html, '</div>')
+    table.insert(html, '</a>')
+    table.insert(html, '</article>')
   end
 
-  table.insert(doc.blocks, pandoc.BulletList(bullet_items))
+  table.insert(html, '</div>')
+  table.insert(html, '</section>')
+
+  return table.concat(html, "\n")
+end
+
+local function append_related_section(doc, heading, items, max_items)
+  local html = render_cards_html(heading, items, max_items)
+  if not html then
+    return
+  end
+
+  table.insert(doc.blocks, pandoc.RawBlock("html", html))
 end
 
 function Pandoc(doc)
@@ -412,23 +357,15 @@ function Pandoc(doc)
   local current_content = read_file(input_path)
 
   if not current_content then
-    log("Could not read current file: " .. tostring(input_path))
     return doc
   end
 
   local current_meta = parse_yaml_front_matter(current_content)
   if not current_meta or not current_meta.categories or #current_meta.categories == 0 then
-    log("Current page has no parseable categories: " .. tostring(input_path))
     return doc
   end
 
   local current_categories = current_meta.categories
-
-  log("Project root: " .. tostring(project_root))
-  log("Input file: " .. tostring(input_file))
-  log("Resolved input path: " .. tostring(input_path))
-  log("Current key: " .. tostring(current_key))
-  log("Current categories: " .. table.concat(current_categories, ", "))
 
   local related_longforms = collect_related(project_root, current_key, current_categories, "longforms")
   local related_posts = collect_related(project_root, current_key, current_categories, "posts")
