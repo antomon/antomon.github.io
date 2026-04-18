@@ -456,8 +456,8 @@ function Pandoc(doc)
   local related_longforms = collect_related(project_root, current_key, current_categories, "longforms")
   local related_posts = collect_related(project_root, current_key, current_categories, "posts")
 
-  append_related_section(doc, "See also longforms", related_longforms, 4)
-  append_related_section(doc, "See also posts", related_posts, 4)
+  append_related_section(doc, "See also longforms", related_longforms, 6)
+  append_related_section(doc, "See also posts", related_posts, 6)
 
   return doc
 end
