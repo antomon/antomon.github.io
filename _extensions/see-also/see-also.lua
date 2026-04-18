@@ -315,32 +315,101 @@ local function render_cards_html(heading, items, max_items)
   local n = math.min(max_items or 4, #items)
   local html = {}
 
-  table.insert(html, '<section style="margin-top:2.75rem;">')
+  table.insert(html, [[
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+]])
+
   table.insert(html, '<h2>' .. html_escape(heading) .. '</h2>')
-  table.insert(html, '<div class="row g-4 mt-1">')
+  table.insert(html, '<div class="see-also-cards">')
 
   for i = 1, n do
     local item = items[i]
 
-    table.insert(html, '<div class="col-12 col-md-6 col-lg-4">')
-    table.insert(html, '<article class="card h-100" style="overflow:hidden;border:1px solid rgba(0,0,0,0.08);border-radius:14px;background:var(--bs-body-bg);box-shadow:0 2px 8px rgba(0,0,0,0.04);">')
-    table.insert(html, '<a href="' .. html_escape(item.href) .. '" style="color:inherit;text-decoration:none;display:block;height:100%;">')
+    table.insert(html, '<article class="see-also-card">')
+    table.insert(html, '<a class="see-also-card-link" href="' .. html_escape(item.href) .. '">')
 
     if item.image and trim(item.image) ~= "" then
-      table.insert(html, '<img src="' .. html_escape(item.image) .. '" alt="" class="card-img-top" style="width:100%;height:160px;object-fit:cover;display:block;">')
+      table.insert(html,
+        '<img class="see-also-card-image" src="' .. html_escape(item.image) .. '" alt="">'
+      )
     end
 
-    table.insert(html, '<div class="card-body">')
-    table.insert(html, '<h5 class="card-title" style="margin-bottom:0.45rem;line-height:1.25;">' .. html_escape(item.title) .. '</h5>')
+    table.insert(html, '<div class="see-also-card-body">')
+    table.insert(html, '<h5 class="see-also-card-title">' .. html_escape(item.title) .. '</h5>')
 
     if item.subtitle and trim(item.subtitle) ~= "" then
-      table.insert(html, '<div class="card-subtitle" style="color:var(--bs-secondary-color,#6c757d);font-size:0.95rem;line-height:1.35;">' .. html_escape(item.subtitle) .. '</div>')
+      table.insert(html,
+        '<div class="see-also-card-subtitle">' .. html_escape(item.subtitle) .. '</div>'
+      )
     end
 
     table.insert(html, '</div>')
     table.insert(html, '</a>')
     table.insert(html, '</article>')
-    table.insert(html, '</div>')
   end
 
   table.insert(html, '</div>')
