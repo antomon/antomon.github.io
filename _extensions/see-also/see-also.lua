@@ -95,7 +95,6 @@ local function parse_yaml_front_matter(content)
     subtitle = nil,
     date = nil,
     date_modified = nil,
-    description = nil,
     image = nil,
     categories = {}
   }
@@ -116,8 +115,6 @@ local function parse_yaml_front_matter(content)
         meta.date = strip_quotes(value)
       elseif key == "date-modified" then
         meta.date_modified = strip_quotes(value)
-      elseif key == "description" then
-        meta.description = strip_quotes(value)
       elseif key == "image" then
         meta.image = strip_quotes(value)
       elseif key == "categories" then
@@ -200,6 +197,19 @@ local function href_from_key(key)
   return "/" .. p
 end
 
+local function image_href_from_key_and_meta(key, meta)
+  if not meta.image or trim(meta.image) == "" then
+    return nil
+  end
+
+  local base = href_from_key(key)
+  if base:sub(-1) ~= "/" then
+    base = base .. "/"
+  end
+
+  return base .. meta.image
+end
+
 local function resolve_input_path(project_root, input_file)
   input_file = normalize_fs_path(input_file)
 
@@ -268,6 +278,7 @@ local function collect_related(project_root, current_key, current_categories, co
               title = meta.title,
               subtitle = meta.subtitle,
               href = href_from_key(key),
+              image = image_href_from_key_and_meta(key, meta),
               date = meta.date or "",
               date_modified = meta.date_modified or "",
               score = score
@@ -312,6 +323,13 @@ local function render_cards_html(heading, items, max_items)
     local item = items[i]
     table.insert(html, '<article class="see-also-card card h-100">')
     table.insert(html, '<a class="see-also-card-link" href="' .. html_escape(item.href) .. '">')
+
+    if item.image and trim(item.image) ~= "" then
+      table.insert(html,
+        '<img class="see-also-card-image card-img-top" src="' .. html_escape(item.image) .. '" alt="">'
+      )
+    end
+
     table.insert(html, '<div class="card-body">')
     table.insert(html, '<h5 class="card-title see-also-card-title">' .. html_escape(item.title) .. '</h5>')
 
