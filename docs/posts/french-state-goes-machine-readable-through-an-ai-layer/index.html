@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-04-18">
+<meta name="description" content="France’s experimental MCP server for data.gouv.fr is more than a technical connector. It signals a broader shift in how a state can expose public information in the age of AI. Rather than limiting access to web pages for humans and APIs for developers, the French open data platform is beginning to add a third interface layer: a standardized machine readable protocol through which AI agents can search datasets, inspect metadata, discover public APIs, and query part of the national open data corpus through conversation. This article explains what the Model Context Protocol is, how the official data.gouv.fr MCP server works, how users can leverage it according to the public documentation, and what its code reveals about the architectural choices behind the implementation. It then situates the server within the broader French ecosystem of datasets, dataservices, and downstream reuses, arguing that the real significance of the initiative lies not in one endpoint alone, but in the emergence of public digital infrastructure designed to remain usable across successive interface paradigms, from websites and APIs to AI mediated access.">
+
+<title>The French state becomes machine readable through an AI layer – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="The French state becomes machine readable through an AI layer – Random Bits of Knowledge">
+<meta property="og:description" content="France’s experimental MCP server for data.gouv.fr is more than a technical connector. It signals a broader shift in how a state can expose public information in the age of AI. Rather than limiting access to web pages for humans and APIs for developers, the French open data platform is beginning to add a third interface layer: a standardized machine readable protocol through which AI agents can search datasets, inspect metadata, discover public APIs, and query part of the national open data corpus through conversation. This article explains what the Model Context Protocol is, how the official data.gouv.fr MCP server works, how users can leverage it according to the public documentation, and what its code reveals about the architectural choices behind the implementation. It then situates the server within the broader French ecosystem of datasets, dataservices, and downstream reuses, arguing that the real significance of the initiative lies not in one endpoint alone, but in the emergence of public digital infrastructure designed to remain usable across successive interface paradigms, from websites and APIs to AI mediated access.">
+<meta property="og:image" content="https://antomon.github.io/posts/french-state-goes-machine-readable-through-an-ai-layer/marianne-mcp.jpeg">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="The French state becomes machine readable through an AI layer – Random Bits of Knowledge">
+<meta name="twitter:description" content="France’s experimental MCP server for data.gouv.fr is more than a technical connector. It signals a broader shift in how a state can expose public information in the age of AI. Rather than limiting access to web pages for humans and APIs for developers, the French open data platform is beginning to add a third interface layer: a standardized machine readable protocol through which AI agents can search datasets, inspect metadata, discover public APIs, and query part of the national open data corpus through conversation. This article explains what the Model Context Protocol is, how the official data.gouv.fr MCP server works, how users can leverage it according to the public documentation, and what its code reveals about the architectural choices behind the implementation. It then situates the server within the broader French ecosystem of datasets, dataservices, and downstream reuses, arguing that the real significance of the initiative lies not in one endpoint alone, but in the emergence of public digital infrastructure designed to remain usable across successive interface paradigms, from websites and APIs to AI mediated access.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/french-state-goes-machine-readable-through-an-ai-layer/marianne-mcp.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed slimcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">The French state becomes machine readable through an AI layer</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">The French state becomes machine readable through an AI layer</h1>
+            <p class="subtitle lead">Inside the data.gouv.fr MCP server and the new interface stack for public data</p>
+                  <div>
+        <div class="description">
+          France’s experimental MCP server for data.gouv.fr is more than a technical connector. It signals a broader shift in how a state can expose public information in the age of AI. Rather than limiting access to web pages for humans and APIs for developers, the French open data platform is beginning to add a third interface layer: a standardized machine readable protocol through which AI agents can search datasets, inspect metadata, discover public APIs, and query part of the national open data corpus through conversation. This article explains what the Model Context Protocol is, how the official data.gouv.fr MCP server works, how users can leverage it according to the public documentation, and what its code reveals about the architectural choices behind the implementation. It then situates the server within the broader French ecosystem of datasets, dataservices, and downstream reuses, arguing that the real significance of the initiative lies not in one endpoint alone, but in the emergence of public digital infrastructure designed to remain usable across successive interface paradigms, from websites and APIs to AI mediated access.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">EU digital sovereignty</div>
+                <div class="quarto-category">machine learning</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 18, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">April 18, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#mcp-101" id="toc-mcp-101" class="nav-link" data-scroll-target="#mcp-101">MCP 101</a></li>
+  <li><a href="#how-to-use-the-data.gouv.fr-mcp-server" id="toc-how-to-use-the-data.gouv.fr-mcp-server" class="nav-link" data-scroll-target="#how-to-use-the-data.gouv.fr-mcp-server">How to use the data.gouv.fr MCP server</a></li>
+  <li><a href="#inside-the-implementation-what-the-french-mcp-server-actually-is" id="toc-inside-the-implementation-what-the-french-mcp-server-actually-is" class="nav-link" data-scroll-target="#inside-the-implementation-what-the-french-mcp-server-actually-is">Inside the implementation: what the French MCP server actually is</a>
+  <ul class="collapse">
+  <li><a href="#a-small-fastmcp-application-rather-than-a-complex-agent-system" id="toc-a-small-fastmcp-application-rather-than-a-complex-agent-system" class="nav-link" data-scroll-target="#a-small-fastmcp-application-rather-than-a-complex-agent-system">A small FastMCP application rather than a complex agent system</a></li>
+  <li><a href="#explicit-tool-registration-rather-than-one-monolithic-endpoint" id="toc-explicit-tool-registration-rather-than-one-monolithic-endpoint" class="nav-link" data-scroll-target="#explicit-tool-registration-rather-than-one-monolithic-endpoint">Explicit tool registration rather than one monolithic endpoint</a></li>
+  <li><a href="#streamable-http-only" id="toc-streamable-http-only" class="nav-link" data-scroll-target="#streamable-http-only">Streamable HTTP only</a></li>
+  <li><a href="#stateless-http-as-an-interoperability-decision" id="toc-stateless-http-as-an-interoperability-decision" class="nav-link" data-scroll-target="#stateless-http-as-an-interoperability-decision">Stateless HTTP as an interoperability decision</a></li>
+  <li><a href="#transport-security-is-treated-as-part-of-the-design-not-an-afterthought" id="toc-transport-security-is-treated-as-part-of-the-design-not-an-afterthought" class="nav-link" data-scroll-target="#transport-security-is-treated-as-part-of-the-design-not-an-afterthought">Transport security is treated as part of the design, not an afterthought</a></li>
+  <li><a href="#operational-observability-is-built-in" id="toc-operational-observability-is-built-in" class="nav-link" data-scroll-target="#operational-observability-is-built-in">Operational observability is built in</a></li>
+  <li><a href="#the-search-layer-is-thin-but-not-naive" id="toc-the-search-layer-is-thin-but-not-naive" class="nav-link" data-scroll-target="#the-search-layer-is-thin-but-not-naive">The search layer is thin, but not naive</a></li>
+  <li><a href="#the-tabular-query-tool-is-a-controlled-analytical-interface" id="toc-the-tabular-query-tool-is-a-controlled-analytical-interface" class="nav-link" data-scroll-target="#the-tabular-query-tool-is-a-controlled-analytical-interface">The tabular query tool is a controlled analytical interface</a></li>
+  <li><a href="#the-implementation-preserves-the-platforms-ontology" id="toc-the-implementation-preserves-the-platforms-ontology" class="nav-link" data-scroll-target="#the-implementation-preserves-the-platforms-ontology">The implementation preserves the platform’s ontology</a></li>
+  <li><a href="#what-the-code-says-about-the-overall-philosophy" id="toc-what-the-code-says-about-the-overall-philosophy" class="nav-link" data-scroll-target="#what-the-code-says-about-the-overall-philosophy">What the code says about the overall philosophy</a></li>
+  </ul></li>
+  <li><a href="#what-the-community-is-building-on-top-of-the-platform" id="toc-what-the-community-is-building-on-top-of-the-platform" class="nav-link" data-scroll-target="#what-the-community-is-building-on-top-of-the-platform">What the community is building on top of the platform</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><img src="marianne-mcp.jpeg" class="img-fluid"></p>
+</div></div><section id="introduction" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>A great deal of public sector digitalization has followed a familiar pattern. Governments publish web portals for humans, APIs for developers, and documentation for specialists, while ordinary users remain responsible for navigating the complexity of the administrative surface on their own. The French experiment around the <strong>data.gouv.fr MCP server</strong> is interesting because it adds a new interface layer to that model: <em>not just pages for people and endpoints for software engineers, but a structured protocol through which AI assistants can interact with public data</em>.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn1"><p><sup>1</sup>&nbsp;See the official announcement of the experimental MCP server on data.gouv.fr: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div><div id="fn2"><p><sup>2</sup>&nbsp;The official announcement states that data.gouv.fr is experimenting with an MCP server, presents the initiative as exploratory, and specifies that the server is read only at this stage: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div></div><p>This is the real novelty of the initiative. In February 2026, data.gouv.fr announced an experimental MCP server designed to let chatbots and other AI systems interact with French public data through a standardized framework. The stated objective is exploratory and cautious: to understand what the Model Context Protocol can contribute to access to public data, while remaining attentive to its limits. At this stage, the server is read only and is meant to support exploration of open public datasets rather than any modification or publication workflow.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>That may sound like a narrow technical step, but it is more consequential than it first appears. Public data portals already contain huge quantities of information, yet scale alone does not guarantee usability. What changes here is the mode of access. Instead of requiring each AI tool to build a custom integration against the platform, data.gouv.fr is exposing a common machine readable interface that compatible assistants can use to search datasets, inspect metadata, list resources, query some data directly, and retrieve usage indicators through explicit tools. The official announcement describes this precisely as a way to facilitate the use of public data by AI chatbots without multiplying bespoke integrations.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn3"><p><sup>3</sup>&nbsp;The official announcement explains that the goal is to facilitate the use of public data by AI chatbots through a standardized protocol rather than multiplying bespoke integrations: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div><div id="fn4"><p><sup>4</sup>&nbsp;Official datasets catalog on data.gouv.fr, showing the current number of datasets: <a href="https://www.data.gouv.fr/datasets">Jeux de données sur data.gouv.fr</a></p></div><div id="fn5"><p><sup>5</sup>&nbsp;The official announcement frames the MCP server as an experiment to facilitate access to public data by AI chatbots while remaining attentive to the limits of the approach: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div></div><p>The importance of that design becomes even clearer when one considers the scale of the underlying catalog. The official datasets catalog on data.gouv.fr states that the platform contains 73,872 datasets, which means that the experimental MCP server is not being attached to a marginal repository, but to a very large national open data infrastructure.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> This matters because the value of a standardized AI facing interface rises with the size and heterogeneity of the underlying corpus. The more numerous the datasets, the greater the practical need for a machine readable access layer that can help users search, inspect, and navigate them without requiring bespoke integrations for each assistant or extensive manual browsing. The official announcement itself frames the server in exactly that spirit: as an experiment meant to facilitate the use of public data by AI chatbots through a standardized protocol, while remaining attentive to the limits of the approach.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p>This article is therefore about more than one protocol. Its purpose is to examine a <strong>shift in public digital infrastructure</strong>. The French state, through data.gouv.fr, is not simply publishing datasets in bulk. It is beginning to <strong>expose them through a machine legible conversational interface</strong>, making a very large public data corpus directly addressable by AI agents.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> The article will first explain what MCP is and what it is for, then analyze the French implementation itself, and finally study the code of the public repository to understand what the server actually exposes, how users can leverage it, and what architectural choices the implementation reveals.</p>
+<div class="no-row-height column-margin column-container"><div id="fn6"><p><sup>6</sup>&nbsp;For the official framing of the MCP server as an experimental interface for public data access, see: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a>. For the scale of the underlying public data corpus, see the official datasets catalog: <a href="https://www.data.gouv.fr/datasets">Jeux de données sur data.gouv.fr</a></p></div></div></section>
+<section id="mcp-101" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="mcp-101">MCP 101</h2>
+<p>To understand why the French initiative matters, one first needs a minimal understanding of <strong>MCP</strong>, the <strong>Model Context Protocol</strong>. MCP was originally introduced by <strong>Anthropic</strong> in November 2024 as an open standard for connecting AI applications to external systems, and it is now documented as an open protocol for linking language model clients to tools, data sources, and workflows.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> In concrete terms, it gives an AI assistant a standardized way to access data sources, call tools, and use structured workflows, instead of relying only on whatever text happened to be inside its training data or current prompt. The protocol has also been adopted well beyond Anthropic’s own ecosystem: <strong>OpenAI</strong> documents MCP support in its API, Apps SDK, and Codex tooling, while <strong>GitHub</strong> documents MCP support in GitHub Copilot and the GitHub MCP Server.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> Its governance has also broadened. In late 2025, Anthropic donated MCP to the <strong>Agentic AI Foundation</strong>, a directed fund under the <strong>Linux Foundation</strong>, so that the protocol could evolve under more neutral, multi company stewardship rather than remaining tied to a single vendor.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> This matters because it shows that MCP is not merely a vendor specific experiment, but an increasingly accepted interaction standard across major AI platforms and a protocol now embedded in a broader open governance structure.</p>
+<div class="no-row-height column-margin column-container"><div id="fn7"><p><sup>7</sup>&nbsp;Official MCP introduction: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a></p></div><div id="fn8"><p><sup>8</sup>&nbsp;For OpenAI support, see the official documentation for MCP in the API, Apps SDK, and Codex: <a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp">MCP and Connectors</a>, <a href="https://developers.openai.com/apps-sdk/concepts/mcp-server">MCP</a>, <a href="https://developers.openai.com/codex/mcp">Model Context Protocol</a>. For GitHub support, see the official GitHub Copilot documentation: <a href="https://docs.github.com/en/copilot/concepts/context/mcp">About Model Context Protocol (MCP)</a>, <a href="https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/use-the-github-mcp-server">Using the GitHub MCP Server in your IDE</a></p></div><div id="fn9"><p><sup>9</sup>&nbsp;Anthropic announced that it was donating MCP to the Agentic AI Foundation under the Linux Foundation: <a href="https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation">Donating the Model Context Protocol and establishing the Agentic AI Foundation</a>. The MCP project documentation also describes MCP as having grown into a multi company open standard under the Linux Foundation: <a href="https://modelcontextprotocol.io/development/roadmap">Roadmap</a></p></div><div id="fn10"><p><sup>10</sup>&nbsp;Official MCP introduction explaining the purpose of a standard way to connect AI systems to tools and data sources: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a></p></div></div><p>At first principles level, the problem is simple. A language model can generate text, but by itself it does not inherently know how to inspect a database, search a public data catalog, call a calculator, read a local file, or interact with an external service in a disciplined way. Every such capability normally requires a custom integration. MCP exists to reduce that fragmentation. It defines a common protocol through which an AI application can connect to an external system and discover what that system makes available.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a></p>
+<p>The official introduction uses a useful analogy: <strong>MCP is like a USB C port for AI applications</strong>. Just as USB C gives many different devices a standardized way to connect, MCP gives many different AI clients a standardized way to connect to external tools and data sources. The value of the analogy is architectural. The point is not intelligence by itself. The point is interoperability. A data provider does not need to build a different bespoke connector for every AI client. Instead, it can expose one MCP server, and any compatible client can potentially use it.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn11"><p><sup>11</sup>&nbsp;The official MCP introduction uses the USB C analogy to explain interoperability across AI applications and external systems: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a></p></div><div id="fn12"><p><sup>12</sup>&nbsp;Official MCP specification describing architecture and use of JSON RPC 2.0: <a href="https://modelcontextprotocol.io/specification/">Model Context Protocol Specification</a></p></div></div><p>The protocol distinguishes three main roles. There is the <strong>host</strong>, which is the AI application the user is actually interacting with. There is the <strong>client</strong>, which is the connector component inside that host. And there is the <strong>server</strong>, which exposes context and capabilities to the host. The official specification says MCP uses <strong>JSON RPC 2.0</strong> messages for this communication. So, at a very practical level, MCP is not magic. It is a structured request and response protocol that lets an AI host discover what an external system offers and then invoke those capabilities in a standardized way.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
+<p>For non specialists, the most important concepts are only three: <strong>tools</strong>, <strong>resources</strong>, and <strong>prompts</strong>:<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn13"><p><sup>13</sup>&nbsp;Overview of MCP server features in the official specification and documentation: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a></p></div></div><ul>
+<li><p>A <strong>tool</strong> is an action the model can invoke on an external system. The official specification describes tools as named capabilities that let models interact with outside systems, such as querying databases, calling APIs, or performing computations. A tool therefore does not merely give the model more text. It gives it the ability to do something structured in the outside world or against an external service. In the case of the French data.gouv.fr MCP server, examples of tools include searching datasets, listing dataset resources, querying tabular data, or retrieving usage metrics.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a></p></li>
+<li><p>A <strong>resource</strong> is context exposed by the server. The official specification says resources allow servers to share data that provides context to language models, such as files, database schemas, or application specific information, each identified by a URI. So if a tool is closer to a verb, a resource is closer to a document or object that can be read. Resources matter because many AI tasks are not really about taking an action, but about obtaining grounded context from an authoritative external source.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p></li>
+<li><p>A <strong>prompt</strong>, in MCP terminology, is a structured prompt template exposed by the server. The specification says prompts allow servers to provide reusable messages and instructions for interacting with language models, and that they are typically intended to be user controlled. In practice, prompts let a server package a recommended interaction pattern for a domain. They do not replace the model. They give it a structured starting point or workflow.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a></p></li>
+</ul>
+<div class="no-row-height column-margin column-container"><div id="fn14"><p><sup>14</sup>&nbsp;Official MCP tools specification: <a href="https://modelcontextprotocol.io/specification/latest/server/tools">Tools</a>. For examples from the French implementation, see the official repository: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn15"><p><sup>15</sup>&nbsp;Official MCP resources specification: <a href="https://modelcontextprotocol.io/specification/latest/server/resources">Resources</a></p></div><div id="fn16"><p><sup>16</sup>&nbsp;Official MCP prompts specification: <a href="https://modelcontextprotocol.io/specification/latest/server/prompts">Prompts</a></p></div><div id="fn17"><p><sup>17</sup>&nbsp;The official MCP documentation and specification show that the protocol covers more than tool invocation, including resources and prompts: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a>, <a href="https://modelcontextprotocol.io/specification/latest/server/resources">Resources</a>, <a href="https://modelcontextprotocol.io/specification/latest/server/prompts">Prompts</a></p></div></div><p>This distinction is important because it shows that MCP is broader than <em>tool calling</em>. It can expose actions, context, and reusable interaction patterns. That is why the protocol is relevant for public digital infrastructure. A government platform may want an AI system not only to call an endpoint, but also to retrieve authoritative public information and to do so through a predictable interaction model.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+<p>Why does this matter in practice? The official MCP documentation gives a straightforward answer. For developers, MCP reduces the effort of integrating external systems into AI applications. For AI applications, it expands what they can do by giving them access to tools and data beyond their base model. For end users, it means assistants can become more useful because they are no longer restricted to generic text generation. They can access relevant systems directly when permitted.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn18"><p><sup>18</sup>&nbsp;Official MCP introduction on the value of the protocol for developers and AI applications: <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol Introduction</a></p></div><div id="fn19"><p><sup>19</sup>&nbsp;For the official French framing of the MCP server as a standardized AI facing interface for public data, see: <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div></div><p>This is exactly the background needed to understand the French experiment. The novelty is not that France has public data. Many governments already publish large quantities of public data. The novelty is that France is starting to expose that data through an MCP server, meaning through a standardized interface designed for AI mediated access rather than only for human browsing or traditional software integration. Instead of asking each assistant vendor to invent its own connector to the French open data platform, the platform can expose a common interface once and let multiple compatible clients use it. That is the infrastructural logic behind the initiative.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<p>There is also an important limit. MCP does not make an AI system automatically correct, authoritative, or safe. It merely gives it a standardized way to obtain external context and invoke external capabilities. The quality of the result still depends on the design of the server, the quality of the underlying data, the behavior of the client, and the reasoning of the model itself. MCP improves connectivity and structure. It does not eliminate the need for verification. That point is especially important when the connected system is a public data platform, where the difference between access and correct interpretation remains substantial. This caution is consistent with the official architecture and specification, which define communication mechanisms and capability exposure, not epistemic guarantees about model outputs.<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn20"><p><sup>20</sup>&nbsp;The official MCP specification defines protocol structure and server capabilities, not truth guarantees about model outputs: <a href="https://modelcontextprotocol.io/specification/">Model Context Protocol Specification</a></p></div></div></section>
+<section id="how-to-use-the-data.gouv.fr-mcp-server" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="how-to-use-the-data.gouv.fr-mcp-server">How to use the data.gouv.fr MCP server</h2>
+<p>From the user perspective, the official data.gouv.fr MCP server is meant to be used through an MCP compatible client, not by manually sending protocol messages. The repository states this very clearly: the recommended option is to use the hosted public endpoint at <code>https://mcp.data.gouv.fr/mcp</code>, which is available without access restrictions, and then connect a compatible chatbot or coding assistant to it. The repository explicitly mentions clients such as Claude, ChatGPT, and Gemini, and provides configuration instructions for a larger list that also includes Cursor, Claude Desktop, Claude Code, Le Chat, VS Code, Windsurf, AnythingLLM, HuggingChat, IBM Bob, Kiro, OpenCode, and others.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn21"><p><sup>21</sup>&nbsp;Official repository README for the data.gouv.fr MCP server, including hosted endpoint and supported clients: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn22"><p><sup>22</sup>&nbsp;Official repository README section recommending the hosted endpoint for normal use: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>The first practical point is that the repository recommends the hosted endpoint rather than self hosting for ordinary usage. Its wording is direct: use the hosted endpoint <code>https://mcp.data.gouv.fr/mcp</code>, and only substitute your own URL if you choose to self host the server. That means the basic usage model is very simple. The user selects an MCP capable application, adds the data.gouv.fr endpoint using the configuration format expected by that application, and then starts interacting with public data through natural language.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a></p>
+<p>The repository’s ChatGPT instructions are unusually concrete. It says the connector is available only on paid plans, specifically Plus, Pro, Team, and Enterprise. The documented path is to open <code>Settings</code>, then <code>Apps and connectors</code>, then <code>Advanced settings</code> to enable Developer mode, and finally return to <code>Settings</code> and <code>Connectors</code> to add a new connector whose URL is <code>https://mcp.data.gouv.fr/mcp</code>. Once saved, the tools become available inside ChatGPT.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn23"><p><sup>23</sup>&nbsp;Official ChatGPT setup instructions in the repository README: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn24"><p><sup>24</sup>&nbsp;Official client configuration examples for Cursor, VS Code, Claude Code, and Claude Desktop in the repository README: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>For Cursor, the repository explains that MCP servers can be added through Cursor settings by searching for <em>MCP</em> or <em>Model Context Protocol</em> and inserting a JSON block that points to <code>https://mcp.data.gouv.fr/mcp</code> with HTTP transport. For VS Code, the repository gives the platform specific locations of the <code>mcp.json</code> file and shows a similar configuration using a <code>servers</code> object whose <code>datagouv</code> entry uses the same hosted URL. For Claude Code, the documented setup is command line based: <code>claude mcp add --transport http datagouv https://mcp.data.gouv.fr/mcp</code>. For Claude Desktop, the repository provides a configuration file example using <code>npx</code> and <code>mcp-remote</code> against the same endpoint, and it even documents a Windows specific troubleshooting case involving the built in Node runtime.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a></p>
+<p>The repository also documents setup for clients oriented toward broader public use rather than only developer environments. For Le Chat by Mistral, it says the feature is available on all plans including free, and the steps are to go to <code>Intelligence</code>, then <code>Connectors</code>, then add a <code>Custom MCP Connector</code>, give it a name, set the URL to <code>https://mcp.data.gouv.fr/mcp</code>, leave authentication disabled, and create it. For HuggingChat, the instructions are to open the MCP server manager from the plus icon, add a server, provide the URL, and then run a health check so that the server shows as connected and the toggle can be activated for use in chat.<a href="#fn25" class="footnote-ref" id="fnref25" role="doc-noteref"><sup>25</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn25"><p><sup>25</sup>&nbsp;Official client configuration examples for Le Chat and HuggingChat in the repository README: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn26"><p><sup>26</sup>&nbsp;Official repository README usage examples and overview of the conversational interaction model: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>Once the connector is configured, the user does not normally need to think about MCP again. The interaction becomes conversational. The repository explains the expected usage through examples such as asking what datasets are available on housing prices or asking to show the latest population data for Paris. This is an important detail: the server is not designed as a generic chat endpoint but as a structured bridge between natural language requests and the public data operations exposed by the tools.<a href="#fn26" class="footnote-ref" id="fnref26" role="doc-noteref"><sup>26</sup></a></p>
+<p>The repository then describes the available tools. On the dataset side, the server exposes <code>search_datasets</code>, <code>get_dataset_info</code>, <code>list_dataset_resources</code>, <code>get_resource_info</code>, and <code>query_resource_data</code>. The repository explains each of them in operational terms. <code>search_datasets</code> searches datasets by keywords and returns metadata such as title, description, organization, tags, and resource count. <code>get_dataset_info</code> retrieves detailed information on a specific dataset. <code>list_dataset_resources</code> enumerates the files attached to a dataset, including metadata such as format, size, type, and URL. <code>get_resource_info</code> retrieves detailed information about a resource, including its MIME type, URL, dataset association, and whether the Tabular API is available. <code>query_resource_data</code> then queries a specific resource through the Tabular API in order to fetch rows and answer questions over the data.<a href="#fn27" class="footnote-ref" id="fnref27" role="doc-noteref"><sup>27</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn27"><p><sup>27</sup>&nbsp;Official repository README tool descriptions for <code>search_datasets</code>, <code>get_dataset_info</code>, <code>list_dataset_resources</code>, <code>get_resource_info</code>, and <code>query_resource_data</code>: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn28"><p><sup>28</sup>&nbsp;The layered workflow is inferred directly from the official tool descriptions and examples in the repository README: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>This implies a practical usage sequence. A user typically begins with discovery, using <code>search_datasets</code> to identify datasets related to a topic. Once a promising dataset is found, the next step is inspection, using <code>list_dataset_resources</code> to see what files are attached and <code>get_dataset_info</code> or <code>get_resource_info</code> to understand the structure and relevance of the material. Only after that does the user move to actual data retrieval, using <code>query_resource_data</code> to inspect rows or answer questions grounded in a specific tabular resource. The repository’s tool descriptions strongly support this layered workflow even when it does not spell it out as a formal sequence in the same paragraph.<a href="#fn28" class="footnote-ref" id="fnref28" role="doc-noteref"><sup>28</sup></a></p>
+<p>The server also exposes a second family of functions for <strong>dataservices</strong>, which the repository defines as external third party APIs registered in the data.gouv.fr catalog, such as Adresse API or Sirene API. This is an important distinction. Datasets are static data files, while dataservices are APIs listed in the catalog. For this second class, the server provides <code>search_dataservices</code>, <code>get_dataservice_info</code>, and <code>get_dataservice_openapi_spec</code>. In practical terms, that means a user can exploit the server not only to discover downloadable datasets, but also to discover relevant public APIs and inspect their documented interfaces.<a href="#fn29" class="footnote-ref" id="fnref29" role="doc-noteref"><sup>29</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn29"><p><sup>29</sup>&nbsp;Official repository README section describing dataservices and the tools <code>search_dataservices</code>, <code>get_dataservice_info</code>, and <code>get_dataservice_openapi_spec</code>: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn30"><p><sup>30</sup>&nbsp;Official repository README section documenting <code>get_metrics</code> and its production only availability: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>A further documented capability is <code>get_metrics</code>. The repository says this tool returns monthly statistics including visits and downloads, sorted by month in descending order, and that at least one of <code>dataset_id</code> or <code>resource_id</code> must be provided. It also states an operational limit that matters for users and deployers alike: this tool works only against the production environment because the Metrics API does not exist in demo or preproduction.<a href="#fn30" class="footnote-ref" id="fnref30" role="doc-noteref"><sup>30</sup></a></p>
+<p>For users who want to run the server themselves, the repository also documents local execution. It recommends Docker, with <code>docker compose up -d</code> as the default startup command. The documented environment variables include <code>MCP_HOST</code>, <code>MCP_PORT</code>, <code>MCP_ENV</code>, <code>DATAGOUV_API_ENV</code>, and <code>LOG_LEVEL</code>. The repository notes that <code>DATAGOUV_API_ENV</code> can target either production or demo data.gouv.fr, and that binding to <code>127.0.0.1</code> instead of <code>0.0.0.0</code> is preferable for local development from an MCP security standpoint. Once running locally, the server exposes <code>POST /mcp</code> for JSON RPC traffic and <code>GET /health</code> for a JSON health probe.<a href="#fn31" class="footnote-ref" id="fnref31" role="doc-noteref"><sup>31</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn31"><p><sup>31</sup>&nbsp;Official repository README local development and Docker instructions, including environment variables and endpoints: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn32"><p><sup>32</sup>&nbsp;Official repository README instructions for testing with MCP Inspector: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>The repository even documents how to test the server interactively with the official MCP Inspector. The stated procedure is to start the local server and then launch the inspector with <code>npx @modelcontextprotocol/inspector --http-url "http://127.0.0.1:${MCP_PORT}/mcp"</code>. This is less relevant for ordinary end users, but it is useful for developers, public sector technologists, and researchers who want to inspect the exposed tools more explicitly rather than only through a chatbot interface.<a href="#fn32" class="footnote-ref" id="fnref32" role="doc-noteref"><sup>32</sup></a></p>
+<p>So, stripped to its essentials, the official usage model is this. Connect an MCP capable client to <code>https://mcp.data.gouv.fr/mcp</code>. Use natural language to search for datasets or dataservices. Inspect the returned metadata and resources. Then query specific resources or inspect API specifications depending on what the catalog contains. The repository documentation makes clear that the design is intentionally practical: the goal is to let users move from a question in ordinary language to structured operations over the French national open data platform without having to manually browse the site or hand code against its APIs.<a href="#fn33" class="footnote-ref" id="fnref33" role="doc-noteref"><sup>33</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn33"><p><sup>33</sup>&nbsp;Official repository README summarizing the practical usage model of the server: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div></section>
+<section id="inside-the-implementation-what-the-french-mcp-server-actually-is" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="inside-the-implementation-what-the-french-mcp-server-actually-is">Inside the implementation: what the French MCP server actually is</h2>
+<p>Once the user side workflow is understood, the next question is architectural. What exactly has the French team built? Is this a large autonomous agent system, a specialized reasoning engine, or merely a thin compatibility layer over existing public APIs? The code makes the answer quite clear. The official data.gouv.fr MCP server is fundamentally a <strong>protocol adapter</strong>: a relatively small service that exposes selected capabilities of the French open data platform through the Model Context Protocol, so that MCP compatible AI clients can invoke them through a standardized interface rather than through bespoke integrations.<a href="#fn34" class="footnote-ref" id="fnref34" role="doc-noteref"><sup>34</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn34"><p><sup>34</sup>&nbsp;Official repository README describing the project as an MCP server for searching, exploring, and analyzing datasets from data.gouv.fr through conversation: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn35"><p><sup>35</sup>&nbsp;Repository structure and project description in the official repository: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>The repository structure already points in that direction. At the top level, the project has a small <code>main.py</code>, a <code>tools</code> package, helper modules, tests, Docker support, and packaging metadata. That is not the shape of a monolithic AI application. It is the shape of a bounded service whose purpose is to expose an existing platform through a clean integration layer. The repository README itself describes it in those terms: an MCP server that allows AI chatbots such as Claude, ChatGPT, and Gemini to search, explore, and analyze datasets from data.gouv.fr directly through conversation.<a href="#fn35" class="footnote-ref" id="fnref35" role="doc-noteref"><sup>35</sup></a></p>
+<section id="a-small-fastmcp-application-rather-than-a-complex-agent-system" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="a-small-fastmcp-application-rather-than-a-complex-agent-system">A small FastMCP application rather than a complex agent system</h3>
+<p>The <code>main.py</code> file is revealing precisely because it is so compact. It instantiates a <code>FastMCP</code> server named <code>"data.gouv.fr MCP server"</code>, registers the tools, wraps the MCP application in a small monitoring layer, and runs the resulting ASGI app through Uvicorn. In other words, the core server does not contain business logic about datasets itself. It contains the protocol scaffold, transport security configuration, health reporting, and observability wiring. The real application logic lives in the tool handlers.<a href="#fn36" class="footnote-ref" id="fnref36" role="doc-noteref"><sup>36</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn36"><p><sup>36</sup>&nbsp;Official implementation entry point showing <code>FastMCP</code> initialization, tool registration, monitoring wrapper, and Uvicorn app startup: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div><div id="fn37"><p><sup>37</sup>&nbsp;The bounded protocol surface is evident from the server entry point and registered tools in the official codebase: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a>, <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div></div><p>This is a strong architectural signal. The French implementation does not try to bury everything inside one opaque conversational backend. It keeps the protocol layer narrow and legible. That makes the service easier to inspect, easier to maintain, and easier to reason about. The model does not get a vague unrestricted bridge to the entire platform. It gets a bounded set of named capabilities.<a href="#fn37" class="footnote-ref" id="fnref37" role="doc-noteref"><sup>37</sup></a></p>
+</section>
+<section id="explicit-tool-registration-rather-than-one-monolithic-endpoint" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="explicit-tool-registration-rather-than-one-monolithic-endpoint">Explicit tool registration rather than one monolithic endpoint</h3>
+<p>The <code>tools/__init__.py</code> file confirms this design. The MCP server registers a fixed set of tools: <code>search_datasets</code>, <code>search_dataservices</code>, <code>get_dataservice_info</code>, <code>get_dataservice_openapi_spec</code>, <code>query_resource_data</code>, <code>get_dataset_info</code>, <code>list_dataset_resources</code>, <code>get_resource_info</code>, and <code>get_metrics</code>. This is a deliberately explicit interface surface.<a href="#fn38" class="footnote-ref" id="fnref38" role="doc-noteref"><sup>38</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn38"><p><sup>38</sup>&nbsp;Official tool registration in the repository: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div></div><p>This choice matters more than it might seem. A public facing AI integration could have been implemented as one generic operation such as “ask data.gouv.fr anything.” Instead, the French server decomposes the interaction into bounded operations that map to real classes of backend capability: search, metadata inspection, resource listing, row retrieval, dataservice discovery, API specification inspection, and usage metrics. That decomposition is important for three reasons.</p>
+<p>First, it makes the interface inspectable by both developers and users. One can see what the server can and cannot do. Second, it lets the client reason over specific tool affordances rather than a vague omnipotent backend. Third, it preserves the ontology of the underlying platform. Datasets, resources, dataservices, and metrics remain distinct things rather than being collapsed into one fuzzy abstraction.<a href="#fn39" class="footnote-ref" id="fnref39" role="doc-noteref"><sup>39</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn39"><p><sup>39</sup>&nbsp;The explicit separation of tools is documented in the repository and implemented in the official code: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div></div></section>
+<section id="streamable-http-only" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="streamable-http-only">Streamable HTTP only</h3>
+<p>The repository states that the server uses the official Python MCP SDK and supports <strong>streamable HTTP</strong> transport only. It explicitly does not support STDIO or SSE. The endpoint surface is also narrow: <code>POST /mcp</code> for JSON RPC traffic and <code>GET /health</code> for health checks.<a href="#fn40" class="footnote-ref" id="fnref40" role="doc-noteref"><sup>40</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn40"><p><sup>40</sup>&nbsp;Official repository README documenting Streamable HTTP only transport and the <code>/mcp</code> and <code>/health</code> endpoints: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn41"><p><sup>41</sup>&nbsp;Transport model and endpoints documented in the official repository README: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div><p>This is a subtle but important design choice. Many early MCP examples were oriented toward local developer tooling, where STDIO based transport is natural. The French implementation instead privileges a remotely accessible HTTP service. That makes sense for a national open data portal intended to be used by many classes of client, not just local code tools. The design is therefore production oriented rather than merely demonstrative.<a href="#fn41" class="footnote-ref" id="fnref41" role="doc-noteref"><sup>41</sup></a></p>
+</section>
+<section id="stateless-http-as-an-interoperability-decision" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="stateless-http-as-an-interoperability-decision">Stateless HTTP as an interoperability decision</h3>
+<p>One of the most revealing technical decisions appears directly in <code>main.py</code>. The <code>FastMCP</code> instance is created with <code>stateless_http=True</code>. The in code comment explains the reason: to avoid “Session not found” errors with MCP clients that do not correctly preserve the <code>mcp-session-id</code> header across requests, with examples explicitly including Claude Code, Cline, and OpenAI Codex. The same comment adds that stateful sessions are unnecessary here because the server does not use server initiated notifications.<a href="#fn42" class="footnote-ref" id="fnref42" role="doc-noteref"><sup>42</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn42"><p><sup>42</sup>&nbsp;Official server code showing <code>stateless_http=True</code> and the compatibility comment about preserving <code>mcp-session-id</code>: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div><div id="fn43"><p><sup>43</sup>&nbsp;The design choice is visible in the official implementation and its code comments: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div></div><p>This is not just an implementation detail. It reveals the design philosophy of the service. The server is optimized for <strong>broad client compatibility</strong> rather than for protocol features it does not currently need. In other words, the team is solving the real integration problem that exists today, not a more ambitious but fragile one. For public infrastructure, this is a sound judgment. A protocol is only useful if the clients actually interoperate with it.<a href="#fn43" class="footnote-ref" id="fnref43" role="doc-noteref"><sup>43</sup></a></p>
+</section>
+<section id="transport-security-is-treated-as-part-of-the-design-not-an-afterthought" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="transport-security-is-treated-as-part-of-the-design-not-an-afterthought">Transport security is treated as part of the design, not an afterthought</h3>
+<p>The <code>main.py</code> file also configures <code>TransportSecuritySettings</code> with DNS rebinding protection enabled. It restricts <code>allowed_hosts</code> to the production and preproduction domains plus localhost variants, and similarly restricts <code>allowed_origins</code> to the corresponding HTTPS and local development origins. The code comments tie this explicitly to MCP transport security requirements, including origin validation and localhost binding guidance for local development.<a href="#fn44" class="footnote-ref" id="fnref44" role="doc-noteref"><sup>44</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn44"><p><sup>44</sup>&nbsp;Official server code configuring <code>TransportSecuritySettings</code>, <code>allowed_hosts</code>, and <code>allowed_origins</code>: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div><div id="fn45"><p><sup>45</sup>&nbsp;The transport security configuration is implemented in the official server entry point: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div></div><p>This matters because it shows that the French team is not treating MCP as a generic convenience wrapper with no protocol specific threat model. Exposing tool invocation over HTTP creates a new integration surface, and the implementation acknowledges that. The security posture here is not exhaustive, of course, but it is evidence of disciplined engineering. The server constrains where it may be called from and by whom at the transport layer, which is exactly what one would want from a public machine interface.<a href="#fn45" class="footnote-ref" id="fnref45" role="doc-noteref"><sup>45</sup></a></p>
+</section>
+<section id="operational-observability-is-built-in" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="operational-observability-is-built-in">Operational observability is built in</h3>
+<p>The same file includes a custom monitoring wrapper around the MCP app. The wrapper intercepts HTTP requests, exposes a dedicated <code>/health</code> endpoint, and sends tracking events for MCP requests through a Matomo helper. The health response includes <code>status</code>, <code>uptime_since</code>, <code>version</code>, <code>env</code>, and <code>data_env</code>. Sentry initialization is also performed at startup.<a href="#fn46" class="footnote-ref" id="fnref46" role="doc-noteref"><sup>46</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn46"><p><sup>46</sup>&nbsp;Official implementation of the monitoring wrapper, health endpoint, Matomo tracking, and Sentry initialization: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div><div id="fn47"><p><sup>47</sup>&nbsp;Operational monitoring and observability features are visible in the official server code: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div></div><p>This is operationally significant. An experimental public MCP endpoint is still a public service. The French implementation is clearly instrumented as such. It supports health reporting, version visibility, environment introspection, analytics, and error monitoring. This is not what one usually finds in a throwaway demo. It suggests the service is being treated as a real operational component of the platform’s evolving interface layer.<a href="#fn47" class="footnote-ref" id="fnref47" role="doc-noteref"><sup>47</sup></a></p>
+</section>
+<section id="the-search-layer-is-thin-but-not-naive" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="the-search-layer-is-thin-but-not-naive">The search layer is thin, but not naive</h3>
+<p>The <code>search_datasets.py</code> tool is one of the clearest examples of the server adding value beyond mere pass through exposure of the underlying API. The code explains that the data.gouv.fr search API uses strict AND logic, which means that generic words often added by users can cause searches to fail by requiring metadata terms that are unlikely to appear. To mitigate that, the server defines a query cleaning function that removes common generic terms such as <code>données</code>, <code>fichier</code>, <code>tableau</code>, and format names such as <code>csv</code>, <code>excel</code>, <code>xlsx</code>, <code>json</code>, and <code>xml</code>.<a href="#fn48" class="footnote-ref" id="fnref48" role="doc-noteref"><sup>48</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn48"><p><sup>48</sup>&nbsp;Official dataset search tool implementation describing strict AND logic and query cleaning: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py">search_datasets.py</a></p></div><div id="fn49"><p><sup>49</sup>&nbsp;Official dataset search tool implementation showing cleaned query fallback behavior: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py">search_datasets.py</a></p></div></div><p>This is an important design move. The MCP server is not simply replicating the raw API. It is adapting the interaction model for natural language use. Users often ask for “datasets in CSV” or “fichier de données,” but those generic words are not semantically useful for metadata retrieval if the underlying search engine treats them as hard constraints. The server therefore removes them, tries the cleaned query first, and if the cleaned version yields no result while differing from the original, it falls back to the unmodified query. That fallback behavior is also explicit in the code.<a href="#fn49" class="footnote-ref" id="fnref49" role="doc-noteref"><sup>49</sup></a></p>
+<p>This is a small heuristic, but conceptually it is important. It shows what a good MCP wrapper should do. It should not merely expose an API mechanically. It should encode the friction points of the underlying platform and reduce them in a way that remains transparent and bounded.<a href="#fn50" class="footnote-ref" id="fnref50" role="doc-noteref"><sup>50</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn50"><p><sup>50</sup>&nbsp;The search adaptation logic is documented directly in the official implementation: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py">search_datasets.py</a></p></div></div></section>
+<section id="the-tabular-query-tool-is-a-controlled-analytical-interface" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="the-tabular-query-tool-is-a-controlled-analytical-interface">The tabular query tool is a controlled analytical interface</h3>
+<p>The <code>query_resource_data.py</code> tool is even more revealing. It does not just fetch an entire file blindly. It exposes a more structured and analysis oriented retrieval model over the Tabular API. The tool accepts a natural language <code>question</code>, a <code>resource_id</code>, pagination controls, optional filters by column and value, a restricted set of filter operators, and optional sorting controls. The supported operators listed in the code are <code>exact</code>, <code>contains</code>, <code>less</code>, <code>greater</code>, <code>strictly_less</code>, and <code>strictly_greater</code>, while sorting is restricted to <code>asc</code> or <code>desc</code>.<a href="#fn51" class="footnote-ref" id="fnref51" role="doc-noteref"><sup>51</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn51"><p><sup>51</sup>&nbsp;Official tabular query tool implementation documenting accepted parameters, filter operators, and sort directions: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py">query_resource_data.py</a></p></div></div><p>Several design judgments are embedded here.</p>
+<p>The tool explicitly recommends starting with a small <code>page_size</code> of 20 to preview the resource structure. It clamps <code>page_size</code> to a range between 1 and 200. It retrieves resource metadata first, and if possible dataset metadata as well, so that the textual response can contextualize the query with the resource title and dataset title. It then builds filter and sort parameters for the Tabular API in a controlled way, rather than allowing arbitrary parameter injection.<a href="#fn52" class="footnote-ref" id="fnref52" role="doc-noteref"><sup>52</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn52"><p><sup>52</sup>&nbsp;Official tabular query tool implementation showing <code>page_size</code> handling, metadata retrieval, and controlled parameter construction: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py">query_resource_data.py</a></p></div><div id="fn53"><p><sup>53</sup>&nbsp;Official tabular query tool implementation showing result formatting, paging guidance, and handling of large datasets: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py">query_resource_data.py</a></p></div></div><p>The result formatting is also telling. The tool reports the total row count when available, calculates total pages, lists the column names, shows the retrieved rows, truncates long field values, and, when more data exists, tells the user what to do next. For larger datasets above 1000 rows, the tool explicitly warns that the dataset is large and recommends either pagination or using <code>get_resource_info</code> to retrieve the raw file URL and fetch it directly.<a href="#fn53" class="footnote-ref" id="fnref53" role="doc-noteref"><sup>53</sup></a></p>
+<p>This is not a general purpose data analysis engine. It is a <strong>controlled inspection interface</strong>. That is the right design for an MCP server over a public data portal. The goal is not to reimplement pandas inside the protocol layer. The goal is to make tabular public resources inspectable and partially queryable in a way that supports conversational exploration while remaining bounded and legible.<a href="#fn54" class="footnote-ref" id="fnref54" role="doc-noteref"><sup>54</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn54"><p><sup>54</sup>&nbsp;The bounded analytical behavior is visible in the official tabular query tool implementation: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py">query_resource_data.py</a></p></div></div></section>
+<section id="the-implementation-preserves-the-platforms-ontology" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="the-implementation-preserves-the-platforms-ontology">The implementation preserves the platform’s ontology</h3>
+<p>Another important architectural feature is that the server keeps a sharp distinction between <strong>datasets</strong>, <strong>resources</strong>, and <strong>dataservices</strong>. The repository documentation is explicit that dataservices are external APIs registered in the data.gouv.fr catalog, unlike datasets which are static files. That distinction is reflected in the separate tool families for search, inspection, and OpenAPI specification retrieval.<a href="#fn55" class="footnote-ref" id="fnref55" role="doc-noteref"><sup>55</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn55"><p><sup>55</sup>&nbsp;Official repository documentation and code distinguish datasets from dataservices: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a>, <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div><div id="fn56"><p><sup>56</sup>&nbsp;The distinct treatment of files and APIs is reflected in the official repository and code: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a>, <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div></div><p>This is conceptually correct and important. A public data file and an API are not the same kind of object. One is primarily explored through rows, structure, and downloads. The other is explored through endpoint documentation, parameters, and interaction semantics. The French implementation does not flatten these into a single undifferentiated object model. It preserves the ontology of the catalog, which makes the resulting AI interface more truthful to the underlying platform.<a href="#fn56" class="footnote-ref" id="fnref56" role="doc-noteref"><sup>56</sup></a></p>
+</section>
+<section id="what-the-code-says-about-the-overall-philosophy" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="what-the-code-says-about-the-overall-philosophy">What the code says about the overall philosophy</h3>
+<p>Taken together, the code reveals a consistent design philosophy.</p>
+<p>The first principle is <strong>thinness</strong>. The server is intentionally narrow. It exposes a selected set of operations and delegates most actual data storage and retrieval to existing platform services.<a href="#fn57" class="footnote-ref" id="fnref57" role="doc-noteref"><sup>57</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn57"><p><sup>57</sup>&nbsp;The server’s intentionally narrow scope is visible across the official repository and codebase: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div><div id="fn58"><p><sup>58</sup>&nbsp;Explicit named tool decomposition in the official code: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py">tools/<strong>init</strong>.py</a></p></div></div><p>The second principle is <strong>explicitness</strong>. Capabilities are decomposed into named tools rather than hidden behind a single broad conversational endpoint.<a href="#fn58" class="footnote-ref" id="fnref58" role="doc-noteref"><sup>58</sup></a></p>
+<p>The third principle is <strong>interoperability pragmatism</strong>. The use of stateless HTTP and the focus on a hosted endpoint show that the service is designed for real client compatibility rather than abstract protocol completeness.<a href="#fn59" class="footnote-ref" id="fnref59" role="doc-noteref"><sup>59</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn59"><p><sup>59</sup>&nbsp;Stateless HTTP and hosted endpoint emphasis are documented in the official repository and implementation: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a>, <a href="https://github.com/datagouv/datagouv-mcp/blob/main/main.py">main.py</a></p></div><div id="fn60"><p><sup>60</sup>&nbsp;Examples of bounded augmentation are visible in the official search and tabular query tool implementations: <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py">search_datasets.py</a>, <a href="https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py">query_resource_data.py</a></p></div></div><p>The fourth principle is <strong>bounded augmentation</strong>. The server adds modest but meaningful logic, such as search query cleaning, metadata contextualization, pagination hints, filter validation, and explicit guidance for large datasets, without trying to replace the underlying data platform.<a href="#fn60" class="footnote-ref" id="fnref60" role="doc-noteref"><sup>60</sup></a></p>
+<p>This is why the French MCP server is interesting. It is not technically impressive because it performs deep reasoning on its own. It is interesting because it embodies a sound architectural judgment about how a national open data platform can become AI addressable without becoming opaque, monolithic, or overly magical. It remains recognizably a public data platform. The MCP layer simply makes that platform legible to a new class of clients.<a href="#fn61" class="footnote-ref" id="fnref61" role="doc-noteref"><sup>61</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn61"><p><sup>61</sup>&nbsp;The overall architectural character of the service emerges from the official repository and codebase taken together: <a href="https://github.com/datagouv/datagouv-mcp">datagouv-mcp</a></p></div></div></section>
+</section>
+<section id="what-the-community-is-building-on-top-of-the-platform" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="what-the-community-is-building-on-top-of-the-platform">What the community is building on top of the platform</h2>
+<p>An open data platform is not important only because of what it publishes. It is important because of what others can build with it. This is one of the reasons the data.gouv.fr MCP experiment matters beyond protocol design. The underlying platform is not a static archive. It already sits inside a broader ecosystem of reuse, where public datasets are turned into applications, visualizations, search tools, domain specific services, and practical decision aids.<a href="#fn62" class="footnote-ref" id="fnref62" role="doc-noteref"><sup>62</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn62"><p><sup>62</sup>&nbsp;Official reuse catalog on data.gouv.fr: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div><div id="fn63"><p><sup>63</sup>&nbsp;Official reuse catalog showing the current number of reuses and the sector taxonomy: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div></div><p>The official reuse catalog on data.gouv.fr makes this visible at a glance. At the time of consultation, the platform listed <strong>5,115 reuses</strong>. The catalog spans a wide range of sectors, including health, transport and mobility, territorial planning and housing, food and agriculture, culture and leisure, economy and business, environment and energy, employment and training, politics and public life, security, education and research, society and demography, law and justice, and open data tools. This alone is an important signal. The value of the French open data infrastructure is not confined to one theme or one administrative department. It is generative across a wide spectrum of public and economic activity.<a href="#fn63" class="footnote-ref" id="fnref63" role="doc-noteref"><sup>63</sup></a></p>
+<p>The official page also highlights some of the most popular reuses, and the selection is revealing because it is highly heterogeneous. Among the featured examples are the <strong>Explorateur des données de valeur foncière (DVF)</strong>, an application around property transaction data, <strong>Eco Score</strong>, which concerns the environmental impact of food products, <strong>Datan</strong>, a tool for analyzing the behavior of members of the National Assembly, <strong>matchID</strong>, a search engine for deceased persons, and <strong>SupTracker</strong>. These examples show that reuse is not limited to one pattern such as dashboards or maps. The same public data infrastructure supports civic analysis, consumer information, memorial search, public accountability, and sector specific exploration tools.<a href="#fn64" class="footnote-ref" id="fnref64" role="doc-noteref"><sup>64</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn64"><p><sup>64</sup>&nbsp;Official reuse catalog page highlighting featured reuses such as DVF, Eco Score, Datan, matchID, and SupTracker: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div><div id="fn65"><p><sup>65</sup>&nbsp;Official reuse catalog page showing the current “selection of the moment”: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div></div><p>The page’s “selection of the moment” reinforces the same point. It features, among others, a <strong>map of the 2026 municipal election results</strong>, <strong>CloudSmog</strong>, and a <strong>map of political representation</strong>. The common element is not the form of the application but the conversion of raw public data into more directly interpretable public artifacts. In other words, the platform’s reuse layer is already a space where data becomes operationalized for citizens, researchers, activists, and developers.<a href="#fn65" class="footnote-ref" id="fnref65" role="doc-noteref"><sup>65</sup></a></p>
+<p>The official catalog also provides a more curated clue about the kinds of practical problems these reuses address. In its “use cases” area, the data.gouv.fr team highlights examples such as understanding the tree heritage of municipalities, knowing the sale price of real estate assets, identifying firms in difficulty, precisely locating interventions, proposing an educational orientation path, assessing the risks attached to a property, and simplifying farm management. These are not abstract demonstrations of transparency. They are concrete transformations of public data into decision support, market intelligence, local knowledge, and administrative assistance.<a href="#fn66" class="footnote-ref" id="fnref66" role="doc-noteref"><sup>66</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn66"><p><sup>66</sup>&nbsp;Official reuse catalog page highlighting practical use cases built on public data: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div><div id="fn67"><p><sup>67</sup>&nbsp;The broader significance of the MCP layer should be read together with the existing reuse ecosystem documented on the official platform: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a>, <a href="https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv">Expérimentation autour d’un serveur MCP pour data.gouv.fr</a></p></div></div><p>This ecosystem matters for the interpretation of the MCP server. The server itself does not create those applications. It does something more infrastructural. It changes the access layer through which AI capable systems can discover and work with the same underlying public data universe. That means MCP should not be understood as an isolated gadget placed on top of a dead catalog. It should be understood as a new machine readable interface over an already productive ecosystem of reuse. The community has already shown that the datasets can generate maps, trackers, search engines, and analytic services. The MCP layer potentially lowers the cost of discovering and interrogating that data through conversational systems. That is the broader significance of the French move.<a href="#fn67" class="footnote-ref" id="fnref67" role="doc-noteref"><sup>67</sup></a></p>
+<p>There is also a governance implication here. When a platform exposes thousands of datasets and thousands of downstream reuses, the problem is no longer only publication. It becomes mediation. How does a citizen, journalist, researcher, entrepreneur, or local public actor find the right dataset, understand what it contains, distinguish between files and APIs, and move from catalog browsing to actual use? The reuse catalog shows that the French ecosystem already has strong downstream creativity. The MCP server can therefore be read as an attempt to improve the interface between that abundance of public information and the next generation of user interaction models.<a href="#fn68" class="footnote-ref" id="fnref68" role="doc-noteref"><sup>68</sup></a></p>
+
+
+<div class="no-row-height column-margin column-container"><div id="fn68"><p><sup>68</sup>&nbsp;For the scale and diversity of downstream reuse on the official platform, see: <a href="https://www.data.gouv.fr/reuses">Réutilisations</a></p></div></div></section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
