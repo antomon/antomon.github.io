@@ -315,33 +315,32 @@ local function render_cards_html(heading, items, max_items)
   local n = math.min(max_items or 4, #items)
   local html = {}
 
-  table.insert(html, '<section class="see-also-section">')
+  table.insert(html, '<section style="margin-top:2.75rem;">')
   table.insert(html, '<h2>' .. html_escape(heading) .. '</h2>')
-  table.insert(html, '<div class="see-also-grid">')
+  table.insert(html, '<div class="row g-4 mt-1">')
 
   for i = 1, n do
     local item = items[i]
-    table.insert(html, '<article class="see-also-card card h-100">')
-    table.insert(html, '<a class="see-also-card-link" href="' .. html_escape(item.href) .. '">')
+
+    table.insert(html, '<div class="col-12 col-md-6 col-lg-4">')
+    table.insert(html, '<article class="card h-100" style="overflow:hidden;border:1px solid rgba(0,0,0,0.08);border-radius:14px;background:var(--bs-body-bg);box-shadow:0 2px 8px rgba(0,0,0,0.04);">')
+    table.insert(html, '<a href="' .. html_escape(item.href) .. '" style="color:inherit;text-decoration:none;display:block;height:100%;">')
 
     if item.image and trim(item.image) ~= "" then
-      table.insert(html,
-        '<img class="see-also-card-image card-img-top" src="' .. html_escape(item.image) .. '" alt="">'
-      )
+      table.insert(html, '<img src="' .. html_escape(item.image) .. '" alt="" class="card-img-top" style="width:100%;height:160px;object-fit:cover;display:block;">')
     end
 
     table.insert(html, '<div class="card-body">')
-    table.insert(html, '<h5 class="card-title see-also-card-title">' .. html_escape(item.title) .. '</h5>')
+    table.insert(html, '<h5 class="card-title" style="margin-bottom:0.45rem;line-height:1.25;">' .. html_escape(item.title) .. '</h5>')
 
     if item.subtitle and trim(item.subtitle) ~= "" then
-      table.insert(html,
-        '<div class="card-subtitle see-also-card-subtitle">' .. html_escape(item.subtitle) .. '</div>'
-      )
+      table.insert(html, '<div class="card-subtitle" style="color:var(--bs-secondary-color,#6c757d);font-size:0.95rem;line-height:1.35;">' .. html_escape(item.subtitle) .. '</div>')
     end
 
     table.insert(html, '</div>')
     table.insert(html, '</a>')
     table.insert(html, '</article>')
+    table.insert(html, '</div>')
   end
 
   table.insert(html, '</div>')
