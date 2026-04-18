@@ -26,15 +26,6 @@ local function join_fs(...)
   return normalize_fs_path(path)
 end
 
-local function file_exists(path)
-  local f = io.open(path, "r")
-  if f then
-    f:close()
-    return true
-  end
-  return false
-end
-
 local function read_file(path)
   local f = io.open(path, "r")
   if not f then
@@ -45,11 +36,25 @@ local function read_file(path)
   return content
 end
 
+local function file_exists(path)
+  local f = io.open(path, "r")
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+
+local function is_directory(path)
+  local ok, entries = pcall(pandoc.system.list_directory, path)
+  return ok and type(entries) == "table"
+end
+
 local function get_project_root()
   if quarto and quarto.project and quarto.project.directory then
     return normalize_fs_path(quarto.project.directory)
   end
-  return "."
+  return normalize_fs_path(".")
 end
 
 local function normalize_category(s)
@@ -183,41 +188,23 @@ local function list_collection_index_files(project_root, collection)
   local files = {}
   local collection_root = join_fs(project_root, collection)
 
-  local cmd
-  if sep == "\\" then
-    cmd = 'cmd /c dir /b /ad "' .. collection_root .. '"'
-  else
-    cmd = 'find "' .. collection_root .. '" -mindepth 1 -maxdepth 1 -type d'
-  end
-
-  local p = io.popen(cmd)
-  if not p then
+  local ok, entries = pcall(pandoc.system.list_directory, collection_root)
+  if not ok or type(entries) ~= "table" then
     return files
   end
 
-  for line in p:lines() do
-    local dir_name = trim(line)
-    if dir_name ~= "" then
-      local full_dir
-
-      if sep == "\\" then
-        full_dir = join_fs(collection_root, dir_name)
-      else
-        if dir_name:match("^" .. normalize_web_path(collection_root) .. "/") then
-          full_dir = normalize_fs_path(dir_name)
-        else
-          full_dir = join_fs(collection_root, dir_name)
+  for _, entry in ipairs(entries) do
+    if entry ~= "." and entry ~= ".." then
+      local subdir = join_fs(collection_root, entry)
+      if is_directory(subdir) then
+        local index_path = join_fs(subdir, "index.qmd")
+        if file_exists(index_path) then
+          table.insert(files, index_path)
         end
-      end
-
-      local index_path = join_fs(full_dir, "index.qmd")
-      if file_exists(index_path) then
-        table.insert(files, index_path)
       end
     end
   end
 
-  p:close()
   return files
 end
 
@@ -234,7 +221,6 @@ local function collect_related(project_root, current_key, current_categories, co
         local score = overlap_score(current_categories, meta.categories)
         if score > 0 then
           table.insert(related, {
-            key = key,
             title = meta.title,
             href = href_from_key(key),
             description = meta.description,
@@ -257,31 +243,30 @@ local function collect_related(project_root, current_key, current_categories, co
 end
 
 local function append_related_section(doc, heading, items, max_items)
+  table.insert(doc.blocks, pandoc.Header(2, heading))
+
   if not items or #items == 0 then
+    table.insert(doc.blocks, pandoc.Para({ pandoc.Str("No matches found.") }))
     return
   end
 
   local n = math.min(max_items or 4, #items)
+  local bullet_items = {}
 
-  table.insert(doc.blocks, pandoc.Header(2, heading))
-
-  local list_items = {}
   for i = 1, n do
     local item = items[i]
     local blocks = {
-      pandoc.Plain({
-        pandoc.Link(item.title, item.href)
-      })
+      pandoc.Plain({ pandoc.Link(item.title, item.href) })
     }
 
     if item.description and item.description ~= "" then
       table.insert(blocks, pandoc.Plain({ pandoc.Str(item.description) }))
     end
 
-    table.insert(list_items, pandoc.BulletList({ blocks })[1])
+    table.insert(bullet_items, blocks)
   end
 
-  table.insert(doc.blocks, pandoc.BulletList(list_items))
+  table.insert(doc.blocks, pandoc.BulletList(bullet_items))
 end
 
 function Pandoc(doc)
@@ -295,12 +280,12 @@ function Pandoc(doc)
     return doc
   end
 
-  local project_root = get_project_root()
   local current_categories = meta_to_categories(doc.meta.categories)
-
   if not current_categories or #current_categories == 0 then
     return doc
   end
+
+  local project_root = get_project_root()
 
   local related_longforms = collect_related(project_root, current_key, current_categories, "longforms")
   local related_posts = collect_related(project_root, current_key, current_categories, "posts")
