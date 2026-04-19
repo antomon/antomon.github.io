@@ -629,7 +629,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var contents = document.createElement("div");
     contents.className = "quarto-title-meta-contents";
-    contents.appendChild(valueNode);
+    contents.appendChild(valueNode.cloneNode(true));
 
     item.appendChild(heading);
     item.appendChild(contents);
@@ -642,7 +642,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!block) return [];
 
     var children = Array.from(block.children);
-    if (children.length < 4) return [block];
+    if (children.length < 4) return [];
 
     var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
     var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
@@ -673,9 +673,9 @@ document.addEventListener("DOMContentLoaded", function () {
         valueNode = contents.children[0];
       } else {
         valueNode = document.createElement("div");
-        while (contents.firstChild) {
-          valueNode.appendChild(contents.firstChild);
-        }
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
       }
 
       var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
@@ -731,12 +731,16 @@ document.addEventListener("DOMContentLoaded", function () {
   var readingTimeBlock = buildReadingTimeBlock();
   if (readingTimeBlock) row2.appendChild(readingTimeBlock);
 
-  if (keywordsBlock) row3.appendChild(keywordsBlock);
+  if (keywordsBlock) row3.appendChild(keywordsBlock.cloneNode(true));
 
   if (row1.children.length) inner.appendChild(row1);
   if (row2.children.length) inner.appendChild(row2);
   if (row3.children.length) inner.appendChild(row3);
   if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
 
   outer.appendChild(inner);
   titleBlock.insertAdjacentElement("afterend", outer);
