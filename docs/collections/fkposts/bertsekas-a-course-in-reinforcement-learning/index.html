@@ -336,6 +336,7 @@ ul.task-list li input[type="checkbox"] {
   display: none;
 }
 
+/* full width strip under title block */
 .banner-info-strip-outer {
   width: 100vw;
   margin-left: calc(50% - 50vw);
@@ -352,7 +353,6 @@ ul.task-list li input[type="checkbox"] {
 
 .banner-meta-row {
   width: 100%;
-  margin: 0 0 1rem 0;
   display: grid;
   gap: 0.35rem 2rem;
 }
@@ -364,6 +364,19 @@ ul.task-list li input[type="checkbox"] {
 
 .banner-meta-row.row-3 {
   grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
 }
 
 .banner-meta-row .quarto-title-meta,
@@ -407,7 +420,7 @@ ul.task-list li input[type="checkbox"] {
   box-sizing: border-box;
   font-size: 1.08rem;
   line-height: 1.75;
-  margin: 0 0 1.5rem 0;
+  margin: 0.25rem 0 1.5rem 0;
   padding: 1.1rem 1.25rem;
   border-left: 4px solid rgba(100,55,160,0.45);
   background: rgba(100,55,160,0.06);
@@ -450,6 +463,18 @@ ul.task-list li input[type="checkbox"] {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
   .banner-info-strip-inner .article-standfirst {
     padding: 1rem;
   }
@@ -474,6 +499,18 @@ ul.task-list li input[type="checkbox"] {
   .banner-meta-row.row-2 {
     grid-template-columns: 1fr;
     gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
   }
 
   .banner-info-strip-inner .article-standfirst {
@@ -528,10 +565,16 @@ document.addEventListener("DOMContentLoaded", function () {
     var authorValue = children[2];
     var affiliationValue = children[3];
 
+    var out = [];
     var authorMeta = makeMetaBlock(authorHeading, authorValue);
     var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
 
-    return [authorMeta, affiliationMeta].filter(Boolean);
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
   }
 
   function normalizePublishedModified(block) {
@@ -556,6 +599,9 @@ document.addEventListener("DOMContentLoaded", function () {
           valueNode.appendChild(node.cloneNode(true));
         });
       }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
 
       var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
       if (meta) out.push(meta);
@@ -610,7 +656,12 @@ document.addEventListener("DOMContentLoaded", function () {
   var readingTimeBlock = buildReadingTimeBlock();
   if (readingTimeBlock) row2.appendChild(readingTimeBlock);
 
-  if (keywordsBlock) row3.appendChild(keywordsBlock.cloneNode(true));
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
 
   if (row1.children.length) inner.appendChild(row1);
   if (row2.children.length) inner.appendChild(row2);
