@@ -334,7 +334,6 @@ ul.task-list li input[type="checkbox"] {
   display: none;
 }
 
-/* full width strip under title block */
 .banner-info-strip-outer {
   width: 100vw;
   margin-left: calc(50% - 50vw);
@@ -352,38 +351,28 @@ ul.task-list li input[type="checkbox"] {
 .banner-meta-row {
   width: 100%;
   margin: 0 0 1rem 0;
-}
-
-.banner-meta-row.row-1 .quarto-title-meta-author {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
   gap: 0.35rem 2rem;
-  width: 100%;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
 }
 
-.banner-meta-row.row-1 .quarto-title-meta-author > div {
+.banner-meta-row .quarto-title-meta > div {
   min-width: 0;
-}
-
-.banner-meta-row.row-2 .quarto-title-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.35rem 2rem;
-  width: 100%;
-  max-width: none !important;
-  margin: 0 !important;
-}
-
-.banner-meta-row.row-2 .quarto-title-meta > div {
-  min-width: 0;
-}
-
-.banner-meta-row.row-3 .keywords {
-  width: 100%;
-  max-width: none !important;
-  margin: 0 !important;
 }
 
 .banner-info-strip-inner .quarto-title-meta-heading,
@@ -407,9 +396,6 @@ ul.task-list li input[type="checkbox"] {
   color: #374151 !important;
   font-family: inherit !important;
   margin-top: 0 !important;
-}
-
-.banner-info-strip-inner .keywords p {
   margin-bottom: 0 !important;
 }
 
@@ -457,11 +443,8 @@ ul.task-list li input[type="checkbox"] {
     padding: 1.25rem 1.5rem 0.5rem 1.5rem;
   }
 
-  .banner-meta-row.row-1 .quarto-title-meta-author {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
-  }
-
-  .banner-meta-row.row-2 .quarto-title-meta {
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
@@ -485,19 +468,10 @@ ul.task-list li input[type="checkbox"] {
     padding: 1rem 1rem 0.5rem 1rem;
   }
 
-  .banner-meta-row.row-1 .quarto-title-meta-author,
-  .banner-meta-row.row-2 .quarto-title-meta {
-    display: grid;
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
     grid-template-columns: 1fr;
     gap: 0.75rem 0;
-  }
-
-  .banner-meta-row.row-1 .quarto-title-meta-author > :nth-child(1),
-  .banner-meta-row.row-1 .quarto-title-meta-author > :nth-child(2),
-  .banner-meta-row.row-1 .quarto-title-meta-author > :nth-child(3),
-  .banner-meta-row.row-1 .quarto-title-meta-author > :nth-child(4) {
-    grid-column: auto;
-    grid-row: auto;
   }
 
   .banner-info-strip-inner .article-standfirst {
@@ -518,6 +492,76 @@ document.addEventListener("DOMContentLoaded", function () {
   var keywordsBlock = titleBlock.querySelector(".keywords");
   var standfirst = document.querySelector(".article-standfirst");
 
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode);
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [block];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    return [authorMeta, affiliationMeta].filter(Boolean);
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        while (contents.firstChild) {
+          valueNode.appendChild(contents.firstChild);
+        }
+      }
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
   function buildReadingTimeBlock() {
     var content = document.querySelector("#quarto-document-content");
     if (!content) return null;
@@ -529,23 +573,10 @@ document.addEventListener("DOMContentLoaded", function () {
     var words = text.split(" ").length;
     var minutes = Math.max(1, Math.round(words / 200));
 
-    var wrapper = document.createElement("div");
-
-    var heading = document.createElement("div");
-    heading.className = "quarto-title-meta-heading";
-    heading.textContent = "Reading time";
-
-    var contents = document.createElement("div");
-    contents.className = "quarto-title-meta-contents";
-
     var p = document.createElement("p");
     p.textContent = minutes + " min";
 
-    contents.appendChild(p);
-    wrapper.appendChild(heading);
-    wrapper.appendChild(contents);
-
-    return wrapper;
+    return makeMetaBlock("Reading time", p);
   }
 
   var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
@@ -566,8 +597,13 @@ document.addEventListener("DOMContentLoaded", function () {
   var row3 = document.createElement("div");
   row3.className = "banner-meta-row row-3";
 
-  if (authorBlock) row1.appendChild(authorBlock);
-  if (metaBlock) row2.appendChild(metaBlock);
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
 
   var readingTimeBlock = buildReadingTimeBlock();
   if (readingTimeBlock) row2.appendChild(readingTimeBlock);
