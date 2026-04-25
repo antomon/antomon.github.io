@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-03-25">
+<meta name="description" content="On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant.">
+
+<title>The December 2025 Cyberattack on Poland’s Energy Sector – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="The December 2025 Cyberattack on Poland’s Energy Sector – Random Bits of Knowledge">
+<meta property="og:description" content="On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant.">
+<meta property="og:image" content="https://antomon.github.io/posts/poland-energy-sector-cyberattack-2025/Cyberattack_on_Poland.jpeg">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="The December 2025 Cyberattack on Poland’s Energy Sector – Random Bits of Knowledge">
+<meta name="twitter:description" content="On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/poland-energy-sector-cyberattack-2025/Cyberattack_on_Poland.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">The December 2025 Cyberattack on Poland’s Energy Sector</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">The December 2025 Cyberattack on Poland’s Energy Sector</h1>
+            <p class="subtitle lead">A detailed reconstruction of the incident, the malware, and the wider significance for energy and OT security</p>
+                  <div>
+        <div class="description">
+          On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cybersecurity</div>
+                <div class="quarto-category">energy</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 25, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">March 27, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#the-primary-facts-established-by-cert-polska" id="toc-the-primary-facts-established-by-cert-polska" class="nav-link" data-scroll-target="#the-primary-facts-established-by-cert-polska">The primary facts established by CERT Polska</a></li>
+  <li><a href="#architecture-of-the-attacked-renewable-sites" id="toc-architecture-of-the-attacked-renewable-sites" class="nav-link" data-scroll-target="#architecture-of-the-attacked-renewable-sites">Architecture of the attacked renewable sites</a></li>
+  <li><a href="#initial-access-at-the-renewable-sites" id="toc-initial-access-at-the-renewable-sites" class="nav-link" data-scroll-target="#initial-access-at-the-renewable-sites">Initial access at the renewable sites</a></li>
+  <li><a href="#automated-destruction-inside-the-renewable-substations" id="toc-automated-destruction-inside-the-renewable-substations" class="nav-link" data-scroll-target="#automated-destruction-inside-the-renewable-substations">Automated destruction inside the renewable substations</a></li>
+  <li><a href="#hitachi-rtus" id="toc-hitachi-rtus" class="nav-link" data-scroll-target="#hitachi-rtus">Hitachi RTUs</a></li>
+  <li><a href="#mikronika-rtus-relion-relays-hmis-and-moxa-serial-servers" id="toc-mikronika-rtus-relion-relays-hmis-and-moxa-serial-servers" class="nav-link" data-scroll-target="#mikronika-rtus-relion-relays-hmis-and-moxa-serial-servers">Mikronika RTUs, Relion relays, HMIs, and Moxa serial servers</a></li>
+  <li><a href="#the-chp-plant-attack" id="toc-the-chp-plant-attack" class="nav-link" data-scroll-target="#the-chp-plant-attack">The CHP plant attack</a></li>
+  <li><a href="#late-2025-activity-in-the-chp-environment" id="toc-late-2025-activity-in-the-chp-environment" class="nav-link" data-scroll-target="#late-2025-activity-in-the-chp-environment">Late 2025 activity in the CHP environment</a></li>
+  <li><a href="#wiper-deployment-and-attempted-server-destruction-at-the-chp" id="toc-wiper-deployment-and-attempted-server-destruction-at-the-chp" class="nav-link" data-scroll-target="#wiper-deployment-and-attempted-server-destruction-at-the-chp">Wiper deployment and attempted server destruction at the CHP</a></li>
+  <li><a href="#the-manufacturing-company" id="toc-the-manufacturing-company" class="nav-link" data-scroll-target="#the-manufacturing-company">The manufacturing company</a></li>
+  <li><a href="#dynowiper" id="toc-dynowiper" class="nav-link" data-scroll-target="#dynowiper">DynoWiper</a></li>
+  <li><a href="#lazywiper" id="toc-lazywiper" class="nav-link" data-scroll-target="#lazywiper">LazyWiper</a></li>
+  <li><a href="#wiper-distribution" id="toc-wiper-distribution" class="nav-link" data-scroll-target="#wiper-distribution">Wiper distribution</a></li>
+  <li><a href="#attribution" id="toc-attribution" class="nav-link" data-scroll-target="#attribution">Attribution</a></li>
+  <li><a href="#additional-ot-perspective-from-dragos" id="toc-additional-ot-perspective-from-dragos" class="nav-link" data-scroll-target="#additional-ot-perspective-from-dragos">Additional OT perspective from Dragos</a></li>
+  <li><a href="#why-the-case-matters" id="toc-why-the-case-matters" class="nav-link" data-scroll-target="#why-the-case-matters">Why the case matters</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("Cyberattack_on_Poland.jpeg");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant.</p>
+</div>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p><strong>CERT Polska opens</strong> the report<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> by stating that on 29 December 2025, during the morning and afternoon hours, <strong>coordinated attacks occurred in Poland’s cyberspace against numerous wind and solar farms</strong>, a <strong>private manufacturing company</strong>, and a <strong>CHP plant</strong> supplying heat to nearly half a million customers. The attacks are described as purely destructive in nature and comparable to deliberate acts of arson. CERT Polska also stresses that both information systems and physical industrial equipment were affected, which it characterizes as uncommon in public reporting to date. The events took place during low temperatures and snowstorms shortly before New Year’s Eve, which amplifies their strategic meaning even though mass service disruption did not materialize.</p>
+<p>What makes the case analytically important is not that it caused a national blackout. It did not. The importance lies elsewhere. The campaign demonstrated that a <strong>threat actor could simultaneously target dozens of grid edge and industrial environments</strong>, achieve operationally significant effects, and do so mainly by exploiting weaknesses in architecture, identity, and equipment hardening. That raises the threshold question of what modern energy sabotage really requires. The Polish case suggests that for many distributed energy environments, the answer is not highly specialized malware but a strong understanding of how remote access, telecontrol, and operational support are actually implemented in the field.</p>
+</section>
+<section id="the-primary-facts-established-by-cert-polska" class="level2">
+<h2 class="anchored" data-anchor-id="the-primary-facts-established-by-cert-polska">The primary facts established by CERT Polska</h2>
+<p>The report establishes several facts with high confidence. First, the incidents across the renewable facilities, the CHP plant, and the manufacturing company were coordinated and attributed by CERT Polska to the same threat actor. Second, at least thirty wind and solar farms were affected. Third, the CHP plant was significant enough to supply heat to nearly half a million customers. Fourth, the campaign was destructive rather than financially motivated. Fifth, the renewable attacks caused loss of communication with DSOs and loss of remote control, but did not stop electricity generation or destabilize the Polish power system.</p>
+<p>That last point deserves emphasis. In the renewable sector, the attack did not primarily target the physical process of generation itself. Instead, it targeted the control and communication layer at the grid connection point. This distinction matters because it explains how a cyberattack can be strategically meaningful without causing immediate nationwide supply failure. A distributed generation fleet can continue to produce electricity while simultaneously becoming harder to monitor, harder to command, and slower to restore when supervisory and telecontrol devices have been damaged.</p>
+</section>
+<section id="architecture-of-the-attacked-renewable-sites" class="level2">
+<h2 class="anchored" data-anchor-id="architecture-of-the-attacked-renewable-sites">Architecture of the attacked renewable sites</h2>
+<p>CERT Polska explains the renewable architecture in order to make the attack intelligible. Electricity from wind turbines and photovoltaic systems is collected and routed to a power substation called the grid connection point. There, voltage is stepped up to 110 kV for transfer to the distribution grid. The DSO oversees the conditions at the grid connection point (GCP) and uses the GCP for remote monitoring and supervisory control. These substations are usually unmanned and remotely managed, which means remote access and telecontrol are structurally central to operations.</p>
+<p>The report identifies the key industrial components present at the GCP. These include the remote terminal unit for telecontrol and supervision, a local HMI, protection relays, serial device servers for IP to serial connectivity, primary and backup communications including a cellular router, and an integrated VPN concentrator and firewall. Poland’s DSOs typically require communication between the operator’s SCADA system and the GCP to pass through serial links using DNP3.0 or IEC 101. That choice helps reduce the chance that a compromised GCP could directly pivot into the DSO network, but it does not prevent sabotage of the GCP itself.</p>
+<p>This architectural description is more than background. It reveals the attacker’s logic. The GCP is both a physical interconnection point and a digital supervision point. Damaging the devices there degrades remote control, remote visibility, and restoration readiness, even if turbines and PV strings continue to operate. The campaign therefore targeted the operational nervous system of the site rather than the generation assets directly.</p>
+</section>
+<section id="initial-access-at-the-renewable-sites" class="level2">
+<h2 class="anchored" data-anchor-id="initial-access-at-the-renewable-sites">Initial access at the renewable sites</h2>
+<p>In each affected renewable facility, a FortiGate appliance served as both VPN concentrator and firewall. CERT Polska states that the VPN interface was exposed to the internet and that authentication to configured accounts did not require multifactor authentication. The report also notes that reusing the same accounts and passwords across multiple facilities is common in the industry. This matters because once a threat actor compromises one valid account, scaling to other sites using the same identity becomes easier and cheaper.</p>
+<p>CERT Polska adds that many of the analyzed facilities did use segregated VLAN subnets, but that the attacker had administrative privileges on the FortiGate. That administrative position likely allowed the attacker either to obtain credentials for a VPN account with access to all subnets or simply to modify the device configuration to achieve equivalent access. All analyzed FortiGate devices were factory reset on the day of the attack, apparently both to hinder restoration and to erase traces. The perimeter device was therefore not just a gateway. It became the attacker’s identity broker, policy override point, and evidence destruction point.</p>
+</section>
+<section id="automated-destruction-inside-the-renewable-substations" class="level2">
+<h2 class="anchored" data-anchor-id="automated-destruction-inside-the-renewable-substations">Automated destruction inside the renewable substations</h2>
+<p>On 29 December 2025, destructive actions were initiated against the devices reached inside the substations. CERT Polska reports that the activity appears to have been at least partially automated. Devices were damaged in ascending IP order, and when the attack failed at a given IP address within a network segment, it did not continue against subsequent addresses. This detail suggests procedural automation rather than fully manual device by device compromise. It also suggests the adversary had enough knowledge of site patterns to encode attack logic around address layout.</p>
+<p>The report is explicit that damage to RTU controllers caused the loss of communication between the facility and the DSO and prevented remote control, but did not affect ongoing generation. That statement captures the essence of the renewable attack. The attacker succeeded against telecontrol and supervision, not against the physical conversion of energy itself.</p>
+</section>
+<section id="hitachi-rtus" class="level2">
+<h2 class="anchored" data-anchor-id="hitachi-rtus">Hitachi RTUs</h2>
+<p>Most of the affected farms used Hitachi RTU560 controllers, running firmware versions 12.6.6.0, 12.7.3.0, 13.1.1.0, and 13.5.2.0. These devices were configured with default credentials, including an account named <em>Default</em>, and exposed a web interface reachable from the GCP network and, with sufficient privileges, from the FortiGate. The attacker used that default account to log into the web interface and upload corrupted firmware. The firmware, in ELF format, had 240 bytes of <code>0xFF</code> inserted at the program entry point, causing invalid instruction execution and a reboot loop. The modified firmware identified itself as version 13.5.3.0, which was not present in the affected environments, implying that the attacker likely sourced it externally.</p>
+<p>CERT Polska further notes that a secure update feature with digital signature verification had been introduced in version 13.2.1 but required explicit activation, and none of the supporting devices had it enabled. Even then, the report notes that CVE 2024 2617 could bypass secure update until fixed in version 13.7.7. Hitachi Energy PSIRT independently confirmed the scenario. This combination of default credentials, reachable management surfaces, weak firmware integrity enforcement, and known update path weakness is one of the clearest examples in the report of how OT sabotage can be achieved without needing ICS protocol malware.</p>
+</section>
+<section id="mikronika-rtus-relion-relays-hmis-and-moxa-serial-servers" class="level2">
+<h2 class="anchored" data-anchor-id="mikronika-rtus-relion-relays-hmis-and-moxa-serial-servers">Mikronika RTUs, Relion relays, HMIs, and Moxa serial servers</h2>
+<p>At facilities using Mikronika RTUs, the attacker logged in via SSH using default root credentials and executed a destructive command intended to delete all files from the Linux based system. Mikronika later recovered logs showing network scanning and login attempts on 25 December 2025 at all facilities where the device was deployed. Hitachi Relion 650 v1.1 protection devices were attacked in two cases via default FTP access, which allowed the deletion of critical files and led to shutdown and prevented restart. CERT Polska notes that if the devices had been deployed per the manufacturer’s recommendations, the default FTP account would have been automatically disabled.</p>
+<p>Some facilities used Mikronika Syndis software on Windows 10 HMIs. These systems had a default local administrator password. The attacker accessed them through RDP, enabled administrative shares, created a firewall rule called <em>Microsoft Update</em> that opened TCP 445, and used PowerShell to make the system accessible over SMB for remote command execution. Reconnaissance followed with Impacket, and on the morning of 29 December a malicious file was written to <code>C:\Source.exe</code> and executed. CERT Polska states that this was the same malware later analyzed as DynoWiper in the CHP case. On HMIs where the local administrator account had different credentials, only unsuccessful password breaking attempts were observed and the HMI was not damaged.</p>
+<p>Every affected facility also used Moxa NPort 6xxx serial device servers. These exposed a web interface and were configured with default login credentials. The attacker used those credentials to reset devices to factory settings, change passwords, and set unreachable IP addresses such as <code>127.0.0.1</code>. The result was not only unavailability but intentional delay in restoration. That detail is significant because it shows that the attacker optimized not just for immediate denial of service but for recovery friction.</p>
+</section>
+<section id="the-chp-plant-attack" class="level2">
+<h2 class="anchored" data-anchor-id="the-chp-plant-attack">The CHP plant attack</h2>
+<p>The attack on one of Poland’s CHP plants had a different tempo and a broader enterprise dimension. CERT Polska states that the attack’s objective was the irreversible destruction of data stored on devices within the internal network through execution of a wiper. The destructive phase was preceded by a long term infiltration, theft of sensitive information, compromise of privileged Active Directory accounts, and unrestricted lateral movement. The wiper was distributed through Group Policy Objects, but an EDR solution detected and blocked the malicious activity. CERT Polska notes that suspicious activity had been visible for months before the attempted wiper deployment.</p>
+<p>Between March and July 2025, the attacker conducted reconnaissance, unauthorized data access, and credential theft. CERT Polska traces early activity to RDP logons from an address assigned to a FortiGate interface on a jump host, then onward movement to other systems including the domain controller. The attacker captured screenshots with <code>nircmd</code>, executed commands via PsExec, and generated <code>outlog.txt</code> files that included process lists, network connections, routing tables, ARP cache entries, and user directory contents. The report also notes that many of the systems accessed via SMB had <em>scada</em> in their names, implying a specific focus on industrial automation assets.</p>
+<p>Privilege escalation followed. CERT Polska describes a Base64 encoded ZIP archive being decoded with <code>certutil</code>, after which EDR detected a likely LSASS memory theft attempt. The attacker also used Rubeus to create a Diamond Ticket and later dumped the Active Directory database from <code>ntds.dit</code> after creating shadow copies. These are classic Windows domain compromise techniques, but here they are embedded in a campaign that also had an OT reconnaissance dimension.</p>
+</section>
+<section id="late-2025-activity-in-the-chp-environment" class="level2">
+<h2 class="anchored" data-anchor-id="late-2025-activity-in-the-chp-environment">Late 2025 activity in the CHP environment</h2>
+<p>When activity resumed in late 2025, the attacker repeatedly connected to the FortiGate SSL VPN portal using multiple accounts defined in configuration, again without two factor authentication. CERT Polska says the attacker used Tor nodes as well as Polish and foreign IP addresses associated with compromised infrastructure. After authenticating, the attacker used FortiGate bookmark functionality to RDP into jump hosts. Some bookmark definitions contained statically configured target credentials, so the attacker could use the SSL VPN portal to reach internal systems without supplying extra local or domain credentials. That is a severe design failure because it turns the perimeter device into a credential relay into the internal network.</p>
+<p>The attacker also used a reverse SOCKS proxy, <code>rsocx</code>, under filenames such as <code>r.exe</code> and <code>rsocx.exe</code>, with the command <code>r.exe -r 31.172.71[.]5:8008</code>. Reconnaissance included built in tools such as <code>nslookup</code> and <code>ping</code>, as well as Advanced Port Scanner and Advanced IP Scanner. Microsoft Edge in private mode was used to access internal services and third party resources, including Dropbox and Pastebin. These details matter because they show a patient operator using both living off the land techniques and public tooling rather than relying exclusively on bespoke implants.</p>
+<p>CERT Polska also documents theft of LSASS memory dumps, copies of the SAM and SYSTEM hives, theft of <code>ntds.dit</code>, exfiltration attempts via PowerShell to <code>31.172.71[.]5:50443</code>, and theft of FortiGate configuration files. The attacker modified the FortiGate perimeter configuration by adding a rule that allowed any protocol and any IP to a specified device while disabling traffic logging and making the rule name resemble an existing institutional label in the configuration. This is a particularly clear example of how the attack combined access, persistence, stealth reduction of auditability, and destructive preparation.</p>
+</section>
+<section id="wiper-deployment-and-attempted-server-destruction-at-the-chp" class="level2">
+<h2 class="anchored" data-anchor-id="wiper-deployment-and-attempted-server-destruction-at-the-chp">Wiper deployment and attempted server destruction at the CHP</h2>
+<p>On the morning of 29 December, the attacker accessed the SSL VPN portal, RDPed to a jump host, then reached a domain controller where an archive containing the wiper was created. The malware was placed on a network share and deployed through an additional GPO. CERT Polska reports that the file itself was not detected by antivirus, but its execution was blocked at runtime by the EDR solution through a canary mechanism. That prevented data overwriting on more than 100 machines where the executable had already been launched. A second, slightly modified attempt later the same day also failed.</p>
+<p>The attacker also tried to destroy data directly on server disks. CERT Polska describes the use of Tiny Core Linux booted on a server via the KVM interface, followed by <code>dd</code> to overwrite portions of attached disks with random data. The attacker also attempted to modify RAID configuration through Intel Rapid Storage Technology. This part of the report is especially revealing because it shows the operator shifting from filesystem destruction to direct storage layer sabotage when needed.</p>
+</section>
+<section id="the-manufacturing-company" class="level2">
+<h2 class="anchored" data-anchor-id="the-manufacturing-company">The manufacturing company</h2>
+<p>CERT Polska reports that the attacker also attempted to disrupt a manufacturing company on 29 December 2025 in coordination with the energy attacks, though the target was opportunistic rather than linked to the other organizations. Initial access came through a Fortinet perimeter device whose past vulnerability and configuration theft had already led to public disclosure in a criminal forum. After gaining access, the attacker modified FortiGate configuration for persistence through built in scripting, creating weekly scripts to exfiltrate privileged credentials and modify security settings. Those scripts sent results to an attacker controlled Slack channel using FortiGate’s own notification capability.</p>
+<p>To move internally, the attacker again used an SSL VPN tunnel and Impacket. Administrative access to a domain controller enabled deployment of a PowerShell based wiper through a GPO pulling the file from a network share. CERT Polska calls this malware LazyWiper. The report also states that the attacker later used on premises credentials to access Microsoft 365 services such as Exchange, Teams, and SharePoint and was particularly interested in files and emails related to OT modernization, SCADA systems, and technical work. That behavior indicates intelligence collection alongside destructive operations.</p>
+</section>
+<section id="dynowiper" class="level2">
+<h2 class="anchored" data-anchor-id="dynowiper">DynoWiper</h2>
+<p>CERT Polska identified four closely related DynoWiper samples. Two are version A, represented by <code>Source.exe</code> and <code>dynacom_update.exe</code>, and two are version B samples compiled under the name <code>schtask.exe</code>. According to the report, version A includes three phases: initialization, data corruption, file deletion, and then system shutdown. Version B removes the shutdown phase and inserts a five second sleep between corruption and deletion. The malware uses the Mersenne Twister random number generator, recursively scans removable and fixed drives, excludes a set of directories such as <code>system32</code>, <code>windows</code>, <code>program files</code>, <code>temp</code>, and <code>appdata</code>, corrupts files by overwriting selected offsets with pseudorandom 16 byte sequences, then deletes files. It contains no persistence, no command and control, no shell command invocations, and no specific attempt to conceal itself from antivirus.</p>
+<p>ESET’s follow on analysis<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> sharpens this picture. ESET states that DynoWiper was deployed to a shared domain path such as <code>C:\inetpub\pub\</code> under names like <code>schtask.exe</code>, <code>schtask2.exe</code>, and a redacted update filename, and that the PDB path in some samples was <code>C:\Users\vagrant\Documents\Visual Studio 2013\Projects\Source\Release\Source.pdb</code>. ESET infers that the build environment may have involved Vagrant managed virtual machines and notes that operators likely modified and rebuilt the wiper after failed attempts during the same day. ESET also stresses that unlike Industroyer and Industroyer2, the observed DynoWiper samples targeted only the IT environment and contained no observed OT specific functionality.</p>
+<p>ESET additionally identifies similarities between DynoWiper and the ZOV wiper, including directory exclusion logic and distinct handling for smaller versus larger files, and attributes DynoWiper to Sandworm with medium confidence. CERT Polska is more conservative. It states that DynoWiper has some similarities to Sandworm and SeashellBlizzard wiper type tools but that the similarity level is too low to attribute it to previously used wiper families. That difference is not a contradiction so much as a difference of analytic scope. ESET is focused on malware lineage and TTP overlap. CERT Polska is focused on incident level evidence and national attribution discipline.</p>
+</section>
+<section id="lazywiper" class="level2">
+<h2 class="anchored" data-anchor-id="lazywiper">LazyWiper</h2>
+<p>LazyWiper, used in the manufacturing sector company, is a PowerShell based wiper that overwrites files with pseudorandom 32 byte sequences at 16 byte intervals, corrupting roughly two thirds of each targeted file. CERT Polska lists a wide range of file extensions targeted, including archive formats, backups, certificates, Office documents, engineering files, SQL, images, PDFs, logs, and even <code>.exe</code>. The report notes that the C# function responsible for file overwriting differs stylistically from the rest of the script, contains implausible comments, and was likely generated by an LLM. It also contains a safeguard that terminates execution if it detects it is running on a domain controller.</p>
+<p>This is a notable detail because it shows that destructive operations do not necessarily require polished, bespoke malware engineering. In this case, a crude PowerShell wiper with likely machine generated code was sufficient when paired with domain level access and GPO based distribution. The sophistication was in the access and the operating model, not necessarily in the code quality of the payload.</p>
+</section>
+<section id="wiper-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="wiper-distribution">Wiper distribution</h2>
+<p>CERT Polska shows that in the renewable case DynoWiper was executed directly on the HMI. In the CHP and manufacturing cases, however, wipers were distributed through Active Directory using a PowerShell script executed on a domain controller. The script backed up the existing <code>Default Domain Policy</code>, modified it to create a new policy called <code>Custom Domain Policy</code>, created a scheduled task called <code>Custom GPO Task</code> running as <code>NT AUTHORITY\SYSTEM</code>, launched the malware from a network share, and then deleted the task. CERT Polska lists the SHA256 values for the distribution scripts and highlights distinctive markers such as the task filter GUID <code>79A87EBB-4DF6-4541-9530-CAD8BEE8A7AD</code>.</p>
+<p>This mechanism is important because it shows the relationship between enterprise compromise and destructive scale. Once a domain controller is controlled, wiper distribution can become a matter of policy manipulation rather than one host at a time execution. The operational burden of scale moves from the malware to the directory service.</p>
+</section>
+<section id="attribution" class="level2">
+<h2 class="anchored" data-anchor-id="attribution">Attribution</h2>
+<p>CERT Polska analyzed both infrastructure and malware. On the infrastructure side, it found use of compromised VPS servers and compromised Cisco routers, with additional related devices identified through commercial network flow monitoring. In consultation with threat intelligence companies, CERT Polska concluded that the reconstructed communications overlapped substantially with infrastructure publicly described by Cisco and the FBI and associated with the activity cluster known as Static Tundra, Berserk Bear, Ghost Blizzard, and Dragonfly. CERT Polska says this cluster has a documented interest in the energy sector and industrial devices and concludes that the infrastructure used for initial access, exfiltration, VPN tunneling for wiper deployment, and RAID sabotage overlaps with Static Tundra infrastructure.</p>
+<p>At the same time, CERT Polska is careful about the malware evidence. It states that DynoWiper contains some similarities to Sandworm and SeashellBlizzard associated wipers, and that the PowerShell script used to run DynoWiper on workstations uses the same deployment technique as Sandworm linked tools like ArguePatch and RansomBoggs, but it does not conclude that Sandworm participated. LazyWiper is explicitly deemed unsuitable for attribution because it was likely largely generated by an LLM and lacks distinctive features.</p>
+<p>ESET goes further on the malware side and attributes DynoWiper to Sandworm with medium confidence, citing close resemblance to TTPs seen earlier in 2025 in ZOV wiper incidents in Ukraine. ESET also notes Sandworm’s long history of attacking Polish organizations, including those in the energy sector, first covertly for espionage and later destructively, as in the Prestige incidents. ([welivesecurity.com][1])</p>
+</section>
+<section id="additional-ot-perspective-from-dragos" class="level2">
+<h2 class="anchored" data-anchor-id="additional-ot-perspective-from-dragos">Additional OT perspective from Dragos</h2>
+<p>The OT cybersecurity firm Dragos states that the 29 December 2025 event was a coordinated cyberattack against multiple sites connected to distributed energy generation in Poland and describes it as the first major coordinated attack on distributed energy resources at scale<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. In Dragos’s framing, the affected systems were the communication and control assets that link grid operators to combined heat and power facilities and to wind and solar sites, rather than the transmission backbone itself. Dragos also states that adversaries gained access to operational technology systems critical to grid operations and disabled some equipment beyond repair at site level.</p>
+<p>This OT specific framing is consistent with the CERT Polska report, which explains that the attack on renewable sites caused loss of communication between facilities and DSOs and prevented remote control, while not interrupting ongoing electricity generation or destabilizing the Polish power system. In other words, the attacker succeeded against the supervisory and telecontrol layer at the grid connection point without producing an immediate bulk power effect.</p>
+<p>Dragos adds an important interpretive layer. It argues that the event is significant not because it caused outages, but because it demonstrated that distributed energy infrastructure is now a valid target for a sophisticated adversary. The brief stresses that DER environments are more numerous, depend heavily on remote connectivity, often receive less cybersecurity investment than centralized plants, and therefore present a broader and less manageable attack surface. It also notes that RTUs standardize how remote sites interface with control centers, which makes compromise repeatable across many sites if edge devices, vulnerabilities, or connectivity patterns are similar.</p>
+<p>Dragos also clarifies an operational point that is easy to miss in superficial retellings of the incident. In electric systems, loss of communications does not usually cause immediate shutdown. A device that loses connectivity often continues operating locally, but it can no longer be monitored or controlled remotely. This is why the power stayed on even though key OT and communications equipment had been compromised. Dragos therefore treats the incident as a serious OT intrusion with limited immediate physical effect, not as a failed or trivial attack.</p>
+<p>The brief further argues that the December 2025 operation represents both continuity and evolution relative to earlier ELECTRUM operations. Continuity lies in the use of destructive tooling, wipers, and attacks on communications infrastructure. Evolution lies in the shift from centralized control points, such as those targeted in Ukraine in 2015 and 2016, toward the distributed edge of the grid, meaning RTUs and communication systems spread across many smaller generation sites. Dragos assesses with moderate confidence that ELECTRUM was responsible, while also noting that the observed impact appears more opportunistic and less fully prepared than the earlier Ukraine operations.</p>
+<p>This perspective sharpens the strategic meaning of the case. The Polish incident was not merely an enterprise compromise that happened to touch energy companies. It was an attack on the digital coordination fabric of distributed generation. The core lesson is that a modern grid does not need to lose its transmission backbone to suffer operationally relevant cyber sabotage. It is enough for an adversary to degrade visibility, telemetry, remote control, and restoration capability across enough distributed sites at the same time.</p>
+</section>
+<section id="why-the-case-matters" class="level2">
+<h2 class="anchored" data-anchor-id="why-the-case-matters">Why the case matters</h2>
+<p>The Polish incident matters because it compresses several assumptions about energy cybersecurity into a single, well documented case and shows that many of them are no longer defensible. It demonstrates that operationally significant disruption can be achieved without causing a national blackout, without deploying highly specialized ICS malware at every stage, and without compromising the transmission backbone. The attacker was able to produce meaningful effects by targeting the digital coordination layer of distributed generation: remote access paths, telecontrol devices, communications infrastructure, domain services, and management surfaces that were easier to reach than the physical process itself.</p>
+<p>That is the first major lesson. In energy systems, the threshold for serious impact is lower than many discussions still imply. A plant or portfolio does not need to stop generating for the attack to matter. It is enough that operators lose visibility, lose remote control, and lose confidence in the integrity of the devices that connect generation assets to the wider grid. Once those functions are degraded across many sites at once, the attacker has already created an operational problem, a regulatory problem, and a strategic signal.</p>
+<p>The second lesson concerns distributed energy itself. Wind, solar, and CHP assets connected through remote telemetry and supervisory infrastructure are often treated as too small, too fragmented, or too peripheral to be systemically attractive. The Polish case shows the opposite. Their very number, geographic spread, and dependence on remote access make them suitable targets for a coordinated campaign. What looks like decentralization from an electrical perspective can still be concentration from a cyber perspective if dozens of sites share the same perimeter technologies, the same access patterns, the same administrative shortcuts, and the same weakly governed OT components.</p>
+<p>The third lesson is that the decisive weaknesses were largely architectural and operational, not exotic. Exposed VPNs, missing multifactor authentication, reused credentials, permissive firewall configurations, default accounts on OT devices, insecure management protocols, weak firmware integrity protections, and poor recovery design were enough to enable sabotage at scale. That matters because it means the case cannot be dismissed as the product of rare zero days or uniquely sophisticated tooling. The uncomfortable implication is that similar outcomes are plausible anywhere comparable patterns exist.</p>
+<p>Finally, the incident matters because it marks a strategic shift in how energy disruption can be pursued. Previous landmark grid attacks were associated with centralized control points and more obvious attempts to produce immediate outage effects. Poland shows a different model: attack the distributed edge, degrade the communications and supervision fabric, damage what is reachable, and impose operational stress without necessarily crossing the threshold into catastrophic national disruption. That model is more scalable, more deniable, and in some contexts politically more usable.</p>
+<p>What Poland exposed, then, was not just a successful campaign against a set of organizations. It exposed a structural reality of modern power systems: as generation becomes more distributed, cyber fragility can also become more distributed, and if that fragility is not governed deliberately, it can accumulate quietly across many small sites until it becomes strategically significant.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The December 2025 campaign against Poland’s energy sector was destructive, coordinated, and operationally significant. In the renewable segment, it disrupted telecontrol and visibility without stopping generation. In the CHP environment, it combined long term enterprise compromise with attempted mass wiper deployment and direct storage sabotage. In the manufacturing environment, it repeated the same broader logic of perimeter compromise, privileged access, cloud data theft, and destructive execution. Across all these targets, the shortest path to impact did not run through highly specialized ICS malware. It ran through weak remote access governance, permissive perimeter devices, poor credential hygiene, exposed management functions, and inadequate segregation between administrative reachability and operational consequence.</p>
+<p>That is the most serious lesson of the case. The incident did not prove that modern adversaries need extraordinary tools to threaten energy systems. It proved something more uncomfortable: in many environments, they do not. If enough distributed sites share the same architectural weaknesses, the attacker does not need to break the grid at its center. It is sufficient to attack its coordination layer at the edge, site after site, until operators lose visibility, control, and confidence at the same time.</p>
+<p>This is why the Polish case should not be read merely as an isolated national incident or as a near miss because the lights stayed on. It should be read as a warning about the cyber consequences of the energy transition when digital scale expands faster than security discipline. Distributed energy can increase resilience in physical and market terms, but if remote access, RTUs, gateways, HMIs, and support paths are deployed as low cost operational conveniences, that same distribution becomes a force multiplier for the attacker. What Poland revealed is not simply a successful intrusion. It is the emergence of a credible model for coordinated cyber sabotage against the digital fabric of distributed generation.</p>
+<p>The final implication is strategic. The threshold for meaningful disruption in energy is lower than many operators, regulators, and vendors still assume. A grid does not need to collapse for an adversary to demonstrate coercive capability. It is enough to show that dozens of geographically separate assets can be reached, degraded, and partially blinded in a synchronized way. Once that has been demonstrated, the question is no longer whether distributed energy infrastructure is a valid target. The question is whether its owners are willing to govern it as critical infrastructure rather than as an accumulation of remotely managed field installations.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/">
+<img class="see-also-card-image" src="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/cve-program.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Reclaiming the Namespace: EU Digital Sovereignty in the CVE Ecosystem?</h5>
+<div class="see-also-card-subtitle">Rebalancing coordination and autonomy: EU digital sovereignty, federated CVE governance, and the conditions for sustainable economic growth</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications/">
+<img class="see-also-card-image" src="../../longforms/quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications/merkletreecertificates.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum-Safe HTTPS Certificates: Google’s Structural Innovation, Technical Foundations, and Governance Implications</h5>
+<div class="see-also-card-subtitle">Engineering quantum resistant web authentication through Merkle commitments, transparency logs, and scalable trust infrastructure</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/">
+<img class="see-also-card-image" src="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/italy-shielded.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Measuring Cyber Risk in the Italian Corporate Sector</h5>
+<div class="see-also-card-subtitle">A Banca d’Italia indicator of cybersecurity vulnerability designed to support creditworthiness evaluation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/">
+<img class="see-also-card-image" src="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/bloch_sphere_against_padlock.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security</h5>
+<div class="see-also-card-subtitle">How quantum attacks turn long-lived signatures into silent integrity and impersonation risks</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/zero-trust-network-access/">
+<img class="see-also-card-image" src="../../longforms/zero-trust-network-access/era-stream-experience.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Zero Trust Network Access</h5>
+<div class="see-also-card-subtitle">A technical genealogy of an architectural break</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/">
+<img class="see-also-card-image" src="../../posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/qc-breaks.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Cryptography at the Edge of Feasibility: Resource Estimates, Architectural Divergence, and Systemic Risk</h5>
+<div class="see-also-card-subtitle">An analysis of the Google and Oratomic results on Shor’s resource estimates and their implications for the convergence of quantum circuit optimization, error correction, and hardware architectures</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-computing-threats-advantage-acting-now/">
+<img class="see-also-card-image" src="../../posts/quantum-computing-threats-advantage-acting-now/quantum_compunting_bloch_padlock.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Computing Threats and the Advantage of Acting Now</h5>
+<div class="see-also-card-subtitle">Why trust expires before systems fail, and how early remediation becomes a strategic program rather than an emergency rewrite</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-key-distribution-and-post-quantum-cryptography/">
+<img class="see-also-card-image" src="../../posts/quantum-key-distribution-and-post-quantum-cryptography/bell-state.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Key Distribution and Post-Quantum Cryptography</h5>
+<div class="see-also-card-subtitle">Concepts, roles, and correct use</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/cybersecurity-in-an-era-with-quantum-computers-interpreting-moscas-risk-inequality/">
+<img class="see-also-card-image" src="../../posts/cybersecurity-in-an-era-with-quantum-computers-interpreting-moscas-risk-inequality/mosca_inequality.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Cybersecurity in an Era with Quantum Computers: Interpreting Mosca’s Risk Inequality</h5>
+<div class="see-also-card-subtitle">Why $x$ plus $y$ greater than $z$ turns quantum readiness into a present day governance problem</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>See: <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Report_2025.pdf">CERT Polska report</a>. <strong>CERT Polska</strong> is the first Polish computer emergency response team. It operates within <strong>NASK – National Research Institute</strong>, has been active since 1996, and carries out the role of <strong>CSIRT NASK</strong>, one of the three national level CSIRTs in Poland’s cybersecurity system. Its activities include incident handling, active response to threats, malware analysis, security research, threat information exchange, tool development, and public reporting on the security of Polish cyberspace.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>See: <a href="https://www.welivesecurity.com/en/eset-research/dynowiper-update-technical-analysis-attribution/">DynoWiper update: Technical analysis and attribution</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>See: <a href="https://hub.dragos.com/thank-you/electrum-targeting-polands-electric-sector?submissionGuid=9bf00ab0-648b-440a-a6d0-877756340532">ELECTRUM: Cyber Attack on Poland’s Electric System 2025</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
