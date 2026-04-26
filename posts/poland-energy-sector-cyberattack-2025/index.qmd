@@ -1,9 +1,9 @@
 ---
 title: "The December 2025 Cyberattack on Poland’s Energy Sector"
 subtitle: "A detailed reconstruction of the incident, the malware, and the wider significance for energy and OT security"
-description: "On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted more than thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The primary public account, published by CERT Polska, shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not interrupt ongoing electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can be achieved without causing an immediate blackout. This article reconstructs the incident in detail from the CERT Polska report and integrates the supplementary malware analysis published by ESET together with the OT focused interpretation offered by Dragos. Its central argument is that the importance of the Polish case lies not in spectacular technical novelty, but in the effectiveness of a campaign built on exposed remote access, weak identity governance, default credentials, insecure management surfaces, and poor architectural separation. The incident should therefore be read as a major warning for European energy operators: in distributed generation environments, cyber weakness at the edge can accumulate across many small sites until it becomes operationally and strategically significant."
+description: "On 29 December 2025, Poland was hit by a coordinated destructive cyber campaign that targeted at least thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. The CERT Polska report shows that the operation crossed from enterprise compromise into direct OT sabotage, damaging RTUs, protection relays, HMIs, and serial device servers while also attempting domain wide data destruction in corporate environments. In the renewable segment, the attack did not stop electricity generation, but it severed communication with distribution system operators and removed remote supervisory control, demonstrating that strategic impact on energy systems can occur without an immediate blackout. This article reconstructs the incident from the CERT Polska report and integrates ESET’s DynoWiper analysis together with Dragos’s OT focused interpretation of the attack on distributed energy resources. The central argument is that the case matters less because of technical novelty than because of what it reveals about exposed remote access, weak identity governance, default credentials, insecure management surfaces, poor segmentation, and fragile recovery paths. The Polish incident should be read as a warning for European energy operators and for Italy in particular: as renewable generation becomes more distributed, cyber risk also becomes distributed, and repeated weaknesses across many small sites can accumulate into operationally and strategically significant exposure unless plant architectures are governed from the outset as critical infrastructure."
 date: "2026-03-25"
-date-modified: "2026-03-27"
+date-modified: "2026-03-26"
 categories: [cybersecurity, energy, 🇬🇧]
 image: "Cyberattack_on_Poland.jpeg"
 ---
@@ -12,25 +12,101 @@ image: "Cyberattack_on_Poland.jpeg"
 
 **CERT Polska opens** the report[^poland-energy-sector-cyberattack-2025-CP25] by stating that on 29 December 2025, during the morning and afternoon hours, **coordinated attacks occurred in Poland’s cyberspace against numerous wind and solar farms**, a **private manufacturing company**, and a **CHP plant** supplying heat to nearly half a million customers. The attacks are described as purely destructive in nature and comparable to deliberate acts of arson. CERT Polska also stresses that both information systems and physical industrial equipment were affected, which it characterizes as uncommon in public reporting to date. The events took place during low temperatures and snowstorms shortly before New Year’s Eve, which amplifies their strategic meaning even though mass service disruption did not materialize. 
 
-[^poland-energy-sector-cyberattack-2025-CP25]: See: [CERT Polska report](https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Report_2025.pdf). **CERT Polska** is the first Polish computer emergency response team. It operates within **NASK – National Research Institute**, has been active since 1996, and carries out the role of **CSIRT NASK**, one of the three national level CSIRTs in Poland’s cybersecurity system. Its activities include incident handling, active response to threats, malware analysis, security research, threat information exchange, tool development, and public reporting on the security of Polish cyberspace. 
+[^poland-energy-sector-cyberattack-2025-CP25]: See: [CERT Polska report](https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Report_2025.pdf). **CERT Polska** is the first Polish computer emergency response team. It operates within **NASK – National Research Institute**, has been active since 1996, and carries out the role of **CSIRT NASK**, one of the three national level CSIRTs in Poland’s cybersecurity system. Its activities include incident handling, active response to threats, malware analysis, security research, threat information exchange, tool development, and public reporting on the security of Polish cyberspace. See also the official team description: [About us](https://cert.pl/en/about-us/).
 
 What makes the case analytically important is not that it caused a national blackout. It did not. The importance lies elsewhere. The campaign demonstrated that a **threat actor could simultaneously target dozens of grid edge and industrial environments**, achieve operationally significant effects, and do so mainly by exploiting weaknesses in architecture, identity, and equipment hardening. That raises the threshold question of what modern energy sabotage really requires. The Polish case suggests that for many distributed energy environments, the answer is not highly specialized malware but a strong understanding of how remote access, telecontrol, and operational support are actually implemented in the field.  
 
 ## The primary facts established by CERT Polska
 
-The report establishes several facts with high confidence. First, the incidents across the renewable facilities, the CHP plant, and the manufacturing company were coordinated and attributed by CERT Polska to the same threat actor. Second, at least thirty wind and solar farms were affected. Third, the CHP plant was significant enough to supply heat to nearly half a million customers. Fourth, the campaign was destructive rather than financially motivated. Fifth, the renewable attacks caused loss of communication with DSOs and loss of remote control, but did not stop electricity generation or destabilize the Polish power system. 
+The report establishes several facts with high confidence. First, the incidents across the renewable facilities, the CHP plant, and the manufacturing company were coordinated, and CERT Polska assessed that they were carried out by the same threat actor. Second, at least thirty wind and solar farms were affected. Third, the CHP plant was significant enough to supply heat to nearly half a million customers. Fourth, the campaign was destructive rather than financially motivated. Fifth, the renewable attacks caused loss of communication with DSOs and loss of remote control, but did not stop electricity generation or destabilize the Polish power system. 
 
 That last point deserves emphasis. In the renewable sector, the attack did not primarily target the physical process of generation itself. Instead, it targeted the control and communication layer at the grid connection point. This distinction matters because it explains how a cyberattack can be strategically meaningful without causing immediate nationwide supply failure. A distributed generation fleet can continue to produce electricity while simultaneously becoming harder to monitor, harder to command, and slower to restore when supervisory and telecontrol devices have been damaged. 
 
 ## Architecture of the attacked renewable sites
 
-CERT Polska explains the renewable architecture in order to make the attack intelligible. Electricity from wind turbines and photovoltaic systems is collected and routed to a power substation called the grid connection point. There, voltage is stepped up to 110 kV for transfer to the distribution grid. The DSO oversees the conditions at the grid connection point (GCP) and uses the GCP for remote monitoring and supervisory control. These substations are usually unmanned and remotely managed, which means remote access and telecontrol are structurally central to operations. 
+CERT Polska explains the renewable architecture in order to make the attack intelligible. Electricity from wind turbines and photovoltaic systems is collected and routed to a power substation called the grid connection point. There, voltage is stepped up to 110 kV for transfer to the distribution grid. The DSO oversees conditions at the grid connection point and uses the GCP for remote monitoring and supervisory control. These substations are usually unmanned and remotely managed, which means remote access and telecontrol are structurally central to operations. 
 
 The report identifies the key industrial components present at the GCP. These include the remote terminal unit for telecontrol and supervision, a local HMI, protection relays, serial device servers for IP to serial connectivity, primary and backup communications including a cellular router, and an integrated VPN concentrator and firewall. Poland’s DSOs typically require communication between the operator’s SCADA system and the GCP to pass through serial links using DNP3.0 or IEC 101. That choice helps reduce the chance that a compromised GCP could directly pivot into the DSO network, but it does not prevent sabotage of the GCP itself. 
+
+```{mermaid}
+%%| label: fig-renewable-gcp-architecture
+%%| fig-cap: Simplified architecture of the attacked renewable plant and its grid connection point, showing the main electrical, OT, communications, and remote access components described by CERT Polska.
+%%| fig-alt: Diagram of a renewable plant connected to the distribution grid through a grid connection point substation. The GCP contains a step up transformer, RTU, local HMI, protection relays, serial device servers, primary and backup communication links, and an integrated VPN concentrator and firewall. The DSO supervisory control system communicates with the GCP through DNP3.0 or IEC 101 serial links.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart LR
+    A[Wind turbines / PV fields] --> B
+
+    subgraph GCP["Grid Connection Point substation"]
+        B[Plant collection point]
+        C[Step up transformer<br/>to 110 kV]
+        E[RTU<br/>telecontrol and supervision]
+        F[Local HMI<br/>status visualization]
+        G[Protection relays<br/>fault detection and isolation]
+        H[Serial device servers<br/>RS232 / RS485 to IP]
+        I[Primary / backup communication links<br/>including cellular router]
+        J[Integrated VPN concentrator<br/>and firewall<br/>remote service access and segmentation]
+    end
+
+    B --> C
+    C --> D[Distribution grid / DSO]
+
+    E --> F
+    G --> E
+    E --> H
+    H --> I
+    J --> E
+    J --> F
+    J --> G
+    J --> H
+
+    K[DSO SCADA / supervisory control] -->|DNP3.0 / IEC 101<br/>via serial links| H
+
+    classDef edge fill:#ffe6cc,stroke:#b45f06,stroke-width:1.5px;
+    classDef ot fill:#d9ead3,stroke:#38761d,stroke-width:1.2px;
+    classDef elec fill:#fff2cc,stroke:#bf9000,stroke-width:1.2px;
+    classDef ext fill:#d0e0e3,stroke:#134f5c,stroke-width:1.2px;
+
+    class I,J edge;
+    class E,F,G,H ot;
+    class B,C elec;
+    class A,D,K ext;
+```
 
 This architectural description is more than background. It reveals the attacker’s logic. The GCP is both a physical interconnection point and a digital supervision point. Damaging the devices there degrades remote control, remote visibility, and restoration readiness, even if turbines and PV strings continue to operate. The campaign therefore targeted the operational nervous system of the site rather than the generation assets directly. 
 
 ## Initial access at the renewable sites
+
+```{mermaid}
+%%| label: fig-renewable-initial-access-chain
+%%| fig-cap: Reconstructed access path into renewable sites, highlighting exposed FortiGate VPN access, authentication without MFA, administrative control of the perimeter device, access expansion across OT subnets, and destructive reset of the FortiGate to hinder recovery and erase traces.
+%%| fig-alt: Attack chain diagram showing Internet access to a FortiGate VPN exposed online, authentication to configured accounts without MFA, administrative privileges on the FortiGate, possible credential reuse across sites or configuration changes enabling access to all subnets, access to RTUs, HMIs, protection relays, and Moxa serial device servers, followed by FortiGate factory reset to hinder recovery and erase traces.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart TD
+    A[Internet] --> B[FortiGate VPN / firewall<br/>VPN interface exposed to Internet]
+    B --> C[Accounts defined in configuration<br/>authentication without MFA]
+    C --> D[Administrative privileges<br/>on FortiGate]
+    D --> E[Credential reuse across sites<br/>or FortiGate configuration change]
+    E --> F[Access to all subnets<br/>or equivalent reachability]
+    F --> G[RTUs]
+    F --> H[HMIs]
+    F --> I[Protection relays]
+    F --> J[Moxa serial device servers]
+
+    D --> K[Factory reset of FortiGate]
+    K --> L[Hinders restoration<br/>erases traces]
+
+    classDef attack fill:#f4cccc,stroke:#990000,stroke-width:1.5px;
+    classDef impact fill:#fce5cd,stroke:#b45f06,stroke-width:1.3px;
+    classDef target fill:#d9ead3,stroke:#38761d,stroke-width:1.2px;
+
+    class A,B,C,D,E,F attack;
+    class K,L impact;
+    class G,H,I,J target;
+```
 
 In each affected renewable facility, a FortiGate appliance served as both VPN concentrator and firewall. CERT Polska states that the VPN interface was exposed to the internet and that authentication to configured accounts did not require multifactor authentication. The report also notes that reusing the same accounts and passwords across multiple facilities is common in the industry. This matters because once a threat actor compromises one valid account, scaling to other sites using the same identity becomes easier and cheaper. 
 
@@ -50,11 +126,71 @@ CERT Polska further notes that a secure update feature with digital signature ve
 
 ## Mikronika RTUs, Relion relays, HMIs, and Moxa serial servers
 
-At facilities using Mikronika RTUs, the attacker logged in via SSH using default root credentials and executed a destructive command intended to delete all files from the Linux based system. Mikronika later recovered logs showing network scanning and login attempts on 25 December 2025 at all facilities where the device was deployed. Hitachi Relion 650 v1.1 protection devices were attacked in two cases via default FTP access, which allowed the deletion of critical files and led to shutdown and prevented restart. CERT Polska notes that if the devices had been deployed per the manufacturer’s recommendations, the default FTP account would have been automatically disabled. 
+At facilities using Mikronika RTUs, the attacker logged in via SSH using default root credentials and executed a destructive command intended to delete all files from the Linux based system. Mikronika later recovered logs showing network scanning and login attempts on 25 December 2025 at all facilities where the device was deployed. Hitachi Relion 650 v1.1 protection devices were attacked in two cases via default FTP access, which allowed the deletion of critical files, caused the devices to shut down, and prevented them from restarting. CERT Polska notes that if the devices had been deployed per the manufacturer’s recommendations, the default FTP account would have been automatically disabled. 
 
 Some facilities used Mikronika Syndis software on Windows 10 HMIs. These systems had a default local administrator password. The attacker accessed them through RDP, enabled administrative shares, created a firewall rule called _Microsoft Update_ that opened TCP 445, and used PowerShell to make the system accessible over SMB for remote command execution. Reconnaissance followed with Impacket, and on the morning of 29 December a malicious file was written to `C:\Source.exe` and executed. CERT Polska states that this was the same malware later analyzed as DynoWiper in the CHP case. On HMIs where the local administrator account had different credentials, only unsuccessful password breaking attempts were observed and the HMI was not damaged. 
 
 Every affected facility also used Moxa NPort 6xxx serial device servers. These exposed a web interface and were configured with default login credentials. The attacker used those credentials to reset devices to factory settings, change passwords, and set unreachable IP addresses such as `127.0.0.1`. The result was not only unavailability but intentional delay in restoration. That detail is significant because it shows that the attacker optimized not just for immediate denial of service but for recovery friction. 
+
+```{mermaid}
+%%| label: fig-renewable-ot-device-compromise
+%%| fig-cap: Device-level destructive actions within the grid connection point, showing how default credentials and exposed management interfaces enabled sabotage of RTUs, relays, HMIs, and serial device servers.
+%%| fig-alt: Diagram showing attacker access from the compromised perimeter into the GCP network, followed by attacks against Hitachi RTUs through the web interface and corrupted firmware upload, Mikronika RTUs through SSH and file deletion, Relion relays through FTP and file deletion, Windows HMIs through RDP and DynoWiper execution, and Moxa serial device servers through web access, reset, password change, and invalid IP configuration. The outcomes include loss of DSO communications, loss of remote control, workstation destruction, relay unavailability, and delayed restoration while generation continues.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart LR
+    A[Access from compromised FortiGate<br/>into GCP network] --> B[Hitachi RTU560]
+    A --> C[Mikronika RTU]
+    A --> D[Hitachi Relion 650 v1.1 relay]
+    A --> E[Windows HMI]
+    A --> F[Moxa NPort 6xxx]
+
+    B --> B1[Default web account]
+    B1 --> B2[Upload corrupted firmware]
+    B2 --> B3[Reboot loop / RTU unavailable]
+
+    C --> C1[Default root SSH credentials]
+    C1 --> C2[Delete system files]
+    C2 --> C3[RTU failure]
+
+    D --> D1[Default FTP account]
+    D1 --> D2[Delete essential files]
+    D2 --> D3[Relay shutdown / no restart]
+
+    E --> E1[Default local admin password]
+    E1 --> E2[RDP access]
+    E2 --> E3[Enable admin shares<br/>open TCP 445<br/>SMB based remote execution]
+    E3 --> E4[DynoWiper execution]
+
+    F --> F1[Default web credentials]
+    F1 --> F2[Factory reset]
+    F2 --> F3[Password change + invalid IP]
+    F3 --> F4[Serial gateway unavailable]
+
+    B3 --> Z1[Loss of DSO communication]
+    C3 --> Z1
+    B3 --> Z2[Loss of remote control]
+    C3 --> Z2
+    F4 --> Z1
+    F4 --> Z3[Restoration delayed]
+    E4 --> Z4[HMI destroyed / operator visibility reduced]
+    D3 --> Z5[Protection device unavailable]
+
+    Z1 --> Y[Operational disruption while generation continues]
+    Z2 --> Y
+    Z3 --> Y
+    Z4 --> Y
+    Z5 --> Y
+
+    classDef attack fill:#f4cccc,stroke:#990000,stroke-width:1.3px;
+    classDef effect fill:#fce5cd,stroke:#b45f06,stroke-width:1.3px;
+    classDef result fill:#d9ead3,stroke:#38761d,stroke-width:1.3px;
+
+    class B1,B2,C1,C2,D1,D2,E1,E2,E3,E4,F1,F2,F3 attack;
+    class B3,C3,D3,F4 effect;
+    class Z1,Z2,Z3,Z4,Z5,Y result;
+```
 
 ## The CHP plant attack
 
@@ -112,7 +248,7 @@ CERT Polska analyzed both infrastructure and malware. On the infrastructure side
 
 At the same time, CERT Polska is careful about the malware evidence. It states that DynoWiper contains some similarities to Sandworm and SeashellBlizzard associated wipers, and that the PowerShell script used to run DynoWiper on workstations uses the same deployment technique as Sandworm linked tools like ArguePatch and RansomBoggs, but it does not conclude that Sandworm participated. LazyWiper is explicitly deemed unsuitable for attribution because it was likely largely generated by an LLM and lacks distinctive features. 
 
-ESET goes further on the malware side and attributes DynoWiper to Sandworm with medium confidence, citing close resemblance to TTPs seen earlier in 2025 in ZOV wiper incidents in Ukraine. ESET also notes Sandworm’s long history of attacking Polish organizations, including those in the energy sector, first covertly for espionage and later destructively, as in the Prestige incidents. ([welivesecurity.com][1])
+ESET goes further on the malware side and attributes DynoWiper to Sandworm with medium confidence, citing close resemblance to TTPs seen earlier in 2025 in ZOV wiper incidents in Ukraine. ESET also notes Sandworm’s long history of attacking Polish organizations, including those in the energy sector, first covertly for espionage and later destructively, as in the Prestige incidents.[^poland-energy-sector-cyberattack-2025-ES26]
 
 ## Additional OT perspective from Dragos
 
@@ -120,7 +256,40 @@ The OT cybersecurity firm Dragos states that the 29 December 2025 event was a co
 
 This OT specific framing is consistent with the CERT Polska report, which explains that the attack on renewable sites caused loss of communication between facilities and DSOs and prevented remote control, while not interrupting ongoing electricity generation or destabilizing the Polish power system. In other words, the attacker succeeded against the supervisory and telecontrol layer at the grid connection point without producing an immediate bulk power effect. 
 
-Dragos adds an important interpretive layer. It argues that the event is significant not because it caused outages, but because it demonstrated that distributed energy infrastructure is now a valid target for a sophisticated adversary. The brief stresses that DER environments are more numerous, depend heavily on remote connectivity, often receive less cybersecurity investment than centralized plants, and therefore present a broader and less manageable attack surface. It also notes that RTUs standardize how remote sites interface with control centers, which makes compromise repeatable across many sites if edge devices, vulnerabilities, or connectivity patterns are similar.  
+Dragos adds an important interpretive layer. It argues that the event is significant not because it caused outages, but because it demonstrated that distributed energy infrastructure is now a valid target for a sophisticated adversary. The brief stresses that DER environments are more numerous, depend heavily on remote connectivity, often receive less cybersecurity investment than centralized plants, and therefore present a broader and less manageable attack surface. It also notes that RTUs standardize how remote sites interface with control centers, which makes compromise repeatable across many sites if edge devices, vulnerabilities, or connectivity patterns are similar.
+
+```{mermaid}
+%%| label: fig-der-systemic-risk-pattern
+%%| fig-cap: Systemic risk pattern in distributed energy resources, showing how repeated architectural choices, shared remote access models, and limited visibility can turn many small sites into a scalable target for coordinated OT disruption.
+%%| fig-alt: Diagram showing many distributed energy sites, combined with remote operations models and standardized low cost deployments, leading to common edge architectures and similar OT integration patterns. These create repeatable compromise paths that can scale into coordinated multi site OT disruption, resulting in loss of telemetry, loss of remote control, communications damage, harder restoration, and potential escalation to broader operational effects.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn"}}%%
+
+flowchart LR
+    A[Many DER sites] --> B[Common edge architecture<br/>VPNs firewalls gateways remote access]
+    F[Remote operations model] --> B
+    G[Standardized low cost deployments] --> B
+
+    B --> C[Similar OT integration patterns<br/>RTUs HMIs relays serial gateways]
+    C --> D[Repeatable compromise paths]
+    D --> E[Coordinated multi site OT disruption]
+
+    H[Limited OT visibility and logging] --> E
+    I[Restoration depends on site by site<br/>manual field intervention] --> E
+
+    E --> J[Loss of telemetry]
+    E --> K[Loss of remote control]
+    E --> L[Damage to communications and edge devices]
+    E --> M[Slower restoration and possible escalation<br/>to broader operational impact]
+
+    classDef der fill:#d0e0e3,stroke:#134f5c,stroke-width:1.2px;
+    classDef risk fill:#f4cccc,stroke:#990000,stroke-width:1.3px;
+    classDef out fill:#d9ead3,stroke:#38761d,stroke-width:1.2px;
+
+    class A,F,G,H,I der;
+    class B,C,D,E risk;
+    class J,K,L,M out;
+```
 
 Dragos also clarifies an operational point that is easy to miss in superficial retellings of the incident. In electric systems, loss of communications does not usually cause immediate shutdown. A device that loses connectivity often continues operating locally, but it can no longer be monitored or controlled remotely. This is why the power stayed on even though key OT and communications equipment had been compromised. Dragos therefore treats the incident as a serious OT intrusion with limited immediate physical effect, not as a failed or trivial attack. 
 
@@ -128,7 +297,7 @@ The brief further argues that the December 2025 operation represents both contin
 
 This perspective sharpens the strategic meaning of the case. The Polish incident was not merely an enterprise compromise that happened to touch energy companies. It was an attack on the digital coordination fabric of distributed generation. The core lesson is that a modern grid does not need to lose its transmission backbone to suffer operationally relevant cyber sabotage. It is enough for an adversary to degrade visibility, telemetry, remote control, and restoration capability across enough distributed sites at the same time. 
 
-[^poland-energy-sector-cyberattack-2025-DR26]: See: [ELECTRUM: Cyber Attack on Poland's Electric System 2025](https://hub.dragos.com/thank-you/electrum-targeting-polands-electric-sector?submissionGuid=9bf00ab0-648b-440a-a6d0-877756340532).
+[^poland-energy-sector-cyberattack-2025-DR26]: See Dragos’s public summary of the report: [Poland Power Grid Attack Targets Distributed Energy Resources](https://www.dragos.com/blog/poland-power-grid-attack-electrum-targets-distributed-energy-2025).
 
 ## Why the case matters
 
@@ -144,14 +313,120 @@ Finally, the incident matters because it marks a strategic shift in how energy d
 
 What Poland exposed, then, was not just a successful campaign against a set of organizations. It exposed a structural reality of modern power systems: as generation becomes more distributed, cyber fragility can also become more distributed, and if that fragility is not governed deliberately, it can accumulate quietly across many small sites until it becomes strategically significant. 
 
-## Conclusion
+## Personal considerations: why this case matters to me in the Italian context
 
-The December 2025 campaign against Poland’s energy sector was destructive, coordinated, and operationally significant. In the renewable segment, it disrupted telecontrol and visibility without stopping generation. In the CHP environment, it combined long term enterprise compromise with attempted mass wiper deployment and direct storage sabotage. In the manufacturing environment, it repeated the same broader logic of perimeter compromise, privileged access, cloud data theft, and destructive execution. Across all these targets, the shortest path to impact did not run through highly specialized ICS malware. It ran through weak remote access governance, permissive perimeter devices, poor credential hygiene, exposed management functions, and inadequate segregation between administrative reachability and operational consequence.
+### Why the Polish case does not feel remote
 
-That is the most serious lesson of the case. The incident did not prove that modern adversaries need extraordinary tools to threaten energy systems. It proved something more uncomfortable: in many environments, they do not. If enough distributed sites share the same architectural weaknesses, the attacker does not need to break the grid at its center. It is sufficient to attack its coordination layer at the edge, site after site, until operators lose visibility, control, and confidence at the same time.
+What makes the Polish case especially relevant to me is that I do not read it as a remote anomaly. I see the same structural pattern in Italy, even if the geopolitical position, the regulatory environment, and the generation mix are not identical. The common pattern is not a specific threat actor or a specific device model. It is the combination of distributed sites, heavy dependence on remote access, edge devices that concentrate trust and reachability, heterogeneous OT components with uneven hardening, and organizational fragmentation between owners, EPCs, integrators, vendors, and O&M providers.
 
-This is why the Polish case should not be read merely as an isolated national incident or as a near miss because the lights stayed on. It should be read as a warning about the cyber consequences of the energy transition when digital scale expands faster than security discipline. Distributed energy can increase resilience in physical and market terms, but if remote access, RTUs, gateways, HMIs, and support paths are deployed as low cost operational conveniences, that same distribution becomes a force multiplier for the attacker. What Poland revealed is not simply a successful intrusion. It is the emergence of a credible model for coordinated cyber sabotage against the digital fabric of distributed generation.
+This is exactly the environment in which a large share of today’s renewable and hybrid energy systems is being designed and deployed. A modern plant is no longer just an electrical installation that happens to contain some digital components. It is, in substance, a **distributed cyber physical operating system** whose physical assets are coordinated, supervised, updated, dispatched, diagnosed, and sometimes even commercially optimized through remote digital relationships. The plant’s true attack surface therefore does not coincide with the visible field equipment taken one by one. It is not just the inverter, or the turbine, or the RTU, or the firewall considered in isolation. It is the **entire graph of trust, access, delegation, and dependency** that binds those components to remote operators, O&M teams, vendor support channels, dispatch and telecontrol interfaces, aggregators, cloud platforms, market systems, data concentrators, and third party maintenance paths.
 
-The final implication is strategic. The threshold for meaningful disruption in energy is lower than many operators, regulators, and vendors still assume. A grid does not need to collapse for an adversary to demonstrate coercive capability. It is enough to show that dozens of geographically separate assets can be reached, degraded, and partially blinded in a synchronized way. Once that has been demonstrated, the question is no longer whether distributed energy infrastructure is a valid target. The question is whether its owners are willing to govern it as critical infrastructure rather than as an accumulation of remotely managed field installations.
+That is the crucial shift in perspective. The plant is no longer only what is physically installed inside the fence. It is also the **extended digital ecosystem that is allowed to observe it, manage it, patch it, configure it, optimize it, and sometimes override it**. Every one of those relationships is operationally useful, but every one of them is also a potential attack path, a privilege boundary, or a latent failure mode. Once this is understood, the Polish incident stops looking like an outlier produced by unusual circumstances and starts looking like a highly legible warning. It becomes recognizable as the kind of event that can emerge wherever distributed assets are connected faster than the surrounding architecture of trust is deliberately governed.
 
+### Why I use enterprise architecture and IEC 62443 at design time
 
+This is also why I do not treat **enterprise architecture** and **IEC 62443** as paperwork to be added after engineering choices have already been made. I use them at design time because that is the most cost effective place to solve the problem. If segmentation, conduits, identity boundaries, remote access patterns, logging points, recovery paths, and administrative domains are decided only after procurement and deployment, the organization pays twice: first for a fast but fragile implementation, and then again for compensating controls, redesign, and operational friction. By contrast, when these choices are made in the architecture phase, security becomes a property of the system shape rather than a collection of late exceptions.
+
+That distinction matters economically as much as technically. A **defensible architecture is not necessarily a more expensive architecture**. Very often it is simply a more explicit one. The cost effective move is to define from the beginning which functions belong in which zones, which communications are actually required, which identities are allowed to traverse which boundaries, how vendor access is brokered, what must be logged outside the local device, and what recovery baseline must exist if a field component is bricked or reset. The Polish incident shows what happens when those questions are left implicit: the attacker discovers the real architecture before the owner has fully governed it.
+
+From this perspective, IEC 62443 is useful not because it is fashionable or because it can be cited in a checklist, but because it provides a disciplined way to convert these problems into design decisions. Zones and conduits force explicit trust boundaries. The foundational requirements force discipline around identification and authentication, restricted data flow, system integrity, and timely response to events. In practical terms, that means remote access cannot simply terminate _somewhere in OT_; management interfaces cannot remain reachable by convenience; default credentials and legacy services cannot survive commissioning; and restoration cannot depend on improvised field work after the incident has already destroyed the evidence.
+
+### Structural compliance by construction
+
+This approach also has an important secondary effect: it tends to align the plant with the direction of regulation before the regulation arrives in its most detailed and most enforceable form. I would not call that _automatic compliance_ in a literal sense, because compliance always requires documentation, evidence, procedures, governance, and often formal role assignment. But I would call it **structural compliance by construction**. If the system is architected with explicit segmentation, secure remote access, asset accountability, monitoring, controlled change, and recovery engineering, then the gap between technical reality and regulatory expectation becomes much smaller.
+
+This matters because the regulatory trajectory is no longer generic. It is becoming layered, cumulative, and increasingly specific at both system and product level. The result is that the technical decisions made during plant and interface design are progressively less separable from legal and regulatory obligations.
+
+### The national layer: NIS2 and PSNC are converging, not diverging
+
+At the national level, the relevance to the Polish case is not abstract. The attack documented by CERT Polska is exactly the kind of event that exposes why cyber governance for energy and industrial operators can no longer be treated as a secondary compliance exercise. It combines destructive intent, compromise of remote access paths, cross domain movement between IT and OT, and operational impact below the threshold of a nationwide blackout. In Italy, that same class of risk now sits inside a regulatory environment that is becoming denser and more explicit, not looser.
+
+The first point is that the Italian transposition of NIS2 is already in force. **Decreto Legislativo 4 settembre 2024, n. 138** was published on 1 October 2024 and took effect on 16 October 2024[^poland-energy-sector-cyberattack-2025-138]. That matters here because NIS2 is not just about generic cybersecurity maturity. It is about forcing operators of essential and important entities to treat cyber risk, incident management, supply chain exposure, and continuity as governed management obligations rather than discretionary technical choices.
+
+The second point is that this decree does not replace or supersede the **Perimetro di Sicurezza Nazionale Cibernetica**. The PSNC was established earlier and remains structurally important for systems tied to national strategic interests.[^poland-energy-sector-cyberattack-2025-PSNC] This is directly relevant to the logic of the article because the Polish case shows how systems that may appear operationally peripheral when considered site by site can become strategically relevant when attacked in coordination. The Italian framework is moving in the same conceptual direction: it narrows the distance between _technical infrastructure_ and _nationally significant infrastructure_ by treating certain digital systems, services, and interconnections as part of a higher consequence security perimeter.
+
+The third and most important point is that **NIS2 and PSNC are converging, not diverging**. Article 33 of the Italian NIS2 transposition explicitly coordinates the two regimes by recognizing that, for systems already covered by the Perimetro, PSNC obligations on cyber risk management and incident notification are considered at least equivalent to the corresponding NIS2 obligations[^poland-energy-sector-cyberattack-2025-article33]. That is not a bureaucratic detail. It means that the direction of travel is toward a more integrated and less permissive model in which organizations cannot rely on fragmented interpretations of _which rule really applies_. From the standpoint of a plant owner, operator, or architect, the message is clear: the same architectural weaknesses highlighted by the Polish incident, especially around remote access, segmentation, trust boundaries, and recovery readiness, are increasingly becoming relevant both as technical exposures and as formal governance failures.
+
+This is why the national layer matters so much to the argument of the article. The Polish incident is a warning that distributed energy and industrial systems can become operationally significant targets without first becoming _big critical infrastructure_ in the traditional centralized sense. The Italian response, through NIS2 and the continuing force of PSNC, points in the same direction: cyber resilience is being treated less as an optional quality of implementation and more as an expected property of strategically relevant systems and services. ACN’s own public positioning reflects this shift by presenting the NIS framework as fully in force and by identifying the Agency as the competent authority and single point of contact for the regime[^poland-energy-sector-cyberattack-2025-acn-nis].
+
+[^poland-energy-sector-cyberattack-2025-acn-nis]: ACN states that the new NIS regime has been in force since 16 October 2024 and that ACN is the competent NIS authority and single point of contact. See the official NIS portal: [NIS - Network Information Security](https://www.acn.gov.it/portale/nis).
+
+[^poland-energy-sector-cyberattack-2025-138]: The Italian transposition of NIS2 is **Decreto Legislativo 4 settembre 2024, n. 138**, published in *Gazzetta Ufficiale* on 1 October 2024 and in force from 16 October 2024. Official text: [Gazzetta Ufficiale](https://www.gazzettaufficiale.it/eli/id/2024/10/01/24G00155/SG).
+
+[^poland-energy-sector-cyberattack-2025-PSNC]: The **Perimetro di Sicurezza Nazionale Cibernetica** was established by **Decreto-Legge 21 settembre 2019, n. 105**, then converted with modifications by **Legge 18 novembre 2019, n. 133**. Its incident notification and security measures were further operationalized through **DPCM 14 aprile 2021, n. 81**, in force from 26 June 2021. See the official publication of the implementing regulation: [Gazzetta Ufficiale](https://www.gazzettaufficiale.it/eli/id/2021/06/11/21G00089/SG).
+
+[^poland-energy-sector-cyberattack-2025-article33]: Article 33 of **Decreto Legislativo n. 138/2024** coordinates NIS2 with the PSNC framework by treating Perimetro obligations on cyber risk management and incident notification as at least equivalent for the systems already covered by that regime. Official text: [Gazzetta Ufficiale](https://www.gazzettaufficiale.it/eli/id/2024/10/01/24G00155/SG).
+
+### The grid code layer: what is already in force, and what is tightening further
+
+At the energy specific layer, precision matters. The **Terna Grid Code** is already the governing framework for the transmission system and for the technical conditions under which plants, data acquisition systems, and defense related devices interface with Terna.[^poland-energy-sector-cyberattack-2025-Terna] But within that framework, it is important not to confuse three different things: the _current requirements already in force_, the _new revision path now visible in Terna’s update documents_, and the broader _direction of tightening_ that emerges when those texts are read together.
+
+[^poland-energy-sector-cyberattack-2025-Terna]: Terna publishes the Grid Code (*Codice di Rete*) and its annexes as the governing technical framework for the national transmission system. The official annex list includes **A.13 _Criteri di connessione al sistema di controllo di Terna_** and **A.69 _Criteri di connessione degli impianti di produzione al sistema di difesa di Terna_**. See Terna’s official Grid Code page: [Codice di Rete Italiano](https://www.terna.it/it/sistema-elettrico/codici-rete/codice-rete-italiano).
+
+#### What is already present in the current framework
+
+Even in the current published version of **Annex A.13**, cybersecurity is not absent. The annex already contains a dedicated security chapter and already requires, among other things, protection and monitoring of communications toward Terna, logical segregation of networks and channels used for data exchange with Terna, prompt reporting of security incidents affecting the communication channel, VPN protection for acquisition systems that use intranet type communications, a VPN terminator on the owner side capable of segregating the network in which RTUs are present, security logs with synchronized timestamps, at least six months of log retention, and mutual authentication measures between the owner and Terna[^poland-energy-sector-cyberattack-2025-a13-current].
+
+[^poland-energy-sector-cyberattack-2025-a13-current]: Current published Annex A.13: [Criteri di connessione al sistema di controllo di Terna](https://download.terna.it/terna/Allegato%20A.13%20%E2%80%93%20Criteri%20di%20connessione%20al%20sistema%20di%20controllo%20di%20Terna_8d7b56b4664fa83.pdf).
+
+That point is important because it means the baseline is not starting from zero. Telecontrol and telemetry connections toward Terna are already treated as security relevant interfaces, not as purely functional transport paths.
+
+#### What the new A.13 update makes clearer and stricter
+
+Where the tightening becomes visible is in the **updated A.13 markup document**, which shows Terna moving from a relatively compact security chapter to a broader and more explicit cybersecurity framework. The updated text introduces a dedicated **Cyber Security** section structured around topics such as **asset inventory and third parties**, **cybersecurity monitoring and incident management**, **malware protection and traffic isolation**, **authentication and authorization**, **communications security and cryptography**, **packet filtering**, **patching**, **logging**, and **backup and restore**.[^terna-annex-a13-markup-structure]
+
+[^terna-annex-a13-markup-structure]: [PDF](https://download.terna.it/terna/A13_Criteri_collegamento_Sistema_controllo_markup_8de0a841e7d100e.pdf)
+
+The updated text also makes several obligations more explicit and more operational. It requires the plant owner to keep updated and consultable inventories of digital assets attached to the interconnection infrastructure, to maintain a 24x7 point of contact, to notify Terna of security events within **four hours** of detection when they may affect connected devices, communications infrastructure, Terna related information, or even supply chain events relevant to the interconnection, to ensure anti malware protection on IT, OT, IoT, and mobile devices, to isolate traffic between VPNs, to use robust credentials including examples such as **MFA**, to prepare for **IEC 62351** secure communications, to apply security patches at least **semiannually**, and to implement backup and restore procedures.
+
+So the direction of travel is clear. The newer A.13 text does not merely repeat the older security concepts. It **broadens them, operationalizes them, and turns them into a more explicit lifecycle discipline** for the infrastructure that connects the plant to Terna’s systems.
+
+This is already a significant architectural message. It means that cyber requirements are not only imposed later through generic corporate policy or audit language. They are increasingly embedded into the very conditions under which telemetry and telecontrol can be connected to the transmission side. The practical implication is that the connection architecture itself must now be designed to sustain asset visibility, segmented trust boundaries, secure remote access, incident response coordination, evidence retention, and recoverability.
+
+#### The same tightening logic is visible in A.69
+
+This becomes even more relevant when one looks at **Annex A.69**, which governs the connection of production plants to Terna’s defense system. In its current logic, A.69 already depends on A.13, because the telecontrol and data connection criteria of A.13 form part of the technical environment within which defense related interfaces operate.
+
+But the newer **A.69 revision text** shows the same direction of tightening more explicitly. The updated text contains its own **Cyber Security** chapter, structured around **monitoring and threat detection**, **secure traffic isolation**, **authentication and authorization**, **traffic encryption**, **access controls and packet filtering**, **patching**, and **backup and restore**.[^poland-energy-sector-cyberattack-2025-69]
+
+[^poland-energy-sector-cyberattack-2025-69]: [PDF](https://download.terna.it/terna/Allegato_A.69_8ddd426e0f51f03.pdf)
+
+In addition, the revised A.69 text links cyber discipline directly to the integrated telecommunications architecture. It states that where the data connection system is integrated for A.69 purposes and also for A.7 and or A.13 purposes, continuity of telecontrol flows must be preserved throughout preparation, testing, and commissioning, and it imposes architectural consequences such as common communication technology constraints, readdressing of field devices, and the need to review the data network architecture when field devices other than RTUs and UPDM are used.
+
+#### The actual direction of tightening
+
+The most precise way to state the issue, then, is this: **Terna’s current framework already contains cyber relevant obligations, but the newer A.13 and A.69 texts show a clear move toward a more explicit, more granular, and more enforceable cybersecurity model at the plant to Terna interface**. The direction is not toward looser interoperability by default. It is toward tighter governance of communications, assets, authentication, logging, patching, and recovery, with increasing emphasis on the whole interconnection chain rather than on the mere existence of a data link.
+
+### The product layer: the Cyber Resilience Act and CEI 0-16 are raising the baseline
+
+In parallel, the product security baseline is tightening as well. At EU level, the **Cyber Resilience Act**, Regulation (EU) **2024/2847**, introduces horizontal cybersecurity requirements for products with digital elements, meaning hardware and software connected directly or indirectly to a device or network. The regulation entered into force on 10 December 2024. Its general application is staged, with the main obligations applying from 11 December 2027, while the reporting obligations for actively exploited vulnerabilities and severe incidents begin earlier, from 11 September 2026.[^poland-energy-sector-cyberattack-2025-CRA]
+
+[^poland-energy-sector-cyberattack-2025-CRA]: The **Cyber Resilience Act**, Regulation (EU) 2024/2847, entered into force on 10 December 2024. The main obligations apply from 11 December 2027, while the reporting obligations under Article 14 apply earlier, from 11 September 2026. See the European Commission’s summary: [Cyber Resilience Act](https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act).
+
+This does not replace system architecture obligations, but it materially changes the product side expectations placed on vendors supplying connected components into energy systems. It pushes security requirements upstream, toward the design, development, lifecycle management, and incident reporting responsibilities of the product manufacturer.
+
+The same tightening is visible in the Italian sector specific technical domain. **CEI 0-16 Variant V5** explicitly requires, for the **Controllore Centrale di Impianto (CCI)** as a whole, conformity to **IEC 62443-4-1** and **IEC 62443-4-2**. The text requires overall certification at **Capability Security Level 1**, together with additional assessment expectations for higher minimum levels on specific foundational requirements, in particular **FR1**, **FR2**, **FR3**, and **FR7**.[^poland-energy-sector-cyberattack-2025-CEI] This is not a generic invocation of good practice. It is a concrete sign that product and interface security expectations are being written into the technical rules of grid connected equipment.
+
+[^poland-energy-sector-cyberattack-2025-CEI]: [PDF](https://static.ceinorme.it/strumenti-online/doc/26009.pdf)
+
+### What this means in practice
+
+Taken together, these layers point in the same direction. **NIS2, PSNC, the CRA, the Terna Grid Code, and CEI 0-16** are converging on one practical message: **remote telemetry, dispatch, and control interfaces can no longer be engineered as operational conveniences and justified later**. They must be designed from the outset as critical infrastructure surfaces.
+
+This is why, for me, the lesson of the Polish case is straightforward. The right response is not to bolt more controls around the edges of an already ambiguous design. It is to design plants, substations, and remote operational ecosystems so that the most dangerous shortcuts are unavailable by default. That is what enterprise architecture is for at this level: not abstract modeling, but the deliberate shaping of trust, authority, and failure modes before those choices harden into expensive operational debt.
+
+And this is the deeper reason I consider an architecture first, **IEC 62443 informed approach** to be the optimal balance between security and cost. It is cheaper to decide correctly than to retrofit under pressure. It is cheaper to standardize secure remote access than to investigate a fleet wide credential problem. It is cheaper to isolate management planes than to discover during an incident that a firewall configuration was the real crown jewel. It is cheaper to design for evidentiary logging and deterministic recovery than to rebuild dozens of sites with partial visibility after destructive actions have already occurred. In critical infrastructure, good architecture is not the opposite of cost effectiveness. It is usually the only durable form of it.
+
+## Conclusions
+
+The December 2025 cyberattack on Poland’s energy sector should be read as more than a national incident report and more than a malware case study. It is a reference event for the next phase of energy cybersecurity. Its real importance lies in showing that coordinated cyber sabotage of distributed generation does not require spectacular novelty. It requires enough understanding of how modern plants are actually operated, enough reach into the edge devices that mediate trust and control, and enough operational discipline to turn repeated weaknesses into repeatable disruption.
+
+That is why the case is strategically important. It shifts attention away from the old intuition that grid cyber risk is concentrated only in major control centers and transmission assets. Those remain critical, but they are no longer the whole picture. The distributed edge of the grid now matters because that is where scale, remote access, operational heterogeneity, and inconsistent security investment meet. In such an environment, systemic relevance can emerge from the synchronized compromise of many small or medium assets that would not appear decisive in isolation.
+
+The Polish incident also sharpens a more general principle. In critical infrastructure, the most dangerous vulnerabilities are often not the most technically exotic ones. They are the ones that have been normalized into operations: shared credentials, overprivileged perimeter devices, weak separation between remote access and administration, opaque vendor pathways, incomplete logging, and recovery models that depend on assumptions of benign failure rather than hostile interference. Once those become routine, the attacker does not have to invent a new path. The path is already there, waiting to be used.
+
+For Italy, and more broadly for European operators living through the energy transition, the lesson is immediate. The expansion of distributed energy cannot be treated as only a capacity, market, and interconnection problem. It is also a problem of cyber architecture. If the digital operating model of distributed generation is designed as a convenience layer around electrical assets, then the attack surface scales faster than resilience. If instead it is designed from the beginning as critical infrastructure, then many of the attack paths visible in Poland become harder, noisier, slower, and more recoverable.
+
+That is the point at which the Polish case becomes constructive rather than merely alarming. It gives operators, engineers, regulators, and owners a very clear warning, but also a very clear design agenda. The objective is not abstract _more security_. The objective is to make sure that remote access, dispatch interfaces, telemetry paths, OT management surfaces, and restoration processes are governed as part of the plant’s essential architecture. Once that is done, compliance with tightening Italian and European requirements becomes less of a late-stage burden and more the formal expression of choices that were already technically correct.
+
+The deepest conclusion, then, is simple. The future risk to energy systems will not be determined only by how much renewable capacity is added, but by how that capacity is digitally organized. The Polish incident shows what happens when distributed generation is operationally connected faster than it is architecturally governed. The real strategic response is to reverse that sequence.
