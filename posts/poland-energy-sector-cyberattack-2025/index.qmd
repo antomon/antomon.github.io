@@ -30,8 +30,8 @@ The report identifies the key industrial components present at the GCP. These in
 
 ```{mermaid}
 %%| label: fig-renewable-gcp-architecture
-%%| fig-cap: Simplified architecture of the attacked renewable plant and its grid connection point, showing the main electrical, OT, communications, and remote access components described by CERT Polska.
-%%| fig-alt: Diagram of a renewable plant connected to the distribution grid through a grid connection point substation. The GCP contains a step up transformer, RTU, local HMI, protection relays, serial device servers, primary and backup communication links, and an integrated VPN concentrator and firewall. The DSO supervisory control system communicates with the GCP through DNP3.0 or IEC 101 serial links.
+%%| fig-cap: Simplified architecture of the attacked renewable plant and its grid connection point, showing the coupling between the electrical path, the OT supervision and control layer, communications links, and remote access components described by CERT Polska.
+%%| fig-alt: Diagram of a renewable plant connected to the distribution grid through a grid connection point substation. The electrical path runs from wind turbines or photovoltaic fields through a plant collection point and step up transformer to the distribution grid. The OT layer includes plant or facility systems, an RTU, local HMI, protection relays, serial device servers, primary and backup communication links, and an integrated VPN concentrator and firewall. The DSO supervisory control system communicates with the GCP through DNP3.0 or IEC 101 links.
 %%| fig-align: center
 %%{init: {"theme": "neo", "look": "handDrawn"}}%%
 
@@ -39,29 +39,47 @@ flowchart TD
     A[Wind turbines / PV fields] --> B
 
     subgraph GCP["Grid Connection Point substation"]
-        B[Plant collection point]
-        C[Step up transformer<br/>to 110 kV]
-        E[RTU<br/>telecontrol and supervision]
-        F[Local HMI<br/>status visualization]
-        G[Protection relays<br/>fault detection and isolation]
-        H[Serial device servers<br/>RS232 / RS485 to IP]
-        I[Primary / backup communication links<br/>including cellular router]
-        J[Integrated VPN concentrator<br/>and firewall<br/>remote service access and segmentation]
+
+        subgraph ELEC["Electrical path"]
+            B[Plant collection point<br/>MV switchgear / collection bus]
+            C[Step up transformer<br/>to 110 kV]
+        end
+
+        subgraph OT["OT supervision and control"]
+            P[Plant / facility systems<br/>generation asset controllers]
+            E[RTU<br/>telecontrol and supervision]
+            F[Local HMI<br/>status visualization]
+            G[Protection relays<br/>fault detection and isolation]
+            H[Serial device servers<br/>RS232 / RS485 to IP]
+        end
+
+        subgraph COMM["Communications and remote access"]
+            I[Primary / backup communication links<br/>including cellular router]
+            J[Integrated VPN concentrator<br/>and firewall<br/>remote service access and segmentation]
+        end
     end
 
     B --> C
     C --> D[Distribution grid / DSO]
 
-    E --> F
-    G --> E
-    E --> H
-    H --> I
-    J --> E
-    J --> F
-    J --> G
-    J --> H
+    A -. telemetry / status / control .-> P
+    B -. measurements / switching status .-> E
+    B -. protection signals .-> G
+    C -. electrical measurements .-> G
 
-    K[DSO SCADA / supervisory control] -->|DNP3.0 / IEC 101<br/>via serial links| H
+    P -. plant status / commands .-> E
+    G -. protection status / events .-> E
+    E --> F
+    E <--> H
+    H <--> I
+
+    J -->|remote service access| P
+    J -->|remote service access| E
+    J -->|remote service access| F
+    J -->|remote service access| G
+    J -->|remote service access| H
+
+    K[DSO SCADA / supervisory control] -->|DNP3.0 / IEC 101<br/>via communication and serial links| I
 
     classDef edge fill:#ffe6cc,stroke:#b45f06,stroke-width:1.5px;
     classDef ot fill:#d9ead3,stroke:#38761d,stroke-width:1.2px;
@@ -69,7 +87,7 @@ flowchart TD
     classDef ext fill:#d0e0e3,stroke:#134f5c,stroke-width:1.2px;
 
     class I,J edge;
-    class E,F,G,H ot;
+    class P,E,F,G,H ot;
     class B,C elec;
     class A,D,K ext;
 ```

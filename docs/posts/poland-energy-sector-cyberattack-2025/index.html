@@ -725,29 +725,47 @@ flowchart TD
     A[Wind turbines / PV fields] --&gt; B
 
     subgraph GCP["Grid Connection Point substation"]
-        B[Plant collection point]
-        C[Step up transformer&lt;br/&gt;to 110 kV]
-        E[RTU&lt;br/&gt;telecontrol and supervision]
-        F[Local HMI&lt;br/&gt;status visualization]
-        G[Protection relays&lt;br/&gt;fault detection and isolation]
-        H[Serial device servers&lt;br/&gt;RS232 / RS485 to IP]
-        I[Primary / backup communication links&lt;br/&gt;including cellular router]
-        J[Integrated VPN concentrator&lt;br/&gt;and firewall&lt;br/&gt;remote service access and segmentation]
+
+        subgraph ELEC["Electrical path"]
+            B[Plant collection point&lt;br/&gt;MV switchgear / collection bus]
+            C[Step up transformer&lt;br/&gt;to 110 kV]
+        end
+
+        subgraph OT["OT supervision and control"]
+            P[Plant / facility systems&lt;br/&gt;generation asset controllers]
+            E[RTU&lt;br/&gt;telecontrol and supervision]
+            F[Local HMI&lt;br/&gt;status visualization]
+            G[Protection relays&lt;br/&gt;fault detection and isolation]
+            H[Serial device servers&lt;br/&gt;RS232 / RS485 to IP]
+        end
+
+        subgraph COMM["Communications and remote access"]
+            I[Primary / backup communication links&lt;br/&gt;including cellular router]
+            J[Integrated VPN concentrator&lt;br/&gt;and firewall&lt;br/&gt;remote service access and segmentation]
+        end
     end
 
     B --&gt; C
     C --&gt; D[Distribution grid / DSO]
 
-    E --&gt; F
-    G --&gt; E
-    E --&gt; H
-    H --&gt; I
-    J --&gt; E
-    J --&gt; F
-    J --&gt; G
-    J --&gt; H
+    A -. telemetry / status / control .-&gt; P
+    B -. measurements / switching status .-&gt; E
+    B -. protection signals .-&gt; G
+    C -. electrical measurements .-&gt; G
 
-    K[DSO SCADA / supervisory control] --&gt;|DNP3.0 / IEC 101&lt;br/&gt;via serial links| H
+    P -. plant status / commands .-&gt; E
+    G -. protection status / events .-&gt; E
+    E --&gt; F
+    E &lt;--&gt; H
+    H &lt;--&gt; I
+
+    J --&gt;|remote service access| P
+    J --&gt;|remote service access| E
+    J --&gt;|remote service access| F
+    J --&gt;|remote service access| G
+    J --&gt;|remote service access| H
+
+    K[DSO SCADA / supervisory control] --&gt;|DNP3.0 / IEC 101&lt;br/&gt;via communication and serial links| I
 
     classDef edge fill:#ffe6cc,stroke:#b45f06,stroke-width:1.5px;
     classDef ot fill:#d9ead3,stroke:#38761d,stroke-width:1.2px;
@@ -755,14 +773,14 @@ flowchart TD
     classDef ext fill:#d0e0e3,stroke:#134f5c,stroke-width:1.2px;
 
     class I,J edge;
-    class E,F,G,H ot;
+    class P,E,F,G,H ot;
     class B,C elec;
     class A,D,K ext;
 </pre>
 </div>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-renewable-gcp-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: Simplified architecture of the attacked renewable plant and its grid connection point, showing the main electrical, OT, communications, and remote access components described by CERT Polska.
+Figure&nbsp;1: Simplified architecture of the attacked renewable plant and its grid connection point, showing the coupling between the electrical path, the OT supervision and control layer, communications links, and remote access components described by CERT Polska.
 </figcaption>
 </figure>
 </div>
