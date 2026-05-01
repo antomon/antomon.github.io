@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.16">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-04-30">
+<meta name="description" content="Digital sovereignty is usually discussed in terms of cloud platforms, data spaces, artificial intelligence, cybersecurity, and strategic autonomy. Yet every digital public service ultimately depends on a more fundamental layer: the infrastructure where source code is written, reviewed, stored, released, and maintained. This article analyses the Dutch government’s Forgejo-based code.overheid.nl platform as a concrete example of sovereign software-development infrastructure. Using only official Dutch government, European Union, and Forgejo documentation, it argues that a public-sector Git forge is not merely a developer tool but a control point in the software supply chain. The Dutch initiative matters because it operationalises open-source policy, public-code reuse, cyber resilience, interoperability, and European digital commons into a governed environment where public software can be produced under public control. For Europe, such platforms are not symbolic alternatives to commercial forges; they are foundational components of digital sovereignty.">
+
+<title>Code Sovereignty Starts with the Forge – Random Bits of Knowledge</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3ae586159be244f9b7da5612ca3882f5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-a197ee5f2d4eaaf2c66dc03ab5ac86cb.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Code Sovereignty Starts with the Forge – Random Bits of Knowledge">
+<meta property="og:description" content="Digital sovereignty is usually discussed in terms of cloud platforms, data spaces, artificial intelligence, cybersecurity, and strategic autonomy. Yet every digital public service ultimately depends on a more fundamental layer: the infrastructure where source code is written, reviewed, stored, released, and maintained. This article analyses the Dutch government’s Forgejo-based code.overheid.nl platform as a concrete example of sovereign software-development infrastructure. Using only official Dutch government, European Union, and Forgejo documentation, it argues that a public-sector Git forge is not merely a developer tool but a control point in the software supply chain. The Dutch initiative matters because it operationalises open-source policy, public-code reuse, cyber resilience, interoperability, and European digital commons into a governed environment where public software can be produced under public control. For Europe, such platforms are not symbolic alternatives to commercial forges; they are foundational components of digital sovereignty.">
+<meta property="og:image" content="https://antomon.github.io/posts/code-sovereignty-starts-with-the-forge/holland-code-sovereignty.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="Code Sovereignty Starts with the Forge – Random Bits of Knowledge">
+<meta name="twitter:description" content="Digital sovereignty is usually discussed in terms of cloud platforms, data spaces, artificial intelligence, cybersecurity, and strategic autonomy. Yet every digital public service ultimately depends on a more fundamental layer: the infrastructure where source code is written, reviewed, stored, released, and maintained. This article analyses the Dutch government’s Forgejo-based code.overheid.nl platform as a concrete example of sovereign software-development infrastructure. Using only official Dutch government, European Union, and Forgejo documentation, it argues that a public-sector Git forge is not merely a developer tool but a control point in the software supply chain. The Dutch initiative matters because it operationalises open-source policy, public-code reuse, cyber resilience, interoperability, and European digital commons into a governed environment where public software can be produced under public control. For Europe, such platforms are not symbolic alternatives to commercial forges; they are foundational components of digital sovereignty.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/code-sovereignty-starts-with-the-forge/holland-code-sovereignty.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Code Sovereignty Starts with the Forge</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Code Sovereignty Starts with the Forge</h1>
+            <p class="subtitle lead">Why the Dutch government’s Forgejo-based code platform matters for European digital sovereignty</p>
+                  <div>
+        <div class="description">
+          Digital sovereignty is usually discussed in terms of cloud platforms, data spaces, artificial intelligence, cybersecurity, and strategic autonomy. Yet every digital public service ultimately depends on a more fundamental layer: the infrastructure where source code is written, reviewed, stored, released, and maintained. This article analyses the Dutch government’s Forgejo-based code.overheid.nl platform as a concrete example of sovereign software-development infrastructure. Using only official Dutch government, European Union, and Forgejo documentation, it argues that a public-sector Git forge is not merely a developer tool but a control point in the software supply chain. The Dutch initiative matters because it operationalises open-source policy, public-code reuse, cyber resilience, interoperability, and European digital commons into a governed environment where public software can be produced under public control. For Europe, such platforms are not symbolic alternatives to commercial forges; they are foundational components of digital sovereignty.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">EU digital sovereignty</div>
+                <div class="quarto-category">software</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 30, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">April 30, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#the-basic-problem-public-software-needs-public-control" id="toc-the-basic-problem-public-software-needs-public-control" class="nav-link" data-scroll-target="#the-basic-problem-public-software-needs-public-control">The basic problem: public software needs public control</a></li>
+  <li><a href="#code.overheid.nl-what-the-dutch-platform-actually-is" id="toc-code.overheid.nl-what-the-dutch-platform-actually-is" class="nav-link" data-scroll-target="#code.overheid.nl-what-the-dutch-platform-actually-is"><code>code.overheid.nl</code>: what the Dutch platform actually is</a></li>
+  <li><a href="#why-forgejo-is-strategically-significant" id="toc-why-forgejo-is-strategically-significant" class="nav-link" data-scroll-target="#why-forgejo-is-strategically-significant">Why Forgejo is strategically significant</a></li>
+  <li><a href="#the-dutch-policy-context-open-unless" id="toc-the-dutch-policy-context-open-unless" class="nav-link" data-scroll-target="#the-dutch-policy-context-open-unless">The Dutch policy context: <em>open, unless</em></a></li>
+  <li><a href="#the-eu-policy-context-open-source-as-digital-autonomy" id="toc-the-eu-policy-context-open-source-as-digital-autonomy" class="nav-link" data-scroll-target="#the-eu-policy-context-open-source-as-digital-autonomy">The EU policy context: open source as digital autonomy</a></li>
+  <li><a href="#digital-commons-and-the-move-beyond-isolated-pilots" id="toc-digital-commons-and-the-move-beyond-isolated-pilots" class="nav-link" data-scroll-target="#digital-commons-and-the-move-beyond-isolated-pilots">Digital commons and the move beyond isolated pilots</a></li>
+  <li><a href="#cyber-resilience-starts-before-deployment" id="toc-cyber-resilience-starts-before-deployment" class="nav-link" data-scroll-target="#cyber-resilience-starts-before-deployment">Cyber resilience starts before deployment</a></li>
+  <li><a href="#why-this-is-sovereignty-infrastructure" id="toc-why-this-is-sovereignty-infrastructure" class="nav-link" data-scroll-target="#why-this-is-sovereignty-infrastructure">Why this is sovereignty infrastructure</a></li>
+  <li><a href="#architectural-implications-for-public-administrations" id="toc-architectural-implications-for-public-administrations" class="nav-link" data-scroll-target="#architectural-implications-for-public-administrations">Architectural implications for public administrations</a></li>
+  <li><a href="#risks-and-limits" id="toc-risks-and-limits" class="nav-link" data-scroll-target="#risks-and-limits">Risks and limits</a></li>
+  <li><a href="#why-this-matters-beyond-the-netherlands" id="toc-why-this-matters-beyond-the-netherlands" class="nav-link" data-scroll-target="#why-this-matters-beyond-the-netherlands">Why this matters beyond the Netherlands</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("holland-code-sovereignty.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>Digital sovereignty is usually discussed in terms of cloud platforms, data spaces, artificial intelligence, cybersecurity, and strategic autonomy. Yet every digital public service ultimately depends on a more fundamental layer: the infrastructure where source code is written, reviewed, stored, released, and maintained. This article analyses the Dutch government’s Forgejo-based code.overheid.nl platform as a concrete example of sovereign software-development infrastructure. Using only official Dutch government, European Union, and Forgejo documentation, it argues that a public-sector Git forge is not merely a developer tool but a control point in the software supply chain. The Dutch initiative matters because it operationalises open-source policy, public-code reuse, cyber resilience, interoperability, and European digital commons into a governed environment where public software can be produced under public control. For Europe, such platforms are not symbolic alternatives to commercial forges; they are foundational components of digital sovereignty.</p>
+</div>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Digital sovereignty is often discussed at the level of cloud, artificial intelligence, semiconductors, cybersecurity, or data spaces. Those layers are important, but they are not the first layer. Before a public administration can control an application, a platform, an AI service, or a digital public service, it must control the software production chain that creates, reviews, signs, stores, publishes, and maintains the source code.</p>
+<p>That is why the Dutch government’s <code>code.overheid.nl</code> initiative is more than a developer convenience. The official landing page describes it as a code platform for the Dutch government where public organisations develop source code together on a <strong>digital, sovereign, open source platform</strong>; it offers secure Git repositories, pull requests, issue tracking, and code reviews, and it is hosted on Dutch government infrastructure<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<p>From a first-principles perspective, source code is the executable memory of a modern state. <strong>If public services are implemented in software, then the place where that software is versioned, reviewed, integrated, and released is part of the state’s operational infrastructure</strong>. A government that depends structurally on an external proprietary forge for that function does not fully control the lifecycle of its own digital public services.</p>
+</section>
+<section id="the-basic-problem-public-software-needs-public-control" class="level2">
+<h2 class="anchored" data-anchor-id="the-basic-problem-public-software-needs-public-control">The basic problem: public software needs public control</h2>
+<p>A Git forge is not just a repository. It is the <strong>system of record for source code, contribution history, identities, access rights, pull requests, reviews, issues, automation hooks, releases, and sometimes CI/CD pipelines and software packages</strong>. In practice, it becomes the coordination layer through which public software is produced.</p>
+<p>The Dutch government developer portal states the problem directly: government open source software has historically been hosted on external Git forges that are not under government control, while hosting source code is a critical part of infrastructure because government must be able to trust how code and binaries are produced<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<p>The Netherlands is therefore addressing a <strong>dependency at the root of the software supply chain</strong>. If source code is hosted on infrastructure outside public control, then the administration remains dependent on an external platform’s licensing model, policy decisions, availability, jurisdictional exposure, identity system, integration roadmap, API compatibility, and business incentives. Even when the hosted code is open source, the forge itself may remain a dependency.</p>
+<p>This distinction is central. Publishing open source code on a proprietary platform increases transparency, but it does not by itself create sovereignty over the development infrastructure.</p>
+</section>
+<section id="code.overheid.nl-what-the-dutch-platform-actually-is" class="level2">
+<h2 class="anchored" data-anchor-id="code.overheid.nl-what-the-dutch-platform-actually-is"><code>code.overheid.nl</code>: what the Dutch platform actually is</h2>
+<p>The official Dutch code platform presents itself as a shared code platform for the Dutch government. It is designed for open source development, cross-government collaboration, reuse of existing solutions, and sovereign secure hosting on Dutch government infrastructure<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
+<p>The developer portal states that <code>code.overheid.nl</code> had its soft launch on 24 April 2026 and is a shared Git environment for government, built on Forgejo. It also states that the platform is in a pilot phase and is being built together with developers.</p>
+<p>This matters architecturally. The initiative is not only a publication catalogue; it is a working environment. A catalogue makes code discoverable after the fact. A <strong>forge changes how software is produced before release</strong>. It allows public organisations to converge on shared templates, shared pipelines, shared governance practices, shared review models, and shared reusable components.</p>
+<p>The Dutch OSS register already functions as a beta overview of open source repositories for the Dutch government, with metadata on repository status, software type, maintenance model, and <code>publiccode.yml</code> availability<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. A sovereign forge complements that catalogue by moving from discovery to controlled production.</p>
+</section>
+<section id="why-forgejo-is-strategically-significant" class="level2">
+<h2 class="anchored" data-anchor-id="why-forgejo-is-strategically-significant">Why Forgejo is strategically significant</h2>
+<p>Forgejo<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> describes itself as a self-hosted lightweight software forge, focused on security, scaling, federation, and privacy. Its official site explicitly presents it as a self-hosted alternative to GitHub and states that organisations can take back control of their software development process by self-hosting their projects.</p>
+<p>That is the core sovereignty property. A self-hosted forge allows the administration to control where code is stored, which identities access it, which security policies apply, which logs are retained, how backups are handled, how integrations are governed, and how the platform evolves.</p>
+<p>Forgejo’s official documentation<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> also shows that it supports the operational capabilities expected from a modern forge: repository management, pull requests, issues, access tokens, authentication, branch protection, package registries, webhooks, actions, runners, and installation options including binaries and Docker.</p>
+<p>This does not mean that Forgejo automatically solves every governance, security, scalability, or compliance issue. The platform must still be hardened, operated, monitored, backed up, patched, and integrated into identity, logging, vulnerability management, and release governance. But it changes the control model: the government becomes the operator of the forge, not merely a tenant of someone else’s developer platform.</p>
+</section>
+<section id="the-dutch-policy-context-open-unless" class="level2">
+<h2 class="anchored" data-anchor-id="the-dutch-policy-context-open-unless">The Dutch policy context: <em>open, unless</em></h2>
+<p>The Dutch initiative is not isolated. It fits into a broader national policy line. The Dutch government explains open source as software whose source code is freely available so that everyone can read, modify, and distribute it. It also states that the government called in 2020 for the source code of government software to be released as much as possible, under the principle <em>open, unless</em><a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a>.</p>
+<p>The implementation of the Open Data Directive in Dutch law further strengthens this principle. The Dutch government states that software made or commissioned by government should be open source as much as possible, that source code is government information, and that public-sector source code should be made suitable for reuse where possible, preferably under the EUPL licence<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a>.</p>
+<p>The key point is that open source is no longer only a cultural preference or a developer habit. It is becoming part of public-sector information governance. If code is government information and must be reusable where possible, then the state needs infrastructure capable of managing that code as public infrastructure.</p>
+<p>A sovereign Git forge is therefore the operational counterpart of <em>open, unless</em>. Without a controlled development platform, the policy remains dependent on fragmented external hosting practices.</p>
+</section>
+<section id="the-eu-policy-context-open-source-as-digital-autonomy" class="level2">
+<h2 class="anchored" data-anchor-id="the-eu-policy-context-open-source-as-digital-autonomy">The EU policy context: open source as digital autonomy</h2>
+<p>The European Commission’s Open Source Software Strategy 2020–2023 states that open source contributes to the Commission’s digital strategy and to the Digital Europe programme. It promotes sharing and reuse of software solutions, knowledge, and expertise to deliver better European services and lower costs. Its stated objectives include progressing towards Europe’s digital autonomy, encouraging sharing and reuse, sharing the Commission’s source code, and building a world-class public service<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a>.</p>
+<p>This gives the Dutch initiative European significance. A national forge is not merely a national IT tool. It is a building block in a European pattern: <strong>public administrations need reusable, inspectable, collaboratively developed software components that can travel across borders without forcing other administrations into the same proprietary dependency chain</strong>.</p>
+<p>The Interoperable Europe Act points in the same direction. The official Interoperable Europe Portal states that the Act aims to remove legal, organisational, semantic, and technical obstacles and to create a <em>network of networks</em> of sovereign, interconnected public administrations across the EU. It also emphasises sharing and reuse of interoperability solutions through the Interoperable Europe Portal<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a>.</p>
+<p>A sovereign code forge is one of the practical mechanisms through which that <em>network of networks</em> can become real. Interoperability is not only about APIs and data formats. It is also about the <strong>ability of public administrations to co-develop, inspect, fork, adapt, and maintain the software components that implement those APIs and public services</strong>.</p>
+</section>
+<section id="digital-commons-and-the-move-beyond-isolated-pilots" class="level2">
+<h2 class="anchored" data-anchor-id="digital-commons-and-the-move-beyond-isolated-pilots">Digital commons and the move beyond isolated pilots</h2>
+<p>The EU Digital Commons EDIC was launched to strengthen European digital sovereignty by coordinating national efforts to develop open, interoperable, reusable digital solutions shared across borders. The Commission states that the initiative brings together France, Germany, the Netherlands, and Italy, and that it is designed to move from isolated pilots to shared, scalable digital infrastructure<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a>.</p>
+<p>This is precisely the category in which a public-sector forge belongs. If every administration publishes code in a fragmented way, Europe gets visibility but not necessarily reuse. If administrations converge on shared governance, metadata, licensing, security practices, and federation patterns, Europe gets the basis for digital commons.</p>
+<p>The Dutch platform is therefore important because it operationalises a missing layer: not only <em>publish public code</em>, but <em>produce public code in an environment aligned with public control, reuse, and cross-government collaboration</em>.</p>
+</section>
+<section id="cyber-resilience-starts-before-deployment" class="level2">
+<h2 class="anchored" data-anchor-id="cyber-resilience-starts-before-deployment">Cyber resilience starts before deployment</h2>
+<p>The Cyber Resilience Act gives further strategic weight to the issue. The Commission states that free and open-source software has a central role in the cybersecurity of products with digital elements and in the EU economy. It also introduces the notion of open-source software stewards, who support the sustained development and viability of open-source software intended for commercial activities, with obligations such as secure development policy and vulnerability handling<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a>.</p>
+<p>This matters because the security of public software cannot be reduced to penetration testing after deployment. It begins in the forge: identity governance, branch protection, peer review, signed commits, dependency review, SBOM generation, vulnerability management, release traceability, reproducible build practices, and incident response workflows.</p>
+<p>A sovereign forge does not eliminate software supply-chain risk, it makes that <strong>risk governable</strong>. The administration can define mandatory controls, enforce minimum workflows, integrate national standards, and collect audit evidence without waiting for the policy surface exposed by an external platform.</p>
+</section>
+<section id="why-this-is-sovereignty-infrastructure" class="level2">
+<h2 class="anchored" data-anchor-id="why-this-is-sovereignty-infrastructure">Why this is sovereignty infrastructure</h2>
+<p>The argument can be reduced to a few hard premises.</p>
+<p>First, public services increasingly execute through software. Second, software behaviour is determined by source code, dependencies, build systems, configuration, secrets, deployment pipelines, and runtime infrastructure. Third, the forge is where source code and much of the associated governance metadata are created, reviewed, stored, and released. Fourth, control over a digital public service is incomplete if the public authority does not control the infrastructure that governs its code lifecycle.</p>
+<p>From those premises, the conclusion follows: a government code forge is not a peripheral developer tool. It is part of sovereign digital infrastructure.</p>
+<p>This does not imply autarky. Europe should not isolate itself from global open source communities. The stronger position is controlled openness: publish code, reuse code, contribute upstream, federate where useful, but avoid structural dependence on a small number of external platforms for the production of public-sector software.</p>
+<p>The European Commission’s Digital Commons EDIC language is aligned with that logic: it frames digital commons as a way to reduce dependency on a small number of global platforms and to provide real digital choice based on European values.</p>
+</section>
+<section id="architectural-implications-for-public-administrations" class="level2">
+<h2 class="anchored" data-anchor-id="architectural-implications-for-public-administrations">Architectural implications for public administrations</h2>
+<p>A public-sector forge should not be treated as a simple hosting migration. It should be designed as a governed software production platform.</p>
+<p>At minimum, the operating model should include:</p>
+<ol type="1">
+<li>identity integration with government-controlled IAM;</li>
+<li>mandatory MFA and privileged-access governance;</li>
+<li>branch protection and mandatory peer review;</li>
+<li>signed commits or equivalent provenance controls for critical repositories;</li>
+<li>dependency and vulnerability scanning;</li>
+<li>SBOM generation for released software;</li>
+<li>controlled CI/CD runners, with separation between trusted and untrusted workloads;</li>
+<li>audit logging and retention aligned with public-sector accountability;</li>
+<li>backup, disaster recovery, and exit procedures;</li>
+<li>standard repository metadata, preferably aligned with <code>publiccode.yml</code>;</li>
+<li>licence governance, with EUPL or other approved open-source licences where appropriate;</li>
+<li>documented contribution models for inter-administration and external community participation.</li>
+</ol>
+<p>The important design principle is that sovereignty is not achieved by merely installing Forgejo. It is achieved when the forge becomes the controlled trust anchor of the public software lifecycle.</p>
+</section>
+<section id="risks-and-limits" class="level2">
+<h2 class="anchored" data-anchor-id="risks-and-limits">Risks and limits</h2>
+<p>The initiative also has risks.</p>
+<p>The first risk is symbolic sovereignty: creating a national forge but continuing to develop critical code elsewhere because developer experience, tooling, automation, or support are insufficient. That would create a public façade rather than a real operational shift.</p>
+<p>The second risk is fragmentation. If every administration creates its own isolated forge without federation, shared metadata, shared licensing practices, and shared discovery mechanisms, the result may be many sovereign islands rather than a reusable public software ecosystem.</p>
+<p>The third risk is underfunded maintenance. Open source does not remove the need for sustained engineering. It shifts the investment from licence rent to capability, maintenance, security, community governance, and long-term stewardship.</p>
+<p>The fourth risk is confusing self-hosting with security. Self-hosting increases control, but it also increases responsibility. A poorly operated sovereign forge can be less secure than a mature external platform. The decisive variable is not ownership alone; it is governed operational capability.</p>
+</section>
+<section id="why-this-matters-beyond-the-netherlands" class="level2">
+<h2 class="anchored" data-anchor-id="why-this-matters-beyond-the-netherlands">Why this matters beyond the Netherlands</h2>
+<p>The Dutch initiative is relevant to the whole EU because it demonstrates a concrete path from policy language to infrastructure.</p>
+<p>Europe already has policy objectives around digital autonomy, interoperability, open source, cyber resilience, and digital commons. The missing step is often operational: where do administrations actually collaborate on code, under what governance model, with what security controls, and with what long-term stewardship?</p>
+<p><code>code.overheid.nl</code> answers that question at national level. If connected to EU-level catalogues, interoperability initiatives, and digital commons structures, such platforms can become part of a European public software fabric.</p>
+<p>That fabric would not replace global open source. It would strengthen Europe’s position inside it. European administrations could contribute more systematically, reuse more effectively, reduce duplicated procurement, and keep strategic control over critical public-sector software assets.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The strategic importance of <code>code.overheid.nl</code> is not that the Netherlands has created another Git hosting site. The important point is that a government has recognised the forge as sovereign infrastructure.</p>
+<p><strong>A state that cannot control its software production chain cannot fully control its digital public services</strong>. A Europe that cannot share, inspect, adapt, and maintain public-sector software through governed open infrastructures will remain dependent on external platforms even when the code itself is open.</p>
+<p>The Dutch Forgejo-based code platform is therefore best understood as a practical sovereignty primitive. It connects <em>open, unless</em> policy, public code reuse, supply-chain security, digital commons, and European interoperability into one operational layer: the place where public software is actually built.</p>
+<p>For EU digital sovereignty, that layer is not optional. It is foundational.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/">
+<img class="see-also-card-image" src="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/cve-program.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Reclaiming the Namespace: EU Digital Sovereignty in the CVE Ecosystem?</h5>
+<div class="see-also-card-subtitle">Rebalancing coordination and autonomy: EU digital sovereignty, federated CVE governance, and the conditions for sustainable economic growth</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/french-state-goes-machine-readable-through-an-ai-layer/">
+<img class="see-also-card-image" src="../../posts/french-state-goes-machine-readable-through-an-ai-layer/marianne-mcp.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The French state becomes machine readable through an AI layer</h5>
+<div class="see-also-card-subtitle">Inside the data.gouv.fr MCP server and the new interface stack for public data</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/frances-linux-desktop-turn-and-the-european-logic-of-digital-sovereignty/">
+<img class="see-also-card-image" src="../../posts/frances-linux-desktop-turn-and-the-european-logic-of-digital-sovereignty/marianne-tux.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">France’s Linux Desktop Turn and the European Logic of Digital Sovereignty</h5>
+<div class="see-also-card-subtitle">From a French workstation migration signal to the broader European effort to regain control over critical digital infrastructure</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The official Dutch government code platform <code>code.overheid.nl</code> presents itself as the government-wide code platform for public organisations in the Netherlands. It describes the platform as a sovereign, open-source environment for collaboration on government source code, including Git repositories, pull requests, issue tracking, and code review. <a href="https://code.overheid.nl/">Website</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>This official Dutch government <a href="https://developer.overheid.nl/blog/2025/11/11/git-forge-overheid">developer article</a> explains why government source code should not depend structurally on external Git forges outside government control. It frames source-code hosting as a critical infrastructure layer for trustworthy software production and recommends a government-controlled Git forge.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>This official Dutch government <a href="https://developer.overheid.nl/blog/2026/04/24/we-gaan-samen-code-overheid-bouwen">developer article</a> announces the collaborative construction of <code>code.overheid.nl</code>. It explains that the platform is being built as a shared Git environment for government, based on Forgejo, and positioned as part of a broader move toward sovereign public-sector software development infrastructure.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>The Dutch government <a href="https://oss.developer.overheid.nl/">OSS register</a> provides an overview of open-source repositories associated with Dutch public organisations. It supports discoverability, reuse, and transparency by cataloguing government software projects and related metadata.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>The official <a href="https://forgejo.org/">Forgejo website</a> describes Forgejo as a self-hosted software forge designed to let organisations control their own software development process. This is relevant because self-hosting changes the governance model of the repository from external platform dependency to direct operational control.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>The official <a href="https://forgejo.org/docs/latest/admin/installation/">Forgejo installation documentation</a> describes the deployment options and administrative setup of Forgejo. It is relevant for understanding that the platform is not merely a repository interface, but an operable software-forge stack that can be hosted and governed by the adopting organisation.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>This official <a href="https://www.rijksoverheid.nl/onderwerpen/digitale-overheid/open-overheid">Dutch government page</a> explains the broader Dutch open-government context, including transparency, openness, and the publication of government information. It provides policy background for treating government source code as public information where publication and reuse are appropriate.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>This official <a href="https://www.rijksoverheid.nl/actueel/nieuws/2024/06/24/inwerkingtreding-wet-implementatie-open-data-richtlijn">Dutch government notice</a> explains the entry into force of the Dutch law implementing the EU Open Data Directive. It is the relevant source for the claim that software made or commissioned by government should, where possible, be published as open source, that source code is treated as government information, and that public-sector source code should be made suitable for reuse, preferably under the European Union Public Licence (EUPL).<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>The European Commission’s official <a href="https://commission.europa.eu/about/departments-and-executive-agencies/digital-services/open-source-software-strategy_en">open-source software strategy</a> explains how open source contributes to the Commission’s digital strategy, software reuse, knowledge sharing, cost reduction, and Europe’s digital autonomy. It provides the EU-level policy basis for connecting public-sector open source with digital sovereignty.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>The official <a href="https://interoperable-europe.ec.europa.eu/interoperable-europe/interoperable-europe-act">Interoperable Europe Act page</a> explains the EU framework for cross-border interoperability among public administrations. It is relevant because sovereign software repositories can support reuse, shared solutions, and technical interoperability across European public-sector organisations.<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>This official <a href="https://digital-strategy.ec.europa.eu/en/news/digital-commons-edic-launches-advance-europes-technological-sovereignty">European Commission announcement</a> describes the launch of the Digital Commons EDIC to advance European technological sovereignty through shared, interoperable, reusable digital solutions. It is relevant because public-sector code repositories can function as operational infrastructure for European digital commons.<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>This official <a href="https://digital-strategy.ec.europa.eu/en/policies/cra-open-source">European Commission page</a> explains how the Cyber Resilience Act relates to open-source software. It is relevant because it connects open-source software, secure development practices, vulnerability handling, and software supply-chain responsibility—issues that are directly affected by how public-sector repositories and forges are governed.<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
