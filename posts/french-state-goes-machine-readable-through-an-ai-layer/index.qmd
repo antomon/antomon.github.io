@@ -20,40 +20,31 @@ The importance of that design becomes even clearer when one considers the scale 
 
 This article is therefore about more than one protocol. Its purpose is to examine a **shift in public digital infrastructure**. The French state, through data.gouv.fr, is not simply publishing datasets in bulk. It is beginning to **expose them through a machine legible conversational interface**, making a very large public data corpus directly addressable by AI agents.[^french-state-goes-machine-readable-through-an-ai-layer-6] The article will first explain what MCP is and what it is for, then analyze the French implementation itself, and finally study the code of the public repository to understand what the server actually exposes, how users can leverage it, and what architectural choices the implementation reveals.
 
-[^french-state-goes-machine-readable-through-an-ai-layer-1]:
-See the official announcement of the experimental MCP server on data.gouv.fr: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
+[^french-state-goes-machine-readable-through-an-ai-layer-1]: See the official announcement of the experimental MCP server on data.gouv.fr: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-2]:
-The official announcement states that data.gouv.fr is experimenting with an MCP server, presents the initiative as exploratory, and specifies that the server is read only at this stage: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
+[^french-state-goes-machine-readable-through-an-ai-layer-2]: The official announcement states that data.gouv.fr is experimenting with an MCP server, presents the initiative as exploratory, and specifies that the server is read only at this stage: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-3]:
-The official announcement explains that the goal is to facilitate the use of public data by AI chatbots through a standardized protocol rather than multiplying bespoke integrations: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
+[^french-state-goes-machine-readable-through-an-ai-layer-3]: The official announcement explains that the goal is to facilitate the use of public data by AI chatbots through a standardized protocol rather than multiplying bespoke integrations: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-4]:
-Official datasets catalog on data.gouv.fr, showing the current number of datasets: [Jeux de données sur data.gouv.fr](https://www.data.gouv.fr/datasets)
+[^french-state-goes-machine-readable-through-an-ai-layer-4]: Official datasets catalog on data.gouv.fr, showing the current number of datasets: [Jeux de données sur data.gouv.fr](https://www.data.gouv.fr/datasets)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-5]:
-The official announcement frames the MCP server as an experiment to facilitate access to public data by AI chatbots while remaining attentive to the limits of the approach: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
+[^french-state-goes-machine-readable-through-an-ai-layer-5]: The official announcement frames the MCP server as an experiment to facilitate access to public data by AI chatbots while remaining attentive to the limits of the approach: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-6]:
-For the official framing of the MCP server as an experimental interface for public data access, see: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv). For the scale of the underlying public data corpus, see the official datasets catalog: [Jeux de données sur data.gouv.fr](https://www.data.gouv.fr/datasets)
+[^french-state-goes-machine-readable-through-an-ai-layer-6]: For the official framing of the MCP server as an experimental interface for public data access, see: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv). For the scale of the underlying public data corpus, see the official datasets catalog: [Jeux de données sur data.gouv.fr](https://www.data.gouv.fr/datasets)
 
 ## MCP 101
 
-To understand why the French initiative matters, one first needs a minimal understanding of **MCP**, the **Model Context Protocol**. MCP was originally introduced by **Anthropic** in November 2024 as an open standard for connecting AI applications to external systems, and it is now documented as an open protocol for linking language model clients to tools, data sources, and workflows.[^french-state-goes-machine-readable-through-an-ai-layer-7] In concrete terms, it gives an AI assistant a standardized way to access data sources, call tools, and use structured workflows, instead of relying only on whatever text happened to be inside its training data or current prompt. The protocol has also been adopted well beyond Anthropic’s own ecosystem: **OpenAI** documents MCP support in its API, Apps SDK, and Codex tooling, while **GitHub** documents MCP support in GitHub Copilot and the GitHub MCP Server.[^french-state-goes-machine-readable-through-an-ai-layer-97] Its governance has also broadened. In late 2025, Anthropic donated MCP to the **Agentic AI Foundation**, a directed fund under the **Linux Foundation**, so that the protocol could evolve under more neutral, multi company stewardship rather than remaining tied to a single vendor.[^french-state-goes-machine-readable-through-an-ai-layer-98] This matters because it shows that MCP is not merely a vendor specific experiment, but an increasingly accepted interaction standard across major AI platforms and a protocol now embedded in a broader open governance structure.
+To understand why the French initiative matters, one first needs a minimal understanding of **MCP**, the **Model Context Protocol**.[^french-state-goes-machine-readable-through-an-ai-layer-MCPintro] MCP was originally introduced by **Anthropic** in November 2024 as an open standard for connecting AI applications to external systems, and it is now documented as an open protocol for linking language model clients to tools, data sources, and workflows.[^french-state-goes-machine-readable-through-an-ai-layer-MCPAnthropic] In concrete terms, it gives an AI assistant a standardized way to access data sources, call tools, and use structured workflows, instead of relying only on whatever text happened to be inside its training data or current prompt. The protocol has also been adopted well beyond Anthropic’s own ecosystem: **OpenAI** documents MCP support in its API, Apps SDK, and Codex tooling, while **GitHub** documents MCP support in GitHub Copilot and the GitHub MCP Server.[^french-state-goes-machine-readable-through-an-ai-layer-97] Its governance has also broadened. In late 2025, Anthropic donated MCP to the **Agentic AI Foundation**, a directed fund under the **Linux Foundation**, so that the protocol could evolve under more neutral, multi company stewardship rather than remaining tied to a single vendor.[^french-state-goes-machine-readable-through-an-ai-layer-98] This matters because it shows that MCP is not merely a vendor specific experiment, but an increasingly accepted interaction standard across major AI platforms and a protocol now embedded in a broader open governance structure.
 
-[^french-state-goes-machine-readable-through-an-ai-layer-7]:
-Anthropic introduced the Model Context Protocol in November 2024: [Introducing the Model Context Protocol](https://www.anthropic.com/news/model-context-protocol). The official MCP documentation defines it as an open standard for connecting AI applications to external systems: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
+[^french-state-goes-machine-readable-through-an-ai-layer-MCPAnthropic]: Anthropic introduced the Model Context Protocol in November 2024: [Introducing the Model Context Protocol](https://www.anthropic.com/news/model-context-protocol). The official MCP documentation defines it as an open standard for connecting AI applications to external systems: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-97]:
-For OpenAI support, see the official documentation for MCP in the API, Apps SDK, and Codex: [MCP and Connectors](https://developers.openai.com/api/docs/guides/tools-connectors-mcp), [MCP](https://developers.openai.com/apps-sdk/concepts/mcp-server), [Model Context Protocol](https://developers.openai.com/codex/mcp). For GitHub support, see the official GitHub Copilot documentation: [About Model Context Protocol (MCP)](https://docs.github.com/en/copilot/concepts/context/mcp), [Using the GitHub MCP Server in your IDE](https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/use-the-github-mcp-server)
+[^french-state-goes-machine-readable-through-an-ai-layer-97]: For OpenAI support, see the official documentation for MCP in the API, Apps SDK, and Codex: [MCP and connectors](https://developers.openai.com/api/docs/guides/tools-connectors-mcp), [MCP server](https://developers.openai.com/apps-sdk/concepts/mcp-server), [Model Context Protocol](https://developers.openai.com/codex/mcp). For GitHub support, see the official GitHub Copilot documentation: [Model Context Protocol](https://docs.github.com/en/copilot/concepts/context/mcp), [Using the GitHub MCP Server in your IDE](https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/use-the-github-mcp-server)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-98]:
-Anthropic announced that it was donating MCP to the Agentic AI Foundation under the Linux Foundation: [Donating the Model Context Protocol and establishing the Agentic AI Foundation](https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation). The MCP project documentation also describes MCP as having grown into a multi company open standard under the Linux Foundation: [Roadmap](https://modelcontextprotocol.io/development/roadmap)
+[^french-state-goes-machine-readable-through-an-ai-layer-98]: Anthropic announced that it was donating MCP to the Agentic AI Foundation under the Linux Foundation: [Donating the Model Context Protocol and establishing the Agentic AI Foundation](https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation). The MCP project documentation also describes MCP as having grown into a multi company open standard under the Linux Foundation: [Roadmap](https://modelcontextprotocol.io/development/roadmap)
 
-At first principles level, the problem is simple. A language model can generate text, but by itself it does not inherently know how to inspect a database, search a public data catalog, call a calculator, read a local file, or interact with an external service in a disciplined way. Every such capability normally requires a custom integration. MCP exists to reduce that fragmentation. It defines a common protocol through which an AI application can connect to an external system and discover what that system makes available.[^french-state-goes-machine-readable-through-an-ai-layer-8]
+At first principles level, the problem is simple. A language model can generate text, but by itself it does not inherently know how to inspect a database, search a public data catalog, call a calculator, read a local file, or interact with an external service in a disciplined way. Every such capability normally requires a custom integration. MCP exists to reduce that fragmentation. It defines a common protocol through which an AI application can connect to an external system and discover what that system makes available.
 
-The official introduction uses a useful analogy: **MCP is like a USB C port for AI applications**. Just as USB C gives many different devices a standardized way to connect, MCP gives many different AI clients a standardized way to connect to external tools and data sources. The value of the analogy is architectural. The point is not intelligence by itself. The point is interoperability. A data provider does not need to build a different bespoke connector for every AI client. Instead, it can expose one MCP server, and any compatible client can potentially use it.[^french-state-goes-machine-readable-through-an-ai-layer-9]
+The official introduction uses a useful analogy: **MCP is like a USB C port for AI applications**. Just as USB C gives many different devices a standardized way to connect, MCP gives many different AI clients a standardized way to connect to external tools and data sources. The value of the analogy is architectural. The point is not intelligence by itself. The point is interoperability. A data provider does not need to build a different bespoke connector for every AI client. Instead, it can expose one MCP server, and any compatible client can potentially use it.
 
 The protocol distinguishes three main roles. There is the **host**, which is the AI application the user is actually interacting with. There is the **client**, which is the connector component inside that host. And there is the **server**, which exposes context and capabilities to the host. The official specification says MCP uses **JSON RPC 2.0** messages for this communication. So, at a very practical level, MCP is not magic. It is a structured request and response protocol that lets an AI host discover what an external system offers and then invoke those capabilities in a standardized way.[^french-state-goes-machine-readable-through-an-ai-layer-10]
 
@@ -67,53 +58,35 @@ For non specialists, the most important concepts are only three: **tools**, **re
 
 This distinction is important because it shows that MCP is broader than _tool calling_. It can expose actions, context, and reusable interaction patterns. That is why the protocol is relevant for public digital infrastructure. A government platform may want an AI system not only to call an endpoint, but also to retrieve authoritative public information and to do so through a predictable interaction model.[^french-state-goes-machine-readable-through-an-ai-layer-15]
 
-Why does this matter in practice? The official MCP documentation gives a straightforward answer. For developers, MCP reduces the effort of integrating external systems into AI applications. For AI applications, it expands what they can do by giving them access to tools and data beyond their base model. For end users, it means assistants can become more useful because they are no longer restricted to generic text generation. They can access relevant systems directly when permitted.[^french-state-goes-machine-readable-through-an-ai-layer-16]
+Why does this matter in practice? The official MCP documentation gives a straightforward answer. For developers, MCP reduces the effort of integrating external systems into AI applications. For AI applications, it expands what they can do by giving them access to tools and data beyond their base model. For end users, it means assistants can become more useful because they are no longer restricted to generic text generation. They can access relevant systems directly when permitted.
 
 This is exactly the background needed to understand the French experiment. The novelty is not that France has public data. Many governments already publish large quantities of public data. The novelty is that France is starting to expose that data through an MCP server, meaning through a standardized interface designed for AI mediated access rather than only for human browsing or traditional software integration. Instead of asking each assistant vendor to invent its own connector to the French open data platform, the platform can expose a common interface once and let multiple compatible clients use it. That is the infrastructural logic behind the initiative.[^french-state-goes-machine-readable-through-an-ai-layer-17]
 
 There is also an important limit. MCP does not make an AI system automatically correct, authoritative, or safe. It merely gives it a standardized way to obtain external context and invoke external capabilities. The quality of the result still depends on the design of the server, the quality of the underlying data, the behavior of the client, and the reasoning of the model itself. MCP improves connectivity and structure. It does not eliminate the need for verification. That point is especially important when the connected system is a public data platform, where the difference between access and correct interpretation remains substantial. This caution is consistent with the official architecture and specification, which define communication mechanisms and capability exposure, not epistemic guarantees about model outputs.[^french-state-goes-machine-readable-through-an-ai-layer-18]
 
-[^french-state-goes-machine-readable-through-an-ai-layer-7]:
-Official MCP introduction: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
+[^french-state-goes-machine-readable-through-an-ai-layer-MCPintro]:  Official MCP introduction explaining the purpose of a standard way to connect AI systems to tools and data sources: [Model Context Protocol introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-8]:
-Official MCP introduction explaining the purpose of a standard way to connect AI systems to tools and data sources: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
+[^french-state-goes-machine-readable-through-an-ai-layer-10]: Official MCP specification describing architecture and use of JSON RPC 2.0: [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-9]:
-The official MCP introduction uses the USB C analogy to explain interoperability across AI applications and external systems: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
+[^french-state-goes-machine-readable-through-an-ai-layer-11]: Overview of MCP server features in the official specification and documentation: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-10]:
-Official MCP specification describing architecture and use of JSON RPC 2.0: [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/)
+[^french-state-goes-machine-readable-through-an-ai-layer-12]: Official MCP tools specification: [Tools](https://modelcontextprotocol.io/specification/latest/server/tools). For examples from the French implementation, see the official repository: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-11]:
-Overview of MCP server features in the official specification and documentation: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
+[^french-state-goes-machine-readable-through-an-ai-layer-13]: Official MCP resources specification: [Resources](https://modelcontextprotocol.io/specification/latest/server/resources)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-12]:
-Official MCP tools specification: [Tools](https://modelcontextprotocol.io/specification/latest/server/tools). For examples from the French implementation, see the official repository: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-14]: Official MCP prompts specification: [Prompts](https://modelcontextprotocol.io/specification/latest/server/prompts)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-13]:
-Official MCP resources specification: [Resources](https://modelcontextprotocol.io/specification/latest/server/resources)
+[^french-state-goes-machine-readable-through-an-ai-layer-15]: The official MCP documentation and specification show that the protocol covers more than tool invocation, including resources and prompts: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro), [Resources](https://modelcontextprotocol.io/specification/latest/server/resources), [Prompts](https://modelcontextprotocol.io/specification/latest/server/prompts)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-14]:
-Official MCP prompts specification: [Prompts](https://modelcontextprotocol.io/specification/latest/server/prompts)
+[^french-state-goes-machine-readable-through-an-ai-layer-17]: For the official French framing of the MCP server as a standardized AI facing interface for public data, see: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-15]:
-The official MCP documentation and specification show that the protocol covers more than tool invocation, including resources and prompts: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro), [Resources](https://modelcontextprotocol.io/specification/latest/server/resources), [Prompts](https://modelcontextprotocol.io/specification/latest/server/prompts)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-16]:
-Official MCP introduction on the value of the protocol for developers and AI applications: [Model Context Protocol Introduction](https://modelcontextprotocol.io/docs/getting-started/intro)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-17]:
-For the official French framing of the MCP server as a standardized AI facing interface for public data, see: [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-18]:
-The official MCP specification defines protocol structure and server capabilities, not truth guarantees about model outputs: [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/)
+[^french-state-goes-machine-readable-through-an-ai-layer-18]: The official MCP specification defines protocol structure and server capabilities, not truth guarantees about model outputs: [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/)
 
 ## How to use the data.gouv.fr MCP server
 
 From the user perspective, the official data.gouv.fr MCP server is meant to be used through an MCP compatible client, not by manually sending protocol messages. The repository states this very clearly: the recommended option is to use the hosted public endpoint at `https://mcp.data.gouv.fr/mcp`, which is available without access restrictions, and then connect a compatible chatbot or coding assistant to it. The repository explicitly mentions clients such as Claude, ChatGPT, and Gemini, and provides configuration instructions for a larger list that also includes Cursor, Claude Desktop, Claude Code, Le Chat, VS Code, Windsurf, AnythingLLM, HuggingChat, IBM Bob, Kiro, OpenCode, and others.[^french-state-goes-machine-readable-through-an-ai-layer-19]
 
-The first practical point is that the repository recommends the hosted endpoint rather than self hosting for ordinary usage. Its wording is direct: use the hosted endpoint `https://mcp.data.gouv.fr/mcp`, and only substitute your own URL if you choose to self host the server. That means the basic usage model is very simple. The user selects an MCP capable application, adds the data.gouv.fr endpoint using the configuration format expected by that application, and then starts interacting with public data through natural language.[^french-state-goes-machine-readable-through-an-ai-layer-20]
+The first practical point is that the repository recommends the hosted endpoint rather than self hosting for ordinary usage. Its wording is direct: use the hosted endpoint `https://mcp.data.gouv.fr/mcp`, and only substitute your own URL if you choose to self host the server. That means the basic usage model is very simple. The user selects an MCP capable application, adds the data.gouv.fr endpoint using the configuration format expected by that application, and then starts interacting with public data through natural language.
 
 The repository’s ChatGPT instructions are unusually concrete. It says the connector is available only on paid plans, specifically Plus, Pro, Team, and Enterprise. The documented path is to open `Settings`, then `Apps and connectors`, then `Advanced settings` to enable Developer mode, and finally return to `Settings` and `Connectors` to add a new connector whose URL is `https://mcp.data.gouv.fr/mcp`. Once saved, the tools become available inside ChatGPT.[^french-state-goes-machine-readable-through-an-ai-layer-21]
 
@@ -121,7 +94,7 @@ For Cursor, the repository explains that MCP servers can be added through Cursor
 
 The repository also documents setup for clients oriented toward broader public use rather than only developer environments. For Le Chat by Mistral, it says the feature is available on all plans including free, and the steps are to go to `Intelligence`, then `Connectors`, then add a `Custom MCP Connector`, give it a name, set the URL to `https://mcp.data.gouv.fr/mcp`, leave authentication disabled, and create it. For HuggingChat, the instructions are to open the MCP server manager from the plus icon, add a server, provide the URL, and then run a health check so that the server shows as connected and the toggle can be activated for use in chat.[^french-state-goes-machine-readable-through-an-ai-layer-23]
 
-Once the connector is configured, the user does not normally need to think about MCP again. The interaction becomes conversational. The repository explains the expected usage through examples such as asking what datasets are available on housing prices or asking to show the latest population data for Paris. This is an important detail: the server is not designed as a generic chat endpoint but as a structured bridge between natural language requests and the public data operations exposed by the tools.[^french-state-goes-machine-readable-through-an-ai-layer-24]
+Once the connector is configured, the user does not normally need to think about MCP again. The interaction becomes conversational. The repository explains the expected usage through examples such as asking what datasets are available on housing prices or asking to show the latest population data for Paris. This is an important detail: the server is not designed as a generic chat endpoint but as a structured bridge between natural language requests and the public data operations exposed by the tools.
 
 The repository then describes the available tools. On the dataset side, the server exposes `search_datasets`, `get_dataset_info`, `list_dataset_resources`, `get_resource_info`, and `query_resource_data`. The repository explains each of them in operational terms. `search_datasets` searches datasets by keywords and returns metadata such as title, description, organization, tags, and resource count. `get_dataset_info` retrieves detailed information on a specific dataset. `list_dataset_resources` enumerates the files attached to a dataset, including metadata such as format, size, type, and URL. `get_resource_info` retrieves detailed information about a resource, including its MIME type, URL, dataset association, and whether the Tabular API is available. `query_resource_data` then queries a specific resource through the Tabular API in order to fetch rows and answer questions over the data.[^french-state-goes-machine-readable-through-an-ai-layer-25]
 
@@ -131,50 +104,31 @@ The server also exposes a second family of functions for **dataservices**, which
 
 A further documented capability is `get_metrics`. The repository says this tool returns monthly statistics including visits and downloads, sorted by month in descending order, and that at least one of `dataset_id` or `resource_id` must be provided. It also states an operational limit that matters for users and deployers alike: this tool works only against the production environment because the Metrics API does not exist in demo or preproduction.[^french-state-goes-machine-readable-through-an-ai-layer-28]
 
-For users who want to run the server themselves, the repository also documents local execution. It recommends Docker, with `docker compose up -d` as the default startup command. The documented environment variables include `MCP_HOST`, `MCP_PORT`, `MCP_ENV`, `DATAGOUV_API_ENV`, and `LOG_LEVEL`. The repository notes that `DATAGOUV_API_ENV` can target either production or demo data.gouv.fr, and that binding to `127.0.0.1` instead of `0.0.0.0` is preferable for local development from an MCP security standpoint. Once running locally, the server exposes `POST /mcp` for JSON RPC traffic and `GET /health` for a JSON health probe.[^french-state-goes-machine-readable-through-an-ai-layer-29]
+For users who want to run the server themselves, the repository also documents local execution. It recommends Docker, with `docker compose up -d` as the default startup command. The documented environment variables include `MCP_HOST`, `MCP_PORT`, `MCP_ENV`, `DATAGOUV_API_ENV`, and `LOG_LEVEL`. The repository notes that `DATAGOUV_API_ENV` can target either production or demo data.gouv.fr, and that binding to `127.0.0.1` instead of `0.0.0.0` is preferable for local development from an MCP security standpoint. Once running locally, the server exposes `POST /mcp` for JSON RPC traffic and `GET /health` for a JSON health probe.
 
 The repository even documents how to test the server interactively with the official MCP Inspector. The stated procedure is to start the local server and then launch the inspector with `npx @modelcontextprotocol/inspector --http-url "http://127.0.0.1:${MCP_PORT}/mcp"`. This is less relevant for ordinary end users, but it is useful for developers, public sector technologists, and researchers who want to inspect the exposed tools more explicitly rather than only through a chatbot interface.[^french-state-goes-machine-readable-through-an-ai-layer-30]
 
 So, stripped to its essentials, the official usage model is this. Connect an MCP capable client to `https://mcp.data.gouv.fr/mcp`. Use natural language to search for datasets or dataservices. Inspect the returned metadata and resources. Then query specific resources or inspect API specifications depending on what the catalog contains. The repository documentation makes clear that the design is intentionally practical: the goal is to let users move from a question in ordinary language to structured operations over the French national open data platform without having to manually browse the site or hand code against its APIs.[^french-state-goes-machine-readable-through-an-ai-layer-31]
 
-[^french-state-goes-machine-readable-through-an-ai-layer-19]:
-Official repository README for the data.gouv.fr MCP server, including hosted endpoint and supported clients: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-19]: Official repository README for the data.gouv.fr MCP server, including hosted endpoint and supported clients: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-20]:
-Official repository README section recommending the hosted endpoint for normal use: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-21]: Official ChatGPT setup instructions in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-21]:
-Official ChatGPT setup instructions in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-22]: Official client configuration examples for Cursor, VS Code, Claude Code, and Claude Desktop in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-22]:
-Official client configuration examples for Cursor, VS Code, Claude Code, and Claude Desktop in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-23]: Official client configuration examples for Le Chat and HuggingChat in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-23]:
-Official client configuration examples for Le Chat and HuggingChat in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-25]: Official repository README tool descriptions for `search_datasets`, `get_dataset_info`, `list_dataset_resources`, `get_resource_info`, and `query_resource_data`: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-24]:
-Official repository README usage examples and overview of the conversational interaction model: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-26]: The layered workflow is inferred directly from the official tool descriptions and examples in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-25]:
-Official repository README tool descriptions for `search_datasets`, `get_dataset_info`, `list_dataset_resources`, `get_resource_info`, and `query_resource_data`: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-27]: Official repository README section describing dataservices and the tools `search_dataservices`, `get_dataservice_info`, and `get_dataservice_openapi_spec`: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-26]:
-The layered workflow is inferred directly from the official tool descriptions and examples in the repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-28]: Official repository README section documenting `get_metrics` and its production only availability: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-27]:
-Official repository README section describing dataservices and the tools `search_dataservices`, `get_dataservice_info`, and `get_dataservice_openapi_spec`: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-30]: Official repository README instructions for testing with MCP Inspector: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-28]:
-Official repository README section documenting `get_metrics` and its production only availability: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-29]:
-Official repository README local development and Docker instructions, including environment variables and endpoints: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-30]:
-Official repository README instructions for testing with MCP Inspector: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
-
-[^french-state-goes-machine-readable-through-an-ai-layer-31]:
-Official repository README summarizing the practical usage model of the server: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-31]: Official repository README summarizing the practical usage model of the server: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
 ## Inside the implementation: what the French MCP server actually is
 
@@ -260,89 +214,61 @@ The fourth principle is **bounded augmentation**. The server adds modest but mea
 
 This is why the French MCP server is interesting. It is not technically impressive because it performs deep reasoning on its own. It is interesting because it embodies a sound architectural judgment about how a national open data platform can become AI addressable without becoming opaque, monolithic, or overly magical. It remains recognizably a public data platform. The MCP layer simply makes that platform legible to a new class of clients.[^french-state-goes-machine-readable-through-an-ai-layer-59]
 
-[^french-state-goes-machine-readable-through-an-ai-layer-32]:
-Official repository README describing the project as an MCP server for searching, exploring, and analyzing datasets from data.gouv.fr through conversation: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-32]: Official repository README describing the project as an MCP server for searching, exploring, and analyzing datasets from data.gouv.fr through conversation: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-33]:
-Repository structure and project description in the official repository: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-33]: Repository structure and project description in the official repository: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-34]:
-Official implementation entry point showing `FastMCP` initialization, tool registration, monitoring wrapper, and Uvicorn app startup: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-34]: Official implementation entry point showing `FastMCP` initialization, tool registration, monitoring wrapper, and Uvicorn app startup: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-35]:
-The bounded protocol surface is evident from the server entry point and registered tools in the official codebase: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-35]: The bounded protocol surface is evident from the server entry point and registered tools in the official codebase: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-36]:
-Official tool registration in the repository: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-36]: Official tool registration in the repository: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-37]:
-The explicit separation of tools is documented in the repository and implemented in the official code: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-37]: The explicit separation of tools is documented in the repository and implemented in the official code: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-38]:
-Official repository README documenting Streamable HTTP only transport and the `/mcp` and `/health` endpoints: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-38]: Official repository README documenting Streamable HTTP only transport and the `/mcp` and `/health` endpoints: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-39]:
-Transport model and endpoints documented in the official repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-39]: Transport model and endpoints documented in the official repository README: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-40]:
-Official server code showing `stateless_http=True` and the compatibility comment about preserving `mcp-session-id`: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-40]: Official server code showing `stateless_http=True` and the compatibility comment about preserving `mcp-session-id`: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-41]:
-The design choice is visible in the official implementation and its code comments: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-41]: The design choice is visible in the official implementation and its code comments: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-42]:
-Official server code configuring `TransportSecuritySettings`, `allowed_hosts`, and `allowed_origins`: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-42]: Official server code configuring `TransportSecuritySettings`, `allowed_hosts`, and `allowed_origins`: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-43]:
-The transport security configuration is implemented in the official server entry point: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-43]: The transport security configuration is implemented in the official server entry point: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-44]:
-Official implementation of the monitoring wrapper, health endpoint, Matomo tracking, and Sentry initialization: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-44]: Official implementation of the monitoring wrapper, health endpoint, Matomo tracking, and Sentry initialization: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-45]:
-Operational monitoring and observability features are visible in the official server code: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-45]: Operational monitoring and observability features are visible in the official server code: [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-46]:
-Official dataset search tool implementation describing strict AND logic and query cleaning: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-46]: Official dataset search tool implementation describing strict AND logic and query cleaning: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-47]:
-Official dataset search tool implementation showing cleaned query fallback behavior: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-47]: Official dataset search tool implementation showing cleaned query fallback behavior: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-48]:
-The search adaptation logic is documented directly in the official implementation: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-48]: The search adaptation logic is documented directly in the official implementation: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-49]:
-Official tabular query tool implementation documenting accepted parameters, filter operators, and sort directions: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-49]: Official tabular query tool implementation documenting accepted parameters, filter operators, and sort directions: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-50]:
-Official tabular query tool implementation showing `page_size` handling, metadata retrieval, and controlled parameter construction: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-50]: Official tabular query tool implementation showing `page_size` handling, metadata retrieval, and controlled parameter construction: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-51]:
-Official tabular query tool implementation showing result formatting, paging guidance, and handling of large datasets: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-51]: Official tabular query tool implementation showing result formatting, paging guidance, and handling of large datasets: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-52]:
-The bounded analytical behavior is visible in the official tabular query tool implementation: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-52]: The bounded analytical behavior is visible in the official tabular query tool implementation: [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-53]:
-Official repository documentation and code distinguish datasets from dataservices: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-53]: Official repository documentation and code distinguish datasets from dataservices: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-54]:
-The distinct treatment of files and APIs is reflected in the official repository and code: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-54]: The distinct treatment of files and APIs is reflected in the official repository and code: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-55]:
-The server’s intentionally narrow scope is visible across the official repository and codebase: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-55]: The server’s intentionally narrow scope is visible across the official repository and codebase: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-56]:
-Explicit named tool decomposition in the official code: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-56]: Explicit named tool decomposition in the official code: [tools/__init__.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/__init__.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-57]:
-Stateless HTTP and hosted endpoint emphasis are documented in the official repository and implementation: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-57]: Stateless HTTP and hosted endpoint emphasis are documented in the official repository and implementation: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp), [main.py](https://github.com/datagouv/datagouv-mcp/blob/main/main.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-58]:
-Examples of bounded augmentation are visible in the official search and tabular query tool implementations: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py), [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
+[^french-state-goes-machine-readable-through-an-ai-layer-58]: Examples of bounded augmentation are visible in the official search and tabular query tool implementations: [search_datasets.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/search_datasets.py), [query_resource_data.py](https://github.com/datagouv/datagouv-mcp/blob/main/tools/query_resource_data.py)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-59]:
-The overall architectural character of the service emerges from the official repository and codebase taken together: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
+[^french-state-goes-machine-readable-through-an-ai-layer-59]: The overall architectural character of the service emerges from the official repository and codebase taken together: [datagouv-mcp](https://github.com/datagouv/datagouv-mcp)
 
 ## What the community is building on top of the platform
 
@@ -360,24 +286,17 @@ This ecosystem matters for the interpretation of the MCP server. The server itse
 
 There is also a governance implication here. When a platform exposes thousands of datasets and thousands of downstream reuses, the problem is no longer only publication. It becomes mediation. How does a citizen, journalist, researcher, entrepreneur, or local public actor find the right dataset, understand what it contains, distinguish between files and APIs, and move from catalog browsing to actual use? The reuse catalog shows that the French ecosystem already has strong downstream creativity. The MCP server can therefore be read as an attempt to improve the interface between that abundance of public information and the next generation of user interaction models.[^french-state-goes-machine-readable-through-an-ai-layer-66]
 
-[^french-state-goes-machine-readable-through-an-ai-layer-60]:
-Official reuse catalog on data.gouv.fr: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-60]: Official reuse catalog on data.gouv.fr: [Réutilisations](https://www.data.gouv.fr/reuses)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-61]:
-Official reuse catalog showing the current number of reuses and the sector taxonomy: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-61]: Official reuse catalog showing the current number of reuses and the sector taxonomy: [Réutilisations](https://www.data.gouv.fr/reuses)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-62]:
-Official reuse catalog page highlighting featured reuses such as DVF, Eco Score, Datan, matchID, and SupTracker: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-62]: Official reuse catalog page highlighting featured reuses such as DVF, Eco Score, Datan, matchID, and SupTracker: [Réutilisations](https://www.data.gouv.fr/reuses)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-63]:
-Official reuse catalog page showing the current _selection of the moment_: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-63]: Official reuse catalog page showing the current _selection of the moment_: [Réutilisations](https://www.data.gouv.fr/reuses)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-64]:
-Official reuse catalog page highlighting practical use cases built on public data: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-64]: Official reuse catalog page highlighting practical use cases built on public data: [Réutilisations](https://www.data.gouv.fr/reuses)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-65]:
-The broader significance of the MCP layer should be read together with the existing reuse ecosystem documented on the official platform: [Réutilisations](https://www.data.gouv.fr/reuses), [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
+[^french-state-goes-machine-readable-through-an-ai-layer-65]: The broader significance of the MCP layer should be read together with the existing reuse ecosystem documented on the official platform: [Réutilisations](https://www.data.gouv.fr/reuses), [Expérimentation autour d’un serveur MCP pour data.gouv.fr](https://www.data.gouv.fr/posts/experimentation-autour-dun-serveur-mcp-pour-datagouv)
 
-[^french-state-goes-machine-readable-through-an-ai-layer-66]:
-For the scale and diversity of downstream reuse on the official platform, see: [Réutilisations](https://www.data.gouv.fr/reuses)
+[^french-state-goes-machine-readable-through-an-ai-layer-66]: For the scale and diversity of downstream reuse on the official platform, see: [Réutilisations](https://www.data.gouv.fr/reuses)
 
