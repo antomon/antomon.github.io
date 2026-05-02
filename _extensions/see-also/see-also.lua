@@ -58,15 +58,24 @@ local function get_project_root()
   return normalize_fs_path(".")
 end
 
-local function is_language_tag(s)
-  return s == "🇬🇧" or s == "🇮🇹"
-end
-
 local function normalize_category(s)
   s = pandoc.text.lower(s or "")
   s = trim(s)
   s = s:gsub("%s+", " ")
   return s
+end
+
+local excluded_categories = {
+  ["🇬🇧"] = true,
+  ["🇮🇹"] = true,
+  ["essay"] = true,
+  ["position paper"] = true,
+  ["tutorial"] = true,
+}
+
+local function is_excluded_category(s)
+  s = normalize_category(s or "")
+  return excluded_categories[s] == true
 end
 
 local function extract_front_matter(content)
@@ -123,7 +132,7 @@ local function parse_yaml_front_matter(content)
           if inline then
             for cat in inline:gmatch("[^,]+") do
               local c = normalize_category(strip_quotes(cat))
-              if c ~= "" and not is_language_tag(c) then
+              if c ~= "" and not is_excluded_category(c) then
                 table.insert(meta.categories, c)
               end
             end
@@ -134,7 +143,7 @@ local function parse_yaml_front_matter(content)
       local item = line:match("^%s*%-%s*(.-)%s*$")
       if item and current_key == "categories" then
         local c = normalize_category(strip_quotes(item))
-        if c ~= "" and not is_language_tag(c) then
+        if c ~= "" and not is_excluded_category(c) then
           table.insert(meta.categories, c)
         end
       end
