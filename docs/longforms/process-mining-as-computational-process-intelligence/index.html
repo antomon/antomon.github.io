@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2022-10-22">
+<meta name="keywords" content="process mining, event logs, computational process intelligence, process discovery, conformance checking, performance mining, object-centric process mining, OCEL, XES, Petri nets, directly-follows graph, behavioral entropy, process variants, ERP, business process management, enterprise architecture, data engineering, process intelligence, task mining, process automation, operational excellence, digital transformation, internal control, audit, supply chain, order-to-cash, procure-to-pay">
+<meta name="description" content="Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution.">
+
+<title>Process Mining as Computational Process Intelligence – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-acf12a64177840b8d86f2d4f01b2e9fb.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ddff6f6c768f4d275e03843a69a2a41e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Process Mining as Computational Process Intelligence – Random Bits of Knowledge">
+<meta property="og:description" content="Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution.">
+<meta property="og:image" content="https://antomon.github.io/longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta name="twitter:title" content="Process Mining as Computational Process Intelligence – Random Bits of Knowledge">
+<meta name="twitter:description" content="Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution.">
+<meta name="twitter:image" content="https://antomon.github.io/longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Process Mining as Computational Process Intelligence</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Process Mining as Computational Process Intelligence</h1>
+            <p class="subtitle lead">A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications</p>
+                  <div>
+        <div class="description">
+          Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">enterprise architecture</div>
+                <div class="quarto-category">tutorial</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author">Antonio Montano <a href="mailto:antonio.montano.contact@gmail.com" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0009-0007-2429-1921" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              4M4
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 22, 2022</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">December 17, 2025</p>
+      </div>
+    </div>
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>process mining, event logs, computational process intelligence, process discovery, conformance checking, performance mining, object-centric process mining, OCEL, XES, Petri nets, directly-follows graph, behavioral entropy, process variants, ERP, business process management, enterprise architecture, data engineering, process intelligence, task mining, process automation, operational excellence, digital transformation, internal control, audit, supply chain, order-to-cash, procure-to-pay</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-process-descriptions-to-computational-evidence" id="toc-from-process-descriptions-to-computational-evidence" class="nav-link active" data-scroll-target="#from-process-descriptions-to-computational-evidence">From process descriptions to computational evidence</a></li>
+  <li><a href="#formal-event-log-model" id="toc-formal-event-log-model" class="nav-link" data-scroll-target="#formal-event-log-model">Formal event-log model</a></li>
+  <li><a href="#process-discovery" id="toc-process-discovery" class="nav-link" data-scroll-target="#process-discovery">Process discovery</a></li>
+  <li><a href="#variants-and-behavioral-entropy" id="toc-variants-and-behavioral-entropy" class="nav-link" data-scroll-target="#variants-and-behavioral-entropy">Variants and behavioral entropy</a></li>
+  <li><a href="#conformance-checking" id="toc-conformance-checking" class="nav-link" data-scroll-target="#conformance-checking">Conformance checking</a></li>
+  <li><a href="#performance-mining" id="toc-performance-mining" class="nav-link" data-scroll-target="#performance-mining">Performance mining</a></li>
+  <li><a href="#object-centric-process-mining" id="toc-object-centric-process-mining" class="nav-link" data-scroll-target="#object-centric-process-mining">Object-centric process mining</a></li>
+  <li><a href="#data-architecture-for-process-intelligence" id="toc-data-architecture-for-process-intelligence" class="nav-link" data-scroll-target="#data-architecture-for-process-intelligence">Data architecture for process intelligence</a>
+  <ul class="collapse">
+  <li><a href="#layer-1-source-systems" id="toc-layer-1-source-systems" class="nav-link" data-scroll-target="#layer-1-source-systems">Layer 1: source systems</a></li>
+  <li><a href="#layer-2-extraction-layer" id="toc-layer-2-extraction-layer" class="nav-link" data-scroll-target="#layer-2-extraction-layer">Layer 2: extraction layer</a></li>
+  <li><a href="#layer-3-semantic-transformation-layer" id="toc-layer-3-semantic-transformation-layer" class="nav-link" data-scroll-target="#layer-3-semantic-transformation-layer">Layer 3: semantic transformation layer</a></li>
+  <li><a href="#layer-4-process-data-store" id="toc-layer-4-process-data-store" class="nav-link" data-scroll-target="#layer-4-process-data-store">Layer 4: process data store</a></li>
+  <li><a href="#layer-5-analytical-layer" id="toc-layer-5-analytical-layer" class="nav-link" data-scroll-target="#layer-5-analytical-layer">Layer 5: analytical layer</a></li>
+  <li><a href="#layer-6-decision-layer" id="toc-layer-6-decision-layer" class="nav-link" data-scroll-target="#layer-6-decision-layer">Layer 6: decision layer</a></li>
+  <li><a href="#layer-7-governance-layer" id="toc-layer-7-governance-layer" class="nav-link" data-scroll-target="#layer-7-governance-layer">Layer 7: governance layer</a></li>
+  </ul></li>
+  <li><a href="#potential-applications" id="toc-potential-applications" class="nav-link" data-scroll-target="#potential-applications">Potential applications</a>
+  <ul class="collapse">
+  <li><a href="#order-to-cash" id="toc-order-to-cash" class="nav-link" data-scroll-target="#order-to-cash">Order-to-cash</a></li>
+  <li><a href="#procure-to-pay" id="toc-procure-to-pay" class="nav-link" data-scroll-target="#procure-to-pay">Procure-to-pay</a></li>
+  <li><a href="#inventory-and-supply-chain-planning" id="toc-inventory-and-supply-chain-planning" class="nav-link" data-scroll-target="#inventory-and-supply-chain-planning">Inventory and supply-chain planning</a></li>
+  <li><a href="#manufacturing-and-meserp-integration" id="toc-manufacturing-and-meserp-integration" class="nav-link" data-scroll-target="#manufacturing-and-meserp-integration">Manufacturing and MES/ERP integration</a></li>
+  <li><a href="#finance-and-working-capital" id="toc-finance-and-working-capital" class="nav-link" data-scroll-target="#finance-and-working-capital">Finance and working capital</a></li>
+  <li><a href="#compliance-internal-control-and-audit" id="toc-compliance-internal-control-and-audit" class="nav-link" data-scroll-target="#compliance-internal-control-and-audit">Compliance, internal control, and audit</a></li>
+  <li><a href="#digital-transformation-and-erp-migration" id="toc-digital-transformation-and-erp-migration" class="nav-link" data-scroll-target="#digital-transformation-and-erp-migration">Digital transformation and ERP migration</a></li>
+  </ul></li>
+  <li><a href="#limits-and-failure-modes" id="toc-limits-and-failure-modes" class="nav-link" data-scroll-target="#limits-and-failure-modes">Limits and failure modes</a></li>
+  <li><a href="#celonis-as-a-commercial-instantiation" id="toc-celonis-as-a-commercial-instantiation" class="nav-link" data-scroll-target="#celonis-as-a-commercial-instantiation">Celonis as a commercial instantiation</a></li>
+  <li><a href="#process-mining-in-enterprise-architecture-and-digital-transformation" id="toc-process-mining-in-enterprise-architecture-and-digital-transformation" class="nav-link" data-scroll-target="#process-mining-in-enterprise-architecture-and-digital-transformation">Process mining in enterprise architecture and digital transformation</a>
+  <ul class="collapse">
+  <li><a href="#capability-architecture" id="toc-capability-architecture" class="nav-link" data-scroll-target="#capability-architecture">Capability architecture</a></li>
+  <li><a href="#process-architecture" id="toc-process-architecture" class="nav-link" data-scroll-target="#process-architecture">Process architecture</a></li>
+  <li><a href="#application-architecture" id="toc-application-architecture" class="nav-link" data-scroll-target="#application-architecture">Application architecture</a></li>
+  <li><a href="#data-architecture-and-semantic-governance" id="toc-data-architecture-and-semantic-governance" class="nav-link" data-scroll-target="#data-architecture-and-semantic-governance">Data architecture and semantic governance</a></li>
+  <li><a href="#operating-model-and-organizational-accountability" id="toc-operating-model-and-organizational-accountability" class="nav-link" data-scroll-target="#operating-model-and-organizational-accountability">Operating model and organizational accountability</a></li>
+  <li><a href="#erp-transformation-and-template-governance" id="toc-erp-transformation-and-template-governance" class="nav-link" data-scroll-target="#erp-transformation-and-template-governance">ERP transformation and template governance</a></li>
+  <li><a href="#automation-and-architectural-control" id="toc-automation-and-architectural-control" class="nav-link" data-scroll-target="#automation-and-architectural-control">Automation and architectural control</a></li>
+  <li><a href="#process-mining-as-a-transformation-control-system" id="toc-process-mining-as-a-transformation-control-system" class="nav-link" data-scroll-target="#process-mining-as-a-transformation-control-system">Process mining as a transformation control system</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("process_mining_enterprise_behavior.jpeg");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution.</p>
+</div>
+<section id="from-process-descriptions-to-computational-evidence" class="level2">
+<h2 class="anchored" data-anchor-id="from-process-descriptions-to-computational-evidence">From process descriptions to computational evidence</h2>
+<p>A <strong>business process is usually described as a normative abstraction</strong>: a purchase order is created, approved, received, invoiced, matched, and paid; a sales order is entered, confirmed, delivered, invoiced, and collected; a production order is planned, released, executed, confirmed, and closed. This representation is useful for governance, but it is not a measurement of operational reality. It is a model of intended behavior.</p>
+<p><strong>Process mining</strong> starts from a stricter premise. A process is not what a procedure says. <strong>A process is the set of temporally ordered state transitions that can be reconstructed from digital traces left by operational systems</strong>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-process-mining-evidence-pipeline" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-process-mining-evidence-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-process-mining-evidence-pipeline">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  D["Raw operational data&lt;br/&gt;ERP, CRM, MES, WMS, logs"] --&gt; PHI["Semantic extraction&lt;br/&gt;φ : D → E"]
+  PHI --&gt; E["Event log or object-centric event structure"]
+  E --&gt; A["Mining algorithms&lt;br/&gt;discovery, conformance, performance"]
+  A --&gt; I["Process model and diagnostics"]
+  I --&gt; G["Governed decisions and actions"]
+  G -. feedback .-&gt; D
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-process-mining-evidence-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Process mining as an evidence pipeline. Raw operational data from enterprise systems are transformed into event logs or object-centric event structures, analyzed through process-mining algorithms, converted into diagnostics, and used to support governed decisions and actions.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The primitive object is therefore not a diagram, a procedure, or a workshop narrative. <strong>The primitive object is an event</strong>.</p>
+<p>An event is an observed fact of the form:</p>
+<p><span class="math display">
+e = (i, a, t, r, x)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">i</span> is a case identifier or, in a more general formulation, a set of related business objects;</li>
+<li><span class="math inline">a</span> is the activity or state transition observed;</li>
+<li><span class="math inline">t</span> is a timestamp;</li>
+<li><span class="math inline">r</span> is the resource, system, organizational unit, or agent responsible for the event;</li>
+<li><span class="math inline">x</span> is a vector of attributes describing the event context.</li>
+</ul>
+<p>The fundamental assumption is minimal: if an enterprise system records enough events with reliable ordering, then the operational process can be reconstructed empirically. The reconstructed process may contradict the designed process. That contradiction is not an error of the analytical method; it is the main object of analysis.</p>
+<p>This shift is epistemologically important. Traditional process modeling is top-down and intentional. Process mining is bottom-up and evidential. The former asks what the organization believes should happen. The latter asks what the information systems prove has happened.</p>
+<p>The technical discipline of process mining emerged around this exact distinction: event data are treated as first-class analytical objects, and process knowledge is extracted from event logs rather than inferred only from interviews, diagrams, or procedural documentation.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+</section>
+<section id="formal-event-log-model" class="level2">
+<h2 class="anchored" data-anchor-id="formal-event-log-model">Formal event-log model</h2>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-case-centric-event-log-structure" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-case-centric-event-log-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-case-centric-event-log-structure">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  L["Event Log L"] --&gt; T1["Trace σ₁&lt;br/&gt;Case c₁"]
+  L --&gt; T2["Trace σ₂&lt;br/&gt;Case c₂"]
+  L --&gt; T3["Trace σₙ&lt;br/&gt;Case cₙ"]
+
+  T1 --&gt; E11["e₁: activity, timestamp, resource, attributes"]
+  T1 --&gt; E12["e₂: activity, timestamp, resource, attributes"]
+  T1 --&gt; E13["eₖ: activity, timestamp, resource, attributes"]
+
+  T2 --&gt; E21["e₁"]
+  T2 --&gt; E22["e₂"]
+  T2 --&gt; E23["eₘ"]
+
+  T3 --&gt; E31["e₁"]
+  T3 --&gt; E32["e₂"]
+  T3 --&gt; E33["eᵣ"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-case-centric-event-log-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Case-centric event-log structure. An event log is represented as a collection of traces, where each trace corresponds to one case and contains an ordered sequence of events with activity, timestamp, resource, and contextual attributes.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>In classical case-centric process mining, an <strong>event log</strong> can be defined as a multiset of traces.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p><span class="math display">
+L \in \mathcal{B}(\mathcal{A}^{*})
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\mathcal{A}</span> is the finite set of activities;</li>
+<li><span class="math inline">\mathcal{A}^{*}</span> is the set of all finite sequences over <span class="math inline">\mathcal{A}</span>;</li>
+<li><span class="math inline">\mathcal{B}(X)</span> denotes the set of multisets over <span class="math inline">X</span>.</li>
+</ul>
+<p>A trace is a finite sequence:</p>
+<p><span class="math display">
+\sigma = \langle a_1, a_2, \ldots, a_n \rangle
+</span></p>
+<p>where each <span class="math inline">a_k \in \mathcal{A}</span> corresponds to an activity executed for the same case.</p>
+<p>More rigorously, an event log can be defined as a finite set of event identifiers <span class="math inline">E</span> equipped with attribute functions:</p>
+<p><span class="math display">
+case : E \rightarrow C,\quad act : E \rightarrow \mathcal{A},\quad time : E \rightarrow T,\quad res : E \rightarrow R,\quad attr : E \rightarrow X
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">C</span> is the set of cases;</li>
+<li><span class="math inline">\mathcal{A}</span> is the activity alphabet;</li>
+<li><span class="math inline">T</span> is a totally or partially ordered time domain;</li>
+<li><span class="math inline">R</span> is the set of resources;</li>
+<li><span class="math inline">X</span> is the attribute domain.</li>
+</ul>
+<p>This formulation preserves event identity even when two events share the same case, activity, timestamp, resource, and attribute vector.</p>
+<p>For a case <span class="math inline">c \in C</span>, the observed trace is obtained by selecting all events associated with <span class="math inline">c</span> and ordering them by timestamp:</p>
+<p><span class="math display">
+\sigma_c = \langle act(e_1), act(e_2), \ldots, act(e_n) \rangle
+</span></p>
+<p>such that:</p>
+<p><span class="math display">
+e_k \in E,\quad case(e_k)=c,\quad time(e_1) \leq time(e_2) \leq \cdots \leq time(e_n)
+</span></p>
+<p>This apparently simple definition hides several non-trivial problems:</p>
+<ol type="1">
+<li><p>Timestamps may be non-unique, inconsistent, delayed, batch-generated, or produced by different systems with different clock semantics.</p></li>
+<li><p>The same business event may be represented by several technical records.</p></li>
+<li><p>The case identifier may be ambiguous.</p></li>
+<li><p>Some relevant events may be missing because they occur outside the transactional system, for example in emails, spreadsheets, manual controls, warehouse terminals, MES systems, supplier portals, banking systems, or desktop activity.</p></li>
+</ol>
+<p>The quality of process mining is therefore bounded by the <strong>quality of event abstraction</strong>. Formally, if the source operational data are represented by a set of raw records <span class="math inline">D</span>, event-log construction is a mapping:</p>
+<p><span class="math display">
+\phi : D \rightarrow L_E
+</span></p>
+<p>where <span class="math inline">L_E</span> denotes the constructed event-log structure, including event identifiers, case assignments, activities, timestamps, resources, and attributes.</p>
+<p>The mining problem is not only the discovery of a process model from <span class="math inline">E</span>. It is also the correctness of <span class="math inline">\phi</span>. A poor extraction function can create an apparently precise but semantically false process model.</p>
+<p>This is why process mining is not merely an algorithmic discipline. It is also a <strong>data-engineering, semantic-modeling, and enterprise-architecture discipline</strong>.</p>
+</section>
+<section id="process-discovery" class="level2">
+<h2 class="anchored" data-anchor-id="process-discovery">Process discovery</h2>
+<p>Process discovery is the construction of a process model <span class="math inline">M</span> from an event log <span class="math inline">L</span>:</p>
+<p><span class="math display">
+discover(L) = M
+</span></p>
+<p>The model <span class="math inline">M</span> can belong to several formalisms:</p>
+<ul>
+<li>directed graphs;</li>
+<li>directly-follows graphs;</li>
+<li>Petri nets;</li>
+<li>process trees;</li>
+<li>BPMN-like models;</li>
+<li>declarative constraint systems;</li>
+<li>stochastic automata;</li>
+<li>object-centric graphs.</li>
+</ul>
+<p>The simplest representation is the directly-follows graph. Given an event log <span class="math inline">L</span>, one defines a relation:</p>
+<p><span class="math display">
+a &gt;_L b
+</span></p>
+<p>if there exists at least one trace <span class="math inline">\sigma \in L</span> such that activity <span class="math inline">a</span> is immediately followed by activity <span class="math inline">b</span> in <span class="math inline">\sigma</span>.</p>
+<p>The frequency of the edge <span class="math inline">(a,b)</span> is more precisely the number of observed adjacent occurrences of <span class="math inline">a</span> followed by <span class="math inline">b</span> across the multiset of traces:</p>
+<p><span class="math display">
+freq_L(a,b) =
+\sum_{\sigma \in supp(L)}
+count_L(\sigma)
+\cdot
+|\{k \in \{1,\ldots,|\sigma|-1\} : \sigma_k = a \land \sigma_{k+1} = b\}|
+</span></p>
+<p>A directly-follows graph is therefore:</p>
+<p><span class="math display">
+G_L = (\mathcal{A}, F)
+</span></p>
+<p>where:</p>
+<p><span class="math display">
+F = \{(a,b) \in \mathcal{A} \times \mathcal{A} : a &gt;_L b\}
+</span></p>
+<p>This model is computationally simple and operationally useful. It shows frequent paths, rare paths, loops, skips, and variant structures. However, it is not always semantically precise. It may confuse concurrency with choice, and it may over-represent spurious behavior if the event log contains noise or incomplete traces.</p>
+<p>For example, if two activities <span class="math inline">a</span> and <span class="math inline">b</span> are concurrent, one may observe both sequences:</p>
+<p><span class="math display">
+\langle a,b \rangle
+</span></p>
+<p>and:</p>
+<p><span class="math display">
+\langle b,a \rangle
+</span></p>
+<p>A directly-follows graph may represent this as two causal paths, even though the correct interpretation may be parallelism rather than mutual causality.</p>
+<p>More expressive discovery algorithms therefore try to infer constructs such as sequence, choice, concurrency, loop, silent transition, and synchronization. In Petri-net terms<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>, a discovered model can be represented as:</p>
+<p><span class="math display">
+N = (P, T_N, F, M_0, M_f)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">P</span> is the set of places;</li>
+<li><span class="math inline">T_N</span> is the set of transitions;</li>
+<li><span class="math inline">F \subseteq (P \times T_N) \cup (T_N \times P)</span> is the flow relation;</li>
+<li><span class="math inline">M_0</span> is the initial marking;</li>
+<li><span class="math inline">M_f</span> is the final marking.</li>
+</ul>
+<p>The value of Petri nets is that they provide formal execution semantics. A transition is enabled only when the required input tokens exist. This makes it possible to <strong>reason rigorously about reachability, deadlocks, soundness, concurrency, and conformance</strong>.</p>
+</section>
+<section id="variants-and-behavioral-entropy" class="level2">
+<h2 class="anchored" data-anchor-id="variants-and-behavioral-entropy">Variants and behavioral entropy</h2>
+<p>A <strong>process variant</strong> is a distinct trace pattern. If <span class="math inline">L</span> is an event log, the set of variants is:</p>
+<p><span class="math display">
+V(L) = \{\sigma : \sigma \in supp(L)\}
+</span></p>
+<p>where <span class="math inline">supp(L)</span> is the support of the multiset <span class="math inline">L</span>.</p>
+<p>The probability of a variant <span class="math inline">\sigma</span> is:</p>
+<p><span class="math display">
+p(\sigma) = \frac{count_L(\sigma)}{|L|}
+</span></p>
+<p>A useful measure of process fragmentation is behavioral entropy:</p>
+<p><span class="math display">
+H(L) = - \sum_{\sigma \in V(L)} p(\sigma) \log p(\sigma)
+</span></p>
+<p>Low <strong>entropy</strong> indicates that the process is concentrated around a small number of dominant variants. High entropy indicates behavioral dispersion. In enterprise processes, high entropy is not automatically bad. It may reflect product diversity, customer segmentation, legal-entity differences, localization, exception handling, or legitimate operational flexibility. However, high entropy without business explanation is a signal of weak standardization or uncontrolled exception handling.</p>
+<p>A mathematically disciplined interpretation requires conditioning. Let <span class="math inline">Z</span> be a set of contextual attributes, such as legal entity, business unit, product family, supplier type, customer segment, country, plant, warehouse, or channel. Then one should compare:</p>
+<p><span class="math display">
+H(L)
+</span></p>
+<p>with:</p>
+<p><span class="math display">
+H(L \mid Z)
+</span></p>
+<p>If entropy collapses after conditioning on <span class="math inline">Z</span>, the variation is structurally explained. If entropy remains high within homogeneous partitions, the variation is likely operational rather than structural.</p>
+<p>This distinction matters in ERP transformation. A multinational group may show hundreds of order-to-cash variants globally. Some are legitimate because fiscal, logistic, or customer-channel conditions differ. Others are pure organizational noise. <strong>Process mining becomes valuable when it separates these two cases</strong>.</p>
+</section>
+<section id="conformance-checking" class="level2">
+<h2 class="anchored" data-anchor-id="conformance-checking">Conformance checking</h2>
+<p>Discovery asks: what model can be inferred from the event log? <strong>Conformance checking</strong> asks a different question: given a normative model <span class="math inline">M</span> and an event log <span class="math inline">L</span>, how well does the observed behavior conform to the expected behavior?</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-conformance-checking-alignment" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-conformance-checking-alignment-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-conformance-checking-alignment">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  M["Normative process model M"] --&gt; LM["Allowed behavior&lt;br/&gt;𝓛(M)"]
+  LOBS["Observed event log&lt;br/&gt;L_obs"] --&gt; ALIGN["Alignment computation"]
+
+  LM --&gt; ALIGN
+
+  ALIGN --&gt; FIT["Fitness&lt;br/&gt;Can the model replay the log?"]
+  ALIGN --&gt; PREC["Precision&lt;br/&gt;Does the model allow too much?"]
+  ALIGN --&gt; DEV["Deviation diagnostics&lt;br/&gt;skips, inserts, loops, wrong order"]
+  DEV --&gt; ACT["Control remediation&lt;br/&gt;process, system, data, training"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-conformance-checking-alignment-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Conformance checking through alignment. The observed event log is compared with the behavior allowed by the normative process model. The alignment computation produces fitness, precision, deviation diagnostics, and remediation inputs for process, system, data, or training interventions.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Formally, conformance checking evaluates the relation between:</p>
+<p><span class="math display">
+L_{obs}
+</span></p>
+<p>and:</p>
+<p><span class="math display">
+\mathcal{L}(M)
+</span></p>
+<p>where <span class="math inline">\mathcal{L}(M)</span> is the language of all traces allowed by model <span class="math inline">M</span>.</p>
+<p>The simplest view is language membership:</p>
+<p><span class="math display">
+\sigma \in \mathcal{L}(M)
+</span></p>
+<p>If <span class="math inline">\sigma</span> is allowed by the model, it is conformant. If it is not, it deviates. In real processes, however, this binary view is too crude. A trace may deviate slightly or severely. It may skip one activity, execute activities in the wrong order, repeat a control step, or contain additional manual interventions.</p>
+<p>A more useful formulation is alignment-based conformance. Given an observed trace <span class="math inline">\sigma</span> and a model <span class="math inline">M</span>, an alignment is a sequence of moves that synchronizes observed events with model transitions. A synchronous move means that the event and the model agree. A log move means that the event occurred but the model did not expect it. A model move means that the model expected an activity that was not observed.</p>
+<p>The <strong>optimal alignment</strong> minimizes a cost function:</p>
+<p><span class="math display">
+cost(\gamma) = \sum_{m \in \gamma} c(m)
+</span></p>
+<p>where <span class="math inline">\gamma</span> is an alignment and <span class="math inline">c(m)</span> is the cost assigned to each move type. The deviation distance is then:</p>
+<p><span class="math display">
+d(\sigma, M) = \min_{\gamma \in Align(\sigma,M)} cost(\gamma)
+</span></p>
+<p><strong>Fitness</strong> can be interpreted as the degree to which the model can replay the log:</p>
+<p><span class="math display">
+fitness(L,M) =
+1 -
+\frac{
+\sum_{\sigma \in supp(L)} count_L(\sigma)\, d(\sigma,M)
+}{
+\sum_{\sigma \in supp(L)} count_L(\sigma)\, d_{max}(\sigma,M)
+}
+</span></p>
+<p>Here, <span class="math inline">d_{max}(\sigma,M)</span> denotes a normalizing maximum deviation cost for trace <span class="math inline">\sigma</span> with respect to model <span class="math inline">M</span>, so that the resulting fitness score can be interpreted on a bounded scale.</p>
+<p><strong>Precision</strong> measures the inverse problem: whether the model allows too much behavior that was never observed. A model with perfect fitness but poor precision may be so permissive that it accepts almost everything. Such a model is not analytically useful.</p>
+<p><strong>Generalization</strong> measures whether the model captures behavior likely to occur beyond the observed sample. Simplicity penalizes unnecessary structural complexity. <strong>Process discovery</strong> is therefore not a single-objective optimization problem. It is a <strong>trade-off among fitness, precision, generalization, and simplicity</strong>.</p>
+</section>
+<section id="performance-mining" class="level2">
+<h2 class="anchored" data-anchor-id="performance-mining">Performance mining</h2>
+<p>Process mining becomes operationally powerful when <strong>control-flow analysis</strong> is combined with temporal and economic measures. Let <span class="math inline">e_i</span> and <span class="math inline">e_j</span> be two events in the same trace such that <span class="math inline">t(e_i) &lt; t(e_j)</span>. The elapsed time between them is:</p>
+<p><span class="math display">
+\Delta t(e_i,e_j) = t(e_j) - t(e_i)
+</span></p>
+<p>For two activities <span class="math inline">a</span> and <span class="math inline">b</span>, one can define the empirical waiting-time multiset:</p>
+<p><span class="math display">
+W_{a,b} = \{\!\{\Delta t(e_i,e_j) : act(e_i)=a,\ act(e_j)=b,\ e_i \rightarrow e_j\}\!\}
+</span></p>
+<p>where <span class="math inline">e_i \rightarrow e_j</span> denotes the selected behavioral relation, usually direct succession or a domain-specific milestone relation. The <strong>mean waiting time</strong> is:</p>
+<p><span class="math display">
+\mu_{a,b} = \mathbb{E}[W_{a,b}]
+</span></p>
+<p>The variance is:</p>
+<p><span class="math display">
+\sigma^2_{a,b} = \mathbb{E}[(W_{a,b} - \mu_{a,b})^2]
+</span></p>
+<p>In practice, the distribution is often more informative than the mean. Enterprise waiting times are typically heavy-tailed. A small number of extreme cases may dominate the average. Median, quantiles, conditional distributions, and survival functions are therefore more robust.</p>
+<p>For a process instance <span class="math inline">c</span>, <strong>cycle time</strong> can be defined as:</p>
+<p><span class="math display">
+CT(c) = t_{end}(c) - t_{start}(c)
+</span></p>
+<p>Throughput is:</p>
+<p><span class="math display">
+TH = \frac{N}{T}
+</span></p>
+<p>where <span class="math inline">N</span> is the number of completed cases in observation window <span class="math inline">T</span>.</p>
+<p><strong>Work in progress</strong> can be estimated as:</p>
+<p><span class="math display">
+WIP(t) = |\{c : t_{start}(c) \leq t &lt; t_{end}(c)\}|
+</span></p>
+<p>Under standard stability and flow-conservation assumptions, Little’s Law provides a fundamental consistency relation:<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p><span class="math display">
+\overline{WIP} = TH \cdot \overline{CT}
+</span></p>
+<p>This relation is useful because it prevents superficial interpretations. If throughput is constant and WIP grows, then cycle time must grow. If the organization wants shorter cycle time without reducing input volume, it must either increase capacity, reduce rework, reduce queues, or change the flow structure.</p>
+<p>Process mining gives <strong>empirical estimates</strong> of these quantities per process segment, resource, product family, legal entity, supplier class, plant, warehouse, or customer group.</p>
+</section>
+<section id="object-centric-process-mining" class="level2">
+<h2 class="anchored" data-anchor-id="object-centric-process-mining">Object-centric process mining</h2>
+<p>The classical event-log model assumes one dominant case identifier. This assumption is often false in enterprise systems.</p>
+<p>Consider procure-to-pay. A single purchase requisition can generate multiple purchase orders. A purchase order can contain multiple lines. A line can be partially received. Several receipts can be matched to one invoice. One invoice can refer to several purchase orders. One payment can settle multiple invoices. The process is not a sequence over one object. It is a network of interacting objects. The same problem appears in order-to-cash, make-to-order, engineer-to-order, maintenance, logistics, warehouse management, project accounting, and intercompany flows.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-object-centric-event-structure" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-object-centric-event-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-object-centric-event-structure">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  E1(("Event&lt;br/&gt;Invoice posted"))
+
+  INV["Invoice&lt;br/&gt;INV-9981"] --- E1
+  PO["Purchase Order&lt;br/&gt;PO-450001"] --- E1
+  POL["Purchase Order Line&lt;br/&gt;PO-450001-10"] --- E1
+  SUP["Supplier&lt;br/&gt;SUP-210"] --- E1
+  LE["Legal Entity&lt;br/&gt;IT01"] --- E1
+
+  PO --- POL
+  PO --- SUP
+  POL --- INV
+  INV --- LE
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-object-centric-event-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Object-centric event structure. A single business event, such as invoice posting, can be related to several enterprise objects at the same time, including invoices, purchase orders, purchase order lines, suppliers, and legal entities.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The <strong>object-centric formulation</strong> replaces the case-centric trace with a typed object-event structure. Let:</p>
+<p><span class="math display">
+O = \bigcup_{\tau \in \mathcal{T}} O_{\tau}
+</span></p>
+<p>be the set of business objects partitioned by object type <span class="math inline">\tau</span>, such as Sales Order, Sales Order Line, Delivery, Invoice, Payment, Purchase Order, Production Order, Batch, Shipment, Handling Unit, or Service Ticket.</p>
+<p>An event is associated not with one case but with a <strong>set of objects</strong>:</p>
+<p><span class="math display">
+rel(e) \subseteq O
+</span></p>
+<p>The event log becomes a <strong>structure</strong>:</p>
+<p><span class="math display">
+L_{OC} = (E, O, type, act, time, rel, attr)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">E</span> is the set of events;</li>
+<li><span class="math inline">O</span> is the set of objects;</li>
+<li><span class="math inline">type : O \rightarrow \mathcal{T}</span> assigns each object to an object type;</li>
+<li><span class="math inline">act : E \rightarrow \mathcal{A}</span> assigns an activity to each event;</li>
+<li><span class="math inline">time : E \rightarrow T</span> assigns a timestamp;</li>
+<li><span class="math inline">rel \subseteq E \times O</span> relates events to objects;</li>
+<li><span class="math inline">attr</span> stores event and object attributes.</li>
+</ul>
+<p>This structure is naturally a <strong>typed temporal hypergraph</strong>. Events are hyperedges connecting multiple business objects. Objects persist. Events occur. Relationships carry the semantics of operational interaction.</p>
+<p>The analytical gain is significant. Instead of forcing the organization to choose whether the process is <em>by order</em>, <em>by order line</em>, <em>by delivery</em>, or <em>by invoice</em>, one can analyze several perspectives over the same object-centric model.</p>
+<p>For example:</p>
+<ul>
+<li>from the Sales Order perspective, one sees customer-commitment behavior;</li>
+<li>from the Delivery perspective, one sees logistic execution;</li>
+<li>from the Invoice perspective, one sees billing behavior;</li>
+<li>from the Payment perspective, one sees cash-collection behavior;</li>
+<li>from the Item perspective, one sees material-flow behavior.</li>
+</ul>
+<p><strong>Object-centric event logs are therefore more faithful to ERP reality</strong>. The <strong>OCEL 2.0 standard</strong> formalizes this kind of event data and supports richer relationships between events and objects, including object-to-object relationships and multiple exchange formats.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+</section>
+<section id="data-architecture-for-process-intelligence" class="level2">
+<h2 class="anchored" data-anchor-id="data-architecture-for-process-intelligence">Data architecture for process intelligence</h2>
+<p>A process-mining system is not an isolated analytical tool. It is a data product over operational systems.</p>
+<p>A robust architecture contains at least seven layers.</p>
+<section id="layer-1-source-systems" class="level3">
+<h3 class="anchored" data-anchor-id="layer-1-source-systems">Layer 1: source systems</h3>
+<p>The source layer includes ERP, CRM, MES, WMS, PLM, TMS, service-management systems, banking systems, supplier portals, customer portals, spreadsheets, workflow engines, API gateways, and sometimes desktop-interaction logs.</p>
+<p>The essential question is not whether these systems contain data. They do. The essential question is whether they contain reconstructible event semantics.</p>
+<p>A database table recording the current status of an order is insufficient unless historical status transitions are retained. Process mining requires temporal evidence, not only current state.</p>
+</section>
+<section id="layer-2-extraction-layer" class="level3">
+<h3 class="anchored" data-anchor-id="layer-2-extraction-layer">Layer 2: extraction layer</h3>
+<p>The extraction layer collects raw operational records. This may occur through database replication, APIs, change-data capture, flat-file exports, event streams, audit tables, message queues, or system-specific connectors.</p>
+<p>The extraction design must preserve:</p>
+<ul>
+<li>timestamp fidelity;</li>
+<li>source-system identifiers;</li>
+<li>transaction keys;</li>
+<li>user and resource metadata;</li>
+<li>status-transition history;</li>
+<li>deletion and reversal semantics;</li>
+<li>time-zone normalization;</li>
+<li>legal-entity and organizational context.</li>
+</ul>
+</section>
+<section id="layer-3-semantic-transformation-layer" class="level3">
+<h3 class="anchored" data-anchor-id="layer-3-semantic-transformation-layer">Layer 3: semantic transformation layer</h3>
+<p>The semantic transformation layer maps raw records to event abstractions.</p>
+<p>This layer defines the function:</p>
+<p><span class="math display">
+\phi : D \rightarrow E
+</span></p>
+<p>It decides that a row in a change-log table corresponds to an event such as “Purchase Order Approved”, “Sales Order Blocked”, “Delivery Created”, “Invoice Posted”, “Goods Receipt Reversed”, or “Payment Cleared”.</p>
+<p>This layer is the most critical one. If it is wrong, all subsequent process analysis becomes formally valid but operationally false.</p>
+</section>
+<section id="layer-4-process-data-store" class="level3">
+<h3 class="anchored" data-anchor-id="layer-4-process-data-store">Layer 4: process data store</h3>
+<p>The process data store persists event logs, object tables, relationships, attributes, and derived metrics. In a case-centric model, this may be a set of event-log tables. In an object-centric model, this becomes a graph-like or relational structure connecting objects, events, and relationships.</p>
+<p>The data store should support incremental refresh, historical reproducibility, lineage, versioning, and auditable transformation logic.</p>
+</section>
+<section id="layer-5-analytical-layer" class="level3">
+<h3 class="anchored" data-anchor-id="layer-5-analytical-layer">Layer 5: analytical layer</h3>
+<p>The analytical layer executes discovery, conformance checking, performance mining, variant analysis, root-cause analysis, predictive models, and simulation.</p>
+<p>The output is not merely a graph. The output is a set of hypotheses about operational behavior, such as:</p>
+<ul>
+<li>late deliveries are concentrated in specific product families;</li>
+<li>invoice blocks correlate with missing purchase-order references;</li>
+<li>maverick buying correlates with specific plants or buyers;</li>
+<li>rework loops appear after manual price changes;</li>
+<li>customer-credit blocks increase cycle time but reduce exposure;</li>
+<li>intercompany flows create hidden waiting time between legal entities.</li>
+</ul>
+</section>
+<section id="layer-6-decision-layer" class="level3">
+<h3 class="anchored" data-anchor-id="layer-6-decision-layer">Layer 6: decision layer</h3>
+<p>The decision layer converts analytical signals into managerial or operational interventions. These may include alerts, exception queues, workflow tasks, control recommendations, automation triggers, policy changes, master-data remediation, or process redesign.</p>
+<p>The decision layer must distinguish between correlation and intervention. A bottleneck signal is not automatically a prescription. It becomes a prescription only when the causal mechanism is understood well enough to justify action.</p>
+</section>
+<section id="layer-7-governance-layer" class="level3">
+<h3 class="anchored" data-anchor-id="layer-7-governance-layer">Layer 7: governance layer</h3>
+<p>The governance layer defines data ownership, process ownership, access control, semantic standards, metric definitions, auditability, and change management.</p>
+<p>Without governance, process mining degenerates into visually persuasive analytics with unstable semantics. With governance, it becomes a computational representation of enterprise operations.</p>
+</section>
+</section>
+<section id="potential-applications" class="level2">
+<h2 class="anchored" data-anchor-id="potential-applications">Potential applications</h2>
+<section id="order-to-cash" class="level3">
+<h3 class="anchored" data-anchor-id="order-to-cash">Order-to-cash</h3>
+<p>Order-to-cash is one of the most natural application areas because it combines commercial commitments, logistics, invoicing, credit management, and cash collection.</p>
+<p>Relevant objects include:</p>
+<ul>
+<li>customer;</li>
+<li>quotation;</li>
+<li>sales order;</li>
+<li>sales order line;</li>
+<li>delivery;</li>
+<li>shipment;</li>
+<li>invoice;</li>
+<li>credit memo;</li>
+<li>payment;</li>
+<li>dispute.</li>
+</ul>
+<p>Relevant events include:</p>
+<ul>
+<li>quotation created;</li>
+<li>order created;</li>
+<li>order confirmed;</li>
+<li>credit block applied;</li>
+<li>block released;</li>
+<li>delivery created;</li>
+<li>goods issued;</li>
+<li>invoice posted;</li>
+<li>payment received;</li>
+<li>dispute opened;</li>
+<li>dispute closed.</li>
+</ul>
+<p>Typical analyses include:</p>
+<ul>
+<li>cycle time from order creation to delivery;</li>
+<li>cycle time from delivery to invoice;</li>
+<li>days sales outstanding;</li>
+<li>frequency and duration of credit blocks;</li>
+<li>rework caused by order changes;</li>
+<li>delivery delays by warehouse, carrier, item, customer segment, or legal entity;</li>
+<li>revenue leakage from billing errors;</li>
+<li>exception paths that bypass standard approval.</li>
+</ul>
+<p>In an ERP transformation, this analysis can validate whether the target operating model is actually being adopted after go-live.</p>
+</section>
+<section id="procure-to-pay" class="level3">
+<h3 class="anchored" data-anchor-id="procure-to-pay">Procure-to-pay</h3>
+<p>Procure-to-pay is structurally suitable for conformance checking because procurement processes usually contain explicit control expectations.</p>
+<p>Relevant objects include:</p>
+<ul>
+<li>purchase requisition;</li>
+<li>purchase order;</li>
+<li>purchase order line;</li>
+<li>supplier;</li>
+<li>goods receipt;</li>
+<li>service entry sheet;</li>
+<li>invoice;</li>
+<li>payment;</li>
+<li>contract.</li>
+</ul>
+<p>Relevant events include:</p>
+<ul>
+<li>requisition created;</li>
+<li>requisition approved;</li>
+<li>purchase order created;</li>
+<li>purchase order approved;</li>
+<li>goods received;</li>
+<li>invoice received;</li>
+<li>invoice blocked;</li>
+<li>invoice released;</li>
+<li>payment executed.</li>
+</ul>
+<p>Typical analyses include:</p>
+<ul>
+<li>maverick buying;</li>
+<li>purchase orders created after invoice receipt;</li>
+<li>missing approvals;</li>
+<li>three-way match deviations;</li>
+<li>invoice blocks by supplier or buyer;</li>
+<li>payment-term deviations;</li>
+<li>late payment risk;</li>
+<li>contract leakage;</li>
+<li>approval bottlenecks.</li>
+</ul>
+<p>The mathematical value lies in comparing observed traces with control models. A deviation is not a subjective finding. It is a measurable distance between <span class="math inline">L_{obs}</span> and <span class="math inline">\mathcal{L}(M)</span>.</p>
+</section>
+<section id="inventory-and-supply-chain-planning" class="level3">
+<h3 class="anchored" data-anchor-id="inventory-and-supply-chain-planning">Inventory and supply-chain planning</h3>
+<p>Inventory processes are not always modeled as clean workflows, but they generate rich event data. Object-centric process mining is especially relevant because inventory behavior emerges from interactions among items, warehouses, production orders, purchase orders, sales orders, transfer orders, forecasts, and replenishment policies.</p>
+<p>Relevant analyses include:</p>
+<ul>
+<li>stockout root-cause chains;</li>
+<li>excess stock caused by forecast changes or minimum-order quantities;</li>
+<li>lead-time variability by supplier and item;</li>
+<li>replenishment-cycle deviations;</li>
+<li>warehouse transfer delays;</li>
+<li>blocked or quality-inspection stock;</li>
+<li>planning nervousness;</li>
+<li>mismatch between planning parameters and actual execution.</li>
+</ul>
+<p>A process-mining layer can reveal whether the planning model is structurally coherent. If reorder points, safety stocks, lead times, and coverage groups are configured in one way but the actual replenishment process behaves differently, the difference becomes measurable.</p>
+</section>
+<section id="manufacturing-and-meserp-integration" class="level3">
+<h3 class="anchored" data-anchor-id="manufacturing-and-meserp-integration">Manufacturing and MES/ERP integration</h3>
+<p>Manufacturing processes combine ERP-level production orders with MES-level execution events and machine-level telemetry. The relevant process is not only administrative. It is cyber-physical.</p>
+<p>Relevant objects include:</p>
+<ul>
+<li>production order;</li>
+<li>batch;</li>
+<li>operation;</li>
+<li>work center;</li>
+<li>machine;</li>
+<li>material lot;</li>
+<li>quality inspection;</li>
+<li>nonconformance;</li>
+<li>maintenance order.</li>
+</ul>
+<p>Relevant events include:</p>
+<ul>
+<li>production order released;</li>
+<li>material staged;</li>
+<li>operation started;</li>
+<li>operation completed;</li>
+<li>machine stopped;</li>
+<li>scrap recorded;</li>
+<li>quality inspection completed;</li>
+<li>rework initiated;</li>
+<li>order technically completed.</li>
+</ul>
+<p>Potential analyses include:</p>
+<ul>
+<li>waiting time between release and execution;</li>
+<li>queue time by work center;</li>
+<li>rework loops;</li>
+<li>scrap correlation with machine, shift, material lot, or operator;</li>
+<li>divergence between planned and actual routing;</li>
+<li>bottlenecks across production cells;</li>
+<li>impact of maintenance events on order completion.</li>
+</ul>
+<p>The key technical challenge is synchronization across time domains. ERP, MES, SCADA, and historian systems do not necessarily share the same event granularity or timestamp semantics.</p>
+</section>
+<section id="finance-and-working-capital" class="level3">
+<h3 class="anchored" data-anchor-id="finance-and-working-capital">Finance and working capital</h3>
+<p>Finance processes are attractive because their economic effect can be quantified directly.</p>
+<p>Applications include:</p>
+<ul>
+<li>invoice processing;</li>
+<li>accounts payable;</li>
+<li>accounts receivable;</li>
+<li>dispute management;</li>
+<li>cash application;</li>
+<li>closing processes;</li>
+<li>intercompany reconciliation.</li>
+</ul>
+<p>Metrics include:</p>
+<ul>
+<li>invoice cycle time;</li>
+<li>blocked-invoice aging;</li>
+<li>discount capture rate;</li>
+<li>payment-term compliance;</li>
+<li>overdue receivables;</li>
+<li>dispute resolution time;</li>
+<li>manual journal-entry frequency;</li>
+<li>month-end closing bottlenecks.</li>
+</ul>
+<p>The value is not only operational efficiency. It is liquidity, risk reduction, compliance, and working-capital optimization.</p>
+</section>
+<section id="compliance-internal-control-and-audit" class="level3">
+<h3 class="anchored" data-anchor-id="compliance-internal-control-and-audit">Compliance, internal control, and audit</h3>
+<p>Process mining can support internal controls by replacing sampling-based evidence with population-level behavioral analysis.</p>
+<p>Examples include:</p>
+<ul>
+<li>segregation-of-duties violations;</li>
+<li>skipped approvals;</li>
+<li>order changes after approval;</li>
+<li>payments without proper invoice match;</li>
+<li>manual price overrides;</li>
+<li>goods receipt after invoice;</li>
+<li>supplier-bank-account changes before payment;</li>
+<li>emergency-user activity;</li>
+<li>retrospective purchase-order creation.</li>
+</ul>
+<p>The relevant mathematical concept is not discovery but conformance. The control model defines admissible behavior. The event log shows observed behavior. Deviations can be measured, ranked, and assigned to owners.</p>
+<p>This does not eliminate audit judgment. It changes the empirical basis of audit judgment.</p>
+</section>
+<section id="digital-transformation-and-erp-migration" class="level3">
+<h3 class="anchored" data-anchor-id="digital-transformation-and-erp-migration">Digital transformation and ERP migration</h3>
+<p>In ERP programs, process mining can be used before, during, and after transformation.</p>
+<p>Before transformation, it reconstructs the as-is process from actual data. This avoids designing the target model from workshop narratives alone.</p>
+<p>During transformation, it supports fit-gap analysis. If the actual process contains many variants, the transformation team can distinguish necessary variants from historical noise.</p>
+<p>After go-live, it measures adoption. The organization can test whether users follow the new process, whether legacy workarounds reappear, whether master-data issues create new bottlenecks, and whether local entities diverge from the template.</p>
+<p>The most rigorous use is to treat process mining as a transformation-control system. The target operating model becomes a formal model <span class="math inline">M</span>. The live ERP event log becomes <span class="math inline">L_t</span>. Adoption is measured as a time-dependent conformance function:</p>
+<p><span class="math display">
+A(t) = conformance(L_t, M)
+</span></p>
+<p>where <span class="math inline">A(t)</span> should increase after stabilization if the transformation is effective.</p>
+</section>
+</section>
+<section id="limits-and-failure-modes" class="level2">
+<h2 class="anchored" data-anchor-id="limits-and-failure-modes">Limits and failure modes</h2>
+<p>Process mining is powerful, but its limits are structural:</p>
+<ol type="1">
+<li><p>It cannot see events that are not recorded. If a decision occurs in a phone call, spreadsheet, email, or informal meeting, the process model will only see its downstream trace.</p></li>
+<li><p>It cannot infer semantics from identifiers alone. A timestamped status change does not explain why the status changed.</p></li>
+<li><p>It can confuse correlation with causation. If late deliveries correlate with a certain warehouse, the warehouse may be the cause, or it may simply handle more complex orders.</p></li>
+<li><p>Process mining can produce false managerial confidence. A graph generated from poor event abstraction may look objective while encoding wrong assumptions.</p></li>
+<li><p>Excessive granularity can obscure process logic. Not every technical event should become a business event. The event model must be abstract enough to represent business semantics and concrete enough to preserve causal evidence.</p></li>
+<li><p>Privacy and surveillance risks must be governed. The closer process mining moves toward user-level task mining or desktop interaction capture, the more it enters the domain of labor monitoring, privacy regulation, employee relations, and proportionality analysis.</p></li>
+<li><p>Event logs may encode organizational bias. If a system records only formal approvals, only successful transactions, or only activities executed by certain roles, the resulting process model may overrepresent governed behavior and underrepresent informal recovery work, shadow processes, or exception handling. The observed log is therefore not the process itself; it is the projection of the process through the instrumentation layer of the enterprise.</p></li>
+</ol>
+</section>
+<section id="celonis-as-a-commercial-instantiation" class="level2">
+<h2 class="anchored" data-anchor-id="celonis-as-a-commercial-instantiation">Celonis as a commercial instantiation</h2>
+<p>Celonis can be understood as a commercial platform that industrializes the architecture described above. It is not merely a process-discovery tool. It packages process-data ingestion, process modeling, object-centric process analysis, dashboards, business applications, task mining, automation, and a process-intelligence semantic layer into a managed enterprise platform.</p>
+<p>Celonis currently presents its platform around the concept of a Process Intelligence Graph. This graph combines data from operational systems, applications, and devices with business context such as rules, KPIs, benchmarks, models, and enterprise architecture, with the objective of creating a system-agnostic digital twin of enterprise operations.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p>From a technical perspective, the most important architectural point is the shift from isolated, case-centric process logs toward an object-centric data model. Celonis documentation describes the object-centric model as a unified structure of business objects, events, and relationships, avoiding the need to force complex enterprise processes into a single case notion.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<p>This direction is coherent with the mathematical limitations of classical process mining. Real ERP processes are not linear traces attached to one identifier. They are networks of interacting objects: orders, order lines, deliveries, invoices, payments, materials, suppliers, customers, plants, warehouses, and users. An object-centric architecture is therefore not only a product feature. It is a better computational approximation of enterprise reality.</p>
+<p>Celonis also extends process mining toward task mining. In this layer, user interactions with applications and web pages can be captured and analyzed, subject to configuration and governance controls.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> This moves the analytical boundary from transactional system events to human-computer interaction traces. The gain is visibility into manual work. The risk is that the system moves closer to employee-monitoring infrastructure and therefore requires strict privacy, labor-law, and governance assessment.</p>
+<p>Another relevant extension is the action layer. Celonis Action Flows are designed to create automations and combine them into processes.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> This changes the role of process mining from descriptive analytics to operational intervention. The architecture becomes a closed loop:</p>
+<p><span class="math display">
+observe \rightarrow model \rightarrow diagnose \rightarrow decide \rightarrow act \rightarrow observe
+</span></p>
+<p>The strategic implication is that Celonis should not be evaluated only as a visualization tool. It should be evaluated as a process-intelligence operating layer over enterprise systems. The hard questions are therefore architectural and organizational:</p>
+<ul>
+<li>Which systems are authoritative for process events?</li>
+<li>Which business objects define the object-centric model?</li>
+<li>Which KPIs are governed and reusable?</li>
+<li>Which deviations are merely descriptive and which trigger action?</li>
+<li>Which actions can be automated without violating control principles?</li>
+<li>Which process owners are accountable for model correctness?</li>
+<li>Which parts of the organization are allowed to see user-level or resource-level data?</li>
+<li>Which process improvements are economically material?</li>
+</ul>
+<p>In this sense, Celonis is best interpreted as an enterprise process-intelligence platform rather than as a simple process-mining application. Its value depends less on the beauty of discovered process maps and more on the quality of the semantic layer, the correctness of event extraction, the maturity of process ownership, and the ability to convert evidence into controlled operational change.</p>
+</section>
+<section id="process-mining-in-enterprise-architecture-and-digital-transformation" class="level2">
+<h2 class="anchored" data-anchor-id="process-mining-in-enterprise-architecture-and-digital-transformation">Process mining in enterprise architecture and digital transformation</h2>
+<p>Process mining should not be interpreted as an isolated analytical technique. In a mature enterprise, it is more correctly understood as a computational layer of enterprise architecture: a mechanism that connects operating-model intent, information-system behavior, organizational accountability, and measurable execution evidence.</p>
+<p>Enterprise architecture traditionally represents the enterprise through relatively stable artifacts: capability maps, process models, application landscapes, information models, integration views, organizational structures, and governance principles. These artifacts describe what the enterprise is supposed to be. They define the intentional architecture.</p>
+<p>Process mining adds a complementary dimension. It reconstructs the <strong>behavioral architecture</strong> of the enterprise from event data. It shows how the enterprise actually executes, where control paths diverge from designed procedures, where systems introduce latency, where local variants emerge, and where organizational units use the same application landscape in materially different ways.</p>
+<p>The relation can be expressed as follows:</p>
+<p><span class="math display">
+EA_{intent} = (C, P, A, D, O, G)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">C</span> is the capability architecture;</li>
+<li><span class="math inline">P</span> is the process architecture;</li>
+<li><span class="math inline">A</span> is the application architecture;</li>
+<li><span class="math inline">D</span> is the data architecture;</li>
+<li><span class="math inline">O</span> is the organizational architecture;</li>
+<li><span class="math inline">G</span> is the governance architecture.</li>
+</ul>
+<p>Process mining introduces an empirical behavioral layer:</p>
+<p><span class="math display">
+EA_{observed} = f(E)
+</span></p>
+<p>where <span class="math inline">E</span> is the event structure extracted from operational systems.</p>
+<p>The architectural problem is then not merely to discover a process model. The real problem is to compare <strong>intentional architecture with observed architecture</strong>:</p>
+<p><span class="math display">
+\Delta EA = EA_{observed} - EA_{intent}
+</span></p>
+<p>This difference is one of the most important objects of digital transformation. It identifies where the <strong>designed enterprise and the executed enterprise diverge</strong>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-enterprise-architecture-behavioral-gap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-enterprise-architecture-behavioral-gap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-enterprise-architecture-behavioral-gap">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  subgraph INTENT["Intentional Enterprise Architecture"]
+    C["Capability architecture"]
+    P["Process architecture"]
+    A["Application architecture"]
+    D["Data architecture"]
+    O["Organizational architecture"]
+    G["Governance architecture"]
+  end
+
+  subgraph OBS["Observed Behavioral Architecture"]
+    E["Event data"]
+    PM["Process mining model"]
+    K["KPIs, variants, deviations, bottlenecks"]
+  end
+
+  C --&gt; DELTA["ΔEA&lt;br/&gt;Gap between designed and executed enterprise"]
+  P --&gt; DELTA
+  A --&gt; DELTA
+  D --&gt; DELTA
+  O --&gt; DELTA
+  G --&gt; DELTA
+
+  E --&gt; PM --&gt; K --&gt; DELTA
+
+  DELTA --&gt; T["Transformation backlog"]
+  T --&gt; R["Process redesign"]
+  T --&gt; S["System configuration"]
+  T --&gt; MD["Master-data remediation"]
+  T --&gt; AU["Automation"]
+  T --&gt; GOV["Governance intervention"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-enterprise-architecture-behavioral-gap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Process mining as an enterprise-architecture feedback mechanism. Intentional architecture defines the designed enterprise, while observed behavioral architecture reconstructs execution from event data. The gap between the two feeds the transformation backlog across process redesign, system configuration, master-data remediation, automation, and governance intervention.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<section id="capability-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="capability-architecture">Capability architecture</h3>
+<p>At the capability level, process mining helps determine whether a business capability is only formally present or operationally mature.</p>
+<p>For example, an organization may declare that it has a centralized procurement capability. However, event data may show that purchase orders are frequently created after invoice receipt, that approval paths differ by plant, that contracts are bypassed, or that suppliers are selected outside governed catalogues.</p>
+<p>In architectural terms, the capability exists nominally but is not behaviorally instantiated in a controlled and repeatable way.</p>
+<p>A capability can therefore be evaluated through process evidence:</p>
+<p><span class="math display">
+Maturity(capability) = g(conformance, stability, cycle\ time, exception\ rate, automation\ rate)
+</span></p>
+<p>This is more rigorous than assigning maturity through interviews alone. The maturity assessment becomes partially grounded in observed execution.</p>
+</section>
+<section id="process-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="process-architecture">Process architecture</h3>
+<p>At the process-architecture level, process mining validates whether documented processes correspond to real operational flows.</p>
+<p>The usual enterprise-architecture repository contains designed process models. These models are frequently normative, incomplete, outdated, or over-standardized. Process mining provides an empirical counter-model.</p>
+<p>The designed process is:</p>
+<p><span class="math display">
+P_{design}
+</span></p>
+<p>The mined process is:</p>
+<p><span class="math display">
+P_{observed}
+</span></p>
+<p>The transformation-relevant object is the distance:</p>
+<p><span class="math display">
+d(P_{design}, P_{observed})
+</span></p>
+<p>This distance can represent skipped steps, additional activities, loops, local variants, timing deviations, control violations, or different routing patterns.</p>
+<p>This matters because digital transformation often fails when the target process is designed as if the current process were already understood. Process mining reduces that epistemic risk. It does not eliminate judgment, but it constrains speculation by requiring evidence from the systems that execute the process.</p>
+</section>
+<section id="application-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="application-architecture">Application architecture</h3>
+<p>At the application-architecture level, process mining reveals how systems actually participate in end-to-end execution.</p>
+<p>Enterprise architecture diagrams often represent applications as boxes connected by interfaces. This is structurally useful but behaviorally incomplete. It says that two systems are integrated. It does not show whether the integration causes waiting time, rework, duplication, manual reconciliation, or inconsistent state propagation.</p>
+<p>Process mining can expose application-level friction such as:</p>
+<ul>
+<li>excessive waiting time between CRM quotation and ERP sales-order creation;</li>
+<li>manual corrections after system-to-system transfer;</li>
+<li>repeated status reversals after middleware failures;</li>
+<li>invoice blocks caused by inconsistent master data;</li>
+<li>production delays caused by ERP/MES synchronization gaps;</li>
+<li>warehouse execution deviations caused by incomplete order attributes.</li>
+</ul>
+<p>The application landscape can therefore be evaluated not only by technical ownership or interface count, but by behavioral contribution to process performance.</p>
+<p>A useful architectural metric is the latency introduced by an application boundary:</p>
+<p><span class="math display">
+Latency(A_i,A_j) = \mathbb{E}[t(e_j) - t(e_i)]
+</span></p>
+<p>where <span class="math inline">e_i</span> is the last relevant event in application <span class="math inline">A_i</span> and <span class="math inline">e_j</span> is the first corresponding event in application <span class="math inline">A_j</span>.</p>
+<p>This allows integration architecture to be evaluated empirically. A system boundary is not only a diagrammatic relation. It is a measurable delay, risk, and control point.</p>
+</section>
+<section id="data-architecture-and-semantic-governance" class="level3">
+<h3 class="anchored" data-anchor-id="data-architecture-and-semantic-governance">Data architecture and semantic governance</h3>
+<p>Process mining depends on the correctness of event semantics. For this reason, it is tightly connected to enterprise data architecture.</p>
+<p>The same operational fact may be represented differently across ERP, CRM, MES, WMS, PLM, workflow systems, and data warehouses. A process-mining layer must decide which records become events, which timestamps are authoritative, which identifiers correlate objects, and which attributes define the analytical context.</p>
+<p>This makes process mining a semantic-governance problem.</p>
+<p>The event-construction function:</p>
+<p><span class="math display">
+\phi : D \rightarrow E
+</span></p>
+<p>must be governed as an enterprise artifact. It is not a technical detail. It defines the empirical reality that the organization will analyze.</p>
+<p>If <span class="math inline">\phi</span> is unstable, process metrics become unstable. If <span class="math inline">\phi</span> is semantically wrong, dashboards become misleading. If <span class="math inline">\phi</span> is locally customized without governance, cross-company or cross-country comparisons become invalid.</p>
+<p>Therefore, a process-intelligence architecture requires:</p>
+<ul>
+<li>governed event definitions;</li>
+<li>canonical business-object identifiers;</li>
+<li>lineage from source records to analytical events;</li>
+<li>versioned transformation logic;</li>
+<li>ownership of process metrics;</li>
+<li>explicit treatment of time zones, reversals, cancellations, and status changes;</li>
+<li>clear distinction between technical events and business events.</li>
+</ul>
+<p>In digital transformation, this is critical. Without semantic governance, process mining becomes another reporting layer. With semantic governance, it becomes part of the enterprise operating model.</p>
+</section>
+<section id="operating-model-and-organizational-accountability" class="level3">
+<h3 class="anchored" data-anchor-id="operating-model-and-organizational-accountability">Operating model and organizational accountability</h3>
+<p>A process does not belong only to an application. It belongs to an operating model.</p>
+<p>The same process may cross sales, finance, logistics, procurement, production, customer service, compliance, and external partners. Process mining exposes these crossings. It shows where ownership is fragmented, where handovers create delay, where exception handling is informal, and where local autonomy contradicts global standardization.</p>
+<p>This has a direct consequence for transformation governance. Every relevant process metric should have an owner. Every relevant deviation class should have an accountable function. Every recurring exception should be classified as either:</p>
+<ul>
+<li>a legitimate business variant;</li>
+<li>a defect in the process design;</li>
+<li>a defect in master data;</li>
+<li>a defect in system configuration;</li>
+<li>a training or adoption issue;</li>
+<li>a control violation;</li>
+<li>a necessary exception requiring explicit governance.</li>
+</ul>
+<p>This classification is architectural. It determines whether the answer is process redesign, system change, master-data remediation, automation, organizational intervention, or policy enforcement.</p>
+</section>
+<section id="erp-transformation-and-template-governance" class="level3">
+<h3 class="anchored" data-anchor-id="erp-transformation-and-template-governance">ERP transformation and template governance</h3>
+<p>In ERP programs, process mining is especially valuable because it creates continuity between the as-is state, the target template, and post-go-live stabilization.</p>
+<p>Before implementation, it supports empirical as-is discovery. This is useful because workshop-based process collection tends to overstate formal behavior and understate exceptions.</p>
+<p>During design, it supports template rationalization. A global ERP template should not encode every local historical variant. However, it should not suppress legitimate legal, fiscal, logistic, or commercial differences. Process mining helps distinguish structural variation from accidental variation.</p>
+<p>After go-live, it supports adoption control. The target template can be formalized as a reference model <span class="math inline">M_T</span>. The live event log after deployment is <span class="math inline">L_t</span>. Adoption can then be measured as:</p>
+<p><span class="math display">
+Adoption(t) = conformance(L_t, M_T)
+</span></p>
+<p>This allows the transformation office to observe whether the organization is converging toward the target operating model or recreating old behaviors inside the new system.</p>
+<p>The same principle applies to phased rollouts. If different legal entities, plants, or countries adopt the same ERP template, process mining can compare behavioral convergence:</p>
+<p><span class="math display">
+d(L_i, L_j)
+</span></p>
+<p>where <span class="math inline">L_i</span> and <span class="math inline">L_j</span> are event logs from different organizational units.</p>
+<p>Low distance suggests template convergence. High distance requires explanation. It may indicate legitimate localization, poor adoption, configuration divergence, different data quality, or process ownership gaps.</p>
+</section>
+<section id="automation-and-architectural-control" class="level3">
+<h3 class="anchored" data-anchor-id="automation-and-architectural-control">Automation and architectural control</h3>
+<p>Process mining often leads naturally to automation. If a repeated exception is detected, the organization may want to trigger a workflow, create a task, send a notification, update a field, release a block, or call an external service.</p>
+<p>This must be treated carefully. Automation is not automatically transformation. Automating an incoherent process may only accelerate incoherence.</p>
+<p>From an architectural perspective, automation should be introduced only when the following conditions hold:</p>
+<p><span class="math display">
+Observed\ Pattern \rightarrow Diagnosed\ Cause \rightarrow Governed\ Decision \rightarrow Controlled\ Action
+</span></p>
+<p>The action layer should therefore be governed by enterprise architecture principles:</p>
+<ul>
+<li>clear ownership of automated decisions;</li>
+<li>separation between recommendation and execution;</li>
+<li>auditability of actions;</li>
+<li>compatibility with internal controls;</li>
+<li>rollback and exception handling;</li>
+<li>security and access-control design;</li>
+<li>avoidance of uncontrolled point-to-point automation;</li>
+<li>alignment with the canonical process and data model.</li>
+</ul>
+<p>This is especially relevant in ERP landscapes, where apparently simple automations can affect financial postings, inventory positions, customer commitments, supplier obligations, credit exposure, or compliance controls.</p>
+</section>
+<section id="process-mining-as-a-transformation-control-system" class="level3">
+<h3 class="anchored" data-anchor-id="process-mining-as-a-transformation-control-system">Process mining as a transformation control system</h3>
+<p>The strongest architectural interpretation is to treat process mining as a control system for digital transformation.</p>
+<p>A transformation defines a desired future state:</p>
+<p><span class="math display">
+S^*
+</span></p>
+<p>The enterprise produces observed behavior over time:</p>
+<p><span class="math display">
+S(t)
+</span></p>
+<p>Process mining measures the distance:</p>
+<p><span class="math display">
+d(S(t), S^*)
+</span></p>
+<p>Transformation management then acts to reduce that distance, subject to constraints of cost, risk, compliance, organizational capacity, and strategic intent.</p>
+<p>The loop is:</p>
+<p><span class="math display">
+observe \rightarrow compare \rightarrow diagnose \rightarrow intervene \rightarrow observe
+</span></p>
+<p>This is fundamentally different from static transformation governance. A steering committee that only checks milestones, budgets, and deliverables may know whether the project is progressing. It may not know whether the operating model is actually changing. Process mining supplies this missing empirical layer.</p>
+<p>In this sense, process mining is not merely a tool for process improvement. It is an architectural instrument for making digital transformation observable, measurable, and governable.</p>
+<p>It connects the formal architecture of the enterprise with its behavioral execution. It converts operational traces into evidence. It transforms process diagrams from static descriptions into hypotheses that can be tested against reality. And it allows digital transformation to be managed not only as system deployment, but as measurable change in the way the enterprise actually works.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Process mining is the computational reconstruction of operational behavior from event data. Its foundations are simple: events, time, ordering, correlation, and process semantics. Its implementation is difficult because enterprise reality is not a clean sequence of activities. It is a multi-object, multi-system, multi-agent, temporally distributed structure.</p>
+<p>The technical core consists of event-log construction, process discovery, variant analysis, conformance checking, performance mining, object-centric modeling, and operational intervention. The managerial value emerges when these capabilities are connected to concrete enterprise questions: working capital, delivery reliability, procurement control, production efficiency, ERP adoption, compliance, and transformation governance.</p>
+<p>The mathematically disciplined view is therefore the safest one. Process mining should not be treated as automatic truth extraction. It should be treated as a formal inference pipeline:</p>
+<p><span class="math display">
+D \xrightarrow{\phi} E \xrightarrow{mine} M \xrightarrow{evaluate} I \xrightarrow{govern} A
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">D</span> is raw operational data;</li>
+<li><span class="math inline">\phi</span> is the semantic event-construction function;</li>
+<li><span class="math inline">E</span> is the event log or object-centric event structure;</li>
+<li><span class="math inline">M</span> is the discovered or normative process model;</li>
+<li><span class="math inline">I</span> is the set of insights, deviations, bottlenecks, and predictions;</li>
+<li><span class="math inline">A</span> is the set of governed actions.</li>
+</ul>
+<p>Every arrow in this chain can fail. Raw data can be incomplete. Event construction can be semantically wrong. Models can overfit. Deviations can be misinterpreted. Actions can optimize local metrics while damaging the global system.</p>
+<p>Used rigorously, however, process mining provides something that conventional process analysis rarely achieves: a measurable, reproducible, and continuously refreshable representation of how the enterprise actually operates.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/archimate_4_and_the_cartography_of_complexity/">
+<img class="see-also-card-image" src="../../longforms/archimate_4_and_the_cartography_of_complexity/enterprise_modelling.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">ArchiMate 4 and the Cartography of Complexity</h5>
+<div class="see-also-card-subtitle">How ArchiMate 4 simplifies enterprise modeling while enterprise systems grow more complex, shifting the real challenge from notation to semantic governance and operational evidence</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/">
+<img class="see-also-card-image" src="../../longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/ea-insertion.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Introducing Enterprise Architecture in a Multinational Company: A Roadmap for Building the Discipline from Scratch</h5>
+<div class="see-also-card-subtitle">Building an architectural capability to guide technological evolution, manage structural complexity, and evaluate transformation trade-offs in large multinational enterprises</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/from-s&amp;op-to-continuous-orchestration/">
+<img class="see-also-card-image" src="../../longforms/from-s&amp;op-to-continuous-orchestration/orchestration.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">From S&amp;OP to Continuous Orchestration: Envisioning the Hybrid Enterprise of Humans and AI Agents</h5>
+<div class="see-also-card-subtitle">From calendar-driven cycles to signal-driven enterprise adaptation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/from-planning-to-orchestration-reimagining-enterprise-beyond-S&amp;OP/">
+<img class="see-also-card-image" src="../../longforms/from-planning-to-orchestration-reimagining-enterprise-beyond-S&amp;OP/flow.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">From Planning to Orchestration: Reimagining the Enterprise Beyond S&amp;OP</h5>
+<div class="see-also-card-subtitle">Designing the continuously orchestrated enterprise</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/comprehensive-guide-to-sales-and-operations-planning/">
+<img class="see-also-card-image" src="../../longforms/comprehensive-guide-to-sales-and-operations-planning/cycles.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Comprehensive Guide to Sales &amp; Operations Planning, Sales &amp; Operations Execution and Master Production Scheduling</h5>
+<div class="see-also-card-subtitle">From planning cycles to organisational capability: how integrated planning evolves through execution, feedback and learning</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/">
+<img class="see-also-card-image" src="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/ia-org.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Beyond the Hype: What Microsoft’s Copilot Data Really Says About AI at Work</h5>
+<div class="see-also-card-subtitle">From lofty predictions to real-world clicks: what AI usage data reveals about job impact and the new governance of human–agent organizational models</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/architecting-change-interim-management/">
+<img class="see-also-card-image" src="../../posts/architecting-change-interim-management/antonio.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Architecting Change</h5>
+<div class="see-also-card-subtitle">How I blend enterprise architecture, technology, and interim leadership to transform organizations</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>IEEE Task Force on Process Mining, (2012). <strong>Process Mining Manifesto</strong>. <a href="https://www.tf-pm.org/resources/manifesto">Webpage</a>. From the manifesto: <em>The idea of process mining is to discover, monitor and improve real processes (i.e., not assumed processes) by extracting knowledge from event logs readily available in today’s (information) systems. Process mining includes (automated) process discovery (i.e., extracting process models from an event log), conformance checking (i.e., monitoring deviations by comparing model and log), social network/organizational mining, automated construction of simulation models, model extension, model repair, case prediction, and history-based recommendations.</em><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>van der Aalst, W. (2016). <strong>Process mining: Data science in action</strong> (2nd ed.). Springer Berlin Heidelberg. <a href="https://doi.org/10.1007/978-3-662-49851-4">DOI</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>XES, the eXtensible Event Stream standard, is a standard format for representing and exchanging event logs and event streams in process mining. The current IEEE version is IEEE 1849-2023, <strong>IEEE Standard for eXtensible Event Stream (XES) for Achieving Interoperability in Event Logs and Event Streams</strong>. See also the <a href="https://www.xes-standard.org/">XES standardization initiative website</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>A Petri net is a formal model for representing discrete-event systems, especially systems with concurrency, synchronization, conflict, and resource constraints. It is usually defined as a bipartite graph composed of <em>places</em>, <em>transitions</em>, and directed arcs. Places may contain <em>tokens</em>, and the distribution of tokens across places is called a <em>marking</em>, which represents the current state of the system. A transition is enabled when its input places contain the required tokens; when it fires, it consumes tokens from its input places and produces tokens in its output places. In process mining, Petri nets are often used because they provide precise execution semantics for process models, making it possible to reason formally about reachability, deadlocks, parallelism, loops, and conformance between an observed event log and a normative process model. See: Murata, T. (1989). <strong>Petri nets: Properties, analysis and applications</strong>. <em>Proceedings of the IEEE, 77</em>(4), 541–580. <a href="https://doi.org/10.1109/5.24143">DOI</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Little’s Law is a fundamental result of queueing theory. In its standard form, it states that the long-run average number of items in a stable system, usually denoted by <span class="math inline">L</span>, is equal to the long-run average arrival rate, <span class="math inline">\lambda</span>, multiplied by the average time an item spends in the system, <span class="math inline">W</span>: <span class="math inline">L = \lambda W</span>. In process mining and operations analysis, this relation is useful because it links work in progress, throughput, and cycle time. See: Little, J. D. C. (1961). <strong>A proof for the queuing formula: <span class="math inline">L = \lambda W</span></strong>. <em>Operations Research, 9</em>(3), 383–387. <a href="https://doi.org/10.1287/opre.9.3.383">DOI</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>OCEL 2.0 is a standard format for representing object-centric event logs, where events may be related to multiple business objects rather than to a single case identifier. This makes it suitable for complex enterprise processes involving interacting objects such as orders, deliveries, invoices, payments, materials, and resources. See: Berti, A., Koren, I., Adams, J. N., Park, G., Knopp, B., Graves, N., Rafiei, M., Liß, L., Tacke Genannt Unterberg, L., Zhang, Y., Schwanen, C., Pegoraro, M., &amp; van der Aalst, W. M. P. (2023). <strong>OCEL (Object-Centric Event Log) 2.0 specification</strong> (Version 2.0). <em>Chair of Process and Data Science, RWTH Aachen University</em>. <a href="https://www.ocel-standard.org/2.0/ocel20_specification.pdf">PDF</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Celonis, <a href="https://www.celonis.com/platform/process-intelligence-graph"><strong>Process Intelligence Graph</strong></a>.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Celonis documentation, <a href="https://docs.celonis.com/en/object-centric-process-mining.html"><strong>Objects and Events</strong></a> and <a href="https://docs.celonis.com/en/ocdm.html"><strong>Object-Centric Data Model</strong></a>.<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Celonis documentation, <a href="https://docs.celonis.com/en/task-mining.html"><strong>Task Mining</strong></a>.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Celonis documentation, <a href="https://docs.celonis.com/en/action-flows.html"><strong>Action Flows</strong></a>.<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">CC BY-NC-ND 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{montano2022,
+  author = {Montano, Antonio},
+  title = {Process {Mining} as {Computational} {Process} {Intelligence}},
+  date = {2022-10-22},
+  url = {https://antomon.github.io/longforms/process-mining-as-computational-process-intelligence/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-montano2022" class="csl-entry quarto-appendix-citeas" role="listitem">
+Montano, Antonio. 2022. <span>“Process Mining as Computational Process
+Intelligence.”</span> October 22. <a href="https://antomon.github.io/longforms/process-mining-as-computational-process-intelligence/">https://antomon.github.io/longforms/process-mining-as-computational-process-intelligence/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
