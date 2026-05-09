@@ -1,10 +1,10 @@
 ---
 title: "Process Mining as Computational Process Intelligence"
 subtitle: "A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications"
-description: "Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering and enterprise-architecture problem, because the validity of any discovered model depends on the semantic correctness of the event-construction function. It also discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation. Finally, it examines Celonis as a commercial instantiation of process intelligence and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution."
+description: "Process mining reconstructs operational behavior from event data rather than from procedural descriptions, making it a computational discipline for observing how enterprises actually execute their processes. This article develops process mining from first principles, starting from event-log construction, trace semantics, directly-follows relations, Petri-net models, variant analysis, behavioral entropy, conformance checking, performance mining, and Little’s Law. It then extends the classical case-centric model toward object-centric process mining, where events are related to multiple enterprise objects such as orders, deliveries, invoices, payments, materials, suppliers, and resources. The article frames process mining as a data-engineering, semantic-governance, and enterprise-architecture problem, because the validity of any discovered model depends on the correctness of the event-construction function. It discusses applications in order-to-cash, procure-to-pay, inventory, manufacturing, finance, audit, ERP migration, and digital transformation; examines Celonis as a commercial instantiation of process intelligence; and positions process mining as an architectural feedback mechanism for comparing intentional enterprise architecture with observed behavioral execution. The article also provides a practical roadmap for introducing process mining in a corporation, from scoped business questions and governed event models to dashboards, action models, scaling, and build-buy-hybrid decisions. Two mathematical appendices then extend the argument: the first formalizes process mining as system identification for dynamic resource allocation under forecasted demand; the second shows how process-mined parameters and structures can feed an integrated S&OP decision model, transforming process mining from descriptive analytics into empirical input for optimization, governance, and enterprise control."
 date: "2023-10-22"
 date-modified: "2026-01-17"
-categories: [enterprise architecture, tutorial, 🇬🇧]
+categories: [digital transformation, enterprise architecture, essay, 🇬🇧]
 keywords: process mining, event logs, computational process intelligence, process discovery, conformance checking, performance mining, object-centric process mining, OCEL, XES, Petri nets, directly-follows graph, behavioral entropy, process variants, ERP, business process management, enterprise architecture, data engineering, process intelligence, task mining, process automation, operational excellence, digital transformation, internal control, audit, supply chain, order-to-cash, procure-to-pay
 image: "process_mining_enterprise_behavior.jpeg"
 ---
@@ -23,7 +23,7 @@ A **business process is usually described as a normative abstraction**: a purcha
 %%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
 
 flowchart TD
-  D["Raw operational data<br/>ERP, CRM, MES, WMS, logs"] --> PHI["Semantic extraction<br/>φ : D → E"]
+  D["Raw operational data<br/>ERP, CRM, MES, WMS, logs"] --> PHI["Semantic extraction<br/>φ : D → L_E"]
   PHI --> E["Event log or object-centric event structure"]
   E --> A["Mining algorithms<br/>discovery, conformance, performance"]
   A --> I["Process model and diagnostics"]
@@ -152,7 +152,7 @@ $$
 
 where $L_E$ denotes the constructed event-log structure, including event identifiers, case assignments, activities, timestamps, resources, and attributes.
 
-The mining problem is not only the discovery of a process model from $E$. It is also the correctness of $\phi$. A poor extraction function can create an apparently precise but semantically false process model.
+The mining problem is not only the discovery of a process model from $L_E$. It is also the correctness of $\phi$. A poor extraction function can create an apparently precise but semantically false process model.
 
 This is why process mining is not merely an algorithmic discipline. It is also a **data-engineering, semantic-modeling, and enterprise-architecture discipline**.
 
@@ -273,9 +273,11 @@ with:
 
 $$
 H(L \mid Z)
+=
+\sum_z \mathbb{P}(Z=z)H(L_z)
 $$
 
-If entropy collapses after conditioning on $Z$, the variation is structurally explained. If entropy remains high within homogeneous partitions, the variation is likely operational rather than structural.
+where $L_z$ is the sublog restricted to cases or events with contextual condition $Z=z$. If entropy collapses after conditioning on $Z$, the variation is structurally explained. If entropy remains high within homogeneous partitions, the variation is likely operational rather than structural.
 
 This distinction matters in ERP transformation. A multinational group may show hundreds of order-to-cash variants globally. Some are legitimate because fiscal, logistic, or customer-channel conditions differ. Others are pure organizational noise. **Process mining becomes valuable when it separates these two cases**.
 
@@ -350,7 +352,7 @@ fitness(L,M) =
 }
 $$
 
-Here, $d_{max}(\sigma,M)$ denotes a normalizing maximum deviation cost for trace $\sigma$ with respect to model $M$, so that the resulting fitness score can be interpreted on a bounded scale.
+Here, $d_{max}(\sigma,M)$ denotes a normalizing maximum deviation cost for trace $\sigma$ with respect to model $M$, so that the resulting fitness score can be interpreted on a bounded scale. If the denominator is zero, fitness must be defined by convention, because no deviation cost is available for normalization. 
 
 **Precision** measures the inverse problem: whether the model allows too much behavior that was never observed. A model with perfect fitness but poor precision may be so permissive that it accepts almost everything. Such a model is not analytically useful.
 
@@ -526,10 +528,10 @@ The semantic transformation layer maps raw records to event abstractions.
 This layer defines the function:
 
 $$
-\phi : D \rightarrow E
+\phi : D \rightarrow L_E
 $$
 
-It decides that a row in a change-log table corresponds to an event such as “Purchase Order Approved”, “Sales Order Blocked”, “Delivery Created”, “Invoice Posted”, “Goods Receipt Reversed”, or “Payment Cleared”.
+It decides that a row in a change-log table corresponds to an event such as _Purchase Order Approved_, _Sales Order Blocked_, _Delivery Created_, _Invoice Posted_, _Goods Receipt Reversed_, or _Payment Cleared_.
 
 This layer is the most critical one. If it is wrong, all subsequent process analysis becomes formally valid but operationally false.
 
@@ -796,7 +798,7 @@ Process mining is powerful, but its limits are structural:
 
 Celonis can be understood as a commercial platform that industrializes the architecture described above. It is not merely a process-discovery tool. It packages process-data ingestion, process modeling, object-centric process analysis, dashboards, business applications, task mining, automation, and a process-intelligence semantic layer into a managed enterprise platform.
 
-Celonis currently presents its platform around the concept of a Process Intelligence Graph. This graph combines data from operational systems, applications, and devices with business context such as rules, KPIs, benchmarks, models, and enterprise architecture, with the objective of creating a system-agnostic digital twin of enterprise operations.[^process-mining-as-computational-process-intelligence-CEL1]
+At the time of writing, Celonis presents its platform around the concept of a Process Intelligence Graph. This graph combines data from operational systems, applications, and devices with business context such as rules, KPIs, benchmarks, models, and enterprise architecture, with the objective of creating a system-agnostic digital twin of enterprise operations.[^process-mining-as-computational-process-intelligence-CEL1]
 
 [^process-mining-as-computational-process-intelligence-CEL1]: Celonis, [**Process Intelligence Graph**](https://www.celonis.com/platform/process-intelligence-graph).
 
@@ -808,11 +810,7 @@ This direction is coherent with the mathematical limitations of classical proces
 
 Celonis also extends process mining toward task mining. In this layer, user interactions with applications and web pages can be captured and analyzed, subject to configuration and governance controls.[^process-mining-as-computational-process-intelligence-CEL3] This moves the analytical boundary from transactional system events to human-computer interaction traces. The gain is visibility into manual work. The risk is that the system moves closer to employee-monitoring infrastructure and therefore requires strict privacy, labor-law, and governance assessment.
 
-Another relevant extension is the action layer. Celonis Action Flows are designed to create automations and combine them into processes.[^process-mining-as-computational-process-intelligence-CEL4] This changes the role of process mining from descriptive analytics to operational intervention. The architecture becomes a closed loop:
-
-$$
-observe \rightarrow model \rightarrow diagnose \rightarrow decide \rightarrow act \rightarrow observe
-$$
+Another relevant extension is the action layer. Celonis Action Flows are designed to create automations and combine them into processes.[^process-mining-as-computational-process-intelligence-CEL4] This changes the role of process mining from descriptive analytics to operational intervention. The architecture becomes a closed loop: observation feeds modeling, modeling supports diagnosis, diagnosis supports decision, decision triggers action, and the resulting execution generates new evidence for the next observation cycle.
 
 [^process-mining-as-computational-process-intelligence-CEL3]: Celonis documentation, [**Task Mining**](https://docs.celonis.com/en/task-mining.html).
 
@@ -857,7 +855,7 @@ where:
 Process mining introduces an empirical behavioral layer:
 
 $$
-EA_{observed} = f(E)
+EA_{observed} = f(L_E)
 $$
 
 where $E$ is the event structure extracted from operational systems.
@@ -865,7 +863,9 @@ where $E$ is the event structure extracted from operational systems.
 The architectural problem is then not merely to discover a process model. The real problem is to compare **intentional architecture with observed architecture**:
 
 $$
-\Delta EA = EA_{observed} - EA_{intent}
+\Delta EA
+=
+\operatorname{diff}(EA_{intent},EA_{observed})
 $$
 
 This difference is one of the most important objects of digital transformation. It identifies where the **designed enterprise and the executed enterprise diverge**.
@@ -916,21 +916,11 @@ At the capability level, process mining helps determine whether a business capab
 
 For example, an organization may declare that it has a centralized procurement capability. However, event data may show that purchase orders are frequently created after invoice receipt, that approval paths differ by plant, that contracts are bypassed, or that suppliers are selected outside governed catalogues.
 
-In architectural terms, the capability exists nominally but is not behaviorally instantiated in a controlled and repeatable way.
-
-A capability can therefore be evaluated through process evidence:
-
-$$
-Maturity(capability) = g(conformance, stability, cycle\ time, exception\ rate, automation\ rate)
-$$
-
-This is more rigorous than assigning maturity through interviews alone. The maturity assessment becomes partially grounded in observed execution.
+In architectural terms, the capability exists nominally but is not behaviorally instantiated in a controlled and repeatable way. Capability maturity can therefore be assessed through observable evidence: conformance to the intended process, behavioral stability, cycle time, exception rate, and automation rate. This is more rigorous than assigning maturity through interviews alone, because the assessment is partially grounded in observed execution.
 
 ### Process architecture
 
-At the process-architecture level, process mining validates whether documented processes correspond to real operational flows.
-
-The usual enterprise-architecture repository contains designed process models. These models are frequently normative, incomplete, outdated, or over-standardized. Process mining provides an empirical counter-model.
+At the process-architecture level, process mining validates whether documented processes correspond to real operational flows. The usual enterprise-architecture repository contains designed process models. These models are frequently normative, incomplete, outdated, or over-standardized. Process mining provides an empirical counter-model.
 
 The designed process is:
 
@@ -992,7 +982,7 @@ This makes process mining a semantic-governance problem.
 The event-construction function:
 
 $$
-\phi : D \rightarrow E
+\phi : D \rightarrow L_E
 $$
 
 must be governed as an enterprise artifact. It is not a technical detail. It defines the empirical reality that the organization will analyze.
@@ -1063,9 +1053,18 @@ This must be treated carefully. Automation is not automatically transformation. 
 
 From an architectural perspective, automation should be introduced only when the following conditions hold:
 
-$$
-Observed\ Pattern \rightarrow Diagnosed\ Cause \rightarrow Governed\ Decision \rightarrow Controlled\ Action
-$$
+```{mermaid}
+%%| label: fig-automation-governed-action-chain
+%%| fig-cap: Governed action chain for process-mining-driven automation. Observed patterns should first be diagnosed, then converted into governed decisions, and only then executed as controlled actions.
+%%| fig-alt: Flowchart showing observed pattern, diagnosed cause, governed decision, and controlled action.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  P["Observed pattern"] --> C["Diagnosed cause"]
+  C --> D["Governed decision"]
+  D --> A["Controlled action"]
+```
 
 The action layer should therefore be governed by enterprise architecture principles:
 
@@ -1102,13 +1101,22 @@ $$
 d(S(t), S^*)
 $$
 
-Transformation management then acts to reduce that distance, subject to constraints of cost, risk, compliance, organizational capacity, and strategic intent.
+Transformation management then acts to reduce that distance, subject to constraints of cost, risk, compliance, organizational capacity, and strategic intent. The loop is:
 
-The loop is:
+```{mermaid}
+%%| label: fig-transformation-control-loop
+%%| fig-cap: Process mining as a transformation control loop. Observed execution is compared with the desired future state, diagnosed, corrected through intervention, and then observed again.
+%%| fig-alt: Flowchart showing observe, compare, diagnose, intervene, and observe as a feedback loop.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
 
-$$
-observe \rightarrow compare \rightarrow diagnose \rightarrow intervene \rightarrow observe
-$$
+flowchart LR
+  O1["Observe"] --> C["Compare"]
+  C --> D["Diagnose"]
+  D --> I["Intervene"]
+  I --> O2["Observe again"]
+  O2 -. feedback .-> C
+```
 
 This is fundamentally different from static transformation governance. A steering committee that only checks milestones, budgets, and deliverables may know whether the project is progressing. It may not know whether the operating model is actually changing. Process mining supplies this missing empirical layer.
 
@@ -1116,33 +1124,3352 @@ In this sense, process mining is not merely a tool for process improvement. It i
 
 It connects the formal architecture of the enterprise with its behavioral execution. It converts operational traces into evidence. It transforms process diagrams from static descriptions into hypotheses that can be tested against reality. And it allows digital transformation to be managed not only as system deployment, but as measurable change in the way the enterprise actually works.
 
-## Conclusion
+## Practical roadmap for introducing process mining
 
-Process mining is the computational reconstruction of operational behavior from event data. Its foundations are simple: events, time, ordering, correlation, and process semantics. Its implementation is difficult because enterprise reality is not a clean sequence of activities. It is a multi-object, multi-system, multi-agent, temporally distributed structure.
+Introducing process mining in a corporation should not start from tool selection. It should start from the **construction of a measurable process-intelligence capability**. The tool is only one component. The decisive elements are _event semantics, data access, process ownership, governance, and the ability to convert analytical evidence into operational change_.
 
-The technical core consists of event-log construction, process discovery, variant analysis, conformance checking, performance mining, object-centric modeling, and operational intervention. The managerial value emerges when these capabilities are connected to concrete enterprise questions: working capital, delivery reliability, procurement control, production efficiency, ERP adoption, compliance, and transformation governance.
+A practical roadmap can be structured as a staged progression:
 
-The mathematically disciplined view is therefore the safest one. Process mining should not be treated as automatic truth extraction. It should be treated as a formal inference pipeline:
+```{mermaid}
+%%| label: fig-process-mining-introduction-roadmap
+%%| fig-cap: Practical roadmap for introducing process mining. The roadmap starts from a bounded business question, verifies data availability, constructs governed event semantics, builds the first process model, diagnoses deviations and bottlenecks, institutionalizes ownership, and then scales the capability across processes and organizational entities.
+%%| fig-alt: Diagram showing a staged roadmap for process mining introduction, composed of scope, data, events, model, diagnose, govern, and scale. Each stage includes the main conceptual focus and the corresponding governance output.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  S["1. Scope<br/><b>What question matters?</b><br/>Process, owner, value hypothesis"] 
+  D["2. Data<br/><b>What evidence exists?</b><br/>Systems, tables, timestamps, identifiers"]
+  E["3. Events<br/><b>What is an event?</b><br/>Case/object model, activities, attributes"]
+  M["4. Model<br/><b>What behavior is observed?</b><br/>Variants, flows, cycle times, conformance"]
+  X["5. Diagnose<br/><b>Why does it happen?</b><br/>Bottlenecks, deviations, root causes"]
+  G["6. Govern<br/><b>Who acts on it?</b><br/>Owners, controls, actions, accountability"]
+  C["7. Scale<br/><b>How does it become reusable?</b><br/>Standards, templates, cross-entity rollout"]
+
+  S --> D --> E --> M --> X --> G --> C
+
+  S -. output .-> S1["Process-mining charter"]
+  D -. output .-> D1["Data-availability matrix"]
+  E -. output .-> E1["Governed event model"]
+  M -. output .-> M1["Validated process model"]
+  X -. output .-> X1["Deviation and impact register"]
+  G -. output .-> G1["Action and ownership model"]
+  C -. output .-> C1["Reusable process-intelligence layer"]
+```
+
+**Each stage reduces a specific uncertainty**. The first stages answer whether the required evidence exists. The middle stages test whether the evidence can produce valid process knowledge. The final stages determine whether the organization can act on that knowledge.
+
+### Phase 1: define the process question
+
+The first phase is not technical. It is architectural and managerial. The organization must select a process domain where three conditions hold:
+
+1. the process is economically or operationally material;
+2. the process leaves sufficient digital traces;
+3. the process has an accountable owner able to act on the findings.
+
+Good starting candidates are usually:
+
+- procure-to-pay;
+- order-to-cash;
+- invoice management;
+- service-ticket management;
+- production-order execution;
+- warehouse fulfillment;
+- ERP adoption monitoring after go-live.
+
+The initial question should be narrow. For example:
+
+> Why are invoices blocked?
+
+is better than:
+
+> Analyze procurement.
+
+Similarly:
+
+> Which variants delay sales-order fulfillment?
+
+is better than:
+
+> Optimize order-to-cash.
+
+The correct first deliverable is therefore a process-mining charter:
+
+| Element           | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| Process scope     | The process or subprocess to analyze                                    |
+| Business question | The specific operational or control question                            |
+| Process owner     | The accountable business function                                       |
+| Systems in scope  | ERP, CRM, MES, WMS, workflow, ticketing, or other systems               |
+| Objects in scope  | Orders, order lines, invoices, deliveries, payments, tickets, etc.      |
+| Expected value    | Cost, cycle time, compliance, working capital, service level, adoption  |
+| Decision rights   | Who can approve remediation actions                                     |
+| Constraints       | Privacy, legal, security, system-access, and data-retention constraints |
+
+Without this charter, process mining risks becoming exploratory analytics without organizational consequence.
+
+### Phase 2: identify source systems and event evidence
+
+The second phase determines whether the process can be reconstructed from available data. For each process, the organization must identify:
+
+* the authoritative transactional systems;
+* the relevant tables, APIs, logs, audit trails, or change documents;
+* the business objects and their identifiers;
+* the relevant timestamps;
+* the lifecycle states;
+* the users, roles, organizational units, and systems that create events;
+* the history-retention limits;
+* the quality of status-change records.
+
+The key question is: can the process be reconstructed from recorded events? A simple data-availability matrix is useful:
+
+| Business event      | Source system | Source object      | Timestamp         | Identifier     | Available? | Notes                            |
+| ------------------- | ------------- | ------------------ | ----------------- | -------------- | ---------- | -------------------------------- |
+| Sales order created | ERP           | Sales order header | Creation datetime | Sales order ID | Yes        | Header-level event               |
+| Delivery created    | ERP/WMS       | Delivery document  | Creation datetime | Delivery ID    | Yes        | Link to sales order required     |
+| Goods issued        | ERP/WMS       | Delivery posting   | Posting datetime  | Delivery ID    | Yes        | May be batch-posted              |
+| Invoice posted      | ERP           | Invoice document   | Posting datetime  | Invoice ID     | Yes        | Link to delivery/order required  |
+| Payment received    | ERP/Bank      | Payment clearing   | Clearing datetime | Payment ID     | Partial    | Bank reconciliation rules needed |
+
+This phase often reveals that the enterprise does not lack data. It lacks governed event semantics.
+
+### Phase 3: define the event model
+
+The **event model** is the semantic core of process mining. It defines what counts as an event. For a **case-centric analysis**, the minimum model is:
 
 $$
-D \xrightarrow{\phi} E \xrightarrow{mine} M \xrightarrow{evaluate} I \xrightarrow{govern} A
+e = (case, activity, timestamp, resource, attributes)
+$$
+
+For an **object-centric analysis**, the model becomes:
+
+$$
+e = (activity, timestamp, resource, attributes, rel(e))
+$$
+
+where $rel(e)$ is the set of business objects related to the event.
+
+The organization must decide whether the process is naturally case-centric or object-centric. A case-centric model is suitable when the process has one stable case identifier: ticket, claim, workflow instance, service request, purchase requisition. An object-centric model is preferable when the process crosses many related objects: sales order, sales order line, delivery, shipment, invoice, payment, customer, material, and warehouse.
+
+The event model should be documented as an enterprise artifact. For each event type, the documentation should specify:
+
+| Field                | Meaning                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| Event name           | Business-level name of the event                              |
+| Source system        | Authoritative system                                          |
+| Source table/API/log | Technical origin                                              |
+| Timestamp rule       | Which timestamp is used and why                               |
+| Object relationship  | Which business objects the event relates to                   |
+| Resource rule        | How user, role, system, or agent is assigned                  |
+| Reversal logic       | How cancellations, reversals, and corrections are represented |
+| Granularity          | Header-level, line-level, operation-level, or object-level    |
+| Data-quality risks   | Known limitations                                             |
+
+This phase defines the transformation:
+
+$$
+\phi : D \rightarrow L_E
+$$
+
+where $D$ is raw operational data and $L_E$ is the constructed event-log structure.
+
+### Phase 4: build the first event log
+
+The first event log should be small, controlled, and explainable. It should not attempt to cover the entire enterprise. A practical first build may include:
+
+* one process;
+* one legal entity;
+* one plant, country, or business unit;
+* three to six months of historical data;
+* ten to twenty event types;
+* a limited set of attributes.
+
+The objective is not scale. The objective is semantic validation. The first event log should be tested against basic consistency checks:
+
+| Check                    | Purpose                                                      |
+| ------------------------ | ------------------------------------------------------------ |
+| Missing case identifiers | Detect events that cannot be correlated                      |
+| Missing timestamps       | Detect incomplete event evidence                             |
+| Timestamp inversions     | Detect impossible or suspicious ordering                     |
+| Duplicate events         | Detect repeated technical records                            |
+| Orphan objects           | Detect documents without upstream or downstream links        |
+| Extreme durations        | Detect outliers, batch postings, or data-quality errors      |
+| Unmapped statuses        | Detect lifecycle states not covered by the event model       |
+| Reversal patterns        | Detect cancellations or corrections misread as normal events |
+
+Only after these checks does process mining become analytically meaningful.
+
+### Phase 5: perform exploratory discovery
+
+The first analytical step is **process discovery**. The objective is to compare three distinct representations of the same process:
+
+- the **documented process**, namely the process described in procedures, BPMN diagrams, operating manuals, ERP design documents, or internal controls;
+- the **expected process**, namely what process owners, key users, and operational managers believe normally happens;
+- the **observed process**, namely what the event log reconstructs from system evidence.
+
+The **value of process mining is precisely in the tension among these three representations**. If the documented process, the expected process, and the observed process coincide, the organization has a coherent operating model. If they diverge, the divergence must be explained: it may indicate an obsolete procedure, an unrealistic target process, local workarounds, system constraints, poor adoption, weak controls, or hidden operational complexity.
+
+The discovery phase should produce:
+
+* a directly-follows graph;
+* the dominant variants;
+* the rare variants;
+* loop and rework patterns;
+* start and end activities;
+* cycle-time distributions;
+* waiting-time distributions;
+* segmentation by relevant attributes.
+
+The critical discipline is not to interpret every discovered edge as meaningful. Some edges are artifacts of timestamp granularity, batch processing, incomplete event extraction, or over-detailed technical events. A discovered process model should be treated as an analytical hypothesis, not as an immediate representation of truth. It is the result of applying a discovery algorithm to a constructed event log; therefore, its validity depends on both the quality of the event model and the correctness of the extraction logic.
+
+Before being used for decisions, the discovered model must be validated with process owners, source-system experts, and data owners. The validation should confirm that the observed paths, variants, loops, skips, and bottlenecks correspond to real operational behavior rather than to timestamp artifacts, incomplete extraction, duplicated records, or misunderstood system statuses.
+
+### Phase 6: introduce conformance checking
+
+After discovery, the organization can introduce conformance checking. This requires a reference model: a formal or semi-formal representation of how the process is expected to behave. The reference model may come from:
+
+- internal procedures;
+- ERP template design;
+- workflow configuration;
+- control requirements;
+- compliance rules;
+- standard operating procedures;
+- target operating model definitions.
+
+The observed event log is then compared with the behavior allowed by the reference model. In practical terms, this means checking whether real cases follow the expected sequence of activities, respect mandatory controls, avoid forbidden paths, and complete the required steps. The comparison should identify:
+
+- activities that occurred but were not expected;
+- activities that were expected but did not occur;
+- activities executed in the wrong order;
+- repeated activities or rework loops;
+- skipped approvals or controls;
+- exceptional paths that are legitimate but not yet documented;
+- deviations caused by incorrect event extraction rather than by real process behavior.
+
+This phase is especially useful for:
+
+* skipped approvals;
+* retrospective purchase-order creation;
+* invoice before goods receipt;
+* delivery before credit release;
+* manual price override after approval;
+* order changes after confirmation;
+* blocked invoices released without required remediation;
+* segregation-of-duties violations.
+
+The deliverable should not be only a deviation list. Each deviation type should be classified:
+
+| Deviation class     | Interpretation                                              | Typical action                |
+| ------------------- | ----------------------------------------------------------- | ----------------------------- |
+| Legitimate variant  | Required by business, legal, fiscal, or logistic conditions | Formalize as accepted variant |
+| Process defect      | Designed process is incomplete or unrealistic               | Redesign process              |
+| System defect       | ERP/workflow configuration enables wrong behavior           | Change configuration          |
+| Data defect         | Master data or transactional data causes exception          | Remediate data                |
+| Adoption defect     | Users bypass the target process                             | Training or enforcement       |
+| Control violation   | Required control is skipped or overridden                   | Escalate to control owner     |
+| Extraction artifact | Deviation caused by wrong event model                       | Fix event construction        |
+
+This classification prevents process mining from becoming a purely diagnostic exercise.
+
+### Phase 7: quantify performance and economic impact
+
+Once the process structure is understood, the organization should quantify performance. Relevant measures include:
+
+* cycle time;
+* waiting time;
+* throughput;
+* work in progress;
+* rework rate;
+* exception rate;
+* automation rate;
+* manual-touch frequency;
+* SLA breach probability;
+* cost of delay;
+* working-capital impact;
+* revenue leakage;
+* discount loss;
+* compliance exposure.
+
+The key principle is that process-mining findings should be translated into economic or control significance.
+
+For example:
+
+> Average invoice-block duration is 12.4 days
+
+is descriptive.
+
+A more useful statement is:
+
+> Invoice blocks on suppliers in category X delay payment execution by 12.4 days on average, causing loss of early-payment discounts and increasing manual workload in accounts payable.
+
+Even better:
+
+> The top three invoice-block causes explain 67% of blocked-invoice waiting time and are linked to missing purchase-order references, incorrect tax codes, and goods-receipt quantity mismatches.
+
+The analytical target is not process visualization. It is decision-grade evidence.
+
+### Phase 8: create process-owner dashboards
+
+Dashboards should be introduced only after the event model and metrics have stabilized. A process-owner dashboard should not be a generic BI page. It should support operational governance. A minimal dashboard structure is:
+
+| Dashboard area   | Content                                                                |
+| ---------------- | ---------------------------------------------------------------------- |
+| Process overview | Volumes, variants, cycle time, throughput                              |
+| Bottlenecks      | Waiting-time distribution by activity, object, unit, resource          |
+| Deviations       | Conformance violations by type and owner                               |
+| Root causes      | Segmentation by supplier, customer, item, plant, legal entity, channel |
+| Economic impact  | Working capital, delay cost, discount loss, revenue leakage            |
+| Action queue     | Cases requiring remediation or owner decision                          |
+| Trend view       | Whether performance improves after interventions                       |
+
+The dashboard must distinguish between **observed fact and recommended action**. This distinction is essential for governance and auditability.
+
+### Phase 9: define the action model
+
+Process mining becomes transformation-relevant only when the organization defines how insights lead to action. The action model should specify:
+
+* which deviations require human review;
+* which deviations create tasks;
+* which deviations trigger alerts;
+* which deviations require workflow changes;
+* which deviations can be automated;
+* which deviations are only monitored;
+* which deviations must be escalated to compliance or internal audit.
+
+A controlled action pattern should make the transition from analytical signal to operational intervention explicit:
+
+```{mermaid}
+%%| label: fig-process-mining-controlled-action-pattern
+%%| fig-cap: Controlled action pattern for process-mining findings. A process-mining signal is first triaged, then assigned to an accountable owner, converted into a governed decision, executed as an action, and finally verified against the event evidence.
+%%| fig-alt: Flowchart showing a controlled action sequence from signal to triage, owner assignment, decision, action, and verification. The verification step feeds back into the original process evidence.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  S["Signal<br/>Observed deviation, bottleneck, or exception"]
+  T["Triage<br/>Classify cause and severity"]
+  O["Owner<br/>Assign accountable function or role"]
+  D["Decision<br/>Approve remediation or monitoring"]
+  A["Action<br/>Process, data, system, or control intervention"]
+  V["Verification<br/>Check whether the evidence improves"]
+
+  S --> T --> O --> D --> A --> V
+  V -. feedback .-> S
+```
+
+For example:
+
+| Signal                                      | Owner                     | Action                                  | Verification                         |
+| ------------------------------------------- | ------------------------- | --------------------------------------- | ------------------------------------ |
+| Invoice blocked for missing PO reference    | Accounts Payable          | Correct reference or reject invoice     | Block removed and invoice posted     |
+| PO created after invoice                    | Procurement control owner | Review maverick buying case             | Classified as exception or violation |
+| Delivery delayed after credit block release | Sales operations          | Investigate logistics handover          | Delivery delay cause assigned        |
+| Repeated manual price override              | Sales governance          | Review pricing policy and approval rule | Override rate reduced                |
+| Production order rework loop                | Manufacturing engineering | Analyze routing or quality cause        | Rework loop frequency reduced        |
+
+Automation should be introduced only after the causal mechanism is stable. Otherwise, the organization risks automating noise.
+
+### Phase 10: scale across processes and entities
+
+Scaling process mining requires standardization. The organization should not build independent event models for every project. It should create a reusable process-intelligence architecture. Scaling requires:
+
+* canonical business-object definitions;
+* reusable event definitions;
+* common timestamp conventions;
+* standard quality checks;
+* shared metric definitions;
+* governed dashboards;
+* common lineage model;
+* access-control model;
+* data-retention model;
+* deployment pipeline.
+
+A mature process-intelligence capability should support comparison across entities:
+
+$$
+d(L_i, L_j)
+$$
+
+where $L_i$ and $L_j$ are event logs from different plants, countries, legal entities, or business units. This allows the enterprise to distinguish:
+
+* legitimate local variation;
+* noncompliant process divergence;
+* template-adoption failure;
+* system-configuration drift;
+* master-data inconsistencies;
+* organizational performance differences.
+
+Scaling without semantic standardization produces misleading benchmarks. Scaling with semantic standardization creates an empirical operating-model layer.
+
+### Phase 11: institutionalize governance
+
+Process mining must eventually become part of enterprise governance. A sustainable governance model includes:
+
+| Role                   | Responsibility                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| Process owner          | Owns process performance, deviations, and improvement actions                  |
+| Data owner             | Owns source data correctness and definitions                                   |
+| Event-model owner      | Owns event semantics and transformation rules                                  |
+| Application owner      | Owns source-system behavior and configuration constraints                      |
+| Enterprise architect   | Ensures alignment with capability, process, application, and data architecture |
+| Security owner         | Controls access, segregation, and technical risk                               |
+| Privacy/legal owner    | Assesses personal-data, labor, and retention implications                      |
+| Internal control/audit | Defines control rules and reviews deviations                                   |
+| Data engineering team  | Operates pipelines, quality checks, and data products                          |
+| BI/product team        | Maintains dashboards and user-facing analytical products                       |
+
+The governance principle is simple:
+
+$$
+No\ metric\ without\ owner,\quad no\ event\ without\ definition,\quad no\ action\ without\ accountability
+$$
+
+### Phase 12: evaluate build, buy, or hybrid strategy
+
+Only after the first use cases have clarified the enterprise’s real needs should the organization decide whether to continue with open source, adopt a commercial platform, or use a hybrid architecture.
+
+The evaluation should be based on the following criteria:
+
+| Criterion                | Open-source path                    | Commercial platform path          | Hybrid path                               |
+| ------------------------ | ----------------------------------- | --------------------------------- | ----------------------------------------- |
+| Architectural control    | High                                | Medium to low                     | High for data layer, medium for UX        |
+| Speed of rollout         | Medium to low                       | High                              | Medium                                    |
+| Business-user experience | Depends on internal productization  | Usually stronger                  | Strong if well integrated                 |
+| Connectors               | Custom or generic                   | Often packaged                    | Mixed                                     |
+| Event semantics          | Fully owned internally              | Often platform-mediated           | Internally owned                          |
+| Object-centric modeling  | Possible, but engineering-intensive | Productized in advanced platforms | Internally governed, externally consumed  |
+| Task mining              | Weak open-source maturity           | Stronger commercial maturity      | Commercial only where justified           |
+| License cost             | Lower direct cost                   | Higher direct cost                | Mixed                                     |
+| Engineering effort       | Higher                              | Lower                             | Medium                                    |
+| Vendor lock-in           | Lower at data layer                 | Higher                            | Reduced if data layer remains independent |
+| Support model            | Internal/community/consultancy      | Vendor-backed                     | Mixed                                     |
+
+The most robust corporate strategy is often hybrid: **own the process-data and semantic layer**, while buying or building analytical and user-facing capabilities selectively. This prevents the enterprise from losing control of its process semantics while still allowing commercial acceleration where it is economically justified.
+
+### Minimal implementation sequence
+
+The first implementation should not try to cover the enterprise. It should prove one thing: that operational traces can be converted into governed evidence, and that governed evidence can drive measurable change.
+
+The sequence is deliberately narrow:
+
+```{mermaid}
+%%| label: fig-process-mining-minimal-implementation-sequence
+%%| fig-cap: Minimal implementation sequence for process mining. The first implementation starts from a high-value process and a precise business question, builds and validates the event model, discovers and explains deviations, converts findings into governed actions, and then standardizes the model for reuse.
+%%| fig-alt: Flowchart showing the minimal implementation sequence for process mining, that is select process, define question, identify data, define model, build event log, validate, discover, compare, classify, quantify, dashboard, act, measure, standardize, scale.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  A["Select one high-value process<br/><b>Do not start enterprise-wide</b>"]
+  B["Define one precise question<br/><b>What decision should this evidence support?</b>"]
+  C["Identify source systems and timestamps<br/><b>Where is the process recorded?</b>"]
+  D["Define the case or object model<br/><b>What is being followed?</b>"]
+  E["Build the first event log<br/><b>Small, explainable, auditable</b>"]
+  F["Validate with process and system experts<br/><b>Remove semantic errors before analysis</b>"]
+  G["Discover variants and bottlenecks<br/><b>What actually happens?</b>"]
+  H["Compare with the reference model<br/><b>What should have happened?</b>"]
+  I["Classify deviations<br/><b>Cause, owner, severity</b>"]
+  J["Quantify impact<br/><b>Cost, time, risk, working capital, control exposure</b>"]
+  K["Build the process-owner dashboard<br/><b>Evidence for action, not decoration</b>"]
+  L["Define remediation actions<br/><b>Process, data, system, control, training</b>"]
+  M["Measure the effect<br/><b>Did the gap actually shrink?</b>"]
+  N["Standardize the event model<br/><b>Make it reusable</b>"]
+  O["Scale to adjacent processes or entities<br/><b>Only after semantic stability</b>"]
+
+  A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M --> N --> O
+  M -. "if no improvement" .-> I
+  F -. "if log is wrong" .-> D
+```
+
+The sequence is a control loop, not a reporting project. Each step must either increase the reliability of the evidence or increase the organization’s ability to act on it.
+
+A weak implementation stops at a process map. A serious implementation continues until deviations are owned, causes are classified, actions are executed, and the next event log shows whether the gap has narrowed.
+
+The practical test is simple:
+
+> Can the enterprise observe the gap between intended and executed behavior, explain why the gap exists, assign ownership, intervene, and verify that the intervention worked?
+
+If the answer is yes, process mining has stopped being analytics. It has become part of the enterprise transformation system.
+
+## Conclusion
+
+Process mining is the computational reconstruction of operational behavior from event data. Its foundations are elementary: events, time, ordering, correlation, and process semantics. Its implementation is difficult because enterprise reality is not a clean sequence of activities. It is a multi-object, multi-system, multi-agent, temporally distributed structure in which orders, deliveries, invoices, payments, materials, resources, systems, and organizational units interact continuously.
+
+The technical core consists of event-log construction, process discovery, variant analysis, behavioral entropy, conformance checking, performance mining, object-centric modeling, and operational intervention. Each layer answers a different question. Discovery shows what happened. Variant analysis shows how fragmented the behavior is. Conformance checking shows where observed execution diverges from expected behavior. Performance mining shows where time, queues, rework, and throughput losses accumulate. Object-centric process mining extends the analysis from linear case traces to the object networks that characterize real ERP, supply-chain, manufacturing, finance, and service processes.
+
+The central constraint is semantic correctness. Process mining does not extract truth directly from systems. It extracts models from constructed event logs. The decisive transformation is therefore the event-construction function:
+
+$$
+D \xrightarrow{\phi} L_E
+$$
+
+where $D$ is raw operational data and $L_E$ is the event log or object-centric event structure. If this transformation is wrong, all subsequent analysis may be formally valid and operationally false. This is why process mining is not only an algorithmic discipline. It is also a data-engineering, semantic-governance, and enterprise-architecture discipline.
+
+The full inference chain can be expressed as:
+
+$$
+D \xrightarrow{\phi} L_E \xrightarrow{mine} M \xrightarrow{evaluate} I \xrightarrow{govern} A
 $$
 
 where:
 
 - $D$ is raw operational data;
 - $\phi$ is the semantic event-construction function;
-- $E$ is the event log or object-centric event structure;
-- $M$ is the discovered or normative process model;
-- $I$ is the set of insights, deviations, bottlenecks, and predictions;
+- $L_E$ is the event log or object-centric event structure;
+- $M$ is the discovered, reference, or normative process model;
+- $I$ is the set of insights, deviations, bottlenecks, variants, risks, and predictions;
 - $A$ is the set of governed actions.
 
-Every arrow in this chain can fail. Raw data can be incomplete. Event construction can be semantically wrong. Models can overfit. Deviations can be misinterpreted. Actions can optimize local metrics while damaging the global system.
+Every arrow in this chain can fail. Raw data can be incomplete. Event construction can be semantically wrong. Models can overfit. Deviations can be misclassified. Bottlenecks can be correlated with the wrong cause. Dashboards can create visual confidence without decision quality. Actions can optimize local metrics while damaging the global system.
 
-Used rigorously, however, process mining provides something that conventional process analysis rarely achieves: a measurable, reproducible, and continuously refreshable representation of how the enterprise actually operates.
+For this reason, process mining should be framed as a control system rather than as a reporting layer. Its practical value does not end with a process map. It emerges when the enterprise can observe the gap between intended and executed behavior, explain the causes of that gap, assign ownership, intervene through process, data, system, control, or organizational changes, and then verify from subsequent event evidence whether the gap has actually narrowed.
 
+This interpretation makes process mining directly relevant to enterprise architecture and digital transformation. Enterprise architecture defines the intentional enterprise: capabilities, processes, applications, data, organization, and governance. Process mining reconstructs the observed behavioral enterprise from operational traces. The difference between the two is one of the most important objects of transformation. It shows where the designed operating model is real, where it is only nominal, where local variants are justified, where they are accidental, and where systems or organizational practices undermine the intended architecture.
 
+The practical roadmap must therefore start narrow and become governed before it becomes large. The correct sequence is not to buy a tool and search for use cases. It is to select one material process, define one precise business question, identify the source systems and timestamps, define the case or object model, build a small and auditable event log, validate it with process and system experts, discover variants and bottlenecks, compare observed behavior with the reference model, classify deviations, quantify impact, create a process-owner dashboard, define remediation actions, measure their effect, and only then standardize and scale.
 
+Commercial platforms such as Celonis industrialize several parts of this architecture: ingestion, object-centric modeling, process applications, task mining, dashboards, automation, and operationalization. Their value should therefore be evaluated not only as visualization products, but as process-intelligence operating layers. At the same time, the fundamental architectural question remains independent of any platform: which process semantics must the enterprise own, which analytical capabilities can be bought, and which actions can be automated without weakening governance or control?
 
+Used superficially, process mining becomes another form of dashboarding. Used rigorously, it becomes a measurable, reproducible, and continuously refreshable representation of how the enterprise actually operates. Its strongest contribution is not the automatic discovery of process diagrams. It is the disciplined conversion of operational traces into governed evidence, and of governed evidence into accountable transformation.
 
+## Appendix — Dynamical allocation of resources to forecasted demand with process-mining feedback
 
+This appendix formulates a toy continuous-time problem in which process mining is used to improve the dynamic allocation of resources to forecasted demand. The model is intentionally simplified, but it captures the essential structure of the problem:
+
+```{mermaid}
+%%| label: fig-process-mining-allocation-feedback-loop
+%%| fig-cap: Process mining as a feedback loop for dynamic resource allocation. Forecasted demand drives resource allocation, resource allocation determines process execution, execution generates event logs, and event logs update both model parameters and model structure before the next allocation cycle.
+%%| fig-alt: Flowchart showing forecasted demand flowing into resource allocation, then process execution, then event log creation, then parameter and structure update, and finally new allocation. The new allocation loops back into resource allocation.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  D["Forecasted demand<br/>lambda_hat(t), D_hat(t)"] --> A["Resource allocation<br/>U(t), x_star(t)"]
+  A --> E["Process execution<br/>dq/dt = lambda(t) - (I - P^T)y(t)"]
+  E --> L["Event log<br/>events, timestamps, resources, objects"]
+  L --> U["Parameter and structure update<br/>theta to theta_PM, G_norm to G_obs"]
+  U --> NA["New allocation<br/>U(t+1), x_star(t+1)"]
+  NA -. feedback .-> A
+```
+
+The central idea is that process mining contributes in two mathematically distinct ways:
+
+1. It improves the numerical parameters of the model: arrival rates, service rates, routing probabilities, rework probabilities, queue lengths, cycle times, and resource productivity.
+
+2. It can change the equations themselves, because the discovered process may contain edges, loops, bypasses, or exception paths that were absent from the normative model.
+
+The problem is therefore not only parameter estimation. It is also model-structure identification.
+
+### Process as a directed flow network
+
+Let the process be represented as a directed graph:
+
+$$
+G = (V,\mathcal{E})
+$$
+
+where:
+
+- $V = \{1,\ldots,n\}$ is the set of process activities, queues, or operational states;
+- $\mathcal{E} \subseteq V \times V$ is the set of admissible transitions between activities.
+
+Examples of nodes in an invoice-management process may be:
+
+| Node | Meaning |
+|---:|---|
+| 1 | Invoice received |
+| 2 | Formal validation |
+| 3 | Three-way match |
+| 4 | Exception handling |
+| 5 | Approval |
+| 6 | Posting |
+| 7 | Payment scheduling |
+| 8 | Completed |
+
+Let:
+
+$$
+q_i(t) \geq 0
+$$
+
+be the workload or backlog at node $i$ at time $t$. The vector of process-state backlogs is:
+
+$$
+q(t) =
+\begin{bmatrix}
+q_1(t) \\
+q_2(t) \\
+\vdots \\
+q_n(t)
+\end{bmatrix}
+\in \mathbb{R}_{+}^{n}
+$$
+
+Let:
+
+$$
+u_{j,i}(t) \geq 0
+$$
+
+be the amount of resource pool $j$ assigned to activity $i$ at time $t$, with:
+
+$$
+j \in \{1,\ldots,m\}
+$$
+
+The resource-allocation matrix is:
+
+$$
+U(t) = [u_{j,i}(t)] \in \mathbb{R}_{+}^{m \times n}
+$$
+
+Resource capacities impose:
+
+$$
+\sum_{i=1}^{n} u_{j,i}(t) \leq R_j(t)
+\quad \forall j \in \{1,\ldots,m\}
+$$
+
+where $R_j(t)$ is the available capacity of resource pool $j$.
+
+### Service-rate function
+
+Each node $i$ processes workload at an outflow rate:
+
+$$
+y_i(t)
+$$
+
+A simple saturating service function is:
+
+$$
+y_i(t)
+=
+\frac{
+\mu_i(U(t);\theta)\,q_i(t)
+}{
+K_i + q_i(t)
+}
+$$
+
+where:
+
+- $y_i(t)$ is the completion flow from activity $i$;
+- $K_i > 0$ is a saturation constant;
+- $\mu_i(U(t);\theta)$ is the maximum processing capacity assigned to node $i$;
+- $\theta$ is the parameter vector of the model.
+
+A simple linear resource-productivity model is:
+
+$$
+\mu_i(U(t);\theta)
+=
+\sum_{j=1}^{m} \beta_{j,i} u_{j,i}(t)
+$$
+
+where $\beta_{j,i}$ is the productivity of resource pool $j$ on activity $i$. Thus:
+
+$$
+y_i(t)
+=
+\frac{
+\left(\sum_{j=1}^{m} \beta_{j,i} u_{j,i}(t)\right)q_i(t)
+}{
+K_i + q_i(t)
+}
+$$
+
+This function has the correct qualitative behavior:
+
+- if no resources are allocated to activity $i$, then $y_i(t)=0$;
+- if no workload exists at activity $i$, then $y_i(t)=0$;
+- if workload is high, the outflow approaches the allocated processing capacity.
+
+### Routing matrix
+
+Let:
+
+$$
+P = [p_{i,k}]
+$$
+
+be the routing matrix, where $p_{i,k}$ is the probability that a case completed at node $i$ moves next to node $k$. For transitions not present in $\mathcal{E}$, one has $p_{i,k}=0$. 
+
+The row sum may be less than one:
+
+$$
+\sum_{k=1}^{n} p_{i,k} \leq 1
+$$
+
+because some cases exit the process after node $i$. The exit probability is:
+
+$$
+p_{i,\varnothing}
+=
+1 - \sum_{k=1}^{n} p_{i,k}
+$$
+
+The matrix $P$ is not merely a technical parameter. It is the mathematical representation of the discovered process structure.
+
+In a normative model, $P$ may contain only expected forward transitions. In an observed model, process mining may reveal:
+
+- rework edges;
+- exception paths;
+- skipped activities;
+- backflows;
+- manual bypasses;
+- alternative approval routes;
+- repeated loops.
+
+These discovered transitions change $P$ and therefore change the differential equations.
+
+### Forecasted demand as external inflow
+
+Let:
+
+$$
+\lambda_i(t)
+$$
+
+be the external arrival rate into node $i$.
+
+In many processes, external demand enters only at the first activity:
+
+$$
+\lambda(t)
+=
+\begin{bmatrix}
+\hat{d}(t) \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
+$$
+
+where $\hat{d}(t)$ is the forecasted demand rate.
+
+In more complex processes, demand may enter several nodes. For example, invoices may enter through standard invoice intake, exception intake, correction requests, supplier queries, or imported legacy items.
+
+Thus, in general:
+
+$$
+\lambda(t)
+=
+\begin{bmatrix}
+\lambda_1(t) \\
+\lambda_2(t) \\
+\vdots \\
+\lambda_n(t)
+\end{bmatrix}
+$$
+
+Process mining improves $\lambda(t)$ by estimating empirical arrival rates from event logs, segmented by time, object type, legal entity, supplier, customer, plant, channel, or document class.
+
+### Baseline dynamical system
+
+The continuous-time process dynamics are:
+
+$$
+\dot{q}_i(t)
+=
+\lambda_i(t)
++
+\sum_{\ell=1}^{n} p_{\ell,i} y_{\ell}(t)
+-
+y_i(t)
+$$
+
+for each node $i$.
+
+In vector form:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
++
+P^{\top}y(t)
+-
+y(t)
+$$
+
+or, equivalently:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
+-
+(I-P^{\top})y(t)
+$$
+
+where:
+
+$$
+y(t)
+=
+\begin{bmatrix}
+y_1(t) \\
+y_2(t) \\
+\vdots \\
+y_n(t)
+\end{bmatrix}
+$$
+
+and:
+
+$$
+y_i(t)
+=
+\frac{
+\left(\sum_{j=1}^{m} \beta_{j,i} u_{j,i}(t)\right)q_i(t)
+}{
+K_i + q_i(t)
+}
+$$
+
+This is the core dynamical system. The control variable is the resource allocation $U(t)$. The observed state is $q(t)$. The forecasted input is $\lambda(t)$. The structural parameter is $P$. The productivity parameters are $\beta_{j,i}$ and $K_i$.
+
+### Toy three-node example
+
+Consider a simplified invoice process with three operational states:
+
+| Node | Meaning |
+|---:|---|
+| 1 | Invoice intake |
+| 2 | Validation and matching |
+| 3 | Exception handling |
+
+Cases exit the process after validation if no exception exists. Some validation cases move to exception handling. Some exception cases return to validation after remediation.
+
+The observed process graph is:
+
+```{mermaid}
+%%| label: fig-three-node-invoice-process
+%%| fig-cap: Toy three-node invoice process with exception rework. Invoices enter the intake node, move to validation and matching, may proceed to exception handling, and can either exit the process or return to validation after remediation.
+%%| fig-alt: Directed graph showing invoice intake flowing to validation and matching. Validation can either exit the process or move to exception handling. Exception handling can either exit the process or return to validation and matching.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  N1["1<br/>Invoice intake"] --> N2["2<br/>Validation and matching"]
+  N2 --> N3["3<br/>Exception handling"]
+  N3 --> N2
+  N2 --> X["Exit"]
+  N3 --> X
+```
+
+Let:
+
+$$
+q_1(t),\ q_2(t),\ q_3(t)
+$$
+
+be the backlogs at intake, validation, and exception handling. Let the routing matrix be:
+
+$$
+P =
+\begin{bmatrix}
+0 & 1 & 0 \\
+0 & 0 & p_{23} \\
+0 & p_{32} & 0
+\end{bmatrix}
+$$
+
+where:
+
+- $p_{23}$ is the probability that a validation case becomes an exception;
+- $p_{32}$ is the probability that an exception case returns to validation;
+- $1-p_{23}$ is the probability that a validation case exits successfully;
+- $1-p_{32}$ is the probability that an exception case exits after remediation.
+
+The dynamics are:
+
+$$
+\dot{q}_1(t)
+=
+\lambda_1(t)
+-
+y_1(t)
+$$
+
+$$
+\dot{q}_2(t)
+=
+y_1(t)
++
+p_{32}y_3(t)
+-
+y_2(t)
+$$
+
+$$
+\dot{q}_3(t)
+=
+p_{23}y_2(t)
+-
+y_3(t)
+$$
+
+The service functions are:
+
+$$
+y_1(t)
+=
+\frac{
+\mu_1(t)q_1(t)
+}{
+K_1 + q_1(t)
+}
+$$
+
+$$
+y_2(t)
+=
+\frac{
+\mu_2(t)q_2(t)
+}{
+K_2 + q_2(t)
+}
+$$
+
+$$
+y_3(t)
+=
+\frac{
+\mu_3(t)q_3(t)
+}{
+K_3 + q_3(t)
+}
+$$
+
+where:
+
+$$
+\mu_i(t)
+=
+\sum_{j=1}^{m}\beta_{j,i}u_{j,i}(t)
+$$
+
+This system is small, but it captures a real operational mechanism: if too many validation cases become exceptions, and if too many exceptions return to validation, the process can generate self-reinforcing workload.
+
+### Rework amplification and stability
+
+The expected number of validation visits generated by one case can increase when the process contains loops. In the three-node model, the loop is:
+
+$$
+2 \rightarrow 3 \rightarrow 2
+$$
+
+The loop gain is:
+
+$$
+g = p_{23}p_{32}
+$$
+
+If $g$ is close to zero, rework is limited. If $g$ approaches one, the process repeatedly circulates cases between validation and exception handling. A necessary condition for finite expected loop repetitions is:
+
+$$
+p_{23}p_{32} < 1
+$$
+
+The expected number of visits to validation caused by this loop is proportional to:
+
+$$
+\frac{1}{1-p_{23}p_{32}}
+$$
+
+Thus, even moderate increases in $p_{23}$ or $p_{32}$ can materially increase workload. This is precisely where process mining contributes. It estimates the actual loop probabilities from observed traces:
+
+$$
+\hat{p}_{23}
+=
+\frac{
+N_{2 \rightarrow 3}
+}{
+N_{2 \rightarrow 3} + N_{2 \rightarrow \operatorname{exit}}
+}
+$$
+
+$$
+\hat{p}_{32}
+=
+\frac{
+N_{3 \rightarrow 2}
+}{
+N_{3 \rightarrow 2} + N_{3 \rightarrow \operatorname{exit}}
+}
+$$
+
+where $N_{a \rightarrow b}$ is the number of observed directly-follows transitions from activity $a$ to activity $b$.
+
+If the normative model assumes $p_{32}=0$, but the event log shows $\hat{p}_{32}>0$, the equations must change. The term:
+
+$$
+p_{32}y_3(t)
+$$
+
+must be added to $\dot{q}_2(t)$.
+
+That is not parameter tuning. It is structural correction of the dynamical system.
+
+### Normative model versus process-mined model
+
+Suppose the original normative model assumes no rework from exception handling back to validation. Then:
+
+$$
+p_{32}^{norm}=0
+$$
+
+The normative system is:
+
+$$
+\dot{q}_1(t)
+=
+\lambda_1(t)
+-
+y_1(t)
+$$
+
+$$
+\dot{q}_2(t)
+=
+y_1(t)
+-
+y_2(t)
+$$
+
+$$
+\dot{q}_3(t)
+=
+p_{23}^{norm}y_2(t)
+-
+y_3(t)
+$$
+
+This model says that exceptions are resolved independently and do not feed back into validation.
+
+Now suppose process mining discovers that 60% of exception cases return to validation:
+
+$$
+\hat{p}_{32}=0.60
+$$
+
+Then the process-mined system is:
+
+$$
+\dot{q}_1(t)
+=
+\lambda_1(t)
+-
+y_1(t)
+$$
+
+$$
+\dot{q}_2(t)
+=
+y_1(t)
++
+0.60y_3(t)
+-
+y_2(t)
+$$
+
+$$
+\dot{q}_3(t)
+=
+\hat{p}_{23}y_2(t)
+-
+y_3(t)
+$$
+
+The additional term:
+
+$$
+0.60y_3(t)
+$$
+
+changes the dynamics of validation. The validation queue is no longer driven only by new intake. It is also driven by remediated exceptions returning for revalidation. This is a mathematically explicit example of process mining changing the expression of the model.
+
+### Resource allocation as a control problem
+
+The allocation problem is to choose $U(t)$ so that the system remains stable and performance improves. A simple one-step objective is:
+
+$$
+\min_{U(t)}
+\quad
+q^+(t;U)^{\top}Wq^+(t;U)
++
+\eta \|U(t)-U(t^-)\|_F^2
+$$
+
+where:
+
+$$
+q^+(t;U)
+=
+q(t)
++
+\Delta t
+\left[
+\lambda(t)
+-
+(I-P^{\top})y(q(t),U(t),\theta(t))
+\right]
+$$
+
+subject to:
+
+$$
+\sum_{i=1}^{n} u_{j,i}(t) \leq R_j(t)
+\quad \forall j
+$$
+
+$$
+u_{j,i}(t) \geq 0
+\quad \forall j,i
+$$
+
+where:
+
+- $W$ is a positive semidefinite matrix of business criticality weights;
+- $\eta \geq 0$ penalizes excessive resource reallocation;
+- $\|\cdot\|_F$ is the Frobenius norm;
+- $U(t^-)$ is the previous allocation.
+
+A more rigorous finite-horizon model is:
+
+$$
+\min_{U(\cdot)}
+\int_{t}^{t+H}
+\left[
+q(\tau)^{\top}Wq(\tau)
++
+\eta \|\dot{U}(\tau)\|_F^2
+\right]d\tau
+$$
+
+subject to the process dynamics:
+
+$$
+\dot{q}(\tau)
+=
+\lambda(\tau)
+-
+(I-P^{\top})y(\tau)
+$$
+
+and resource constraints:
+
+$$
+\sum_{i=1}^{n} u_{j,i}(\tau) \leq R_j(\tau)
+\quad \forall j,\tau
+$$
+
+$$
+u_{j,i}(\tau) \geq 0
+\quad \forall j,i,\tau
+$$
+
+This is a continuous-time optimal-control problem.
+
+In practical enterprise use, it would usually be solved in discretized form over daily, weekly, or shift-level intervals. The continuous-time formulation is still useful because it makes the causal structure explicit: backlog is a state variable, resource allocation is a control variable, process execution is the plant, and process mining is the empirical observation mechanism that updates both parameters and equations.
+
+### How process mining improves the input parameters
+
+The model depends on the parameter vector:
+
+$$
+\theta =
+(P, \beta, K, \lambda)
+$$
+
+where:
+
+- $P$ is the routing matrix;
+- $\beta$ is the resource-productivity matrix;
+- $K$ contains the saturation constants;
+- $\lambda(t)$ is the arrival-rate vector.
+
+Process mining improves each of these quantities by estimating them from observed event data rather than from nominal process documentation, static master data, or managerial assumptions.
+
+#### Routing probabilities
+
+From event logs, process mining estimates transition frequencies:
+
+$$
+N_{i \rightarrow k}
+$$
+
+where $N_{i \rightarrow k}$ is the number of observed transitions from node $i$ to node $k$. Then:
+
+$$
+\hat{p}_{i,k}
+=
+\frac{
+N_{i \rightarrow k}
+}{
+\sum_{\ell=1}^{n} N_{i \rightarrow \ell} + N_{i \rightarrow \operatorname{exit}}
+}
+$$
+
+This updates the routing matrix:
+
+$$
+P^{old}
+\rightarrow
+\hat{P}^{PM}
+$$
+
+The superscript $PM$ indicates that the parameter has been estimated through process-mining evidence.
+
+#### Arrival rates
+
+Let $A_i([t,t+\Delta t])$ be the number of cases entering node $i$ during the time interval $[t,t+\Delta t]$. Then:
+
+$$
+\hat{\lambda}_i(t)
+=
+\frac{
+A_i([t,t+\Delta t])
+}{
+\Delta t
+}
+$$
+
+This estimate can be conditioned by attributes $z$:
+
+$$
+\hat{\lambda}_i(t \mid z)
+=
+\frac{
+A_i([t,t+\Delta t],z)
+}{
+\Delta t
+}
+$$
+
+where $z$ may denote plant, supplier, customer, legal entity, product family, priority, channel, document type, or any other attribute that materially changes process behavior.
+
+#### Resource productivity
+
+Let $C_i([t,t+\Delta t])$ be the number of completions at node $i$ in the interval $[t,t+\Delta t]$ and $u_{j,i}(\tau)$ be the observed allocation of resource pool $j$ to node $i$ at time $\tau$. The model:
+
+$$
+C_i([t,t+\Delta t])
+\approx
+\int_t^{t+\Delta t}
+\frac{
+\left(\sum_{j=1}^{m}\beta_{j,i}u_{j,i}(\tau)\right)q_i(\tau)
+}{
+K_i+q_i(\tau)
+}
+\,d\tau
+$$
+
+can be used to estimate $\beta_{j,i}$ and $K_i$ by regression, maximum likelihood, or Bayesian updating. In a simplified high-backlog regime where:
+
+$$
+q_i(t) \gg K_i
+$$
+
+the service flow approximates:
+
+$$
+y_i(t)
+\approx
+\sum_{j=1}^{m}\beta_{j,i}u_{j,i}(t)
+$$
+
+and the productivity estimate becomes approximately:
+
+$$
+\hat{\beta}_{j,i}
+\approx
+\frac{
+\text{completed cases at node } i \text{ by resource pool } j
+}{
+\text{resource time allocated from pool } j \text{ to node } i
+}
+$$
+
+This estimate is not a theoretical capacity. It is an observed productivity coefficient derived from execution data.
+
+#### Queue lengths and cycle times
+
+Process mining also estimates the queue length at each node:
+
+$$
+q_i(t)
+=
+\left|
+\{c : c \text{ is active at node } i \text{ at time } t\}
+\right|
+$$
+
+and the empirical sojourn time of case $c$ at node $i$:
+
+$$
+S_i(c)
+=
+time_{out,i}(c) - time_{in,i}(c)
+$$
+
+From this, one obtains the empirical mean sojourn time:
+
+$$
+\hat{S}_i
+=
+\frac{1}{|\mathcal{C}_i|}
+\sum_{c \in \mathcal{C}_i} S_i(c)
+$$
+
+where $\mathcal{C}_i$ is the set of cases observed at node $i$. One can also estimate the variance:
+
+$$
+\widehat{\operatorname{Var}}(S_i)
+=
+\frac{1}{|\mathcal{C}_i|-1}
+\sum_{c \in \mathcal{C}_i}
+\left(S_i(c)-\hat{S}_i\right)^2
+$$
+
+These estimates can be used to validate whether the state equation correctly represents the observed accumulation and depletion of work.
+
+### How process mining changes the expressions
+
+The previous subsection describes parameter improvement. The deeper contribution is structural. Suppose the designed process model contains the edge set:
+
+$$
+\mathcal{E}^{norm}
+=
+\{(1,2),(2,3),(3,4),(4,\operatorname{exit})\}
+$$
+
+This implies a routing matrix:
+
+$$
+P^{norm}
+$$
+
+with no rework, no bypass, and no exceptional return path. Process mining may instead discover the empirical edge set:
+
+$$
+\mathcal{E}^{obs}
+=
+\{(1,2),(2,3),(3,4),(4,\operatorname{exit}),(3,2),(2,4),(1,3)\}
+$$
+
+The new edges have meanings:
+
+| Edge | Interpretation |
+|---|---|
+| $(3,2)$ | Rework from activity 3 back to activity 2 |
+| $(2,4)$ | Skip from activity 2 directly to activity 4 |
+| $(1,3)$ | Bypass of activity 2 |
+
+The normative dynamical equation:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
+-
+(I-(P^{norm})^{\top})y(t)
+$$
+
+must therefore be replaced by the observed equation:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
+-
+(I-(P^{obs})^{\top})y(t)
+$$
+
+This changes the terms in each component equation. For example, if edge $(3,2)$ is discovered, then $\dot{q}_2(t)$ gains a new inflow term:
+
+$$
++p_{3,2}y_3(t)
+$$
+
+If edge $(1,3)$ is discovered, then $\dot{q}_3(t)$ gains a new inflow term:
+
+$$
++p_{1,3}y_1(t)
+$$
+
+If a skip edge $(2,4)$ is discovered, then $\dot{q}_3(t)$ may lose expected flow because not all completions from node $2$ go to node $3$. Thus process mining does not merely refine:
+
+$$
+p_{i,k}
+$$
+
+It may change whether $p_{i,k}$ exists at all. This is model-structure learning. Process mining changes the mathematical object being optimized: not only the values inside the equations, but the equations themselves.
+
+### Attribute-dependent dynamics
+
+In enterprise processes, routing is often not homogeneous. The probability of moving from activity $i$ to activity $k$ may depend on contextual attributes. Let $z(t)$ be an attribute vector:
+
+$$
+z(t)
+=
+(customer,\ supplier,\ plant,\ legal\ entity,\ item,\ channel,\ priority,\ amount,\ldots)
+$$
+
+Then the routing probability becomes attribute-dependent:
+
+$$
+p_{i,k}
+=
+p_{i,k}(z,t)
+$$
+
+The dynamics become:
+
+$$
+\dot{q}_i(t)
+=
+\lambda_i(t)
++
+\sum_{\ell=1}^{n} p_{\ell,i}(z,t)y_{\ell}(t)
+-
+y_i(t)
+$$
+
+This is more realistic. For example:
+
+- high-value invoices may have a higher approval probability;
+- foreign suppliers may have a higher exception probability;
+- specific plants may create more rework;
+- some customers may generate more credit blocks;
+- some product families may cause more delivery exceptions.
+
+Process mining estimates these conditional transition functions:
+
+$$
+\hat{p}_{i,k}(z)
+=
+\mathbb{P}(next=k \mid current=i, z)
+$$
+
+This can change the model from a single global process to a family of context-dependent dynamical systems:
+
+$$
+\dot{q}(t;z)
+=
+\lambda(t;z)
+-
+(I-P(z,t)^{\top})y(t;z)
+$$
+
+That change is essential for corporate use, because a single average process model may conceal the operational mechanisms that actually matter.
+
+### Exception-induced nonlinearities
+
+Process mining may also reveal that exception probabilities increase with backlog or waiting time. This produces nonlinear dynamics. For example, suppose the probability that validation creates an exception is:
+
+$$
+p_{23}(q_2)
+=
+p_{23}^{0}
++
+\alpha
+\frac{q_2}{H+q_2}
+$$
+
+where:
+
+- $p_{23}^{0}$ is the baseline exception probability;
+- $\alpha$ is the maximum backlog-induced increase;
+- $H$ is a half-saturation constant.
+
+Then:
+
+$$
+\dot{q}_3(t)
+=
+p_{23}(q_2(t))y_2(t)
+-
+y_3(t)
+$$
+
+or, after substitution:
+
+$$
+\dot{q}_3(t)
+=
+\left(
+p_{23}^{0}
++
+\alpha
+\frac{q_2(t)}{H+q_2(t)}
+\right)y_2(t)
+-
+y_3(t)
+$$
+
+This expresses an operational fact often visible in process logs: when queues become large, errors, escalations, repeated touches, and clarification loops may increase.
+
+Process mining detects this by showing that exception probabilities are not constant, but conditional on backlog, waiting time, resource pool, or case attributes. A linear normative model:
+
+$$
+\dot{q}_3(t)
+=
+p_{23}y_2(t)
+-
+y_3(t)
+$$
+
+is therefore replaced by a nonlinear observed model:
+
+$$
+\dot{q}_3(t)
+=
+p_{23}(q_2(t),S_2(t),z)y_2(t)
+-
+y_3(t)
+$$
+
+where $S_2(t)$ is the observed sojourn time at validation.
+
+### Positive feedback and controlled correction
+
+A harmful operational feedback loop may be:
+
+$$
+q_2(t)\uparrow
+\Rightarrow
+p_{23}(q_2)\uparrow
+\Rightarrow
+q_3(t)\uparrow
+\Rightarrow
+p_{32}y_3(t)\uparrow
+\Rightarrow
+q_2(t)\uparrow
+$$
+
+In words:
+
+- validation backlog increases;
+- exception probability increases;
+- exception backlog increases;
+- more exceptions return to validation;
+- validation backlog increases further.
+
+This is an uncontrolled positive feedback loop in the process itself. The goal of dynamic allocation is to impose a controlled feedback loop in the opposite direction:
+
+$$
+q_2(t)\uparrow
+\Rightarrow
+u_{\cdot,2}(t)\uparrow
+\Rightarrow
+y_2(t)\uparrow
+\Rightarrow
+q_2(t)\downarrow
+\Rightarrow
+p_{23}(q_2)\downarrow
+$$
+
+The process-mining system makes this possible by estimating:
+
+$$
+q_2(t),\quad p_{23}(q_2),\quad p_{32},\quad \beta_{j,2},\quad \beta_{j,3}
+$$
+
+The allocation controller can then decide whether additional resources should be assigned to validation, exception handling, or both.
+
+### Example: two alternative interventions
+
+In the three-node model, suppose the bottleneck appears at validation:
+
+$$
+q_2(t) \gg q_1(t),q_3(t)
+$$
+
+A superficial intervention would allocate more resources to validation:
+
+$$
+u_{\cdot,2}(t) \uparrow
+$$
+
+This increases:
+
+$$
+y_2(t)
+$$
+
+However, if process mining shows that $p_{23}$ is high, increasing validation throughput may also increase the inflow into exception handling:
+
+$$
+\dot{q}_3(t)
+=
+p_{23}y_2(t)
+-
+y_3(t)
+$$
+
+If exception capacity is insufficient, then:
+
+$$
+q_3(t) \uparrow
+$$
+
+and, because exceptions return to validation:
+
+$$
+p_{32}y_3(t) \uparrow
+$$
+
+which again increases:
+
+$$
+\dot{q}_2(t)
+$$
+
+Thus, adding validation resources alone may worsen the loop. The process-mined model reveals that the correct intervention may be joint allocation:
+
+$$
+u_{\cdot,2}(t) \uparrow
+\quad \text{and} \quad
+u_{\cdot,3}(t) \uparrow
+$$
+
+or even priority allocation to exception handling:
+
+$$
+u_{\cdot,3}(t) \uparrow
+$$
+
+if the dominant cause of validation backlog is returning exception work. This is a concrete example where process mining changes the managerial conclusion by changing the dynamical equations.
+
+### Parameter assimilation from event logs
+
+Let $\theta(t)$ be the parameter vector:
+
+$$
+\theta(t)
+=
+\{P(t),\beta(t),K(t),\lambda(t),\alpha(t),H(t)\}
+$$
+
+Let:
+
+$$
+\hat{\theta}^{PM}(t)
+$$
+
+be the estimate obtained from process mining over a rolling event-log window. A simple assimilation rule is:
+
+$$
+\theta(t^+)
+=
+(1-\gamma)\theta(t^-)
++
+\gamma \hat{\theta}^{PM}(t)
+$$
+
+where:
+
+$$
+0 < \gamma \leq 1
+$$
+
+For routing probabilities:
+
+$$
+P(t^+)
+=
+(1-\gamma)P(t^-)
++
+\gamma \hat{P}^{PM}(t)
+$$
+
+For productivity:
+
+$$
+\beta(t^+)
+=
+(1-\gamma)\beta(t^-)
++
+\gamma \hat{\beta}^{PM}(t)
+$$
+
+For arrival rates:
+
+$$
+\lambda(t^+)
+=
+(1-\gamma)\lambda(t^-)
++
+\gamma \hat{\lambda}^{PM}(t)
+$$
+
+However, structural changes require a different operation. If process mining discovers a statistically material edge $(i,k)$ not present in the normative graph, then:
+
+$$
+\mathcal{E}(t^+) = \mathcal{E}(t^-) \cup \{(i,k)\}
+$$
+
+and the state equation changes because the term:
+
+$$
++p_{i,k}y_i(t)
+$$
+
+appears in $\dot{q}_k(t)$. Similarly, if an edge disappears or becomes negligible:
+
+$$
+p_{i,k} \approx 0
+$$
+
+then the edge may be removed after governance validation:
+
+$$
+\mathcal{E}(t^+) = \mathcal{E}(t^-) \setminus \{(i,k)\}
+$$
+
+The update is therefore two-level:
+
+$$
+\text{parameter update: } \theta \rightarrow \theta'
+$$
+
+$$
+\text{structure update: } G \rightarrow G'
+$$
+
+### Model-predictive allocation
+
+A practical control policy is model-predictive control. At each decision time $t$, the organization solves:
+
+$$
+\min_{U(\cdot)}
+\int_{t}^{t+H}
+\left[
+q(\tau)^{\top}Wq(\tau)
++
+\rho(\tau)^{\top}V\rho(\tau)
++
+\eta \|\dot{U}(\tau)\|_F^2
+\right]d\tau
+$$
+
+subject to:
+
+$$
+\dot{q}(\tau)
+=
+\lambda(\tau)
+-
+(I-P(\tau)^{\top})y(\tau)
+$$
+
+$$
+y_i(\tau)
+=
+\frac{
+\left(\sum_{j=1}^{m}\beta_{j,i}(\tau)u_{j,i}(\tau)\right)q_i(\tau)
+}{
+K_i(\tau)+q_i(\tau)
+}
+$$
+
+$$
+\sum_{i=1}^{n}u_{j,i}(\tau)\leq R_j(\tau)
+\quad \forall j
+$$
+
+$$
+u_{j,i}(\tau)\geq 0
+\quad \forall j,i
+$$
+
+where $\rho(\tau)$ is a vector of rework or exception intensities. For example:
+
+$$
+\rho_i(\tau)
+=
+y_i(\tau)
+\sum_{k: k \prec i} p_{i,k}(\tau)
+$$
+
+where $k \prec i$ denotes a backward or rework transition from node $i$ to node $k$. This definition measures rework flow, not merely rework probability, because it weights the backward-routing probability by the actual outflow from node $i$.
+
+The optimization penalizes:
+
+- backlog;
+- rework intensity;
+- unstable resource allocation.
+
+Only the first control action is implemented. Then the process executes, new events are observed, process mining updates the model, and the optimization is solved again.
+
+### What process mining adds mathematically
+
+Without process mining, the organization often uses a static model:
+
+$$
+\dot{q}(t)
+=
+\lambda^{forecast}(t)
+-
+(I-(P^{norm})^{\top})y(t)
+$$
+
+with assumed parameters:
+
+$$
+P^{norm},\quad \beta^{assumed},\quad K^{assumed}
+$$
+
+With process mining, the model becomes:
+
+$$
+\dot{q}(t)
+=
+\hat{\lambda}^{PM}(t,z)
+-
+(I-(\hat{P}^{PM}(t,z))^{\top})\hat{y}^{PM}(t)
+$$
+
+where:
+
+$$
+\hat{y}^{PM}_i(t)
+=
+\frac{
+\left(\sum_{j=1}^{m}\hat{\beta}^{PM}_{j,i}(t,z)u_{j,i}(t)\right)q_i(t)
+}{
+\hat{K}^{PM}_i(t,z)+q_i(t)
+}
+$$
+
+and where $\hat{P}^{PM}$ may have a different sparsity pattern from $P^{norm}$.
+
+The difference is not cosmetic. It changes:
+
+- the state equations;
+- the stability properties;
+- the bottleneck interpretation;
+- the optimal allocation;
+- the expected effect of interventions;
+- the governance discussion.
+
+### Compact numerical illustration
+
+Assume the three-node system:
+
+$$
+\dot{q}_1
+=
+\lambda
+-
+y_1
+$$
+
+$$
+\dot{q}_2
+=
+y_1
++
+p_{32}y_3
+-
+y_2
+$$
+
+$$
+\dot{q}_3
+=
+p_{23}y_2
+-
+y_3
+$$
+
+Let:
+
+$$
+\lambda = 100
+$$
+
+The normative model assumes:
+
+$$
+p_{23}^{norm}=0.10,\quad p_{32}^{norm}=0
+$$
+
+Process mining estimates:
+
+$$
+\hat{p}_{23}=0.25,\quad \hat{p}_{32}=0.60
+$$
+
+Assume high backlog, so that service rates approximate capacities:
+
+$$
+y_i \approx \mu_i
+$$
+
+Suppose the current allocation produces:
+
+$$
+\mu_1=100,\quad \mu_2=100,\quad \mu_3=20
+$$
+
+Under the normative model:
+
+$$
+\dot{q}_1 = 100-100=0
+$$
+
+$$
+\dot{q}_2 = 100-100=0
+$$
+
+$$
+\dot{q}_3 = 0.10(100)-20=-10
+$$
+
+The normative model predicts stability, or even a reduction of the exception backlog. Under the process-mined model:
+
+$$
+\dot{q}_1 = 100-100=0
+$$
+
+$$
+\dot{q}_2 = 100 + 0.60(20)-100=12
+$$
+
+$$
+\dot{q}_3 = 0.25(100)-20=5
+$$
+
+The observed model predicts that both validation and exception backlogs grow. The difference is caused by two process-mined corrections:
+
+$$
+p_{23}: 0.10 \rightarrow 0.25
+$$
+
+and:
+
+$$
+p_{32}: 0 \rightarrow 0.60
+$$
+
+The second correction changes the equation for $\dot{q}_2$ by adding:
+
+$$
++0.60y_3
+$$
+
+The result is a different allocation decision. Increasing only $\mu_2$ may not solve the problem. The model indicates that $\mu_3$ must also increase to reduce the returning exception flow. For example, if the allocation changes to:
+
+$$
+\mu_1=100,\quad \mu_2=120,\quad \mu_3=30
+$$
+
+then:
+
+$$
+\dot{q}_1 = 0
+$$
+
+$$
+\dot{q}_2 = 100 + 0.60(30)-120=-2
+$$
+
+$$
+\dot{q}_3 = 0.25(120)-30=0
+$$
+
+The validation backlog starts decreasing, and the exception backlog stops growing. This is the basic mathematical role of process mining in dynamic allocation: it changes the inferred system from a falsely stable system into an accurately unstable one, and it changes the control decision accordingly.
+
+### Conclusion
+
+The continuous-time model can be summarized as:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
+-
+(I-P(t)^{\top})y(q(t),U(t),\theta(t))
+$$
+
+with:
+
+$$
+y_i(t)
+=
+\frac{
+\left(\sum_{j=1}^{m}\beta_{j,i}(t)u_{j,i}(t)\right)q_i(t)
+}{
+K_i(t)+q_i(t)
+}
+$$
+
+Process mining contributes by estimating:
+
+$$
+\lambda(t),\quad P(t),\quad \beta(t),\quad K(t),\quad q(t)
+$$
+
+and, more importantly, by identifying whether the graph $G=(V,\mathcal{E})$ itself is wrong. Therefore, process mining improves the dynamic allocation problem at two levels:
+
+$$
+\text{parameter correction}
+\quad
+\theta^{assumed} \rightarrow \hat{\theta}^{PM}
+$$
+
+and:
+
+$$
+\text{structure correction}
+\quad
+G^{norm} \rightarrow G^{obs}
+$$
+
+The first makes the numbers better. The second makes the equations truer. This is why process mining is not merely descriptive analytics. In a dynamic-resource-allocation setting, it becomes the empirical observation mechanism through which the enterprise identifies the real process, estimates its parameters, detects destabilizing feedback loops, and changes the allocation policy before backlog, rework, and cycle time amplify.
+
+## Appendix — From process mining to a mathematical S&OP decision model
+
+This appendix reverses the usual interpretation of process mining. The conventional view is:
+
+> process mining → process discovery → process visualization → process improvement.
+
+The stronger interpretation is:
+
+> process mining → empirical system identification → mathematical model → optimization → governed decision-making → S&OP control loop.
+
+In this view, process mining is not the final analytical product. It is the observation mechanism through which the enterprise infers the real mathematical structure of its operating system.
+
+The target is a full Sales & Operations Planning (S&OP) model in which demand, capacity, inventory, procurement, production, logistics, service levels, financial constraints, and process execution are not treated as disconnected managerial topics, but as one dynamic constrained optimization problem.
+
+The evolution is:
+
+$$
+M_0
+\rightarrow
+M_1
+\rightarrow
+M_2
+\rightarrow
+M_3
+\rightarrow
+M_4
+\rightarrow
+M^*
+$$
+
+where:
+
+- $M_0$ is the normative process model;
+- $M_1$ is the process-mined execution model;
+- $M_2$ is the calibrated dynamical model;
+- $M_3$ is the local optimization model;
+- $M_4$ is the integrated S&OP optimization model;
+- $M^*$ is the established rolling-horizon decision system.
+
+### Initial state: the normative enterprise model
+
+The enterprise usually starts with a normative model:
+
+$$
+M_0 = (G^{norm}, C^{norm}, P^{norm}, L^{norm})
+$$
+
+where:
+
+- $G^{norm}$ is the documented process structure;
+- $C^{norm}$ is the nominal capacity model;
+- $P^{norm}$ is the assumed routing matrix;
+- $L^{norm}$ is the assumed lead-time model.
+
+This model is often produced by procedures, ERP configuration, planning parameters, interviews, or target operating model documentation.
+
+The problem is that $M_0$ is not necessarily false, but it is not yet empirically verified. It says:
+
+> this is how the process should work
+
+It does not prove:
+
+> this is how the process actually behaves under demand, capacity, exceptions, and organizational constraints
+
+The first transformation is therefore epistemic:
+
+$$
+M_0
+\rightarrow
+M_1
+$$
+
+where process mining converts the normative model into an observed behavioral model.
+
+### Process-mined execution model
+
+Let the enterprise process be represented as a directed graph:
+
+$$
+G = (V,\mathcal{E})
+$$
+
+where:
+
+- $V$ is the set of operational states, activities, buffers, queues, or decision points;
+- $\mathcal{E}$ is the set of observed transitions.
+
+The normative graph is:
+
+$$
+G^{norm} = (V^{norm},\mathcal{E}^{norm})
+$$
+
+The process-mined graph is:
+
+$$
+G^{obs} = (V^{obs},\mathcal{E}^{obs})
+$$
+
+Process mining estimates the observed transition structure from event logs:
+
+$$
+\mathcal{E}^{obs}
+=
+\{(i,j) : N_{i \rightarrow j} > \varepsilon\}
+$$
+
+where $N_{i \rightarrow j}$ is the number of observed transitions from node $i$ to node $j$, and $\varepsilon$ is a materiality threshold. The first correction is structural:
+
+$$
+G^{norm} \rightarrow G^{obs}
+$$
+
+This may add or remove equations. For example, if the normative model assumes:
+
+$$
+2 \rightarrow 3 \rightarrow 4
+$$
+
+but the event log shows:
+
+$$
+2 \rightarrow 3,\quad
+3 \rightarrow 2,\quad
+3 \rightarrow 4,\quad
+2 \rightarrow 4
+$$
+
+then the model must include both a rework loop and a skip path. The routing matrix becomes:
+
+$$
+P^{obs} = [p_{ij}^{obs}]
+$$
+
+with:
+
+$$
+p_{ij}^{obs}
+=
+\frac{
+N_{i \rightarrow j}
+}{
+\sum_k N_{i \rightarrow k} + N_{i \rightarrow \operatorname{exit}}
+}
+$$
+
+This is the first point at which process mining changes the mathematical model. It does not merely improve parameters. It changes the topology of the system.
+
+### Calibrated dynamical model
+
+The next step is to convert the observed process graph into a dynamical system. Let:
+
+$$
+q_i(t)
+$$
+
+be the workload, queue, or WIP at process node $i$.
+
+Let:
+
+$$
+y_i(t)
+$$
+
+be the outflow from node $i$.
+
+Let:
+
+$$
+\lambda_i(t)
+$$
+
+be the external inflow into node $i$. The process dynamics are:
+
+$$
+\dot{q}_i(t)
+=
+\lambda_i(t)
++
+\sum_{\ell}p_{\ell i}^{obs}(t)y_{\ell}(t)
+-
+y_i(t)
+$$
+
+or, in vector form:
+
+$$
+\dot{q}(t)
+=
+\lambda(t)
+-
+(I-P^{obs}(t)^\top)y(t)
+$$
+
+The service-rate equation may be:
+
+$$
+y_i(t)
+=
+\frac{
+\mu_i(t)q_i(t)
+}{
+K_i + q_i(t)
+}
+$$
+
+where:
+
+- $\mu_i(t)$ is the effective processing capacity at node $i$;
+- $K_i$ is a saturation parameter;
+- $q_i(t)$ is the workload waiting at node $i$.
+
+If capacity depends on allocated resources:
+
+$$
+\mu_i(t)
+=
+\sum_{r \in \mathcal{R}}\beta_{ri}(t)u_{ri}(t)
+$$
+
+where:
+
+- $u_{ri}(t)$ is the amount of resource $r$ allocated to node $i$;
+- $\beta_{ri}(t)$ is the productivity of resource $r$ at node $i$.
+
+Process mining estimates:
+
+$$
+P^{obs}(t),\quad
+\lambda(t),\quad
+\beta(t),\quad
+K,\quad
+q(t),\quad
+y(t)
+$$
+
+from event logs. The model has now evolved from:
+
+$$
+M_1 = G^{obs}
+$$
+
+to:
+
+$$
+M_2 = (G^{obs},P^{obs},\lambda,\beta,K,q,y)
+$$
+
+This is a calibrated dynamical model of execution.
+
+### Local decision model: resource allocation
+
+The first optimization problem is local resource allocation. Given the current state $q(t)$, forecasted inflow $\lambda(t)$, observed routing matrix $P^{obs}(t)$, and resource productivity $\beta(t)$, choose the allocation matrix:
+
+$$
+U(t) = [u_{ri}(t)]
+$$
+
+to reduce backlog, cycle time, and rework. A local control problem over horizon $H$ is:
+
+$$
+\min_{U(\cdot)}
+\int_t^{t+H}
+\left[
+q(\tau)^\top Wq(\tau)
++
+\rho(\tau)^\top V\rho(\tau)
++
+\eta\|\dot{U}(\tau)\|_F^2
+\right]d\tau
+$$
+
+subject to:
+
+$$
+\dot{q}(\tau)
+=
+\lambda(\tau)
+-
+(I-P^{obs}(\tau)^\top)y(\tau)
+$$
+
+$$
+y_i(\tau)
+=
+\frac{
+\left(\sum_r \beta_{ri}(\tau)u_{ri}(\tau)\right)q_i(\tau)
+}{
+K_i+q_i(\tau)
+}
+$$
+
+$$
+\sum_i u_{ri}(\tau) \leq R_r(\tau)
+\quad \forall r
+$$
+
+$$
+u_{ri}(\tau)\geq 0
+\quad \forall r,i
+$$
+
+where:
+
+- $W$ weights backlog criticality;
+- $V$ weights rework or exception intensity;
+- $\eta$ penalizes excessive resource reallocations;
+- $R_r(\tau)$ is available resource capacity.
+
+This model is already useful, but it remains local. It optimizes execution capacity inside a process. S&OP requires a larger model: the enterprise must decide what to sell, produce, buy, move, stock, prioritize, delay, substitute, outsource, or escalate. The model must therefore evolve again:
+
+$$
+M_3 \rightarrow M_4
+$$
+
+### Extension from process execution to S&OP state variables
+
+A full S&OP model requires state variables beyond process queues.
+
+Let:
+
+- $i \in \mathcal{I}$ index products or product families;
+- $l \in \mathcal{L}$ index locations, plants, warehouses, or markets;
+- $s \in \mathcal{S}$ index suppliers;
+- $r \in \mathcal{R}$ index resources or capacity pools;
+- $t \in \{1,\ldots,T\}$ index planning periods.
+
+The main state variables are:
+
+$$
+I_{i,l,t}
+$$
+
+inventory of product $i$ at location $l$;
+
+$$
+B_{i,l,t}
+$$
+
+backlog or unmet demand;
+
+$$
+WIP_{p,t}
+$$
+
+work in progress in production or operational process $p$;
+
+$$
+Q_{i,l,t}
+$$
+
+quality-blocked or unavailable stock;
+
+$$
+C_{r,l,t}
+$$
+
+available capacity of resource $r$ at location $l$ in period $t$;
+
+$$
+A_{i,l,t}
+$$
+
+available-to-promise quantity;
+
+$$
+D_{i,l,t}
+$$
+
+demand for product $i$ at location $l$ in period $t$. The decision variables include:
+
+$$
+x_{i,l,t}^{prod}
+$$
+
+production quantity;
+
+$$
+x_{i,s,l,t}^{buy}
+$$
+
+procurement quantity from supplier $s$;
+
+$$
+x_{i,l,l',t}^{trans}
+$$
+
+transfer quantity from location $l$ to location $l'$;
+
+$$
+x_{i,l,t}^{ship}
+$$
+
+shipment to customer demand;
+
+$$
+x_{r,p,t}^{alloc}
+$$
+
+capacity allocated from resource $r$ to process $p$;
+
+$$
+x_{i,l,t}^{sub}
+$$
+
+substitution quantity;
+
+$$
+x_{i,l,t}^{lost}
+$$
+
+lost sales or unserved demand. S&OP is therefore not one equation. It is a coupled system of material, capacity, demand, and process-execution equations.
+
+### Demand model with process-mined demand realization
+
+The commercial forecast is:
+
+$$
+\hat{D}_{i,l,t}
+$$
+
+but observed demand realization differs from the forecast.
+
+Let:
+
+$$
+D_{i,l,t}
+=
+\hat{D}_{i,l,t}
++
+\varepsilon_{i,l,t}
+$$
+
+where $\varepsilon_{i,l,t}$ is forecast error.
+
+Process mining contributes by distinguishing demand events from process artifacts. For example, apparent demand may include:
+
+- duplicate orders;
+- cancelled orders;
+- changed orders;
+- backorder re-promising;
+- split deliveries;
+- intercompany demand;
+- emergency replenishment;
+- manual order corrections.
+
+Therefore the process-mined demand signal is not merely sales-order volume. It is a cleaned event-derived signal:
+
+$$
+\tilde{D}_{i,l,t}
+=
+\Psi_D(E_t)
+$$
+
+where $\Psi_D$ is the process-mining transformation that extracts true demand events from raw operational traces. The demand model becomes:
+
+$$
+D_{i,l,t}
+=
+f_{i,l,t}(market,\ seasonality,\ price,\ promotions,\ installed\ base,\ events)
++
+\varepsilon_{i,l,t}
+$$
+
+with process-mined correction:
+
+$$
+\hat{D}_{i,l,t}^{PM}
+=
+(1-\alpha_D)\hat{D}_{i,l,t}^{stat}
++
+\alpha_D \tilde{D}_{i,l,t}
+$$
+
+where:
+
+- $\hat{D}^{stat}$ is the statistical or commercial forecast;
+- $\tilde{D}$ is the process-mined realized demand signal;
+- $\alpha_D$ controls how strongly event evidence updates the forecast.
+
+### Inventory balance equations
+
+For each product $i$, location $l$, and period $t$, let $I_{i,l,t}$ denote **physical inventory**. Available inventory is derived later by subtracting quality-blocked, reserved, and otherwise unavailable quantities.
+
+The physical inventory balance is:
+
+$$
+I_{i,l,t+1}
+=
+I_{i,l,t}
++
+x_{i,l,t}^{prod}
++
+\sum_s x_{i,s,l,t-L_{s,i,l}^{buy}}^{buy}
++
+\sum_{l' \neq l} x_{i,l',l,t-L_{l',l}^{trans}}^{trans}
+-
+x_{i,l,t}^{ship}
+-
+\sum_{l' \neq l}x_{i,l,l',t}^{trans}
+-
+\operatorname{scrap}_{i,l,t}
+$$
+
+where:
+
+- $L_{s,i,l}^{buy}$ is procurement lead time from supplier $s$ to location $l$ for product $i$;
+- $L_{l',l}^{trans}$ is transfer lead time from location $l'$ to location $l$;
+- $\operatorname{scrap}_{i,l,t}$ is scrapped or physically lost quantity.
+
+Process mining improves the lead-time parameters:
+
+$$
+L_{s,i,l}^{buy}
+\rightarrow
+\hat{L}_{s,i,l}^{PM}
+$$
+
+$$
+L_{l',l}^{trans}
+\rightarrow
+\hat{L}_{l',l}^{PM}
+$$
+
+by measuring actual elapsed times between operational events: purchase-order creation, supplier confirmation, shipment, receipt, quality release, warehouse availability, transfer creation, transfer shipment, transfer receipt, and stock availability.
+
+Process mining may also change the inventory model itself when it reveals hidden inventory states. For example, if material is often physically received but then blocked in quality inspection, the simple assumption that receipt immediately implies availability is false. The model must distinguish physical inventory from available inventory.
+
+Introduce a quality-blocked state:
+
+$$
+Q_{i,l,t}
+$$
+
+with dynamics:
+
+$$
+Q_{i,l,t+1}
+=
+Q_{i,l,t}
++
+\operatorname{receipt\_to\_quality}_{i,l,t}
+-
+\operatorname{quality\_release}_{i,l,t}
+-
+\operatorname{quality\_scrap}_{i,l,t}
+$$
+
+where:
+
+- $\operatorname{receipt\_to\_quality}_{i,l,t}$ is the quantity received into quality-blocked status;
+- $\operatorname{quality\_release}_{i,l,t}$ is the quantity released from quality inspection into available stock;
+- $\operatorname{quality\_scrap}_{i,l,t}$ is the quantity rejected or scrapped after quality inspection.
+
+Available inventory is then:
+
+$$
+I_{i,l,t}^{available}
+=
+I_{i,l,t}^{physical}
+-
+Q_{i,l,t}
+-
+\operatorname{reserved}_{i,l,t}
+-
+\operatorname{blocked}_{i,l,t}
+$$
+
+where:
+
+- $I_{i,l,t}^{physical}$ is total physical inventory;
+- $Q_{i,l,t}$ is quality-blocked inventory;
+- $\operatorname{reserved}_{i,l,t}$ is inventory reserved for existing demand or allocations;
+- $\operatorname{blocked}_{i,l,t}$ is inventory unavailable for other administrative, compliance, or operational reasons.
+
+This is a structural correction caused by process mining. The planning model no longer treats all physical stock as usable stock. It separates inventory existence from inventory availability, which is essential for S&OP, available-to-promise calculation, shortage analysis, and service-level planning.
+
+### Capacity equations
+
+Production and operational capacity are constrained. Let:
+
+$$
+a_{r,i,l}
+$$
+
+be the capacity consumption of product $i$ at location $l$ on resource $r$. Then:
+
+$$
+\sum_i a_{r,i,l}x_{i,l,t}^{prod}
++
+\sum_p b_{r,p}x_{r,p,t}^{alloc}
+\leq
+C_{r,l,t}
++
+\operatorname{overtime}_{r,l,t}
++
+\operatorname{outsourcing}_{r,l,t}
+$$
+
+where:
+
+- $a_{r,i,l}$ is the routing/capacity coefficient;
+- $b_{r,p}$ is the effort required by process $p$;
+- $C_{r,l,t}$ is normal capacity;
+- overtime and outsourcing are optional capacity-expansion decisions.
+
+Process mining contributes by replacing nominal routing times with empirical routing times:
+
+$$
+a_{r,i,l}^{norm}
+\rightarrow
+\hat{a}_{r,i,l}^{PM}
+$$
+
+For example, if ERP routing says that an operation requires 0.20 hours per unit, but event logs from MES and ERP confirmations show 0.28 hours with high variance, the planning model must use the observed coefficient or at least model the discrepancy. The capacity model becomes:
+
+$$
+a_{r,i,l,t}
+=
+\hat{a}_{r,i,l}^{PM}(z,t)
+$$
+
+where $z$ may include product variant, batch size, machine, shift, operator group, raw-material origin, quality grade, or plant.
+
+### Service-level and backlog equations
+
+Demand fulfillment is represented by:
+
+$$
+x_{i,l,t}^{ship} + B_{i,l,t+1}
+=
+D_{i,l,t} + B_{i,l,t}
+$$
+
+with:
+
+$$
+0 \leq x_{i,l,t}^{ship} \leq I_{i,l,t}^{available}
+$$
+
+Service level can be expressed as:
+
+$$
+SL_{i,l,t}
+=
+\frac{x_{i,l,t}^{ship}}{D_{i,l,t}+B_{i,l,t}}
+$$
+
+or over horizon $T$ as a fill-rate measure:
+
+$$
+SL_{i,l}
+=
+1
+-
+\frac{
+B_{i,l,T+1}+\sum_{t=1}^{T}x_{i,l,t}^{lost}
+}{
+B_{i,l,1}+\sum_{t=1}^{T}D_{i,l,t}
+}
+$$
+
+Process mining contributes by distinguishing true demand failures from administrative artifacts. For example, a late shipment may be caused by:
+
+- stock unavailability;
+- credit block;
+- missing customer data;
+- warehouse delay;
+- production delay;
+- transport delay;
+- manual order correction;
+- pricing approval;
+- customs or compliance hold.
+
+The backlog equation can therefore be decomposed by cause:
+
+$$
+B_{i,l,t}
+=
+B_{i,l,t}^{stock}
++
+B_{i,l,t}^{capacity}
++
+B_{i,l,t}^{credit}
++
+B_{i,l,t}^{masterdata}
++
+B_{i,l,t}^{logistics}
++
+B_{i,l,t}^{other}
+$$
+
+This decomposition is not available from a standard planning model. It is inferred from event traces.
+
+### Rework, yield, and exception dynamics
+
+S&OP models often assume that planned output becomes immediately available output. Process mining frequently shows that this is false. The difference may come from permanent losses, temporary unavailability, quality holds, rework loops, or exception-handling workload. These effects should not be collapsed into one generic yield coefficient.
+
+Let:
+
+$$
+Y_{i,l,t}
+$$
+
+be the physical yield of production or fulfillment for product $i$ at location $l$ in period $t$. Physical yield should represent permanent output loss, such as scrap or irreversible rejection, not temporary unavailability.
+
+A process-mined physical yield can be expressed as:
+
+$$
+Y_{i,l,t}^{PM}
+=
+1
+-
+\frac{
+\operatorname{scrap}_{i,l,t}
++
+\operatorname{rejected}_{i,l,t}
+}{
+x_{i,l,t}^{prod}
+}
+$$
+
+where:
+
+- $\operatorname{scrap}_{i,l,t}$ is permanently scrapped quantity;
+- $\operatorname{rejected}_{i,l,t}$ is irreversibly rejected quantity;
+- $x_{i,l,t}^{prod}$ is planned or executed production quantity.
+
+However, physical yield is not sufficient to determine available output. Some quantity may be physically produced but not yet available for demand fulfillment because it is blocked, reserved, unreleased, under inspection, or pending administrative completion.
+
+Define an availability-adjusted output factor:
+
+$$
+\phi_{i,l,t}^{PM}
+=
+1
+-
+\frac{
+\operatorname{scrap}_{i,l,t}
++
+\operatorname{rejected}_{i,l,t}
++
+\operatorname{quality\_block}_{i,l,t}
++
+\operatorname{unreleased}_{i,l,t}
+}{
+x_{i,l,t}^{prod}
+}
+$$
+
+This expression assumes that the numerator categories are disjoint for the period considered; otherwise, the same quantity could be subtracted more than once.
+
+Then available output is:
+
+$$
+A^{out}_{i,l,t}
+=
+\phi_{i,l,t}^{PM}x_{i,l,t}^{prod}
+$$
+
+where $A^{out}_{i,l,t}$ is the quantity that can actually contribute to available supply in the S&OP model.
+
+This distinction is important. Scrap and irreversible rejection reduce physical yield. Quality blocks and unreleased quantities reduce availability, but they may later become available after inspection, release, correction, or approval. Rework is different again: it may not directly reduce output, but it consumes capacity, increases lead time, and may generate additional process load.
+
+For this reason, exception intensity should be indexed according to the mechanism it affects. Three separate quantities are useful:
+
+$$
+\rho^{capacity}_{r,l,t}
+$$
+
+for exceptions that consume or reduce resource capacity;
+
+$$
+\rho^{demand}_{i,l,t}
+$$
+
+for exceptions that generate additional demand-like workload;
+
+$$
+\rho^{process}_{p,t}
+$$
+
+for exceptions or rework loops measured at process level.
+
+A generic process-mined exception-intensity function can be written as:
+
+$$
+\rho^{process}_{p,t}
+=
+\rho_{p}^{0}
++
+\alpha_{p}
+\frac{WIP_{p,t}}{H_{p}+WIP_{p,t}}
++
+\delta_{p}^{\top}z_{p,t}
+$$
+
+where:
+
+- $\rho_{p}^{0}$ is baseline exception intensity for process $p$;
+- $WIP_{p,t}$ is work in progress in process $p$;
+- $H_{p}$ is a saturation parameter;
+- $z_{p,t}$ is a vector of contextual variables;
+- $\alpha_{p}$ measures the sensitivity of exception intensity to WIP;
+- $\delta_{p}$ measures the sensitivity of exception intensity to contextual attributes.
+
+The effect of exception intensity depends on the operational mechanism. If exceptions primarily consume additional capacity, they reduce effective capacity:
+
+$$
+C_{r,l,t}^{effective}
+=
+C_{r,l,t}(1-\rho^{capacity}_{r,l,t})
+$$
+
+If exceptions primarily generate additional workload, they increase effective demand or effective process load:
+
+$$
+D_{i,l,t}^{effective}
+=
+D_{i,l,t}(1+\rho^{demand}_{i,l,t})
+$$
+
+If exceptions primarily increase lead time, they should instead modify the empirical lead-time parameter:
+
+$$
+L_{i,l,t}^{effective}
+=
+L_{i,l,t}^{PM}(1+\rho^{lead}_{i,l,t})
+$$
+
+where $\rho^{lead}_{i,l,t}$ denotes the process-mined lead-time amplification factor for product $i$ at location $l$ in period $t$.
+
+Process mining estimates these quantities from rework loops, repeated touches, reversals, cancellations, quality holds, release delays, correction cycles, and exception paths. The mathematical contribution is the separation of three effects that are often confused in planning models:
+
+$$
+\text{physical yield loss}
+\neq
+\text{temporary unavailability}
+\neq
+\text{rework-induced workload}
+$$
+
+This separation makes the S&OP model more operationally faithful. It prevents the planning system from treating every deviation as lost output and allows different interventions: yield improvement for scrap, release acceleration for blocked stock, and capacity or process redesign for rework.
+
+### Integrated S&OP optimization problem
+
+The full S&OP problem can now be written as a rolling-horizon stochastic or deterministic optimization model. A deterministic equivalent is:
+
+$$
+\min_x
+\sum_{t=1}^{T}
+\left[
+\sum_{i,l} h_{i,l}I_{i,l,t}
++
+\sum_{i,l} b_{i,l}B_{i,l,t}
++
+\sum_{i,l} c_{i,l}^{prod}x_{i,l,t}^{prod}
++
+\sum_{i,s,l} c_{i,s,l}^{buy}x_{i,s,l,t}^{buy}
++
+\sum_{i,l,l'} c_{i,l,l'}^{trans}x_{i,l,l',t}^{trans}
++
+\sum_{r,l} c_{r,l}^{ot}\operatorname{overtime}_{r,l,t}
++
+\sum_{i,l} c_{i,l}^{lost}x_{i,l,t}^{lost}
++
+\sum_{p} c_p^{exception}\rho^{process}_{p,t}
+\right]
+$$
+
+subject to inventory balance:
+
+$$
+I_{i,l,t+1}
+=
+I_{i,l,t}
++
+x_{i,l,t}^{prod}
++
+\sum_s x_{i,s,l,t-\hat{L}_{s,i,l}^{PM}}^{buy}
++
+\sum_{l' \neq l} x_{i,l',l,t-\hat{L}_{l',l}^{PM}}^{trans}
+-
+x_{i,l,t}^{ship}
+-
+\sum_{l' \neq l}x_{i,l,l',t}^{trans}
+-
+\operatorname{scrap}_{i,l,t}
+$$
+
+demand fulfillment:
+
+$$
+x_{i,l,t}^{ship}
++
+B_{i,l,t+1}
++
+x_{i,l,t}^{lost}
+=
+\hat{D}_{i,l,t}^{PM}
++
+B_{i,l,t}
+$$
+
+capacity constraints:
+
+$$
+\sum_i \hat{a}_{r,i,l,t}^{PM}x_{i,l,t}^{prod}
++
+\sum_p \hat{b}_{r,p,t}^{PM}x_{r,p,t}^{alloc}
+\leq
+C_{r,l,t}^{PM}
++
+\operatorname{overtime}_{r,l,t}
++
+\operatorname{outsourcing}_{r,l,t}
+$$
+
+available inventory:
+
+$$
+x_{i,l,t}^{ship}
+\leq
+I_{i,l,t}^{physical}
+-
+Q_{i,l,t}^{PM}
+-
+\operatorname{reserved}_{i,l,t}^{PM}
+$$
+
+service-level constraint:
+
+$$
+\frac{\sum_t x_{i,l,t}^{ship}}
+{\sum_t \hat{D}_{i,l,t}^{PM}}
+\geq
+SL_{i,l}^{target}
+$$
+
+supplier constraints:
+
+$$
+x_{i,s,l,t}^{buy}
+\leq
+\operatorname{SupplierCap}_{i,s,t}^{PM}
+$$
+
+and non-negativity:
+
+$$
+x \geq 0
+$$
+
+This is the integrated S&OP mathematical model. Process mining enters the model through the superscript $PM$. It supplies empirically observed parameters:
+
+$$
+\hat{D}^{PM},\quad
+\hat{L}^{PM},\quad
+\hat{a}^{PM},\quad
+\hat{b}^{PM},\quad
+C^{PM},\quad
+Q^{PM},\quad
+\operatorname{reserved}^{PM},\quad
+\operatorname{SupplierCap}^{PM},\quad
+\rho^{PM}
+$$
+
+The S&OP model is therefore not built only from master data, planning parameters, and managerial assumptions. It is built from observed execution.
+
+### Model evolution across maturity stages
+
+The evolution can be summarized mathematically.
+
+#### Stage 0: spreadsheet or normative planning
+
+The initial model is usually:
+
+$$
+\operatorname{supply}_t
+-
+\operatorname{demand}_t
+=
+\operatorname{projected\ inventory}_t
+$$
+
+This model has weak process semantics. It assumes lead times, capacities, yields, and availability are known and stable.
+
+#### Stage 1: event-informed planning
+
+Process mining estimates actual demand realization and lead times:
+
+$$
+\hat{D}^{stat}
+\rightarrow
+\hat{D}^{PM}
+$$
+
+$$
+L^{masterdata}
+\rightarrow
+\hat{L}^{PM}
+$$
+
+The model becomes:
+
+$$
+I_{t+1}
+=
+I_t
++
+\operatorname{supply}_{t-\hat{L}^{PM}}
+-
+\hat{D}_t^{PM}
+$$
+
+This is still simple, but more empirical.
+
+#### Stage 2: process-corrected planning
+
+Process mining reveals hidden states: quality blocks, reserved stock, blocked orders, approval delays, rework, and unavailable capacity. The inventory equation becomes:
+
+$$
+I^{available}_t
+=
+I^{physical}_t
+-
+Q_t^{PM}
+-
+\operatorname{reserved}_t^{PM}
+-
+\operatorname{blocked}_t^{PM}
+$$
+
+The demand equation becomes:
+
+$$
+D_t^{effective}
+=
+\hat{D}_t^{PM}(1+\rho_t^{PM})
+$$
+
+The model has now changed structure.
+
+#### Stage 3: capacity-constrained planning
+
+Process mining estimates empirical capacity consumption:
+
+$$
+a^{routing}
+\rightarrow
+\hat{a}^{PM}
+$$
+
+and effective capacity:
+
+$$
+C^{nominal}
+\rightarrow
+C^{PM}
+$$
+
+The S&OP model becomes constrained:
+
+$$
+\sum_i \hat{a}_{r,i,t}^{PM}x_{i,t}^{prod}
+\leq
+C_{r,l,t}^{PM}
+$$
+
+The enterprise can now distinguish demand infeasibility from execution inefficiency.
+
+#### Stage 4: multi-echelon S&OP optimization
+
+The model expands across products, locations, suppliers, plants, warehouses, and time periods:
+
+$$
+\min_x \operatorname{TotalCost}(x)
+$$
+
+subject to:
+
+$$
+\operatorname{inventory\ balance}
+$$
+
+$$
+\operatorname{demand\ fulfillment}
+$$
+
+$$
+\operatorname{capacity}
+$$
+
+$$
+\operatorname{supplier\ constraints}
+$$
+
+$$
+\operatorname{transport\ constraints}
+$$
+
+$$
+\operatorname{service\ levels}
+$$
+
+$$
+\operatorname{cash\ or\ working\ capital\ constraints}
+$$
+
+The S&OP process becomes a formal constrained optimization problem.
+
+#### Stage 5: established rolling-horizon S&OP control system
+
+At the mature state, the model is updated continuously or periodically:
+
+$$
+M_{t+1}
+=
+\operatorname{Update}(M_t,E_{t+1})
+$$
+
+The rolling-horizon optimization is:
+
+$$
+x_t^*
+=
+\arg\min_{x_{t:t+H}}
+J(x_{t:t+H};M_t)
+$$
+
+Only the first-period decision is executed:
+
+$$
+\operatorname{execute}(x_t^*)
+$$
+
+Then new event data are observed:
+
+$$
+E_{t+1}
+$$
+
+and the model is updated again. The established state is therefore:
+
+$$
+E_t
+\rightarrow
+M_t
+\rightarrow
+x_t^*
+\rightarrow
+execution
+\rightarrow
+E_{t+1}
+\rightarrow
+M_{t+1}
+$$
+
+This is model-predictive S&OP.
+
+### Final established state
+
+In the final established state, process mining is no longer an occasional diagnostic exercise. It becomes part of the enterprise planning and control system. The mature S&OP state can be represented as:
+
+$$
+M^*
+=
+(G^{obs},\Theta^{PM},X^*,\Gamma)
+$$
+
+where:
+
+- $G^{obs}$ is the observed process graph;
+- $\Theta^{PM}$ is the process-mined parameter set;
+- $X^*$ is the optimized decision policy;
+- $\Gamma$ is the governance layer.
+
+The parameter set is:
+
+$$
+\Theta^{PM}
+=
+\{
+\hat{D}^{PM},
+\hat{L}^{PM},
+\hat{P}^{PM},
+\hat{a}^{PM},
+\hat{C}^{PM},
+\hat{Y}^{PM},
+\hat{\phi}^{PM},
+\hat{\rho}^{PM},
+\hat{SL}^{PM}
+\}
+$$
+
+where:
+
+- $\hat{D}^{PM}$ is process-mined demand realization;
+- $\hat{L}^{PM}$ is empirical lead time;
+- $\hat{P}^{PM}$ is routing and rework structure;
+- $\hat{a}^{PM}$ is empirical capacity consumption;
+- $\hat{C}^{PM}$ is effective capacity;
+- $\hat{Y}^{PM}$ is empirical yield;
+- $\hat{\phi}^{PM}$ is the availability-adjusted output factor;
+- $\hat{\rho}^{PM}$ is exception or rework intensity;
+- $\hat{SL}^{PM}$ is observed service-level performance.
+
+The optimization policy is:
+
+$$
+X^*
+=
+\{
+x^{prod,*},
+x^{buy,*},
+x^{trans,*},
+x^{ship,*},
+x^{alloc,*},
+x^{sub,*},
+x^{ot,*}
+\}
+$$
+
+The governance layer is:
+
+$$
+\Gamma
+=
+\{
+owners,
+constraints,
+approval\ rules,
+risk\ thresholds,
+service\ policies,
+financial\ limits,
+exception\ rules
+\}
+$$
+
+The S&OP process is then no longer merely a monthly meeting sequence. It becomes a governed optimization loop:
+
+```{mermaid}
+%%| label: fig-sop-governed-optimization-loop
+%%| fig-cap: Governed S&OP optimization loop. Process mining supports the sensing layer, the mathematical model supports optimization, governance converts optimization into decisions, and execution produces new event evidence.
+%%| fig-alt: Flowchart showing sense, model, optimize, decide, execute, and learn as a closed S&OP control loop.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+  S["Sense"] --> M["Model"]
+  M --> O["Optimize"]
+  O --> D["Decide"]
+  D --> E["Execute"]
+  E --> L["Learn"]
+  L -. feedback .-> S
+```
+
+### Meaning for S&OP governance
+
+This formulation changes the meaning of S&OP:
+
+- A traditional S&OP process often reconciles demand and supply through meetings, spreadsheets, assumptions, and negotiated compromises.
+
+- A process-mining-enabled S&OP process reconciles demand and supply through an empirically calibrated model of enterprise execution.
+
+The practical differences are substantial:
+
+1. Demand is not only forecasted. It is corrected by observed order behavior.
+
+2. Supply is not only planned. It is constrained by observed capacity, lead time, yield, rework, and exception behavior.
+
+3. Inventory is not only counted. It is classified by availability, quality status, reservation, blockage, and process position.
+
+4. Capacity is not only nominal. It is empirically measured through event traces.
+
+5. Service level is not only reported. It is decomposed into causal failure modes.
+
+6. The plan is not only approved. It is tested against the observed dynamics of the enterprise.
+
+Conceptually, the mature S&OP process is an optimization problem over forecasts, constraints, observed process dynamics, and governance rules.
+
+The final mathematical principle is:
+
+$$
+S\&OP^*
+=
+\arg\min_x
+\mathbb{E}
+\left[
+\operatorname{Cost}(x,D,\Theta^{PM})
++
+\operatorname{Risk}(x,D,\Theta^{PM})
+-
+\operatorname{Value}(x,D,\Theta^{PM})
+\right]
+$$
+
+subject to:
+
+$$
+x \in \mathcal{X}^{PM}
+$$
+
+where $\mathcal{X}^{PM}$ is the feasible set defined by material, capacity, financial, service, governance, and process-dynamic constraints inferred or corrected through process-mining evidence.
+
+### Conclusion
+
+The evolution from process mining to S&OP can be summarized as follows:
+
+```{mermaid}
+%%| label: fig-process-mining-to-sop-control-system
+%%| fig-cap: Evolution from process mining to a rolling S&OP control system. Event logs are transformed into an observed process graph, then into a dynamical execution model, then into local resource optimization, then into integrated supply-demand optimization, and finally into a rolling S&OP control system.
+%%| fig-alt: Flowchart showing event logs flowing to observed process graph, dynamical execution model, local resource optimization, integrated supply-demand optimization, and rolling S&OP control system.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  E["Event logs"] --> G["Observed process graph"]
+  G --> D["Dynamical execution model"]
+  D --> R["Local resource optimization"]
+  R --> S["Integrated supply-demand optimization"]
+  S --> C["Rolling S&OP control system"]
+```
+
+At the beginning, process mining explains what happened, but at the mature state, process mining helps decide what should happen next.
+
+The strongest form of process mining is therefore not process visualization. It is empirical system identification for enterprise optimization. In a full S&OP setting, the value of process mining is not that it draws the real process. The value is that it makes the real process mathematically usable. It supplies the missing bridge between operational execution and decision science:
+
+```{mermaid}
+%%| label: fig-operational-execution-to-decision-science
+%%| fig-cap: Process mining as the bridge between operational execution and decision science. Reality generates event data; event data feed a model; the model supports optimization; optimization produces governed action.
+%%| fig-alt: Flowchart showing reality flowing to event data, then model, then optimization, then governed action.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  R["Operational reality"] --> E["Event data"]
+  E --> M["Mathematical model"]
+  M --> O["Optimization"]
+  O --> A["Governed action"]
+```
