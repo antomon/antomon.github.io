@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-05-16">
+<meta name="description" content="Questo articolo interpreta gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 del Codice di Rete come un segnale di rafforzamento strutturale della postura di sicurezza richiesta agli impianti connessi alla rete elettrica. La tesi centrale è che tali aggiornamenti non siano una semplice revisione documentale, ma il passaggio verso un modello in cui controllo, monitoraggio, telecomunicazioni, disponibilità operativa e cybersecurity diventano dimensioni inseparabili dell’architettura di impianto. I tre allegati intervengono su oggetti formalmente distinti ma sostanzialmente convergenti. L’Allegato A.13 disciplina la connessione al sistema di controllo di Terna; l’Allegato A.69 regola la connessione degli impianti di produzione al sistema di difesa; l’Allegato A.52 definisce le caratteristiche funzionali e di comunicazione dell’UPDM. Considerati insieme, essi descrivono un impianto non più come infrastruttura elettrica con un canale dati aggiunto, ma come sistema cyber-fisico governato end-to-end, nel quale apparati, reti, misure, comandi, collaudi, manutenzione e sicurezza devono essere coerenti con il ruolo sistemico dell’impianto. La prima direttrice di cambiamento riguarda il perimetro tecnico. Il livello a 36 kV assume una rilevanza esplicita, soprattutto per impianti di produzione, accumulo e consumo/autoconsumo connessi direttamente o indirettamente alla RTN. Questo incide in modo particolare su BESS, impianti rinnovabili e configurazioni ibride, perché porta dentro la disciplina Terna impianti che non possono più essere trattati come casi minori o assimilati per analogia agli impianti AT tradizionali. La seconda direttrice riguarda la rete di comunicazione. Gli allegati spostano il baricentro da una nozione generica di collegamento dati a una nozione più rigorosa di infrastruttura TLC/OT soggetta a requisiti architetturali, prestazionali e di governance. MPLS, router conformi all’architettura Terna, funzione di switching integrata, BGP, IPSec ove previsto, indirizzamento governato, assenza di switch esterni intermedi e connessioni fisiche dedicate in fibra ottica diventano elementi di progetto, non dettagli esecutivi. La terza direttrice riguarda la conduzione operativa. Gli aggiornamenti introducono requisiti di ciclo di vita: adeguamento degli impianti esistenti, finestre transitorie, migrazione tecnologica, esenzioni condizionate, collaudi tecnici, documentazione, monitoraggio proattivo, gestione dei guasti, H24 e responsabilità verso provider, O&amp;M contractor, telco, integratori e fornitori di apparati. La conformità Terna non si esaurisce quindi nel commissioning, ma deve essere mantenuta, verificata e documentata durante l’intero esercizio. L’Allegato A.13 viene letto come il passaggio dal telecontrollo alla connessione operativa dell’impianto. L’Allegato A.69 formalizza invece il sistema di difesa come catena OT/TLC/cyber, con particolare rilievo per impianti a 36 kV e sistemi elettrochimici di accumulo, nei quali EMS, BMS e PCS devono essere integrati con misure, comandi e vincoli temporali coerenti con i requisiti Terna. L’Allegato A.52 porta il ragionamento sull’UPDM, che diventa un componente cyber-fisico critico: doppia Ethernet, alta affidabilità, IEC 61850, segregazione, secure boot, firma del firmware, RADIUS, RBAC, logging, patching e gestione vulnerabilità. L’articolo colloca infine questa evoluzione nella traiettoria regolatoria europea. NIS2, DORA, Cyber Resilience Act e Perimetro di Sicurezza Nazionale Cibernetica convergono verso una stessa direzione: la cybersecurity non è più un presidio specialistico esterno ai processi industriali, ma un requisito ordinario di continuità operativa, governance, responsabilità e resilienza delle filiere critiche. In un contesto in cui automazione, crime-as-a-service, AI generativa, supply chain attack e sfruttamento di sistemi legacy abbassano il costo unitario dell’attacco, anche operatori e fornitori un tempo sotto la soglia di interesse diventano bersagli rilevanti. La conclusione operativa è che il perimetro Terna deve essere portato dentro il progetto dell’impianto fin dall’inizio. La domanda non è più se l’impianto disponga di un canale verso Terna, ma se possieda una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, monitoraggio, difesa, collaudo, manutenzione, auditabilità e continuità per tutto il ciclo di vita.">
+
+<title>Controllo e Monitoraggio della Rete: la Nuova Postura di Sicurezza degli Impianti Connessi – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-acf12a64177840b8d86f2d4f01b2e9fb.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ddff6f6c768f4d275e03843a69a2a41e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Controllo e Monitoraggio della Rete: la Nuova Postura di Sicurezza degli Impianti Connessi – Random Bits of Knowledge">
+<meta property="og:description" content="Questo articolo interpreta gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 del Codice di Rete come un segnale di rafforzamento strutturale della postura di sicurezza richiesta agli impianti connessi alla rete elettrica. La tesi centrale è che tali aggiornamenti non siano una semplice revisione documentale, ma il passaggio verso un modello in cui controllo, monitoraggio, telecomunicazioni, disponibilità operativa e cybersecurity diventano dimensioni inseparabili dell’architettura di impianto. I tre allegati intervengono su oggetti formalmente distinti ma sostanzialmente convergenti. L’Allegato A.13 disciplina la connessione al sistema di controllo di Terna; l’Allegato A.69 regola la connessione degli impianti di produzione al sistema di difesa; l’Allegato A.52 definisce le caratteristiche funzionali e di comunicazione dell’UPDM. Considerati insieme, essi descrivono un impianto non più come infrastruttura elettrica con un canale dati aggiunto, ma come sistema cyber-fisico governato end-to-end, nel quale apparati, reti, misure, comandi, collaudi, manutenzione e sicurezza devono essere coerenti con il ruolo sistemico dell’impianto. La prima direttrice di cambiamento riguarda il perimetro tecnico. Il livello a 36 kV assume una rilevanza esplicita, soprattutto per impianti di produzione, accumulo e consumo/autoconsumo connessi direttamente o indirettamente alla RTN. Questo incide in modo particolare su BESS, impianti rinnovabili e configurazioni ibride, perché porta dentro la disciplina Terna impianti che non possono più essere trattati come casi minori o assimilati per analogia agli impianti AT tradizionali. La seconda direttrice riguarda la rete di comunicazione. Gli allegati spostano il baricentro da una nozione generica di collegamento dati a una nozione più rigorosa di infrastruttura TLC/OT soggetta a requisiti architetturali, prestazionali e di governance. MPLS, router conformi all’architettura Terna, funzione di switching integrata, BGP, IPSec ove previsto, indirizzamento governato, assenza di switch esterni intermedi e connessioni fisiche dedicate in fibra ottica diventano elementi di progetto, non dettagli esecutivi. La terza direttrice riguarda la conduzione operativa. Gli aggiornamenti introducono requisiti di ciclo di vita: adeguamento degli impianti esistenti, finestre transitorie, migrazione tecnologica, esenzioni condizionate, collaudi tecnici, documentazione, monitoraggio proattivo, gestione dei guasti, H24 e responsabilità verso provider, O&amp;M contractor, telco, integratori e fornitori di apparati. La conformità Terna non si esaurisce quindi nel commissioning, ma deve essere mantenuta, verificata e documentata durante l’intero esercizio. L’Allegato A.13 viene letto come il passaggio dal telecontrollo alla connessione operativa dell’impianto. L’Allegato A.69 formalizza invece il sistema di difesa come catena OT/TLC/cyber, con particolare rilievo per impianti a 36 kV e sistemi elettrochimici di accumulo, nei quali EMS, BMS e PCS devono essere integrati con misure, comandi e vincoli temporali coerenti con i requisiti Terna. L’Allegato A.52 porta il ragionamento sull’UPDM, che diventa un componente cyber-fisico critico: doppia Ethernet, alta affidabilità, IEC 61850, segregazione, secure boot, firma del firmware, RADIUS, RBAC, logging, patching e gestione vulnerabilità. L’articolo colloca infine questa evoluzione nella traiettoria regolatoria europea. NIS2, DORA, Cyber Resilience Act e Perimetro di Sicurezza Nazionale Cibernetica convergono verso una stessa direzione: la cybersecurity non è più un presidio specialistico esterno ai processi industriali, ma un requisito ordinario di continuità operativa, governance, responsabilità e resilienza delle filiere critiche. In un contesto in cui automazione, crime-as-a-service, AI generativa, supply chain attack e sfruttamento di sistemi legacy abbassano il costo unitario dell’attacco, anche operatori e fornitori un tempo sotto la soglia di interesse diventano bersagli rilevanti. La conclusione operativa è che il perimetro Terna deve essere portato dentro il progetto dell’impianto fin dall’inizio. La domanda non è più se l’impianto disponga di un canale verso Terna, ma se possieda una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, monitoraggio, difesa, collaudo, manutenzione, auditabilità e continuità per tutto il ciclo di vita.">
+<meta property="og:image" content="https://antomon.github.io/posts/controllo-monitoraggio-rete-nuova-postura-sicurezza-impianti-connessi/terna-shield.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="Controllo e Monitoraggio della Rete: la Nuova Postura di Sicurezza degli Impianti Connessi – Random Bits of Knowledge">
+<meta name="twitter:description" content="Questo articolo interpreta gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 del Codice di Rete come un segnale di rafforzamento strutturale della postura di sicurezza richiesta agli impianti connessi alla rete elettrica. La tesi centrale è che tali aggiornamenti non siano una semplice revisione documentale, ma il passaggio verso un modello in cui controllo, monitoraggio, telecomunicazioni, disponibilità operativa e cybersecurity diventano dimensioni inseparabili dell’architettura di impianto. I tre allegati intervengono su oggetti formalmente distinti ma sostanzialmente convergenti. L’Allegato A.13 disciplina la connessione al sistema di controllo di Terna; l’Allegato A.69 regola la connessione degli impianti di produzione al sistema di difesa; l’Allegato A.52 definisce le caratteristiche funzionali e di comunicazione dell’UPDM. Considerati insieme, essi descrivono un impianto non più come infrastruttura elettrica con un canale dati aggiunto, ma come sistema cyber-fisico governato end-to-end, nel quale apparati, reti, misure, comandi, collaudi, manutenzione e sicurezza devono essere coerenti con il ruolo sistemico dell’impianto. La prima direttrice di cambiamento riguarda il perimetro tecnico. Il livello a 36 kV assume una rilevanza esplicita, soprattutto per impianti di produzione, accumulo e consumo/autoconsumo connessi direttamente o indirettamente alla RTN. Questo incide in modo particolare su BESS, impianti rinnovabili e configurazioni ibride, perché porta dentro la disciplina Terna impianti che non possono più essere trattati come casi minori o assimilati per analogia agli impianti AT tradizionali. La seconda direttrice riguarda la rete di comunicazione. Gli allegati spostano il baricentro da una nozione generica di collegamento dati a una nozione più rigorosa di infrastruttura TLC/OT soggetta a requisiti architetturali, prestazionali e di governance. MPLS, router conformi all’architettura Terna, funzione di switching integrata, BGP, IPSec ove previsto, indirizzamento governato, assenza di switch esterni intermedi e connessioni fisiche dedicate in fibra ottica diventano elementi di progetto, non dettagli esecutivi. La terza direttrice riguarda la conduzione operativa. Gli aggiornamenti introducono requisiti di ciclo di vita: adeguamento degli impianti esistenti, finestre transitorie, migrazione tecnologica, esenzioni condizionate, collaudi tecnici, documentazione, monitoraggio proattivo, gestione dei guasti, H24 e responsabilità verso provider, O&amp;M contractor, telco, integratori e fornitori di apparati. La conformità Terna non si esaurisce quindi nel commissioning, ma deve essere mantenuta, verificata e documentata durante l’intero esercizio. L’Allegato A.13 viene letto come il passaggio dal telecontrollo alla connessione operativa dell’impianto. L’Allegato A.69 formalizza invece il sistema di difesa come catena OT/TLC/cyber, con particolare rilievo per impianti a 36 kV e sistemi elettrochimici di accumulo, nei quali EMS, BMS e PCS devono essere integrati con misure, comandi e vincoli temporali coerenti con i requisiti Terna. L’Allegato A.52 porta il ragionamento sull’UPDM, che diventa un componente cyber-fisico critico: doppia Ethernet, alta affidabilità, IEC 61850, segregazione, secure boot, firma del firmware, RADIUS, RBAC, logging, patching e gestione vulnerabilità. L’articolo colloca infine questa evoluzione nella traiettoria regolatoria europea. NIS2, DORA, Cyber Resilience Act e Perimetro di Sicurezza Nazionale Cibernetica convergono verso una stessa direzione: la cybersecurity non è più un presidio specialistico esterno ai processi industriali, ma un requisito ordinario di continuità operativa, governance, responsabilità e resilienza delle filiere critiche. In un contesto in cui automazione, crime-as-a-service, AI generativa, supply chain attack e sfruttamento di sistemi legacy abbassano il costo unitario dell’attacco, anche operatori e fornitori un tempo sotto la soglia di interesse diventano bersagli rilevanti. La conclusione operativa è che il perimetro Terna deve essere portato dentro il progetto dell’impianto fin dall’inizio. La domanda non è più se l’impianto disponga di un canale verso Terna, ma se possieda una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, monitoraggio, difesa, collaudo, manutenzione, auditabilità e continuità per tutto il ciclo di vita.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/controllo-monitoraggio-rete-nuova-postura-sicurezza-impianti-connessi/terna-shield.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Controllo e Monitoraggio della Rete: la Nuova Postura di Sicurezza degli Impianti Connessi</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Controllo e Monitoraggio della Rete: la Nuova Postura di Sicurezza degli Impianti Connessi</h1>
+            <p class="subtitle lead">Gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 nel quadro europeo di resilienza cyber, NIS2, CRA e Perimetro di Sicurezza Nazionale Cibernetica</p>
+                  <div>
+        <div class="description">
+          Questo articolo interpreta gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 del Codice di Rete come un segnale di rafforzamento strutturale della postura di sicurezza richiesta agli impianti connessi alla rete elettrica. La tesi centrale è che tali aggiornamenti non siano una semplice revisione documentale, ma il passaggio verso un modello in cui controllo, monitoraggio, telecomunicazioni, disponibilità operativa e cybersecurity diventano dimensioni inseparabili dell’architettura di impianto. I tre allegati intervengono su oggetti formalmente distinti ma sostanzialmente convergenti. L’Allegato A.13 disciplina la connessione al sistema di controllo di Terna; l’Allegato A.69 regola la connessione degli impianti di produzione al sistema di difesa; l’Allegato A.52 definisce le caratteristiche funzionali e di comunicazione dell’UPDM. Considerati insieme, essi descrivono un impianto non più come infrastruttura elettrica con un canale dati aggiunto, ma come sistema cyber-fisico governato end-to-end, nel quale apparati, reti, misure, comandi, collaudi, manutenzione e sicurezza devono essere coerenti con il ruolo sistemico dell’impianto. La prima direttrice di cambiamento riguarda il perimetro tecnico. Il livello a 36 kV assume una rilevanza esplicita, soprattutto per impianti di produzione, accumulo e consumo/autoconsumo connessi direttamente o indirettamente alla RTN. Questo incide in modo particolare su BESS, impianti rinnovabili e configurazioni ibride, perché porta dentro la disciplina Terna impianti che non possono più essere trattati come casi minori o assimilati per analogia agli impianti AT tradizionali. La seconda direttrice riguarda la rete di comunicazione. Gli allegati spostano il baricentro da una nozione generica di collegamento dati a una nozione più rigorosa di infrastruttura TLC/OT soggetta a requisiti architetturali, prestazionali e di governance. MPLS, router conformi all’architettura Terna, funzione di switching integrata, BGP, IPSec ove previsto, indirizzamento governato, assenza di switch esterni intermedi e connessioni fisiche dedicate in fibra ottica diventano elementi di progetto, non dettagli esecutivi. La terza direttrice riguarda la conduzione operativa. Gli aggiornamenti introducono requisiti di ciclo di vita: adeguamento degli impianti esistenti, finestre transitorie, migrazione tecnologica, esenzioni condizionate, collaudi tecnici, documentazione, monitoraggio proattivo, gestione dei guasti, H24 e responsabilità verso provider, O&amp;M contractor, telco, integratori e fornitori di apparati. La conformità Terna non si esaurisce quindi nel commissioning, ma deve essere mantenuta, verificata e documentata durante l’intero esercizio. L’Allegato A.13 viene letto come il passaggio dal telecontrollo alla connessione operativa dell’impianto. L’Allegato A.69 formalizza invece il sistema di difesa come catena OT/TLC/cyber, con particolare rilievo per impianti a 36 kV e sistemi elettrochimici di accumulo, nei quali EMS, BMS e PCS devono essere integrati con misure, comandi e vincoli temporali coerenti con i requisiti Terna. L’Allegato A.52 porta il ragionamento sull’UPDM, che diventa un componente cyber-fisico critico: doppia Ethernet, alta affidabilità, IEC 61850, segregazione, secure boot, firma del firmware, RADIUS, RBAC, logging, patching e gestione vulnerabilità. L’articolo colloca infine questa evoluzione nella traiettoria regolatoria europea. NIS2, DORA, Cyber Resilience Act e Perimetro di Sicurezza Nazionale Cibernetica convergono verso una stessa direzione: la cybersecurity non è più un presidio specialistico esterno ai processi industriali, ma un requisito ordinario di continuità operativa, governance, responsabilità e resilienza delle filiere critiche. In un contesto in cui automazione, crime-as-a-service, AI generativa, supply chain attack e sfruttamento di sistemi legacy abbassano il costo unitario dell’attacco, anche operatori e fornitori un tempo sotto la soglia di interesse diventano bersagli rilevanti. La conclusione operativa è che il perimetro Terna deve essere portato dentro il progetto dell’impianto fin dall’inizio. La domanda non è più se l’impianto disponga di un canale verso Terna, ma se possieda una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, monitoraggio, difesa, collaudo, manutenzione, auditabilità e continuità per tutto il ciclo di vita.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cybersecurity</div>
+                <div class="quarto-category">🇮🇹</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 16, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">May 16, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduzione-tre-allegati-una-sola-direzione-architetturale" id="toc-introduzione-tre-allegati-una-sola-direzione-architetturale" class="nav-link active" data-scroll-target="#introduzione-tre-allegati-una-sola-direzione-architetturale">Introduzione: tre allegati, una sola direzione architetturale</a></li>
+  <li><a href="#allegato-a.13-dal-telecontrollo-alla-connessione-operativa-dellimpianto" id="toc-allegato-a.13-dal-telecontrollo-alla-connessione-operativa-dellimpianto" class="nav-link" data-scroll-target="#allegato-a.13-dal-telecontrollo-alla-connessione-operativa-dellimpianto">Allegato A.13: dal telecontrollo alla connessione operativa dell’impianto</a></li>
+  <li><a href="#allegato-a.69-il-sistema-di-difesa-come-catena-ottlccyber" id="toc-allegato-a.69-il-sistema-di-difesa-come-catena-ottlccyber" class="nav-link" data-scroll-target="#allegato-a.69-il-sistema-di-difesa-come-catena-ottlccyber">Allegato A.69: il sistema di difesa come catena OT/TLC/cyber</a></li>
+  <li><a href="#allegato-a.52-lupdm-come-componente-cyber-fisico-critico" id="toc-allegato-a.52-lupdm-come-componente-cyber-fisico-critico" class="nav-link" data-scroll-target="#allegato-a.52-lupdm-come-componente-cyber-fisico-critico">Allegato A.52: l’UPDM come componente cyber-fisico critico</a></li>
+  <li><a href="#il-nuovo-perimetro-terna-dentro-la-traiettoria-regolatoria-europea" id="toc-il-nuovo-perimetro-terna-dentro-la-traiettoria-regolatoria-europea" class="nav-link" data-scroll-target="#il-nuovo-perimetro-terna-dentro-la-traiettoria-regolatoria-europea">Il nuovo perimetro Terna dentro la traiettoria regolatoria europea</a></li>
+  <li><a href="#conclusione" id="toc-conclusione" class="nav-link" data-scroll-target="#conclusione">Conclusione</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("terna-shield.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>Questo articolo interpreta gli aggiornamenti Terna agli Allegati A.13, A.69 e A.52 del Codice di Rete come un segnale di rafforzamento strutturale della postura di sicurezza richiesta agli impianti connessi alla rete elettrica. La tesi centrale è che tali aggiornamenti non siano una semplice revisione documentale, ma il passaggio verso un modello in cui controllo, monitoraggio, telecomunicazioni, disponibilità operativa e cybersecurity diventano dimensioni inseparabili dell’architettura di impianto. I tre allegati intervengono su oggetti formalmente distinti ma sostanzialmente convergenti. L’Allegato A.13 disciplina la connessione al sistema di controllo di Terna; l’Allegato A.69 regola la connessione degli impianti di produzione al sistema di difesa; l’Allegato A.52 definisce le caratteristiche funzionali e di comunicazione dell’UPDM. Considerati insieme, essi descrivono un impianto non più come infrastruttura elettrica con un canale dati aggiunto, ma come sistema cyber-fisico governato end-to-end, nel quale apparati, reti, misure, comandi, collaudi, manutenzione e sicurezza devono essere coerenti con il ruolo sistemico dell’impianto. La prima direttrice di cambiamento riguarda il perimetro tecnico. Il livello a 36 kV assume una rilevanza esplicita, soprattutto per impianti di produzione, accumulo e consumo/autoconsumo connessi direttamente o indirettamente alla RTN. Questo incide in modo particolare su BESS, impianti rinnovabili e configurazioni ibride, perché porta dentro la disciplina Terna impianti che non possono più essere trattati come casi minori o assimilati per analogia agli impianti AT tradizionali. La seconda direttrice riguarda la rete di comunicazione. Gli allegati spostano il baricentro da una nozione generica di collegamento dati a una nozione più rigorosa di infrastruttura TLC/OT soggetta a requisiti architetturali, prestazionali e di governance. MPLS, router conformi all’architettura Terna, funzione di switching integrata, BGP, IPSec ove previsto, indirizzamento governato, assenza di switch esterni intermedi e connessioni fisiche dedicate in fibra ottica diventano elementi di progetto, non dettagli esecutivi. La terza direttrice riguarda la conduzione operativa. Gli aggiornamenti introducono requisiti di ciclo di vita: adeguamento degli impianti esistenti, finestre transitorie, migrazione tecnologica, esenzioni condizionate, collaudi tecnici, documentazione, monitoraggio proattivo, gestione dei guasti, H24 e responsabilità verso provider, O&amp;M contractor, telco, integratori e fornitori di apparati. La conformità Terna non si esaurisce quindi nel commissioning, ma deve essere mantenuta, verificata e documentata durante l’intero esercizio. L’Allegato A.13 viene letto come il passaggio dal telecontrollo alla connessione operativa dell’impianto. L’Allegato A.69 formalizza invece il sistema di difesa come catena OT/TLC/cyber, con particolare rilievo per impianti a 36 kV e sistemi elettrochimici di accumulo, nei quali EMS, BMS e PCS devono essere integrati con misure, comandi e vincoli temporali coerenti con i requisiti Terna. L’Allegato A.52 porta il ragionamento sull’UPDM, che diventa un componente cyber-fisico critico: doppia Ethernet, alta affidabilità, IEC 61850, segregazione, secure boot, firma del firmware, RADIUS, RBAC, logging, patching e gestione vulnerabilità. L’articolo colloca infine questa evoluzione nella traiettoria regolatoria europea. NIS2, DORA, Cyber Resilience Act e Perimetro di Sicurezza Nazionale Cibernetica convergono verso una stessa direzione: la cybersecurity non è più un presidio specialistico esterno ai processi industriali, ma un requisito ordinario di continuità operativa, governance, responsabilità e resilienza delle filiere critiche. In un contesto in cui automazione, crime-as-a-service, AI generativa, supply chain attack e sfruttamento di sistemi legacy abbassano il costo unitario dell’attacco, anche operatori e fornitori un tempo sotto la soglia di interesse diventano bersagli rilevanti. La conclusione operativa è che il perimetro Terna deve essere portato dentro il progetto dell’impianto fin dall’inizio. La domanda non è più se l’impianto disponga di un canale verso Terna, ma se possieda una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, monitoraggio, difesa, collaudo, manutenzione, auditabilità e continuità per tutto il ciclo di vita.</p>
+</div>
+<section id="introduzione-tre-allegati-una-sola-direzione-architetturale" class="level2">
+<h2 class="anchored" data-anchor-id="introduzione-tre-allegati-una-sola-direzione-architetturale">Introduzione: tre allegati, una sola direzione architetturale</h2>
+<p>L’avviso di aggiornamento del Codice di Rete pubblicato da Terna nel maggio 2026 non va letto come una normale manutenzione documentale.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Gli Allegati A.13, A.69 e A.52 intervengono su oggetti formalmente distinti: il sistema di controllo, il sistema di difesa e l’unità periferica dei sistemi di difesa e monitoraggio. Tuttavia, se osservati dal punto di vista del disegno e della conduzione degli impianti, i tre aggiornamenti convergono verso lo stesso modello: un impianto connesso alla RTN non è più descrivibile come un insieme di componenti elettrici a cui si aggiunge un canale di comunicazione, ma come un <strong>sistema cyber-fisico governato end-to-end</strong>.</p>
+<p>Il primo elemento comune è l’abbassamento e la precisazione del <strong>perimetro tecnico</strong>. Il livello a 36 kV diventa un confine operativo esplicito per impianti RTN o funzionali alla RTN, impianti di produzione, inclusi gli accumuli, e impianti di consumo/autoconsumo; per le reti di distribuzione il riferimento dell’Allegato A.13 resta invece legato alla soglia pari o superiore a 50 kV. Questo è particolarmente rilevante per impianti rinnovabili, sistemi di accumulo e configurazioni connesse a sezioni 36 kV di stazioni Terna.</p>
+<p>Il secondo elemento comune è la <strong>convergenza fra controllo, difesa, monitoraggio e telecomunicazioni</strong>. Gli allegati non disciplinano più soltanto il contenuto informativo da scambiare, ma anche i vettori, i router, le interfacce, le fibre ottiche, il collaudo, il monitoraggio locale, la manutenzione, la disponibilità e la gestione del guasto. La rete di comunicazione diventa parte integrante della funzionalità elettrica.</p>
+<p>Il terzo elemento comune è la <strong>trasformazione della cybersecurity da principio generale a requisito verificabile</strong>. Asset inventory, segregazione, logging, autenticazione, patching, hardening, gestione vulnerabilità, audit, supply chain e incident response entrano nel lessico ordinario degli allegati tecnici. Il punto fondamentale è che la sicurezza non è più una clausola esterna all’impianto: diventa una proprietà richiesta della catena di controllo, difesa e monitoraggio.</p>
+<p>Il quarto elemento comune riguarda il <strong>ciclo di vita</strong>. I nuovi requisiti non valgono solo per i nuovi impianti. In forme diverse, gli allegati introducono obblighi di adeguamento, finestre temporali, esenzioni condizionate per rifacimenti, repowering o dismissioni, e responsabilità esplicite del Titolare anche quando l’esercizio tecnico è affidato a terzi. La compliance non coincide quindi con il progetto iniziale, ma con la capacità di mantenere nel tempo una configurazione coerente, documentata e collaudabile.</p>
+<p>Questa lettura porta a una conclusione operativa: gli aggiornamenti Terna non sono soltanto prescrizioni per il gestore di rete, né soltanto requisiti per il fornitore BoP o per il vendor degli apparati. Sono <strong>requisiti di architettura di impianto</strong> che incidono su layout, BoM, connessioni di comunicazione, cavidotti, apparati di networking, RTU, UPDM, EMS/BMS, interfacce di campo, contratti O&amp;M, procedure operative di esercizio, governance della cybersecurity e commissioning.</p>
+</section>
+<section id="allegato-a.13-dal-telecontrollo-alla-connessione-operativa-dellimpianto" class="level2">
+<h2 class="anchored" data-anchor-id="allegato-a.13-dal-telecontrollo-alla-connessione-operativa-dellimpianto">Allegato A.13: dal telecontrollo alla connessione operativa dell’impianto</h2>
+<p>L’<strong>Allegato A.13</strong> disciplina i criteri di connessione al sistema di controllo di Terna. La revisione 2026 sposta l’asse del documento da una logica di telecontrollo e acquisizione dati verso una logica più ampia di infrastruttura operativa. Il documento continua a trattare supervisione, teleregolazione e monitoraggio delle grandezze elettriche, ma la parte realmente nuova sta nel fatto che tali funzioni vengono legate a una rete dati più prescrittiva, a una disciplina specifica per il 36 kV, a requisiti di disponibilità, collaudo, monitoraggio, segregazione e cybersecurity.</p>
+<p>In termini di design, l’Allegato A.13 incide soprattutto su cinque dimensioni architetturali e operative:</p>
+<ol type="1">
+<li><p><strong>Perimetro</strong>: gli impianti connessi a 36 kV, inclusi gli impianti di accumulo, vengono ricondotti a una disciplina esplicita, superando la possibilità di trattarli come casi marginali o assimilati per analogia agli impianti AT tradizionali.</p></li>
+<li><p><strong>Target tecnologico</strong>: i collegamenti nuovi o oggetto di adeguamento convergono verso un modello MPLS, mentre le tecnologie legacy vengono progressivamente confinate a condizioni transitorie, da gestire nell’ambito di un piano di migrazione.</p></li>
+<li><p><strong>Boundary di rete</strong>: la connessione verso Terna costituisce un dominio dedicato, non una semplice estensione della rete OT di impianto. Il punto di attestazione deve essere realizzato su router conformi all’architettura Terna, con funzione di switching integrata, routing BGP, cifratura IPSec ove prevista, indirizzamento definito da Terna e assenza di switch esterni intermedi. Le RTU e, nel caso delle configurazioni a 36 kV, gli apparati di campo devono essere attestati direttamente alle porte dell’apparato, con identificazione puntuale degli endpoint.</p></li>
+<li><p><strong>Connessione fisica per impianti a 36 kV</strong>: nel caso di connessione a sezioni 36 kV di stazioni Terna, l’architettura richiede una soluzione fisica dedicata, fondata su doppia fibra ottica monomodale, pannello di terminazione, cassetta di giunzione, router dedicati e chiara individuazione del punto di confine tra infrastruttura del Titolare e infrastruttura Terna.</p></li>
+<li><p><strong>Conduzione operativa</strong>: il Titolare non deve limitarsi a predisporre il collegamento, ma deve garantirne la gestione nel tempo, includendo contatti H24, governo dei provider, coordinamento con l’O&amp;M, aggiornamento dei riferimenti operativi delle terze parti, segregazione tra Titolari gestiti dallo stesso fornitore, monitoraggio dei collegamenti, gestione dei guasti, cambio provider, documentazione tecnica e collaudo con Terna.</p></li>
+</ol>
+<p>La tabella seguente riassume solo le differenze sostanziali, cioè quelle che modificano il disegno o la conduzione dell’impianto.</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ambito sostanziale</th>
+<th>Differenza sostanziale</th>
+<th>Impatto su disegno e conduzione impianto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Perimetro 36 kV e storage</td>
+<td>La soglia rilevante viene estesa agli impianti RTN, di produzione, consumo e autoconsumo con tensione pari o superiore a 36 kV; gli impianti di accumulo sono richiamati esplicitamente.</td>
+<td>Gli impianti BESS/PV connessi a 36 kV devono essere progettati come impianti pienamente soggetti ai requisiti A.13, non come casi minori o assimilati.</td>
+</tr>
+<tr class="even">
+<td>Adeguamento degli esistenti</td>
+<td>La revisione introduce una disciplina di adeguamento per impianti esistenti e una finestra temporale per i nuovi impianti.</td>
+<td>Serve un piano di retrofit TLC/OT per impianti già progettati o in esercizio, con migrazione condivisa con Terna e continuità dei flussi.</td>
+</tr>
+<tr class="odd">
+<td>MPLS come target</td>
+<td>Le tecnologie non-MPLS sono trattate come legacy; i nuovi collegamenti sono disciplinati in tecnologia MPLS.</td>
+<td>Le RFQ TLC devono chiedere MPLS Layer 3 VPN, QoS, MCR, SLA, latenza, provider end-to-end, BGP e compatibilità con router Terna.</td>
+</tr>
+<tr class="even">
+<td>Provider e catena tecnica</td>
+<td>Viene rafforzato il requisito di collegamento end-to-end senza provider intermediari.</td>
+<td>In fase di procurement va chiarita la catena reale del carrier, comprese tratte wholesale, sub-provider, demarcazioni e percorsi fisici.</td>
+</tr>
+<tr class="odd">
+<td>Localizzazione dell’infrastruttura</td>
+<td>L’intera infrastruttura funzionale alla connessione al sistema di controllo, comprendente sistemi e telecomunicazioni, deve essere localizzata sul territorio nazionale italiano.</td>
+<td>Vanno verificati NOC, SOC, servizi gestiti, componenti cloud, sistemi di monitoraggio, jump host, O&amp;M e terze parti che intervengono sulla catena di connessione verso Terna.</td>
+</tr>
+<tr class="even">
+<td>Router e LAN Terna</td>
+<td>Il router deve svolgere anche funzione di switch ethernet; non è ammesso uno switch esterno; routing e indirizzamento sono governati da Terna.</td>
+<td>La BoM deve prevedere router dedicati e compatibili, con porte sufficienti, supporto BGP, abilitazione/licenze per IPSec ove necessarie e connessione diretta degli apparati di campo.</td>
+</tr>
+<tr class="odd">
+<td>Connessione 36 kV in fibra ottica</td>
+<td>Per impianti connessi a sezioni 36 kV di stazioni Terna sono richiesti due cavi FO monomodale G.652D, pannello FO, cassetta di giunzione e router dedicati.</td>
+<td>Layout, cavidotti, terminazioni, locali tecnici, manutenzione FO e responsabilità di confine diventano parte del disegno di impianto.</td>
+</tr>
+<tr class="even">
+<td>Monitoraggio e collaudo</td>
+<td>Sono richiesti monitoraggio proattivo, segnalazione guasto, collaudo tecnico remoto, documentazione tecnica e gestione delle riserve.</td>
+<td>Il commissioning deve includere una milestone TLC Terna autonoma, distinta dal solo SAT funzionale dell’impianto.</td>
+</tr>
+<tr class="odd">
+<td>Cybersecurity operativa</td>
+<td>Il capitolo cyber richiede inventari, flussi, terze parti, logging, patching, backup, autenticazione, segregazione, assessment e diritto di audit.</td>
+<td>L’impianto deve essere gestito come ambiente OT cyber-controllato, con evidenze mantenute nel tempo e non solo prodotte al collaudo.</td>
+</tr>
+</tbody>
+</table>
+<p>La lettura architetturale è quindi chiara: A.13 non è più soltanto il documento che dice come portare misure e segnali al sistema di controllo. È il documento che impone una <strong>forma tecnica alla relazione fra impianto, rete dati Terna, O&amp;M, cybersecurity e continuità operativa</strong>.</p>
+</section>
+<section id="allegato-a.69-il-sistema-di-difesa-come-catena-ottlccyber" class="level2">
+<h2 class="anchored" data-anchor-id="allegato-a.69-il-sistema-di-difesa-come-catena-ottlccyber">Allegato A.69: il sistema di difesa come catena OT/TLC/cyber</h2>
+<p>L’<strong>Allegato A.69</strong> disciplina la connessione degli impianti di produzione al sistema di difesa di Terna. La revisione 2026 è particolarmente rilevante perché tocca sia la comunicazione sia la funzione elettrica. Il sistema di difesa non è trattato come un semplice canale di teledistacco, ma come una catena distribuita capace di acquisire misure, ricevere messaggi, attuare comandi di distacco, modulazione o limitazione, interagire con UPDM e apparati di campo, e mantenere continuità e osservabilità nel tempo.</p>
+<p>Il cambio di prospettiva è più evidente su tre assi:</p>
+<ol type="1">
+<li><p>Il <strong>36 kV</strong>: anche qui viene introdotta una disciplina dedicata, coordinata con l’Allegato A.13, basata su fibra ottica diretta fra impianto e stazione Terna.</p></li>
+<li><p>L’<strong>accumulo</strong>: la revisione introduce una sezione specifica per impianti elettrochimici di accumulo, con comandi e misure coerenti con il comportamento bidirezionale del BESS.</p></li>
+<li><p>L’<strong>UPDM come asset operativo</strong>: non basta installare l’apparato; occorre monitorarlo, mantenerlo, testarlo, conservarne i flussi, rispondere ai guasti e garantirne la conformità nel tempo.</p></li>
+</ol>
+<p>Il punto fisico più importante è che, per le configurazioni a 36 kV, il sistema di difesa entra nel layout della stazione e dell’impianto: due cavi fisici distinti in fibra ottica monomodale G.652D verso la stazione Terna, pannello, cassetta di giunzione, router, manutenzione, monitoraggio, collaudo e prove di continuità diventano elementi di progetto. Il punto funzionale più importante è che il BESS viene trattato come risorsa attiva di difesa: non solo erogazione o assorbimento misurati, ma capacità energetica disponibile, potenza massima raggiungibile e comandi di azzeramento, massimo assorbimento, massima erogazione, ripristino ed emergenza.</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ambito sostanziale</th>
+<th>Differenza sostanziale</th>
+<th>Impatto su disegno e conduzione impianto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Perimetro &gt;36 kV e 36 kV</td>
+<td>La revisione distingue espressamente impianti connessi a tensione superiore a 36 kV e impianti connessi a 36 kV.</td>
+<td>Gli impianti a 36 kV devono seguire una disciplina propria, non una trasposizione semplificata delle configurazioni AT tradizionali.</td>
+</tr>
+<tr class="even">
+<td>Adeguamento e transizione</td>
+<td>Vengono introdotti termini per impianti nuovi ed esistenti, con specifico riferimento all’installazione UPDM e alla migrazione verso MPLS.</td>
+<td>Serve una gap analysis su impianti esistenti: connessione, router, UPDM, interfaccia locale, collaudi e cybersecurity devono essere verificati.</td>
+</tr>
+<tr class="odd">
+<td>MPLS e router di difesa</td>
+<td>MPLS diventa il riferimento per nuovi collegamenti e adeguamenti; sono richiesti due router dedicati al Sistema di Difesa, gestiti da Terna.</td>
+<td>La BoM deve prevedere router Terna-compatible, BGP, IPSec, funzione di switching integrata nel router, porte sufficienti e connessione diretta degli apparati di campo.</td>
+</tr>
+<tr class="even">
+<td>FO per impianti 36 kV</td>
+<td>La connessione 36 kV richiede due cavi FO monomodale G.652D verso la stazione Terna, pannello FO, cassetta di giunzione e router dedicati.</td>
+<td>Cavidotti, percorsi FO, terminazioni, accessibilità, manutenzione e prove di continuità diventano parte del progetto elettro-strumentale.</td>
+</tr>
+<tr class="odd">
+<td>Collaudo FO/TLC</td>
+<td>Per 36 kV sono richiesti collaudo remoto, documentazione tecnica, prove di continuità FO, riferimento tecnico e tracciato del percorso ottico.</td>
+<td>Il commissioning deve prevedere un pacchetto di test TLC/FO separato dal solo test funzionale dell’UPDM.</td>
+</tr>
+<tr class="even">
+<td>Integrazione A.69/A.13/A.7</td>
+<td>È possibile usare un’unica infrastruttura TLC, ma con proposta preventiva, riconfigurazione IP se necessaria, continuità dei flussi e revisione architetturale con Terna.</td>
+<td>La convergenza TLC è ammessa solo se governata; non è un semplice riuso opportunistico della stessa linea.</td>
+</tr>
+<tr class="odd">
+<td>UPDM come asset operativo</td>
+<td>La revisione rafforza responsabilità su installazione, esercizio, test periodici, manutenzione, ripristino e conformità dell’UPDM.</td>
+<td>L’O&amp;M deve includere procedure specifiche per UPDM, guasti, test, evidenze, escalation e interfaccia con Terna.</td>
+</tr>
+<tr class="even">
+<td>Monitoraggio UPDM e retention</td>
+<td>Sono richiesti monitoraggio locale, rilevazione anomalie, porta mirror, memorizzazione dei flussi per almeno 60 giorni e ripristino entro tre giorni lavorativi.</td>
+<td>L’impianto deve avere capacità di osservabilità tecnica della catena UPDM, non solo un apparato installato e sigillato.</td>
+</tr>
+<tr class="odd">
+<td>BESS e impianti elettrochimici</td>
+<td>Vengono introdotti comandi e misure dedicate per accumulo elettrochimico: potenza, capacità disponibile, massimo assorbimento, massima erogazione, azzeramento scambio, emergenza e ripristino.</td>
+<td>EMS, BMS e PCS devono essere integrati con logiche e misure coerenti con i requisiti del sistema di difesa.</td>
+</tr>
+<tr class="even">
+<td>Siti multi-tecnologia</td>
+<td>Per siti comprendenti impianti di diverse tipologie devono essere rispettati i requisiti applicabili a ciascuna tipologia di impianto; inoltre, il Titolare deve comunicare a Terna il limite di scambio di potenza del sito con la rete.</td>
+<td>Per impianti ibridi, ad esempio PV+BESS o configurazioni con più tecnologie nello stesso sito, il progetto non può limitarsi a trattare separatamente le singole unità: deve essere governata anche la configurazione complessiva di sito e il relativo limite di scambio con la rete.</td>
+</tr>
+<tr class="odd">
+<td>Tempi di attuazione dei comandi</td>
+<td>I comandi di apertura devono rispettare il tempo di attuazione assegnato da Terna alla tipologia di impianto; i comandi di modulazione devono essere cablati direttamente all’ingresso del circuito di pilotaggio dell’inverter. Per massimo assorbimento e massima erogazione/produzione deve essere raggiunto il 90% della potenza indicata entro Ts ≤ 180 ms e il 100% entro 4 secondi; per l’azzeramento scambio, l’azzeramento della potenza deve avvenire entro Ts ≤ 180 ms.</td>
+<td>La verifica dell’integrazione EMS/BMS/PCS non può essere soltanto funzionale: deve includere il rispetto dei tempi di attuazione, il cablaggio diretto dei comandi, l’assenza di temporizzazioni o apparecchiature interposte non ammesse e la capacità dell’impianto di mantenere lo stato richiesto per tutta la durata dell’emergenza.</td>
+</tr>
+<tr class="even">
+<td>Certificazione e sigillatura</td>
+<td>La certificazione si estende dalla catena di comando alla catena di acquisizione e comando, includendo apparati di comunicazione e componenti intermedi.</td>
+<td>La progettazione deve rendere sigillabili, verificabili e tracciabili dispositivi, morsettiere, relè, convertitori, router e componenti TLC.</td>
+</tr>
+<tr class="odd">
+<td>Cybersecurity</td>
+<td>Il capitolo cyber diventa organico: asset, terze parti, eventi, protezione malware, isolamento, autenticazione, firewall, patching, logging e audit.</td>
+<td>La difesa elettrica e la cyber-resilience diventano parte dello stesso dominio operativo.</td>
+</tr>
+</tbody>
+</table>
+<p>L’Allegato A.69 è quindi il punto in cui l’evoluzione Terna diventa più evidente dal punto di vista funzionale. L’impianto non deve soltanto <em>farsi vedere</em> da Terna. Deve essere in grado di partecipare a una <strong>logica di difesa distribuita</strong>, con canali resilienti, comandi deterministici, misure affidabili, BESS integrato e capacità di dimostrare che la catena rimane conforme durante l’esercizio.</p>
+</section>
+<section id="allegato-a.52-lupdm-come-componente-cyber-fisico-critico" class="level2">
+<h2 class="anchored" data-anchor-id="allegato-a.52-lupdm-come-componente-cyber-fisico-critico">Allegato A.52: l’UPDM come componente cyber-fisico critico</h2>
+<p>L’<strong>Allegato A.52</strong> è la specifica funzionale e di comunicazione dell’UPDM. La revisione 2026 aggiorna un documento nato in un contesto tecnologico molto diverso, nel quale l’UPDM era descritto soprattutto come apparato periferico dedicato a I/O, logiche, diagnostica e protocollo IEC 60870-5-104 multicast per difesa e monitoraggio. La nuova impostazione mantiene la funzione originaria, ma la colloca dentro un mondo fatto di doppie interfacce Ethernet, alta affidabilità, IEC 61850, segregazione, identity management, secure boot, logging, patching, supply chain e requisiti cyber che richiamano NIS2, linee guida ACN e IEC 62443.</p>
+<p>Il cambiamento più forte è che l’UPDM non è più soltanto un apparato di elettro-automazione. Diventa un <strong>componente cyber-fisico critico</strong>. Deve eseguire comandi rapidi e deterministici, ma deve anche resistere a congestioni multicast, gestire due interfacce, filtrare connessioni TCP autorizzate, mantenere log, proteggere firmware e configurazioni, usare utenze individuali e supportare un ciclo di vita sicuro.</p>
+<p>Un altro elemento rilevante è la distinzione fra UPDM standard e UPDM semplificata per impianti fino a 6 MW. Questa distinzione introduce un principio di proporzionalità tecnica, ma non elimina il vincolo funzionale: anche la soluzione semplificata deve consentire la corretta attuazione dei comandi di teledistacco e limitazione previsti dall’Allegato A.69.</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ambito sostanziale</th>
+<th>Differenza sostanziale</th>
+<th>Impatto su disegno e conduzione impianto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Adeguamento UPDM esistenti</td>
+<td>La revisione si applica anche alle UPDM già installate, imponendo adeguamenti entro 12 mesi su seconda Ethernet, cybersecurity, capacità UDP, whitelist TCP e matrice evento/azione.</td>
+<td>Serve censire il parco UPDM, verificare firmware, hardware, doppia Ethernet, prestazioni protocollo e capability cyber.</td>
+</tr>
+<tr class="even">
+<td>UPDM semplificata ≤6 MW</td>
+<td>È ammessa una UPDM semplificata per impianti con potenza efficiente netta minore o uguale a 6 MW.</td>
+<td>Per piccoli impianti la BoM può essere meno onerosa, ma va dimostrata la corretta attuazione dei comandi A.69.</td>
+</tr>
+<tr class="odd">
+<td>Modulazione</td>
+<td>Lo scopo dell’UPDM include esplicitamente la modulazione oltre a distacco automatico, telescatto e monitoraggio.</td>
+<td>L’apparato va valutato anche per comandi di regolazione o limitazione, non solo per apertura/intervento.</td>
+</tr>
+<tr class="even">
+<td>Doppia Ethernet</td>
+<td>Sono richieste due interfacce Ethernet indipendenti verso la rete Terna, con architettura a due CPU o singola CPU a doppia interfaccia.</td>
+<td>L’UPDM deve gestire flussi doppi e comandi ricevuti da entrambe le interfacce senza duplicazioni o rallentamenti.</td>
+</tr>
+<tr class="odd">
+<td>Prestazioni UDP/TCP</td>
+<td>Ogni interfaccia deve gestire almeno 200 messaggi UDP/s; l’UPDM deve accettare connessioni TCP unicast solo da una lista configurabile di almeno 10 centri remoti Terna autorizzati, identificati tramite indirizzi IP comunicati da Terna.</td>
+<td>I test devono verificare carico multicast/UDP, filtro IP dei centri autorizzati e comportamento sotto traffico anomalo.</td>
+</tr>
+<tr class="even">
+<td>Multicast storm</td>
+<td>La singola CPU con due interfacce deve gestire congestioni tipo multicast storm senza degrado.</td>
+<td>In procurement va richiesta evidenza tecnica di resilienza a scenari di rete degradati.</td>
+</tr>
+<tr class="odd">
+<td>Bus di campo</td>
+<td>Il bus di campo deve usare IEC 61850; Modbus è ammesso solo per UPDM esistenti e solo per telemisure.</td>
+<td>Nuove integrazioni verso IED, moduli remoti, protezioni o sistemi ausiliari devono essere progettate in IEC 61850.</td>
+</tr>
+<tr class="even">
+<td>Segregazione</td>
+<td>La rete del bus di campo UPDM deve essere isolata dalla restante rete dati d’impianto e segregata dalla rete Terna.</td>
+<td>Nei diagrammi devono comparire zone separate per rete Terna, bus di campo UPDM e LAN OT generale.</td>
+</tr>
+<tr class="odd">
+<td>Sincronizzazione</td>
+<td>Sono ammessi GPS o PTPv2/1588v2; nell’ambito della sincronizzazione tramite GPS o PTPv2/1588v2, l’apparato deve garantire un errore massimo del clock interno pari a 1 ms; in assenza di sincronizzazione esterna resta tollerato un errore massimo di 1 s ogni 24 h.</td>
+<td>L’impianto deve avere una strategia di time synchronization coerente, inclusi apparati di rete idonei se si usa PTP.</td>
+</tr>
+<tr class="even">
+<td>Configurazione e rollback</td>
+<td>La configurazione richiede autenticazione, ruoli, CRC-16 inviato al centro Terna e ripristino della configurazione precedente in caso di errore.</td>
+<td>La configurazione UPDM diventa un oggetto governato, versionato e verificabile, non un setting locale informale.</td>
+</tr>
+<tr class="odd">
+<td>Cybersecurity embedded</td>
+<td>Sono richiesti secure development lifecycle, patch, gestione vulnerabilità, conformità NIS2, IEC 62443, linee guida ACN e tracciabilità supply chain.</td>
+<td>La scelta dell’UPDM deve includere evidenze cyber di prodotto, supporto vendor e ciclo di vita della sicurezza.</td>
+</tr>
+<tr class="even">
+<td>Identità e accessi</td>
+<td>Sono richieste utenze individuali, RADIUS, RBAC, least privilege, limitazione degli account generici e blocco dopo tentativi falliti.</td>
+<td>La manutenzione non può basarsi su password condivise o account di fabbrica; serve identity governance.</td>
+</tr>
+<tr class="odd">
+<td>Secure boot e firmware</td>
+<td>Il firmware deve essere protetto con secure boot, firma digitale e verifica dell’integrità dei pacchetti di aggiornamento.</td>
+<td>Gli apparati legacy privi di catena di trust firmware diventano difficilmente compatibili con la nuova baseline.</td>
+</tr>
+<tr class="even">
+<td>Logging</td>
+<td>Sono richiesti log di sicurezza, retention minima di sei mesi, protezione anti-manomissione e tracciamento di attività utente/amministratore.</td>
+<td>Il commissioning deve verificare anche audit trail, esportabilità e conservazione dei log, non solo I/O e protocollo.</td>
+</tr>
+<tr class="odd">
+<td>Comandi armati</td>
+<td>L’UPDM deve prevedere la predisposizione, o armamento, di azioni di controllo da attivare alla ricezione di specifici messaggi di scatto; tutti i comandi armati sul medesimo messaggio devono essere attuati contemporaneamente, senza effettuare la supervisione prevista per i comandi ordinari. L’apparato deve inoltre rispettare il tempo di attuazione Ta tra ricezione del messaggio di scatto e chiusura dei contatti dei relè di output: Ta &lt; 10 ms per apparati A+ e Ta &lt; 20 ms per apparati A, secondo certificazione emessa da Istituti o Laboratori Accreditati.</td>
+<td>La qualifica dell’UPDM non può limitarsi alla compatibilità IEC 60870-5-104 o alla corretta gestione della matrice di armamento: deve includere la classe prestazionale dell’apparato, la verifica certificata dei tempi Ta e l’assenza di logiche locali, interlock o supervisioni che ritardino l’attuazione simultanea dei comandi armati.</td>
+</tr>
+<tr class="even">
+<td>Matrice evento/azione</td>
+<td>La matrice dinamica passa ad almeno 100 eventi per azione di controllo e per interfaccia.</td>
+<td>Va verificata la scalabilità firmware/configurazione dell’UPDM rispetto a impianti più complessi.</td>
+</tr>
+</tbody>
+</table>
+<p>La conseguenza pratica è che l’UPDM diventa il punto in cui la disciplina elettrica, la disciplina OT e la disciplina cyber si incontrano. In un impianto moderno, specialmente se connesso a 36 kV o comprendente accumulo, la scelta dell’UPDM non può essere demandata alla sola compatibilità storica con IEC 104. Deve essere trattata come una scelta architetturale: interfacce, protocolli di campo, tempi, logiche, accessi, firmware, logging, supply chain, manutenzione e integrazione con A.69 devono essere verificati già in fase di selezione tecnica e approvvigionamento dell’apparato, e poi mantenuti durante l’esercizio.</p>
+</section>
+<section id="il-nuovo-perimetro-terna-dentro-la-traiettoria-regolatoria-europea" class="level2">
+<h2 class="anchored" data-anchor-id="il-nuovo-perimetro-terna-dentro-la-traiettoria-regolatoria-europea">Il nuovo perimetro Terna dentro la traiettoria regolatoria europea</h2>
+<p>Gli aggiornamenti degli Allegati A.13, A.69 e A.52 vanno letti dentro una traiettoria regolatoria più ampia: l’Europa sta progressivamente trasformando la cybersecurity da presidio tecnico-specialistico a <strong>requisito ordinario di continuità operativa, governance industriale e responsabilità degli organi di gestione</strong>. La logica non è più soltanto <em>proteggere i sistemi informativi</em>, ma <em>garantire che i soggetti economici rilevanti, energia, trasporti, finanza, sanità, infrastrutture digitali, pubblica amministrazione, fornitori ICT e filiere critiche, siano in grado di prevenire, assorbire, notificare e recuperare da eventi cyber</em> che possono compromettere servizi essenziali o funzioni di sistema.</p>
+<p>La NIS2 rappresenta il riferimento generale di questa evoluzione: la Commissione europea la descrive come un quadro giuridico unitario per la cybersicurezza in 18 settori critici, mentre il testo della direttiva stabilisce una baseline comune di misure di gestione del rischio e obblighi di notifica per i settori inclusi nel suo campo di applicazione. In Italia, la direttiva è stata recepita con il D.Lgs. 4 settembre 2024, n.&nbsp;138, e l’ACN è l’autorità competente NIS e punto di contatto unico.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Questo significa che la sicurezza non è più demandata alla buona pratica tecnica del singolo operatore, ma diventa un obbligo organizzativo verificabile.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>Accanto alla NIS2 si collocano regimi più verticali o complementari. DORA porta la stessa logica nel settore finanziario, con un quadro europeo per la resilienza operativa digitale, la gestione del rischio ICT, il testing, l’incident reporting e il controllo dei fornitori ICT critici.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> Il Cyber Resilience Act sposta invece il vincolo verso il prodotto: prodotti con elementi digitali, inclusi hardware e software, devono incorporare requisiti essenziali di cybersicurezza lungo progettazione, sviluppo, produzione, manutenzione e gestione delle vulnerabilità.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> In Italia, il Perimetro di Sicurezza Nazionale Cibernetica aveva già introdotto una disciplina specifica per beni ICT rilevanti per funzioni e servizi essenziali, con obblighi di sicurezza e notifica degli incidenti al CSIRT.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>Questa convergenza normativa ha una ragione economica e tecnica precisa: il rischio cyber si è industrializzato. ENISA, nel Threat Landscape 2025, analizza le minacce e i trend più rilevanti per l’ecosistema cyber europeo su 4.875 incidenti osservati tra luglio 2024 e giugno 2025; nei propri esercizi di foresight include inoltre la compromissione della supply chain software, l’errore umano e lo sfruttamento di sistemi legacy negli ecosistemi cyber-fisici, i fornitori ICT transfrontalieri come single point of failure e l’abuso dell’AI tra le minacce emergenti al 2030.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> Europol, nell’IOCTA 2026, descrive a sua volta AI, automazione, proxy ed ecosistemi criminali come fattori che aumentano velocità, efficienza e portata delle attività cybercriminali.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<p>Il punto manageriale è che cambia l’economia dell’attacco. In passato molti operatori industriali o infrastrutturali minori erano sotto la soglia di interesse di attori sofisticati: troppo piccoli, troppo locali, troppo costosi da studiare. Con crime-as-a-service, automazione, phishing generativo, deepfake, scanning continuo, riuso di credenziali, exploitation di sistemi non aggiornati e attacchi alla supply chain, il costo unitario di targeting si abbassa. Diventano appetibili anche soggetti intermedi: manutentori, O&amp;M contractor, piccoli produttori connessi, fornitori di apparati, società di ingegneria, operatori locali, operatori con portafogli distribuiti, e soggetti che non sono grandi in termini societari ma sono rilevanti perché connessi a un’infrastruttura critica.</p>
+<p>In questo scenario gli attori di minaccia non sono solo esterni. Il modello corretto include attori criminali, hacktivisti, gruppi con legami statuali, fornitori compromessi, account amministrativi abusati, operatori interni negligenti, errori di configurazione, sistemi legacy non aggiornati e dipendenze software o hardware non governate. ENISA colloca infatti tra le minacce emergenti al 2030 la compromissione della supply chain software, l’errore umano e lo sfruttamento di sistemi legacy in ecosistemi cyber-fisici, oltre alla dipendenza da fornitori ICT cross-border come single point of failure.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a></p>
+<p>Letti in questa prospettiva, gli Allegati Terna non sono un’anomalia settoriale, ma una traduzione elettrica e OT della stessa direzione regolatoria europea. L’Allegato A.13 porta nel sistema di controllo requisiti su rete, localizzazione, provider, monitoraggio, collaudo, terze parti e cybersecurity. L’Allegato A.69 fa lo stesso per il sistema di difesa, aggiungendo la dimensione funzionale del distacco, della modulazione, dell’accumulo e della continuità della catena UPDM. L’Allegato A.52 entra ancora più a monte, trasformando l’UPDM in un componente cyber-fisico: doppia interfaccia Ethernet, segregazione, IEC 61850, secure boot, firma del firmware, autenticazione individuale, RADIUS, RBAC, logging, retention e gestione delle vulnerabilità.</p>
+<p>La conseguenza per un Titolare di impianto è netta: la conformità Terna non può essere gestita come una checklist documentale separata dal progetto. Deve diventare parte del modello operativo dell’impianto. Questo modello deve coprire architettura di rete, boundary fisici, fibra ottica, router, UPDM, RTU, EMS/BMS/PCS, asset inventory, gestione identità, logging, patching, backup, incident response, contratti O&amp;M, obblighi H24, segregazione delle terze parti, auditabilità e conservazione delle evidenze.</p>
+<p>In sintesi, il trend europeo dice che la resilienza non è più una qualità opzionale dei grandi operatori critici. Sta diventando una proprietà richiesta di qualunque nodo economicamente o tecnicamente rilevante dentro una filiera essenziale. Gli aggiornamenti Terna applicano questa logica alla rete elettrica: se un impianto può influire sul controllo, sulla difesa, sull’osservabilità o sulla stabilità del sistema, allora deve essere progettato e condotto come parte di un ecosistema regolato, interconnesso e attaccabile a scala.</p>
+</section>
+<section id="conclusione" class="level2">
+<h2 class="anchored" data-anchor-id="conclusione">Conclusione</h2>
+<p>Gli aggiornamenti agli Allegati A.13, A.69 e A.52 seguono una logica comune. Terna sta spostando il baricentro del Codice di Rete da un insieme di prescrizioni per collegare apparati e scambiare dati a un modello di interoperabilità operativa, nel quale l’impianto deve essere controllabile, difendibile, monitorabile, collaudabile e cyber-resiliente.</p>
+<p>Per chi progetta o governa impianti BESS, fotovoltaici/eolici, ibridi o comunque connessi alla RTN, la conseguenza è diretta. Il perimetro Terna deve essere portato dentro il progetto fin dalle prime fasi: layout, cavidotti, fibra ottica, router con funzione di switching integrata, RTU, UPDM, EMS/BMS, PCS, interfacce IEC 61850, piani IP, logiche di difesa, monitoraggio, cybersecurity, O&amp;M e test di commissioning devono essere pensati come un unico sistema.</p>
+<p>In termini operativi, la domanda corretta non è più: <em>l’impianto ha un canale verso Terna?</em>. La domanda corretta diventa: <em>l’impianto possiede una catena end-to-end, fisica, logica, funzionale e cyber, capace di sostenere controllo, difesa e monitoraggio secondo i requisiti Terna per tutto il suo ciclo di vita?</em>.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/">
+<img class="see-also-card-image" src="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/italy-shielded.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Measuring Cyber Risk in the Italian Corporate Sector</h5>
+<div class="see-also-card-subtitle">A Banca d’Italia indicator of cybersecurity vulnerability designed to support creditworthiness evaluation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/poland-energy-sector-cyberattack-2025/">
+<img class="see-also-card-image" src="../../longforms/poland-energy-sector-cyberattack-2025/Cyberattack_on_Poland.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The December 2025 Cyberattack on Poland’s Energy Sector</h5>
+<div class="see-also-card-subtitle">A detailed reconstruction of the incident, the malware, and the wider significance for energy and OT security</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/">
+<img class="see-also-card-image" src="../../longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/cve-program.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Reclaiming the Namespace: EU Digital Sovereignty in the CVE Ecosystem?</h5>
+<div class="see-also-card-subtitle">Rebalancing coordination and autonomy: EU digital sovereignty, federated CVE governance, and the conditions for sustainable economic growth</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications/">
+<img class="see-also-card-image" src="../../longforms/quantum-safe-HTTPS-certificates-google-structural-innovation-technical-foundations-governance-implications/merkletreecertificates.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum-Safe HTTPS Certificates: Google’s Structural Innovation, Technical Foundations, and Governance Implications</h5>
+<div class="see-also-card-subtitle">Engineering quantum resistant web authentication through Merkle commitments, transparency logs, and scalable trust infrastructure</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/">
+<img class="see-also-card-image" src="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/bloch_sphere_against_padlock.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security</h5>
+<div class="see-also-card-subtitle">How quantum attacks turn long-lived signatures into silent integrity and impersonation risks</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/">
+<img class="see-also-card-image" src="../../posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/qc-breaks.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Cryptography at the Edge of Feasibility: Resource Estimates, Architectural Divergence, and Systemic Risk</h5>
+<div class="see-also-card-subtitle">An analysis of the Google and Oratomic results on Shor’s resource estimates and their implications for the convergence of quantum circuit optimization, error correction, and hardware architectures</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-computing-threats-advantage-acting-now/">
+<img class="see-also-card-image" src="../../posts/quantum-computing-threats-advantage-acting-now/quantum_compunting_bloch_padlock.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Computing Threats and the Advantage of Acting Now</h5>
+<div class="see-also-card-subtitle">Why trust expires before systems fail, and how early remediation becomes a strategic program rather than an emergency rewrite</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/quantum-key-distribution-and-post-quantum-cryptography/">
+<img class="see-also-card-image" src="../../posts/quantum-key-distribution-and-post-quantum-cryptography/bell-state.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Quantum Key Distribution and Post-Quantum Cryptography</h5>
+<div class="see-also-card-subtitle">Concepts, roles, and correct use</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/cybersecurity-in-an-era-with-quantum-computers-interpreting-moscas-risk-inequality/">
+<img class="see-also-card-image" src="../../posts/cybersecurity-in-an-era-with-quantum-computers-interpreting-moscas-risk-inequality/mosca_inequality.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Cybersecurity in an Era with Quantum Computers: Interpreting Mosca’s Risk Inequality</h5>
+<div class="see-also-card-subtitle">Why $x$ plus $y$ greater than $z$ turns quantum readiness into a present day governance problem</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Terna, <strong>Avviso aggiornamento Codice di Rete del 14/05/2026</strong>, <a href="https://www.terna.it/it/sistema-elettrico/pubblicazioni/news-operatori/dettaglio/avviso-aggiornamento-codice-di-rete">URL</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><a href="https://www.acn.gov.it/portale/nis"><strong>NIS - Network Information Security - Agenzia per la Cybersicurezza Nazionale</strong></a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p><a href="https://digital-strategy.ec.europa.eu/en/policies/nis2-directive"><strong>NIS2 Directive: securing network and information systems</strong></a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p><a href="https://eur-lex.europa.eu/eli/reg/2022/2554/oj/eng"><strong>Regulation - 2022/2554 - EN - DORA - EUR-Lex</strong></a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p><a href="https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng"><strong>Regulation - 2024/2847 - EN - Cyber Resilience Act - EUR-Lex</strong></a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p><a href="https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legge:2019-09-21;105"><strong>D.L. 21 settembre 2019, n.&nbsp;105 - Disposizioni urgenti in materia di Perimetro di Sicurezza Nazionale Cibernetica - Normattiva</strong></a> e <a href="https://www.normattiva.it/atto/caricaDettaglioAtto?atto.codiceRedazionale=21G00089"><strong>D.P.C.M. 14 aprile 2021, n.&nbsp;81 - Regolamento in materia di notifiche degli incidenti e misure di sicurezza per il Perimetro di Sicurezza Nazionale Cibernetica - Normattiva</strong></a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p><a href="https://www.enisa.europa.eu/publications/enisa-threat-landscape-2025"><strong>ENISA Threat Landscape 2025 - European Union</strong></a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p><a href="https://www.europol.europa.eu/publication-events/main-reports/iocta-2026-evolving-threat-landscape"><strong>IOCTA 2026 – The Evolving Threat Landscape: How Encryption, Proxies and AI Are Expanding Cybercrime - Europol</strong></a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p><a href="https://www.enisa.europa.eu/topics/cyber-threats/foresight"><strong>Foresight | ENISA - European Union</strong></a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
