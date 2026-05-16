@@ -1,0 +1,992 @@
+---
+title: "Process Mining in Manufacturing with Purchased Components and Variable Lead Times"
+subtitle: "A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction"
+description: "Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions."
+date: "2022-12-13"
+date-modified: "2026-04-18"
+categories: [digital transformation, enterprise architecture, 🇬🇧]
+image: "manufacturing-process-mining.png"
+---
+
+## Why manufacturing is a natural process-mining use case
+
+Manufacturing processes are often described as if they were deterministic chains:
+
+```{mermaid}
+%%| label: fig-manufacturing-normative-chain
+%%| fig-cap: Simplified normative manufacturing chain. The sequence represents the intended high-level flow from planning to procurement, receipt, production, inspection, and shipment.
+%%| fig-alt: Flowchart showing a simple manufacturing chain.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  PLAN["Plan"] --> PROC["Procure"]
+  PROC --> REC["Receive"]
+  REC --> PROD["Produce"]
+  PROD --> INSP["Inspect"]
+  INSP --> SHIP["Ship"]
+```
+
+This representation is useful as a normative process description, but _it is not sufficient to explain what actually happens inside a manufacturing system_. A finished item depends on purchased components, internally processed parts, supplier lead times, quality inspections, warehouse availability, production capacity, engineering changes, material substitutions, inventory reservations, and customer priorities.
+
+A production order may be ready from a routing perspective but blocked by a missing component. A purchased part may be physically received but unavailable because it is still under quality inspection. A work center may be available, but the order may wait because the complete kit is not ready. A production order may start, stop, wait, be reworked, and then return to testing.
+
+**Process mining** is useful precisely because it does not start from the nominal routing, the standard lead time, or the planning parameter. It starts from **event evidence**: what happened, when it happened, to which production order, purchase order, item, batch, supplier, resource, warehouse, and quality lot it happened.
+
+The process-mining pipeline can be summarized as a conceptual transformation chain:[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM1]
+
+$$
+D \xrightarrow{\phi} L_E \xrightarrow{\operatorname{mine}} M \xrightarrow{\operatorname{evaluate}} I \xrightarrow{\operatorname{govern}} A
+$$
+
+where:
+
+- $D$ is _raw operational data_;
+- $\phi$ is the_ event-construction function_;
+- $L_E$ is the _event log_ or _object-centric event structure_;
+- $M$ is the discovered, reference, or _normative process model_;
+- $I$ is the _set of insights, deviations, bottlenecks, variants, risks, and predictions_;
+- $A$ is the _set of governed actions_.
+
+In the manufacturing example, this means that ERP, MES, WMS, QMS, procurement, and shipment records are first converted into **governed event evidence**, then mined into **process models**, evaluated for delays and deviations, and finally translated into **accountable operational actions**.
+
+[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM1]: See the general inference chain in [Process Mining as Computational Process Intelligence](https://4m4.it/longforms/process-mining-as-computational-process-intelligence/), where process mining is framed as a governed pipeline from raw operational data to accountable action.
+
+## Example setting: a smart dosing pump
+
+Consider a manufacturer that produces a configurable **smart dosing pump** used in industrial plants. The product is not extremely complex, but it is complex enough to expose the main manufacturing problem: a finished item is assembled from purchased components, internally processed components, subassemblies, quality-controlled parts, and final test operations.
+
+The simplified bill of materials is:
+
+| Level | Component | Type | Source | Quantity |
+|---:|---|---|---|---:|
+| 0 | Smart dosing pump | Finished item | Manufactured | 1 |
+| 1 | Pump head assembly | Subassembly | Internal assembly | 1 |
+| 2 | Pump head casting | Component | Purchased, then machined | 1 |
+| 2 | Seal kit | Component | Purchased | 1 |
+| 1 | Motor module | Subassembly | Internal assembly | 1 |
+| 2 | Electric motor | Component | Purchased | 1 |
+| 2 | Coupling | Component | Purchased | 1 |
+| 1 | Control module | Subassembly | Internal assembly | 1 |
+| 2 | Controller PCB | Component | Purchased | 1 |
+| 2 | Pressure sensor | Component | Purchased | 1 |
+| 2 | Wiring harness | Component | Purchased | 1 |
+| 1 | Final housing | Component | Purchased | 1 |
+
+The nominal process is:
+
+```{mermaid}
+%%| label: fig-manufacturing-nominal-process
+%%| fig-cap: Nominal manufacturing process for a finished item assembled from purchased components and internal operations. The sequence runs from sales order to production order creation, procurement, receipt, quality inspection, component availability, internal processing, final assembly, testing, packing, and shipment.
+%%| fig-alt: Flowchart showing the nominal manufacturing process.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  SO["Sales order"]
+  POCR["Production order creation"]
+  PR["Purchase requisitions"]
+  PO["Purchase orders"]
+  REC["Component receipt"]
+  QC["Quality inspection"]
+  AV["Component availability"]
+  MACH["Machining"]
+  SUB["Subassembly"]
+  ASM["Final assembly"]
+  TEST["Functional test"]
+  PACK["Packing"]
+  SHIP["Shipment"]
+
+  SO --> POCR
+  POCR --> PR
+  PR --> PO
+  PO --> REC
+  REC --> QC
+  QC --> AV
+  AV --> MACH
+  MACH --> SUB
+  SUB --> ASM
+  ASM --> TEST
+  TEST --> PACK
+  PACK --> SHIP
+```
+
+The business question is deliberately narrow:
+
+> Why do some production orders miss the committed shipment date even when final assembly capacity appears sufficient?
+
+This is a good process-mining question because the answer may be hidden across several systems. The delay may not be visible in final assembly alone. It may originate in procurement, supplier lead-time variability, quality release, warehouse availability, material reservation, or testing rework.
+
+## Event model
+
+The primitive object is the event:[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM2]
+
+$$
+e = (i,a,t,r,x)
+$$
+
+where:
+
+- $i$ is the _case identifier_ or, in a more general formulation, a set of related _business objects_;
+- $a$ is the _activity_ or _state transition observed_;
+- $t$ is the _timestamp_;
+- $r$ is the _resource, system, supplier, machine, organizational unit, or agent responsible for the event_;
+- $x$ is a vector of _attributes describing the event context_.
+
+For a manufacturing process, one case identifier is usually not enough. A finished item is related to a sales order, a production order, several purchase orders, component items, warehouse receipts, quality lots, inventory reservations, operations, work centers, test records, and shipment documents.
+
+A case-centric analysis by production order is useful, but it hides part of the causal structure. If a production order is late because one purchased component was released from quality inspection too late, the production-order trace alone is not enough. The event must be connected to the purchase order line, item, supplier, receipt, quality lot, warehouse, and production order.
+
+The more faithful formulation is therefore object-centric:
+
+$$
+L_{OC} = (E,O,type,act,time,rel,attr)
+$$
+
+where:
+
+- $E$ is the _set of events_;
+- $O$ is the _set of business objects_;
+- $type : O \rightarrow \mathcal{T}$ assigns each object to an _object type_;
+- $act : E \rightarrow \mathcal{A}$ assigns each event to an _activity_;
+- $time : E \rightarrow T$ assigns each event to a _timestamp_;
+- $rel \subseteq E \times O$ relates events to _objects_;
+- $attr$ stores event and object _attributes_.
+
+For example, the event _Controller PCB received_ may be related to:
+
+| Object type | Example |
+|---|---|
+| Purchase order | PO-450091 |
+| Purchase order line | PO-450091-10 |
+| Supplier | PCB-SUP-02 |
+| Item | PCB-CTRL-24V |
+| Production order | PRD-71025 |
+| Sales order | SO-8841 |
+| Warehouse receipt | REC-33018 |
+| Quality lot | QL-9812 |
+
+The event-object relation is:
+
+$$
+rel(e) \subseteq O
+$$
+
+This is why object-centric process mining is important in manufacturing. The production order alone does not explain the delay. The delay may originate in a purchase order, a supplier, a quality lot, a warehouse receipt, or an inventory reservation.
+
+[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM2]: See the event definition in [Process Mining as Computational Process Intelligence](https://4m4.it/longforms/process-mining-as-computational-process-intelligence/), where an event is represented as an observed state transition with case or object, activity, timestamp, resource, and attributes.
+
+## Process structure
+
+A simplified object-centric view is:
+
+```{mermaid}
+%%| label: fig-manufacturing-object-centric-structure
+%%| fig-cap: Object-centric manufacturing structure. A finished product is linked to a sales order, production order, purchased components, purchase orders, receipts, quality lots, internal operations, testing, and shipment.
+%%| fig-alt: Diagram showing a sales order connected to a production order, which is connected to BOM components, purchase orders, component receipts, quality inspection, available stock, machining, full-kit readiness, final assembly, functional test, packing, and shipment.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  SO["Sales order"] --> PRD["Production order"]
+  PRD --> BOM["BOM components"]
+  BOM --> PO["Purchase orders"]
+  PO --> REC["Component receipts"]
+  REC --> QC["Quality inspection"]
+  QC --> AV["Available stock"]
+  PRD --> MACH["Machining"]
+  AV --> KIT["Full kit ready"]
+  MACH --> KIT
+  KIT --> ASM["Final assembly"]
+  ASM --> TEST["Functional test"]
+  TEST --> PACK["Packing"]
+  PACK --> SHIP["Shipment"]
+```
+
+This diagram should not be read as a simple linear process. Some events occur in parallel. Purchase orders may be released before or after production order creation, depending on the planning policy. Some components may already be available in stock. Some components may be substituted. Some receipts may arrive in partial quantities. Some operations may start before the complete kit is formally ready, if the organization allows partial release.
+
+The diagram is therefore a **projection of an object-centric event structure**, not a claim that manufacturing execution is a single sequential trace.
+
+## Event construction from source systems
+
+The **event log** is not found ready-made in the enterprise system. It must be constructed.
+
+The **event-construction function** is:
+
+$$
+\phi : D \rightarrow L_E
+$$
+
+where $D$ is _raw operational data_ and $L_E$ is the _constructed event-log_ or object-centric event structure.
+
+For the smart dosing pump example, relevant source systems may include:
+
+| Source system | Typical source objects | Example events |
+|---|---|---|
+| ERP | sales orders, production orders, purchase orders, inventory transactions | sales order confirmed, production order created, PO released, goods receipt posted |
+| MES | operations, work centers, confirmations, machine events | assembly started, assembly completed, test started, test failed, rework completed |
+| WMS | receipts, put-away, reservations, picking, issue to production | component received, component available, component reserved, component issued |
+| QMS | inspection lots, nonconformities, releases | quality inspection started, quality released, quality blocked, rejected |
+| Supplier portal | confirmations, ASN, shipment notices | supplier confirmed date, supplier shipment created, delay notification |
+| Logistics system | packing, transport, shipment | packing completed, shipment posted, carrier pickup |
+
+The semantic problem is to map technical records into business events. For example:
+
+| Business event | Possible source | Semantic risk |
+|---|---|---|
+| PO released | ERP purchase order approval or release flag | release date may differ from creation date |
+| Component received | ERP goods receipt or WMS receipt | physical receipt may precede ERP posting |
+| Quality released | QMS inspection usage decision or stock-status change | release may be partial or reversed |
+| Component available | WMS availability plus stock status plus reservation status | physical stock is not equal to usable stock |
+| Full kit ready | computed event from all component availability events | requires pegging or allocation logic |
+| Assembly started | MES operation start or ERP confirmation | batch posting may distort timestamp |
+| Functional test passed | MES/QMS test result | retests and partial tests must be modeled |
+| Shipment posted | ERP delivery posting or WMS shipment | posting time may differ from physical pickup |
+
+The correctness of $\phi$ determines whether the analysis is meaningful. If _component received_ is treated as equivalent to _component available_, the model will ignore quality holds. If production-order release is treated as material readiness, the model will hide missing-component delays. If test failures are overwritten by final pass status, rework disappears from the event log.
+
+## Component lead times
+
+The planning system contains nominal lead times. Process mining estimates **empirical lead times from events**.
+
+For a purchased component $k$ supplied by supplier $s$, the planned lead time is:
+
+$$
+L_{k,s}^{plan}
+$$
+
+However, several empirical lead times matter. The receipt lead time for purchase order line $j$ is:
+
+$$
+L_{j}^{receipt}
+=
+time(\operatorname{receipt}_j)
+-
+time(\operatorname{purchase\ order\ release}_j)
+$$
+
+The availability lead time is:
+
+$$
+L_{j}^{avail}
+=
+time(\operatorname{available}_j)
+-
+time(\operatorname{purchase\ order\ release}_j)
+$$
+
+The difference is important. A component can be physically received but not yet usable. If the item is blocked for quality inspection, missing documentation, or warehouse put-away, then:
+
+$$
+L_{j}^{avail} > L_{j}^{receipt}
+$$
+
+Aggregating over historical purchase order lines gives empirical supplier-item lead-time distributions:
+
+$$
+\hat{L}_{k,s}^{receipt,PM}
+=
+\{L_j^{receipt} : item(j)=k,\ supplier(j)=s\}
+$$
+
+and:
+
+$$
+\hat{L}_{k,s}^{avail,PM}
+=
+\{L_j^{avail} : item(j)=k,\ supplier(j)=s\}
+$$
+
+This is more informative than a single planning parameter. The mean may be acceptable while the 90th percentile is operationally dangerous. Also, the receipt lead time may look acceptable while the availability lead time reveals the true constraint.
+
+A simplified empirical table may look like this:
+
+| Component | Supplier | Planned LT | Median availability LT | 90th percentile availability LT | Typical issue |
+|---|---|---:|---:|---:|---|
+| Pump head casting | Foundry A | 15 days | 18 days | 27 days | quality inspection delay |
+| Electric motor | MotorCo | 20 days | 19 days | 24 days | stable |
+| Controller PCB | Electronics B | 30 days | 34 days | 48 days | supplier variability |
+| Pressure sensor | SensorLab | 12 days | 13 days | 21 days | intermittent shortage |
+| Seal kit | SealsCo | 7 days | 6 days | 10 days | stable |
+| Wiring harness | HarnessPro | 10 days | 9 days | 14 days | stable |
+| Final housing | Plastics C | 14 days | 15 days | 22 days | transport delay |
+
+The immediate finding is that average lead time is not enough. The controller PCB and pump head casting dominate the high-percentile risk. This is precisely the kind of **empirical correction** that process mining can provide to planning and S&OP models.
+
+## Physical stock, available stock, and quality-blocked stock
+
+Manufacturing planning often fails when it treats inventory as a single quantity. In reality, physical stock and available stock are not the same thing.
+
+For component $k$ at location $l$ and time $t$, physical inventory can be written as:
+
+$$
+I_{k,l,t}^{physical}
+$$
+
+Quality-blocked inventory is:
+
+$$
+Q_{k,l,t}
+$$
+
+Reserved inventory is:
+
+$$
+R_{k,l,t}^{reserved}
+$$
+
+Other unavailable inventory is:
+
+$$
+U_{k,l,t}^{unavailable}
+$$
+
+Available inventory is therefore:
+
+$$
+I_{k,l,t}^{available}
+=
+I_{k,l,t}^{physical}
+-
+Q_{k,l,t}
+-
+R_{k,l,t}^{reserved}
+-
+U_{k,l,t}^{unavailable}
+$$
+
+Process mining estimates the _transitions between these states from receipt, inspection, release, reservation, issue, reversal, and adjustment events_.
+
+This distinction is essential for the manufacturing example. A component can be visible in physical stock but still unavailable for the production order. If the event log does not distinguish these states, the analysis will attribute the delay to production when the real cause is quality release or inventory reservation.
+
+## Full-kit readiness
+
+The production order cannot proceed to final assembly under a strict full-kit policy until all required components are available. For a finished item $p$, let:
+
+$$
+B_p
+$$
+
+be the set of required components, and let:
+
+$$
+b_{p,k}
+$$
+
+be the required quantity of component $k$ in the bill of materials.
+
+For production order $m$, define:
+
+$$
+A_{m,k}(t)
+$$
+
+as the available quantity of component $k$ that is usable for production order $m$ at time $t$, after quality release, reservation constraints, and allocation rules.
+
+The component availability time is:
+
+$$
+T_{m,k}^{avail}
+=
+\inf \{t : A_{m,k}(t) \geq b_{p,k}\}
+$$
+
+The full-kit readiness time is:
+
+$$
+T_m^{kit}
+=
+\max_{k \in B_p}
+T_{m,k}^{avail}
+$$
+
+The critical missing component is:
+
+$$
+k^*(m)
+=
+\arg\max_{k \in B_p}
+T_{m,k}^{avail}
+$$
+
+This is a compact but powerful formulation. It shows that the manufacturing order is constrained not by the average component, but by the **last required component to become available**.
+
+If the controller PCB arrives last, then the controller PCB is the critical component. If the casting is physically received early but blocked in quality inspection, then the casting may be the critical component even though it is already inside the warehouse.
+
+Process mining estimates $T_{m,k}^{avail}$ from _receipt, quality release, inventory reservation, pegging, allocation, and component issue events_.
+
+## Example event log
+
+A simplified event log for one production order may be:
+
+| Object | Event | Timestamp | Resource/System | Attribute |
+|---|---|---:|---|---|
+| SO-8841 | Sales order confirmed | 2026-02-01 09:12 | ERP | committed date = 2026-03-22 |
+| PRD-71025 | Production order created | 2026-02-02 08:40 | ERP | item = SDP-100 |
+| PO-450091 | PO released for controller PCB | 2026-02-03 10:00 | ERP | supplier = Electronics B |
+| PO-450092 | PO released for motor | 2026-02-03 10:15 | ERP | supplier = MotorCo |
+| PO-450093 | PO released for casting | 2026-02-03 10:20 | ERP | supplier = Foundry A |
+| REC-33011 | Motor received | 2026-02-22 11:10 | WMS | item = motor |
+| REC-33019 | Pump head casting received | 2026-02-24 15:20 | WMS | item = casting |
+| QL-9810 | Casting quality released | 2026-03-04 10:45 | QMS | result = pass |
+| REC-33018 | Controller PCB received | 2026-03-17 14:30 | WMS | item = PCB |
+| QL-9812 | PCB quality released | 2026-03-18 09:30 | QMS | result = pass |
+| PRD-71025 | Full kit ready | 2026-03-18 10:00 | ERP/WMS | critical part = PCB |
+| PRD-71025 | Assembly started | 2026-03-19 08:00 | MES | line = A2 |
+| PRD-71025 | Assembly completed | 2026-03-21 16:00 | MES | line = A2 |
+| PRD-71025 | Functional test failed | 2026-03-22 10:00 | MES/QMS | reason = sensor calibration |
+| PRD-71025 | Rework completed | 2026-03-23 14:00 | MES | station = rework |
+| PRD-71025 | Functional test passed | 2026-03-24 09:00 | MES/QMS | result = pass |
+| SHP-6022 | Shipment posted | 2026-03-25 16:30 | ERP/WMS | carrier = C1 |
+
+The intended process would have predicted that procurement and internal operations could meet the committed shipment date. The event log shows a more precise causal chain:
+
+```{mermaid}
+%%| label: fig-manufacturing-delay-causal-chain
+%%| fig-cap: Process-mined causal chain for a delayed manufacturing order. The delay originates from late controller PCB availability, propagates to full-kit readiness and assembly start, is amplified by functional-test failure and rework, and finally causes shipment after the committed date.
+%%| fig-alt: Flowchart showing controller PCB available late, full kit delayed, assembly starts late, functional test fails, rework is required, and shipment misses the committed date.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  PCB["Controller PCB available late"]
+  KIT["Full kit delayed"]
+  ASM["Assembly starts late"]
+  TEST["Functional test fails"]
+  REWORK["Rework is required"]
+  SHIP["Shipment misses committed date"]
+
+  PCB --> KIT
+  KIT --> ASM
+  ASM --> TEST
+  TEST --> REWORK
+  REWORK --> SHIP
+```
+
+This is the difference between a planning assumption and process evidence.
+
+## Directly-follows view
+
+A **directly-follows view** is a projection of the event log into adjacent activity relations. The directly-follows relation is:
+
+$$
+a >_L b
+$$
+
+if activity $a$ is immediately followed by activity $b$ in at least one trace of the log $L$.[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM3]
+
+The frequency of the edge $(a,b)$ is:
+
+$$
+freq_L(a,b)
+=
+\sum_{\sigma \in supp(L)}
+count_L(\sigma)
+\cdot
+|\{k : \sigma_k = a \land \sigma_{k+1}=b\}|
+$$
+
+At the production-order level, the directly-follows graph may look like this:
+
+```{mermaid}
+%%| label: fig-manufacturing-directly-follows
+%%| fig-cap: Simplified directly-follows graph for the manufacturing example. The production order depends on purchase orders, receipts, quality release, full-kit readiness, assembly, testing, possible rework, and shipment.
+%%| fig-alt: Flowchart showing production order creation, purchase order release, component receipt, quality release, full kit ready, assembly, test, rework loop, packing, and shipment.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  A["Production order created"] --> B["Purchase orders released"]
+  B --> C["Components received"]
+  C --> D["Quality released"]
+  D --> E["Full kit ready"]
+  E --> F["Assembly started"]
+  F --> G["Assembly completed"]
+  G --> H["Functional test"]
+  H --> I["Packing"]
+  I --> J["Shipment"]
+  H --> R["Rework"]
+  R --> H
+```
+
+The rework edge:
+
+$$
+Functional\ Test \rightarrow Rework \rightarrow Functional\ Test
+$$
+
+is especially important. It means that even if component availability is solved, shipment may still be delayed by quality or testing loops.
+
+The directly-follows graph is useful, but it must be interpreted carefully. Manufacturing contains parallel flows. Many component purchase orders progress at the same time. A directly-follows graph may therefore overstate causality if it is built from an artificial projection. In this example, the graph is a diagnostic view, not the complete process semantics.
+
+[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM3]: The directly-follows relation follows the process-discovery section of [Process Mining as Computational Process Intelligence](https://4m4.it/longforms/process-mining-as-computational-process-intelligence/).
+
+## Variants
+
+A manufacturing process is rarely one path. A small set of **variants** may explain most outcomes.
+
+| Variant | Trace pattern | Share | Interpretation |
+|---:|---|---:|---|
+| 1 | Full kit ready → assembly → test passed → shipment | 52% | Normal flow |
+| 2 | PCB available late → full kit delayed → assembly → test passed → shipment | 21% | Supplier lead-time issue |
+| 3 | Casting received → quality hold → full kit delayed → assembly → shipment | 12% | Quality-release issue |
+| 4 | Full kit ready → assembly → test failed → rework → test passed → shipment | 9% | Internal quality or rework issue |
+| 5 | Production order released before components available → waiting → assembly | 6% | Planning or release-policy issue |
+
+The process variant set is:
+
+$$
+V(L)=\{\sigma:\sigma\in supp(L)\}
+$$
+
+The probability of a variant is:
+
+$$
+p(\sigma)
+=
+\frac{count_L(\sigma)}{|L|}
+$$
+
+**Behavioral entropy** measures how fragmented the manufacturing execution process is:
+
+$$
+H(L)
+=
+-
+\sum_{\sigma \in V(L)}
+p(\sigma)\log p(\sigma)
+$$
+
+A high entropy value is not automatically bad. It may reflect legitimate product variants, engineering configurations, customer-specific options, or legal-entity differences. The disciplined interpretation is conditional:
+
+$$
+H(L \mid Z)
+=
+\sum_z \mathbb{P}(Z=z)H(L_z)
+$$
+
+where $Z$ may include product family, supplier, plant, order type, customer segment, or configuration class. If entropy collapses after conditioning on $Z$, variation is structurally explained. If entropy remains high inside homogeneous partitions, it is more likely to represent operational instability.[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM4]
+
+[^process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times-PM4]: See the variants and behavioral-entropy section in [Process Mining as Computational Process Intelligence](https://4m4.it/longforms/process-mining-as-computational-process-intelligence/).
+
+## Conformance checking
+
+The reference model may contain explicit **admissibility rules**. For example:
+
+- **Material readiness rule**: a production order should be released only when material availability is confirmed.
+- **Full-kit rule**: final assembly should start only after full-kit readiness.
+- **Quality-gate rule**: shipment should occur only after functional test has passed.
+
+**Conformance checking** compares the observed event log:
+
+$$
+L_{obs}
+$$
+
+with the allowed behavior of the reference model:
+
+$$
+\mathcal{L}(M)
+$$
+
+where $\mathcal{L}(M)$ is the language of traces allowed by model $M$.
+
+Typical deviations include:
+
+| Deviation | Interpretation | Possible owner |
+|---|---|---|
+| Production order released before critical components are available | Planning policy or MRP parameter issue | Production planning |
+| Assembly started before full-kit readiness | Release-policy violation or operational workaround | Production / Planning |
+| Assembly started before quality release | Control violation or incorrect stock status | Production / Quality |
+| Component received but not available | Quality or warehouse release delay | Quality / Warehouse |
+| Test failed and reworked multiple times | Product, routing, calibration, or supplier quality issue | Manufacturing engineering |
+| Purchase order created too late | Planning lead-time parameter too short | Procurement / Planning |
+| Shipment before complete documentation | Compliance or process-control issue | Logistics / Quality |
+
+A simple binary check asks whether:
+
+$$
+\sigma \in \mathcal{L}(M)
+$$
+
+A more informative conformance model computes an alignment distance:
+
+$$
+d(\sigma,M)
+=
+\min_{\gamma \in Align(\sigma,M)}
+cost(\gamma)
+$$
+
+where $\gamma$ is an alignment between the observed trace and the model. This allows deviations to be ranked by severity rather than treated as identical exceptions.
+
+The value is that deviations are not anecdotal. They are **measurable cases**, with frequency, duration, affected objects, attributes, and owners.
+
+## Performance diagnosis
+
+The manufacturing delay can be decomposed into intervals:
+
+| Interval | Formula | Meaning |
+|---|---|---|
+| Receipt lead time | $\operatorname{time}(receipt)-\operatorname{time}(PO\ release)$ | Supplier and inbound performance |
+| Availability lead time | $\operatorname{time}(available)-\operatorname{time}(PO\ release)$ | Supplier plus quality and warehouse release |
+| Quality release time | $\operatorname{time}(QC\ release)-\operatorname{time}(receipt)$ | Quality and inspection delay |
+| Full-kit waiting time | $T_m^{kit}-\operatorname{time}(production\ order\ creation)$ | Material readiness delay |
+| Assembly time | $\operatorname{time}(assembly\ complete)-\operatorname{time}(assembly\ start)$ | Production execution |
+| Test and rework time | $\operatorname{time}(test\ passed)-\operatorname{time}(first\ test)$ | Quality and rework burden |
+| Order-to-ship time | $\operatorname{time}(shipment)-\operatorname{time}(sales\ order\ confirmation)$ | Customer-facing cycle time |
+
+The total manufacturing cycle time for order $m$ can be written as:
+
+$$
+CT(m)
+=
+T_m^{ship}
+-
+T_m^{order}
+$$
+
+A useful decomposition is:
+
+$$
+CT(m)
+=
+W_m^{procurement}
++
+W_m^{quality}
++
+W_m^{kit}
++
+T_m^{assembly}
++
+T_m^{test}
++
+W_m^{shipment}
+$$
+
+where each term represents a waiting or processing component of the total cycle time. This decomposition is not merely descriptive. It tells the organization _where to intervene_.
+
+In the example, the delay is not primarily caused by final assembly capacity. The event evidence points to a compound delay mechanism:
+
+- **supplier lead-time variability**, which delays component availability;
+- **quality release delay**, which keeps physically received components unavailable;
+- **test rework**, which consumes additional time after assembly.
+
+This changes the managerial conclusion. Adding assembly operators would not solve the dominant cause.
+
+## Critical-path diagnosis
+
+For each production order $m$, the critical component is:
+
+$$
+k^*(m)
+=
+\arg\max_{k \in B_p}
+T_{m,k}^{avail}
+$$
+
+Aggregating $k^*(m)$ across production orders gives a powerful diagnostic:
+
+| Critical component | Share of delayed orders | Main cause |
+|---|---:|---|
+| Controller PCB | 44% | supplier lead-time variability |
+| Pump head casting | 27% | quality-release delay |
+| Pressure sensor | 13% | intermittent shortage |
+| Electric motor | 6% | rare supplier delay |
+| Other | 10% | mixed causes |
+
+This result separates the apparent bottleneck from the real bottleneck. The apparent bottleneck may be final assembly because orders wait before assembly. The real bottleneck may be the controller PCB because it determines full-kit readiness.
+
+This is also why process mining is useful for manufacturing management. It converts a generic operational statement such as _production is late_ into an evidence-based diagnosis: 44% of delayed orders are constrained by controller PCB availability, and the dominant mechanism is supplier lead-time variability.
+
+The first statement identifies a symptom. The second identifies a **measurable constraint**, its frequency, and its dominant causal mechanism.
+
+## Correcting planning parameters
+
+The planning system may currently use:
+
+$$
+L_{PCB}^{plan}=30\ days
+$$
+
+but process mining estimates:
+
+$$
+median(\hat{L}_{PCB}^{avail,PM})=34\ days
+$$
+
+and:
+
+$$
+P90(\hat{L}_{PCB}^{avail,PM})=48\ days
+$$
+
+The planning question is therefore not only:
+
+> What is the average lead time?
+
+It is:
+
+> Which lead-time percentile should be used for the service level required by this product family?
+
+For example:
+
+| Planning policy | Lead-time parameter | Consequence |
+|---|---:|---|
+| Aggressive | median observed availability lead time | lower inventory, higher lateness risk |
+| Balanced | 75th percentile observed availability lead time | moderate buffer |
+| Service-oriented | 90th percentile observed availability lead time | higher inventory, lower lateness risk |
+
+The process-mined correction is:
+
+$$
+L_{k,s}^{plan}
+\rightarrow
+\hat{L}_{k,s}^{avail,PM}
+$$
+
+where $\hat{L}_{k,s}^{avail,PM}$ should be treated as a distribution, not as a single number.
+
+This is a first **bridge** between process mining and S&OP. The planning model becomes _more empirical_ because it is calibrated on observed execution rather than on master-data assumptions alone.
+
+## Rework and exception loops
+
+The example also contains a rework loop:
+
+```{mermaid}
+%%| label: fig-manufacturing-test-rework-loop
+%%| fig-cap: Rework loop after functional test failure. A failed functional test sends the production order to rework; after rework completion, the order returns to functional testing.
+%%| fig-alt: Flowchart showing functional test failed, rework completed, and functional test passed, with rework returning to functional test.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  FAIL["Functional test failed"] --> REWORK["Rework completed"]
+  REWORK --> RETEST["Functional test repeated"]
+  RETEST --> PASS["Functional test passed"]
+  RETEST -. "if still not conforming" .-> REWORK
+```
+
+Let:
+
+$$
+p_{test,rework}
+$$
+
+be the probability that a production order enters rework after functional test. Process mining estimates:
+
+$$
+\hat{p}_{test,rework}
+=
+\frac{
+N_{test \rightarrow rework}
+}{
+N_{test \rightarrow rework}
++
+N_{test \rightarrow pass}
+}
+$$
+
+where $N_{a \rightarrow b}$ is the number of observed directly-follows transitions from activity $a$ to activity $b$.
+
+If the rework probability is high for a specific product variant, supplier batch, pressure sensor type, or work center, the delay should not be attributed only to capacity. The real cause may be calibration, supplier quality, design tolerance, assembly procedure, or test specification.
+
+Rework also changes the effective capacity model. If $\rho_{p,t}^{PM}$ is the process-mined exception or rework intensity for process $p$ in period $t$, then the effective capacity may be lower than nominal capacity:
+
+$$
+C_{r,t}^{effective}
+=
+C_{r,t}^{nominal}(1-\rho_{p,t}^{PM})
+$$
+
+This expresses a simple operational fact: a work center may have nominal capacity, but part of that capacity is consumed by rework and exception handling.
+
+## From process mining to action
+
+A practical action register may be:
+
+| Finding | Evidence | Owner | Action | Verification |
+|---|---|---|---|---|
+| PCB is critical in 44% of delayed orders | $k^*(m)=PCB$ frequently | Procurement | renegotiate lead time, qualify second supplier, increase buffer | PCB criticality share decreases |
+| Castings often blocked after receipt | high $W_m^{quality}$ | Quality | risk-based inspection, supplier quality plan | QC release time decreases |
+| Production orders released before full kit | conformance deviation | Planning | change release rule | early-release deviations decrease |
+| Test failures create rework loop | repeated test → rework → test | Manufacturing engineering | root-cause analysis on sensor calibration | rework rate decreases |
+| Lead-time master data too optimistic | $L^{plan}<P75(\hat{L}^{avail,PM})$ | Supply planning | update planning parameters | schedule adherence improves |
+| Physical stock differs from available stock | high $Q_{k,l,t}$ or reservation conflicts | Warehouse / Quality | improve release and reservation logic | available-stock mismatch decreases |
+
+The action must be verified with a subsequent event log. Otherwise, process mining remains reporting rather than control.
+
+```{mermaid}
+%%| label: fig-manufacturing-action-loop
+%%| fig-cap: Manufacturing process-mining action loop. Evidence identifies the bottleneck, the cause is assigned to an owner, an intervention is executed, and the next event log verifies whether the process improved.
+%%| fig-alt: Flowchart showing event evidence, bottleneck diagnosis, owner assignment, intervention, and verification through the next event log.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  E["Event evidence"] --> B["Bottleneck and variant diagnosis"]
+  B --> C["Cause classification"]
+  C --> O["Owner assignment"]
+  O --> A["Action"]
+  A --> V["Verification in next event log"]
+  V -. feedback .-> E
+```
+
+This is the same governance principle used in the broader process-mining framework: evidence must become accountable action, and action must be checked against subsequent evidence.
+
+## Implications for S&OP
+
+This example also shows why process mining matters for **S&OP**. The S&OP model should not rely only on master-data lead times, nominal routings, and assumed capacity. It should incorporate **observed execution**.
+
+Process mining can feed the planning model with:
+
+$$
+\hat{D}^{PM},\quad
+\hat{L}^{PM},\quad
+\hat{a}^{PM},\quad
+\hat{C}^{PM},\quad
+\hat{\rho}^{PM},\quad
+\hat{\phi}^{PM}
+$$
+
+where:
+
+- $\hat{D}^{PM}$ is _process-mined demand realization_;
+- $\hat{L}^{PM}$ is the _empirical lead-time distribution_;
+- $\hat{a}^{PM}$ is _empirical capacity consumption_;
+- $\hat{C}^{PM}$ is _effective capacity_;
+- $\hat{\rho}^{PM}$ is exception or _rework intensity_;
+- $\hat{\phi}^{PM}$ is the _availability-adjusted output factor_.
+
+For the smart dosing pump, the S&OP implication is clear: the limiting factor is not only final assembly capacity. It is the joint behavior of supplier lead time, quality release, component availability, reservations, and rework.
+
+A better planning model distinguishes the states that are often collapsed too quickly:
+
+```{mermaid}
+%%| label: fig-manufacturing-planning-state-distinctions
+%%| fig-cap: Planning-relevant manufacturing states distinguished by process mining. Physical receipt, quality release, available stock, full-kit readiness, assembly start, and test pass are distinct states with different operational meanings.
+%%| fig-alt: Flowchart showing physical receipt, quality release, available stock, full-kit readiness, assembly start, and test pass as distinct planning-relevant states.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  REC["Physical receipt"] --> QC["Quality release"]
+  QC --> AV["Available stock"]
+  AV --> KIT["Full-kit readiness"]
+  KIT --> ASM["Assembly start"]
+  ASM --> TEST["Test pass"]
+```
+
+The important point is that these states are not equivalent. A component can be received but not quality-released; quality-released but not available because it is reserved elsewhere; available in stock but insufficient to complete the full kit; assembled but not yet accepted because functional testing has failed. That distinction is exactly what process mining makes measurable.
+
+A simplified inventory-availability correction is:
+
+$$
+I_{k,l,t}^{available}
+=
+I_{k,l,t}^{physical}
+-
+Q_{k,l,t}
+-
+R_{k,l,t}^{reserved}
+-
+U_{k,l,t}^{unavailable}
+$$
+
+A simplified capacity correction is:
+
+$$
+C_{r,t}^{effective}
+=
+C_{r,t}^{nominal}(1-\rho_{p,t}^{PM})
+$$
+
+A simplified lead-time correction is:
+
+$$
+L_{k,s}^{plan}
+\rightarrow
+\hat{L}_{k,s}^{avail,PM}
+$$
+
+Together, these corrections change planning from a nominal model to an **empirically calibrated model**.
+
+## Minimal implementation
+
+A practical implementation can start with one product family and one plant.
+
+| Step | Output |
+|---|---|
+| Select product family | Smart dosing pump |
+| Define business question | Why do confirmed orders miss shipment date? |
+| Identify systems | ERP, MES, WMS, QMS, procurement, supplier portal |
+| Define objects | Sales order, production order, item, PO line, receipt, quality lot, reservation, shipment |
+| Define events | Order confirmed, PO released, component received, QC released, component available, full kit ready, assembly started, test passed, shipped |
+| Build event structure | Object-centric event log |
+| Validate semantics | Check timestamps, reservations, quality status, reversals, partial receipts |
+| Discover variants | Normal flow, supplier delay, quality delay, reservation issue, rework loop |
+| Measure performance | Lead times, waiting times, full-kit readiness, critical components |
+| Check conformance | Release rules, quality gates, shipment after test, full-kit policy |
+| Assign actions | Procurement, planning, quality, warehouse, manufacturing engineering |
+| Verify improvement | Compare next-period event log |
+
+The pilot should remain narrow. The objective is not to mine the entire factory. The objective is to prove that the process can be reconstructed, the bottleneck can be attributed, and the intervention can be verified.
+
+## Limits and semantic risks
+
+The analysis depends on the quality of the event model. Several risks must be controlled:
+
+1. **Timestamps may not represent physical reality.** A component may be physically received before the ERP goods receipt is posted. A MES confirmation may be entered at the end of the shift. A quality release may be backdated.
+
+2. **Identifiers may not be stable.** A production order may be split, merged, rescheduled, or technically closed and recreated. A purchase order may be substituted by another supplier. A material may be replaced by an equivalent component.
+
+3. **Physical stock is not available stock.** If quality status, reservation, put-away, and allocation logic are not modeled, the analysis may falsely conclude that production waited despite available inventory.
+
+4. **A directly-follows graph can be misleading when parallel component flows are projected into a single sequence.** Object-centric modeling reduces this problem because it preserves relationships between events and multiple business objects.
+
+5. **Process mining does not by itself prove causality.** It identifies behavioral evidence, temporal relations, deviations, and bottlenecks. Causal interpretation still requires process-owner validation, source-system knowledge, and operational judgment.
+
+## Conclusion
+
+Manufacturing delays are often explained too generically: supplier delay, capacity issue, quality problem, planning error. Process mining makes these explanations precise.
+
+In the smart dosing pump example, the relevant question is not simply whether the product was late. The question is which event chain made it late:
+
+- Was the purchase order released too late?
+- Was the component receipt delayed?
+- Was the component received but blocked in quality inspection?
+- Was the component available but reserved for another order?
+- Was the full kit incomplete?
+- Was final assembly capacity actually constrained?
+- Did functional testing generate rework?
+- Did packing or shipment introduce the final delay?
+
+By **reconstructing the process from event data**, the enterprise can identify the **real critical path** for each production order and the dominant causes across many orders.
+
+The key result is architectural. Manufacturing performance is not only a property of the shop floor. It is an _emergent property of procurement, supplier reliability, quality release, inventory availability, reservation logic, planning parameters, production execution, testing, rework, and shipment_. **Process mining gives the enterprise a quantitative way to observe that system**.
+
+The value is not the process map. The value is the governed evidence that tells the organization what to change.
+
+## Further reading
+
+This manufacturing example is deliberately narrow: one product family, purchased components, variable supplier lead times, quality release, full-kit readiness, assembly, test, rework, and shipment. The following articles expand the same problem from three complementary angles: enterprise modeling, process intelligence, and enterprise-architecture capability building.
+
+### [ArchiMate 4 and the Cartography of Complexity](https://4m4.it/longforms/archimate_4_and_the_cartography_of_complexity/index.html)
+
+This article is useful if the manufacturing example raises a modeling question: how should the enterprise represent dependencies among products, processes, applications, data, technology, suppliers, and governance structures?
+
+The process-mining example shows that manufacturing performance is not caused by one isolated activity. It emerges from the interaction of procurement, inventory, quality, production, warehouse execution, and shipment. The ArchiMate article explains why enterprise architecture needs a disciplined modeling language to describe those dependencies without confusing operational detail with architectural intent. It is the natural companion for readers who want to understand how process evidence can be connected to architecture models, capability maps, application landscapes, and governance views.
+
+### [Process Mining as Computational Process Intelligence](https://4m4.it/longforms/process-mining-as-computational-process-intelligence/)
+
+This is the theoretical foundation behind the present example. The manufacturing case applies only a subset of the full framework: event construction, object-centric process modeling, directly-follows analysis, variants, conformance checking, performance diagnosis, and governed action.
+
+The longform develops the complete argument from first principles. It explains why process mining is not process visualization, but a computational method for reconstructing operational behavior from event data. It also extends the topic toward object-centric process mining, enterprise architecture, data architecture, Celonis, implementation roadmaps, dynamic resource allocation, and S&OP decision models. Readers who want to move from the manufacturing example to the full mathematical and architectural theory should read that article next.
+
+### [Introducing Enterprise Architecture in a Multinational Company: A Roadmap for Building the Discipline from Scratch](https://4m4.it/longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/index.html)
+
+This article is useful if the manufacturing example raises an organizational question: who should own the structural knowledge required to act on process-mining evidence?
+
+Process mining can identify that supplier lead-time variability, quality-blocked inventory, reservation conflicts, or rework loops are damaging manufacturing performance. But turning that evidence into durable change requires enterprise architecture, governance, ownership, and a roadmap for institutionalizing architectural reasoning. The EA roadmap article explains how to build that capability in a multinational environment: from architectural discovery and governance to knowledge-base creation, strategic planning, delivery integration, and the management of transformation trade-offs.
+
+Together, these three articles complete the picture. The present article shows a concrete manufacturing use case. The process-mining longform provides the formal theory. The ArchiMate article explains how to represent enterprise complexity. The enterprise-architecture roadmap explains how to make this knowledge operational inside a large organization.

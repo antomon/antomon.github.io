@@ -1,0 +1,2993 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2022-12-13">
+<meta name="description" content="Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&amp;OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions.">
+
+<title>Process Mining in Manufacturing with Purchased Components and Variable Lead Times – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-acf12a64177840b8d86f2d4f01b2e9fb.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-ddff6f6c768f4d275e03843a69a2a41e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/typewriter-effect@latest/dist/core.js"></script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Process Mining in Manufacturing with Purchased Components and Variable Lead Times – Random Bits of Knowledge">
+<meta property="og:description" content="Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&amp;OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions.">
+<meta property="og:image" content="https://antomon.github.io/posts/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/manufacturing-process-mining.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="Process Mining in Manufacturing with Purchased Components and Variable Lead Times – Random Bits of Knowledge">
+<meta name="twitter:description" content="Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&amp;OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/manufacturing-process-mining.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Process Mining in Manufacturing with Purchased Components and Variable Lead Times</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Process Mining in Manufacturing with Purchased Components and Variable Lead Times</h1>
+            <p class="subtitle lead">A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction</p>
+                  <div>
+        <div class="description">
+          Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&amp;OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">digital transformation</div>
+                <div class="quarto-category">enterprise architecture</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">December 13, 2022</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">April 18, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-manufacturing-is-a-natural-process-mining-use-case" id="toc-why-manufacturing-is-a-natural-process-mining-use-case" class="nav-link active" data-scroll-target="#why-manufacturing-is-a-natural-process-mining-use-case">Why manufacturing is a natural process-mining use case</a></li>
+  <li><a href="#example-setting-a-smart-dosing-pump" id="toc-example-setting-a-smart-dosing-pump" class="nav-link" data-scroll-target="#example-setting-a-smart-dosing-pump">Example setting: a smart dosing pump</a></li>
+  <li><a href="#event-model" id="toc-event-model" class="nav-link" data-scroll-target="#event-model">Event model</a></li>
+  <li><a href="#process-structure" id="toc-process-structure" class="nav-link" data-scroll-target="#process-structure">Process structure</a></li>
+  <li><a href="#event-construction-from-source-systems" id="toc-event-construction-from-source-systems" class="nav-link" data-scroll-target="#event-construction-from-source-systems">Event construction from source systems</a></li>
+  <li><a href="#component-lead-times" id="toc-component-lead-times" class="nav-link" data-scroll-target="#component-lead-times">Component lead times</a></li>
+  <li><a href="#physical-stock-available-stock-and-quality-blocked-stock" id="toc-physical-stock-available-stock-and-quality-blocked-stock" class="nav-link" data-scroll-target="#physical-stock-available-stock-and-quality-blocked-stock">Physical stock, available stock, and quality-blocked stock</a></li>
+  <li><a href="#full-kit-readiness" id="toc-full-kit-readiness" class="nav-link" data-scroll-target="#full-kit-readiness">Full-kit readiness</a></li>
+  <li><a href="#example-event-log" id="toc-example-event-log" class="nav-link" data-scroll-target="#example-event-log">Example event log</a></li>
+  <li><a href="#directly-follows-view" id="toc-directly-follows-view" class="nav-link" data-scroll-target="#directly-follows-view">Directly-follows view</a></li>
+  <li><a href="#variants" id="toc-variants" class="nav-link" data-scroll-target="#variants">Variants</a></li>
+  <li><a href="#conformance-checking" id="toc-conformance-checking" class="nav-link" data-scroll-target="#conformance-checking">Conformance checking</a></li>
+  <li><a href="#performance-diagnosis" id="toc-performance-diagnosis" class="nav-link" data-scroll-target="#performance-diagnosis">Performance diagnosis</a></li>
+  <li><a href="#critical-path-diagnosis" id="toc-critical-path-diagnosis" class="nav-link" data-scroll-target="#critical-path-diagnosis">Critical-path diagnosis</a></li>
+  <li><a href="#correcting-planning-parameters" id="toc-correcting-planning-parameters" class="nav-link" data-scroll-target="#correcting-planning-parameters">Correcting planning parameters</a></li>
+  <li><a href="#rework-and-exception-loops" id="toc-rework-and-exception-loops" class="nav-link" data-scroll-target="#rework-and-exception-loops">Rework and exception loops</a></li>
+  <li><a href="#from-process-mining-to-action" id="toc-from-process-mining-to-action" class="nav-link" data-scroll-target="#from-process-mining-to-action">From process mining to action</a></li>
+  <li><a href="#implications-for-sop" id="toc-implications-for-sop" class="nav-link" data-scroll-target="#implications-for-sop">Implications for S&amp;OP</a></li>
+  <li><a href="#minimal-implementation" id="toc-minimal-implementation" class="nav-link" data-scroll-target="#minimal-implementation">Minimal implementation</a></li>
+  <li><a href="#limits-and-semantic-risks" id="toc-limits-and-semantic-risks" class="nav-link" data-scroll-target="#limits-and-semantic-risks">Limits and semantic risks</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further reading</a>
+  <ul class="collapse">
+  <li><a href="#archimate-4-and-the-cartography-of-complexity" id="toc-archimate-4-and-the-cartography-of-complexity" class="nav-link" data-scroll-target="#archimate-4-and-the-cartography-of-complexity">ArchiMate 4 and the Cartography of Complexity</a></li>
+  <li><a href="#process-mining-as-computational-process-intelligence" id="toc-process-mining-as-computational-process-intelligence" class="nav-link" data-scroll-target="#process-mining-as-computational-process-intelligence">Process Mining as Computational Process Intelligence</a></li>
+  <li><a href="#introducing-enterprise-architecture-in-a-multinational-company-a-roadmap-for-building-the-discipline-from-scratch" id="toc-introducing-enterprise-architecture-in-a-multinational-company-a-roadmap-for-building-the-discipline-from-scratch" class="nav-link" data-scroll-target="#introducing-enterprise-architecture-in-a-multinational-company-a-roadmap-for-building-the-discipline-from-scratch">Introducing Enterprise Architecture in a Multinational Company: A Roadmap for Building the Discipline from Scratch</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("manufacturing-process-mining.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&amp;OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions.</p>
+</div>
+<section id="why-manufacturing-is-a-natural-process-mining-use-case" class="level2">
+<h2 class="anchored" data-anchor-id="why-manufacturing-is-a-natural-process-mining-use-case">Why manufacturing is a natural process-mining use case</h2>
+<p>Manufacturing processes are often described as if they were deterministic chains:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-normative-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-normative-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-normative-chain">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  PLAN["Plan"] --&gt; PROC["Procure"]
+  PROC --&gt; REC["Receive"]
+  REC --&gt; PROD["Produce"]
+  PROD --&gt; INSP["Inspect"]
+  INSP --&gt; SHIP["Ship"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-normative-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Simplified normative manufacturing chain. The sequence represents the intended high-level flow from planning to procurement, receipt, production, inspection, and shipment.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This representation is useful as a normative process description, but <em>it is not sufficient to explain what actually happens inside a manufacturing system</em>. A finished item depends on purchased components, internally processed parts, supplier lead times, quality inspections, warehouse availability, production capacity, engineering changes, material substitutions, inventory reservations, and customer priorities.</p>
+<p>A production order may be ready from a routing perspective but blocked by a missing component. A purchased part may be physically received but unavailable because it is still under quality inspection. A work center may be available, but the order may wait because the complete kit is not ready. A production order may start, stop, wait, be reworked, and then return to testing.</p>
+<p><strong>Process mining</strong> is useful precisely because it does not start from the nominal routing, the standard lead time, or the planning parameter. It starts from <strong>event evidence</strong>: what happened, when it happened, to which production order, purchase order, item, batch, supplier, resource, warehouse, and quality lot it happened.</p>
+<p>The process-mining pipeline can be summarized as a conceptual transformation chain:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p><span class="math display">
+D \xrightarrow{\phi} L_E \xrightarrow{\operatorname{mine}} M \xrightarrow{\operatorname{evaluate}} I \xrightarrow{\operatorname{govern}} A
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">D</span> is <em>raw operational data</em>;</li>
+<li><span class="math inline">\phi</span> is the_ event-construction function_;</li>
+<li><span class="math inline">L_E</span> is the <em>event log</em> or <em>object-centric event structure</em>;</li>
+<li><span class="math inline">M</span> is the discovered, reference, or <em>normative process model</em>;</li>
+<li><span class="math inline">I</span> is the <em>set of insights, deviations, bottlenecks, variants, risks, and predictions</em>;</li>
+<li><span class="math inline">A</span> is the <em>set of governed actions</em>.</li>
+</ul>
+<p>In the manufacturing example, this means that ERP, MES, WMS, QMS, procurement, and shipment records are first converted into <strong>governed event evidence</strong>, then mined into <strong>process models</strong>, evaluated for delays and deviations, and finally translated into <strong>accountable operational actions</strong>.</p>
+</section>
+<section id="example-setting-a-smart-dosing-pump" class="level2">
+<h2 class="anchored" data-anchor-id="example-setting-a-smart-dosing-pump">Example setting: a smart dosing pump</h2>
+<p>Consider a manufacturer that produces a configurable <strong>smart dosing pump</strong> used in industrial plants. The product is not extremely complex, but it is complex enough to expose the main manufacturing problem: a finished item is assembled from purchased components, internally processed components, subassemblies, quality-controlled parts, and final test operations.</p>
+<p>The simplified bill of materials is:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Level</th>
+<th>Component</th>
+<th>Type</th>
+<th>Source</th>
+<th style="text-align: right;">Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td>Smart dosing pump</td>
+<td>Finished item</td>
+<td>Manufactured</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td>Pump head assembly</td>
+<td>Subassembly</td>
+<td>Internal assembly</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td>Pump head casting</td>
+<td>Component</td>
+<td>Purchased, then machined</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td>Seal kit</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td>Motor module</td>
+<td>Subassembly</td>
+<td>Internal assembly</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td>Electric motor</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td>Coupling</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td>Control module</td>
+<td>Subassembly</td>
+<td>Internal assembly</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td>Controller PCB</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td>Pressure sensor</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td>Wiring harness</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td>Final housing</td>
+<td>Component</td>
+<td>Purchased</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+<p>The nominal process is:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-nominal-process" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-nominal-process-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-nominal-process">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  SO["Sales order"]
+  POCR["Production order creation"]
+  PR["Purchase requisitions"]
+  PO["Purchase orders"]
+  REC["Component receipt"]
+  QC["Quality inspection"]
+  AV["Component availability"]
+  MACH["Machining"]
+  SUB["Subassembly"]
+  ASM["Final assembly"]
+  TEST["Functional test"]
+  PACK["Packing"]
+  SHIP["Shipment"]
+
+  SO --&gt; POCR
+  POCR --&gt; PR
+  PR --&gt; PO
+  PO --&gt; REC
+  REC --&gt; QC
+  QC --&gt; AV
+  AV --&gt; MACH
+  MACH --&gt; SUB
+  SUB --&gt; ASM
+  ASM --&gt; TEST
+  TEST --&gt; PACK
+  PACK --&gt; SHIP
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-nominal-process-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Nominal manufacturing process for a finished item assembled from purchased components and internal operations. The sequence runs from sales order to production order creation, procurement, receipt, quality inspection, component availability, internal processing, final assembly, testing, packing, and shipment.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The business question is deliberately narrow:</p>
+<blockquote class="blockquote">
+<p>Why do some production orders miss the committed shipment date even when final assembly capacity appears sufficient?</p>
+</blockquote>
+<p>This is a good process-mining question because the answer may be hidden across several systems. The delay may not be visible in final assembly alone. It may originate in procurement, supplier lead-time variability, quality release, warehouse availability, material reservation, or testing rework.</p>
+</section>
+<section id="event-model" class="level2">
+<h2 class="anchored" data-anchor-id="event-model">Event model</h2>
+<p>The primitive object is the event:<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p><span class="math display">
+e = (i,a,t,r,x)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">i</span> is the <em>case identifier</em> or, in a more general formulation, a set of related <em>business objects</em>;</li>
+<li><span class="math inline">a</span> is the <em>activity</em> or <em>state transition observed</em>;</li>
+<li><span class="math inline">t</span> is the <em>timestamp</em>;</li>
+<li><span class="math inline">r</span> is the <em>resource, system, supplier, machine, organizational unit, or agent responsible for the event</em>;</li>
+<li><span class="math inline">x</span> is a vector of <em>attributes describing the event context</em>.</li>
+</ul>
+<p>For a manufacturing process, one case identifier is usually not enough. A finished item is related to a sales order, a production order, several purchase orders, component items, warehouse receipts, quality lots, inventory reservations, operations, work centers, test records, and shipment documents.</p>
+<p>A case-centric analysis by production order is useful, but it hides part of the causal structure. If a production order is late because one purchased component was released from quality inspection too late, the production-order trace alone is not enough. The event must be connected to the purchase order line, item, supplier, receipt, quality lot, warehouse, and production order.</p>
+<p>The more faithful formulation is therefore object-centric:</p>
+<p><span class="math display">
+L_{OC} = (E,O,type,act,time,rel,attr)
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">E</span> is the <em>set of events</em>;</li>
+<li><span class="math inline">O</span> is the <em>set of business objects</em>;</li>
+<li><span class="math inline">type : O \rightarrow \mathcal{T}</span> assigns each object to an <em>object type</em>;</li>
+<li><span class="math inline">act : E \rightarrow \mathcal{A}</span> assigns each event to an <em>activity</em>;</li>
+<li><span class="math inline">time : E \rightarrow T</span> assigns each event to a <em>timestamp</em>;</li>
+<li><span class="math inline">rel \subseteq E \times O</span> relates events to <em>objects</em>;</li>
+<li><span class="math inline">attr</span> stores event and object <em>attributes</em>.</li>
+</ul>
+<p>For example, the event <em>Controller PCB received</em> may be related to:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Object type</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Purchase order</td>
+<td>PO-450091</td>
+</tr>
+<tr class="even">
+<td>Purchase order line</td>
+<td>PO-450091-10</td>
+</tr>
+<tr class="odd">
+<td>Supplier</td>
+<td>PCB-SUP-02</td>
+</tr>
+<tr class="even">
+<td>Item</td>
+<td>PCB-CTRL-24V</td>
+</tr>
+<tr class="odd">
+<td>Production order</td>
+<td>PRD-71025</td>
+</tr>
+<tr class="even">
+<td>Sales order</td>
+<td>SO-8841</td>
+</tr>
+<tr class="odd">
+<td>Warehouse receipt</td>
+<td>REC-33018</td>
+</tr>
+<tr class="even">
+<td>Quality lot</td>
+<td>QL-9812</td>
+</tr>
+</tbody>
+</table>
+<p>The event-object relation is:</p>
+<p><span class="math display">
+rel(e) \subseteq O
+</span></p>
+<p>This is why object-centric process mining is important in manufacturing. The production order alone does not explain the delay. The delay may originate in a purchase order, a supplier, a quality lot, a warehouse receipt, or an inventory reservation.</p>
+</section>
+<section id="process-structure" class="level2">
+<h2 class="anchored" data-anchor-id="process-structure">Process structure</h2>
+<p>A simplified object-centric view is:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-object-centric-structure" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-object-centric-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-object-centric-structure">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  SO["Sales order"] --&gt; PRD["Production order"]
+  PRD --&gt; BOM["BOM components"]
+  BOM --&gt; PO["Purchase orders"]
+  PO --&gt; REC["Component receipts"]
+  REC --&gt; QC["Quality inspection"]
+  QC --&gt; AV["Available stock"]
+  PRD --&gt; MACH["Machining"]
+  AV --&gt; KIT["Full kit ready"]
+  MACH --&gt; KIT
+  KIT --&gt; ASM["Final assembly"]
+  ASM --&gt; TEST["Functional test"]
+  TEST --&gt; PACK["Packing"]
+  PACK --&gt; SHIP["Shipment"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-object-centric-structure-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Object-centric manufacturing structure. A finished product is linked to a sales order, production order, purchased components, purchase orders, receipts, quality lots, internal operations, testing, and shipment.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This diagram should not be read as a simple linear process. Some events occur in parallel. Purchase orders may be released before or after production order creation, depending on the planning policy. Some components may already be available in stock. Some components may be substituted. Some receipts may arrive in partial quantities. Some operations may start before the complete kit is formally ready, if the organization allows partial release.</p>
+<p>The diagram is therefore a <strong>projection of an object-centric event structure</strong>, not a claim that manufacturing execution is a single sequential trace.</p>
+</section>
+<section id="event-construction-from-source-systems" class="level2">
+<h2 class="anchored" data-anchor-id="event-construction-from-source-systems">Event construction from source systems</h2>
+<p>The <strong>event log</strong> is not found ready-made in the enterprise system. It must be constructed.</p>
+<p>The <strong>event-construction function</strong> is:</p>
+<p><span class="math display">
+\phi : D \rightarrow L_E
+</span></p>
+<p>where <span class="math inline">D</span> is <em>raw operational data</em> and <span class="math inline">L_E</span> is the <em>constructed event-log</em> or object-centric event structure.</p>
+<p>For the smart dosing pump example, relevant source systems may include:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source system</th>
+<th>Typical source objects</th>
+<th>Example events</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ERP</td>
+<td>sales orders, production orders, purchase orders, inventory transactions</td>
+<td>sales order confirmed, production order created, PO released, goods receipt posted</td>
+</tr>
+<tr class="even">
+<td>MES</td>
+<td>operations, work centers, confirmations, machine events</td>
+<td>assembly started, assembly completed, test started, test failed, rework completed</td>
+</tr>
+<tr class="odd">
+<td>WMS</td>
+<td>receipts, put-away, reservations, picking, issue to production</td>
+<td>component received, component available, component reserved, component issued</td>
+</tr>
+<tr class="even">
+<td>QMS</td>
+<td>inspection lots, nonconformities, releases</td>
+<td>quality inspection started, quality released, quality blocked, rejected</td>
+</tr>
+<tr class="odd">
+<td>Supplier portal</td>
+<td>confirmations, ASN, shipment notices</td>
+<td>supplier confirmed date, supplier shipment created, delay notification</td>
+</tr>
+<tr class="even">
+<td>Logistics system</td>
+<td>packing, transport, shipment</td>
+<td>packing completed, shipment posted, carrier pickup</td>
+</tr>
+</tbody>
+</table>
+<p>The semantic problem is to map technical records into business events. For example:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Business event</th>
+<th>Possible source</th>
+<th>Semantic risk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PO released</td>
+<td>ERP purchase order approval or release flag</td>
+<td>release date may differ from creation date</td>
+</tr>
+<tr class="even">
+<td>Component received</td>
+<td>ERP goods receipt or WMS receipt</td>
+<td>physical receipt may precede ERP posting</td>
+</tr>
+<tr class="odd">
+<td>Quality released</td>
+<td>QMS inspection usage decision or stock-status change</td>
+<td>release may be partial or reversed</td>
+</tr>
+<tr class="even">
+<td>Component available</td>
+<td>WMS availability plus stock status plus reservation status</td>
+<td>physical stock is not equal to usable stock</td>
+</tr>
+<tr class="odd">
+<td>Full kit ready</td>
+<td>computed event from all component availability events</td>
+<td>requires pegging or allocation logic</td>
+</tr>
+<tr class="even">
+<td>Assembly started</td>
+<td>MES operation start or ERP confirmation</td>
+<td>batch posting may distort timestamp</td>
+</tr>
+<tr class="odd">
+<td>Functional test passed</td>
+<td>MES/QMS test result</td>
+<td>retests and partial tests must be modeled</td>
+</tr>
+<tr class="even">
+<td>Shipment posted</td>
+<td>ERP delivery posting or WMS shipment</td>
+<td>posting time may differ from physical pickup</td>
+</tr>
+</tbody>
+</table>
+<p>The correctness of <span class="math inline">\phi</span> determines whether the analysis is meaningful. If <em>component received</em> is treated as equivalent to <em>component available</em>, the model will ignore quality holds. If production-order release is treated as material readiness, the model will hide missing-component delays. If test failures are overwritten by final pass status, rework disappears from the event log.</p>
+</section>
+<section id="component-lead-times" class="level2">
+<h2 class="anchored" data-anchor-id="component-lead-times">Component lead times</h2>
+<p>The planning system contains nominal lead times. Process mining estimates <strong>empirical lead times from events</strong>.</p>
+<p>For a purchased component <span class="math inline">k</span> supplied by supplier <span class="math inline">s</span>, the planned lead time is:</p>
+<p><span class="math display">
+L_{k,s}^{plan}
+</span></p>
+<p>However, several empirical lead times matter. The receipt lead time for purchase order line <span class="math inline">j</span> is:</p>
+<p><span class="math display">
+L_{j}^{receipt}
+=
+time(\operatorname{receipt}_j)
+-
+time(\operatorname{purchase\ order\ release}_j)
+</span></p>
+<p>The availability lead time is:</p>
+<p><span class="math display">
+L_{j}^{avail}
+=
+time(\operatorname{available}_j)
+-
+time(\operatorname{purchase\ order\ release}_j)
+</span></p>
+<p>The difference is important. A component can be physically received but not yet usable. If the item is blocked for quality inspection, missing documentation, or warehouse put-away, then:</p>
+<p><span class="math display">
+L_{j}^{avail} &gt; L_{j}^{receipt}
+</span></p>
+<p>Aggregating over historical purchase order lines gives empirical supplier-item lead-time distributions:</p>
+<p><span class="math display">
+\hat{L}_{k,s}^{receipt,PM}
+=
+\{L_j^{receipt} : item(j)=k,\ supplier(j)=s\}
+</span></p>
+<p>and:</p>
+<p><span class="math display">
+\hat{L}_{k,s}^{avail,PM}
+=
+\{L_j^{avail} : item(j)=k,\ supplier(j)=s\}
+</span></p>
+<p>This is more informative than a single planning parameter. The mean may be acceptable while the 90th percentile is operationally dangerous. Also, the receipt lead time may look acceptable while the availability lead time reveals the true constraint.</p>
+<p>A simplified empirical table may look like this:</p>
+<table class="table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Supplier</th>
+<th style="text-align: right;">Planned LT</th>
+<th style="text-align: right;">Median availability LT</th>
+<th style="text-align: right;">90th percentile availability LT</th>
+<th>Typical issue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Pump head casting</td>
+<td>Foundry A</td>
+<td style="text-align: right;">15 days</td>
+<td style="text-align: right;">18 days</td>
+<td style="text-align: right;">27 days</td>
+<td>quality inspection delay</td>
+</tr>
+<tr class="even">
+<td>Electric motor</td>
+<td>MotorCo</td>
+<td style="text-align: right;">20 days</td>
+<td style="text-align: right;">19 days</td>
+<td style="text-align: right;">24 days</td>
+<td>stable</td>
+</tr>
+<tr class="odd">
+<td>Controller PCB</td>
+<td>Electronics B</td>
+<td style="text-align: right;">30 days</td>
+<td style="text-align: right;">34 days</td>
+<td style="text-align: right;">48 days</td>
+<td>supplier variability</td>
+</tr>
+<tr class="even">
+<td>Pressure sensor</td>
+<td>SensorLab</td>
+<td style="text-align: right;">12 days</td>
+<td style="text-align: right;">13 days</td>
+<td style="text-align: right;">21 days</td>
+<td>intermittent shortage</td>
+</tr>
+<tr class="odd">
+<td>Seal kit</td>
+<td>SealsCo</td>
+<td style="text-align: right;">7 days</td>
+<td style="text-align: right;">6 days</td>
+<td style="text-align: right;">10 days</td>
+<td>stable</td>
+</tr>
+<tr class="even">
+<td>Wiring harness</td>
+<td>HarnessPro</td>
+<td style="text-align: right;">10 days</td>
+<td style="text-align: right;">9 days</td>
+<td style="text-align: right;">14 days</td>
+<td>stable</td>
+</tr>
+<tr class="odd">
+<td>Final housing</td>
+<td>Plastics C</td>
+<td style="text-align: right;">14 days</td>
+<td style="text-align: right;">15 days</td>
+<td style="text-align: right;">22 days</td>
+<td>transport delay</td>
+</tr>
+</tbody>
+</table>
+<p>The immediate finding is that average lead time is not enough. The controller PCB and pump head casting dominate the high-percentile risk. This is precisely the kind of <strong>empirical correction</strong> that process mining can provide to planning and S&amp;OP models.</p>
+</section>
+<section id="physical-stock-available-stock-and-quality-blocked-stock" class="level2">
+<h2 class="anchored" data-anchor-id="physical-stock-available-stock-and-quality-blocked-stock">Physical stock, available stock, and quality-blocked stock</h2>
+<p>Manufacturing planning often fails when it treats inventory as a single quantity. In reality, physical stock and available stock are not the same thing.</p>
+<p>For component <span class="math inline">k</span> at location <span class="math inline">l</span> and time <span class="math inline">t</span>, physical inventory can be written as:</p>
+<p><span class="math display">
+I_{k,l,t}^{physical}
+</span></p>
+<p>Quality-blocked inventory is:</p>
+<p><span class="math display">
+Q_{k,l,t}
+</span></p>
+<p>Reserved inventory is:</p>
+<p><span class="math display">
+R_{k,l,t}^{reserved}
+</span></p>
+<p>Other unavailable inventory is:</p>
+<p><span class="math display">
+U_{k,l,t}^{unavailable}
+</span></p>
+<p>Available inventory is therefore:</p>
+<p><span class="math display">
+I_{k,l,t}^{available}
+=
+I_{k,l,t}^{physical}
+-
+Q_{k,l,t}
+-
+R_{k,l,t}^{reserved}
+-
+U_{k,l,t}^{unavailable}
+</span></p>
+<p>Process mining estimates the <em>transitions between these states from receipt, inspection, release, reservation, issue, reversal, and adjustment events</em>.</p>
+<p>This distinction is essential for the manufacturing example. A component can be visible in physical stock but still unavailable for the production order. If the event log does not distinguish these states, the analysis will attribute the delay to production when the real cause is quality release or inventory reservation.</p>
+</section>
+<section id="full-kit-readiness" class="level2">
+<h2 class="anchored" data-anchor-id="full-kit-readiness">Full-kit readiness</h2>
+<p>The production order cannot proceed to final assembly under a strict full-kit policy until all required components are available. For a finished item <span class="math inline">p</span>, let:</p>
+<p><span class="math display">
+B_p
+</span></p>
+<p>be the set of required components, and let:</p>
+<p><span class="math display">
+b_{p,k}
+</span></p>
+<p>be the required quantity of component <span class="math inline">k</span> in the bill of materials.</p>
+<p>For production order <span class="math inline">m</span>, define:</p>
+<p><span class="math display">
+A_{m,k}(t)
+</span></p>
+<p>as the available quantity of component <span class="math inline">k</span> that is usable for production order <span class="math inline">m</span> at time <span class="math inline">t</span>, after quality release, reservation constraints, and allocation rules.</p>
+<p>The component availability time is:</p>
+<p><span class="math display">
+T_{m,k}^{avail}
+=
+\inf \{t : A_{m,k}(t) \geq b_{p,k}\}
+</span></p>
+<p>The full-kit readiness time is:</p>
+<p><span class="math display">
+T_m^{kit}
+=
+\max_{k \in B_p}
+T_{m,k}^{avail}
+</span></p>
+<p>The critical missing component is:</p>
+<p><span class="math display">
+k^*(m)
+=
+\arg\max_{k \in B_p}
+T_{m,k}^{avail}
+</span></p>
+<p>This is a compact but powerful formulation. It shows that the manufacturing order is constrained not by the average component, but by the <strong>last required component to become available</strong>.</p>
+<p>If the controller PCB arrives last, then the controller PCB is the critical component. If the casting is physically received early but blocked in quality inspection, then the casting may be the critical component even though it is already inside the warehouse.</p>
+<p>Process mining estimates <span class="math inline">T_{m,k}^{avail}</span> from <em>receipt, quality release, inventory reservation, pegging, allocation, and component issue events</em>.</p>
+</section>
+<section id="example-event-log" class="level2">
+<h2 class="anchored" data-anchor-id="example-event-log">Example event log</h2>
+<p>A simplified event log for one production order may be:</p>
+<table class="table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 25%">
+<col style="width: 18%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Object</th>
+<th>Event</th>
+<th style="text-align: right;">Timestamp</th>
+<th>Resource/System</th>
+<th>Attribute</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SO-8841</td>
+<td>Sales order confirmed</td>
+<td style="text-align: right;">2026-02-01 09:12</td>
+<td>ERP</td>
+<td>committed date = 2026-03-22</td>
+</tr>
+<tr class="even">
+<td>PRD-71025</td>
+<td>Production order created</td>
+<td style="text-align: right;">2026-02-02 08:40</td>
+<td>ERP</td>
+<td>item = SDP-100</td>
+</tr>
+<tr class="odd">
+<td>PO-450091</td>
+<td>PO released for controller PCB</td>
+<td style="text-align: right;">2026-02-03 10:00</td>
+<td>ERP</td>
+<td>supplier = Electronics B</td>
+</tr>
+<tr class="even">
+<td>PO-450092</td>
+<td>PO released for motor</td>
+<td style="text-align: right;">2026-02-03 10:15</td>
+<td>ERP</td>
+<td>supplier = MotorCo</td>
+</tr>
+<tr class="odd">
+<td>PO-450093</td>
+<td>PO released for casting</td>
+<td style="text-align: right;">2026-02-03 10:20</td>
+<td>ERP</td>
+<td>supplier = Foundry A</td>
+</tr>
+<tr class="even">
+<td>REC-33011</td>
+<td>Motor received</td>
+<td style="text-align: right;">2026-02-22 11:10</td>
+<td>WMS</td>
+<td>item = motor</td>
+</tr>
+<tr class="odd">
+<td>REC-33019</td>
+<td>Pump head casting received</td>
+<td style="text-align: right;">2026-02-24 15:20</td>
+<td>WMS</td>
+<td>item = casting</td>
+</tr>
+<tr class="even">
+<td>QL-9810</td>
+<td>Casting quality released</td>
+<td style="text-align: right;">2026-03-04 10:45</td>
+<td>QMS</td>
+<td>result = pass</td>
+</tr>
+<tr class="odd">
+<td>REC-33018</td>
+<td>Controller PCB received</td>
+<td style="text-align: right;">2026-03-17 14:30</td>
+<td>WMS</td>
+<td>item = PCB</td>
+</tr>
+<tr class="even">
+<td>QL-9812</td>
+<td>PCB quality released</td>
+<td style="text-align: right;">2026-03-18 09:30</td>
+<td>QMS</td>
+<td>result = pass</td>
+</tr>
+<tr class="odd">
+<td>PRD-71025</td>
+<td>Full kit ready</td>
+<td style="text-align: right;">2026-03-18 10:00</td>
+<td>ERP/WMS</td>
+<td>critical part = PCB</td>
+</tr>
+<tr class="even">
+<td>PRD-71025</td>
+<td>Assembly started</td>
+<td style="text-align: right;">2026-03-19 08:00</td>
+<td>MES</td>
+<td>line = A2</td>
+</tr>
+<tr class="odd">
+<td>PRD-71025</td>
+<td>Assembly completed</td>
+<td style="text-align: right;">2026-03-21 16:00</td>
+<td>MES</td>
+<td>line = A2</td>
+</tr>
+<tr class="even">
+<td>PRD-71025</td>
+<td>Functional test failed</td>
+<td style="text-align: right;">2026-03-22 10:00</td>
+<td>MES/QMS</td>
+<td>reason = sensor calibration</td>
+</tr>
+<tr class="odd">
+<td>PRD-71025</td>
+<td>Rework completed</td>
+<td style="text-align: right;">2026-03-23 14:00</td>
+<td>MES</td>
+<td>station = rework</td>
+</tr>
+<tr class="even">
+<td>PRD-71025</td>
+<td>Functional test passed</td>
+<td style="text-align: right;">2026-03-24 09:00</td>
+<td>MES/QMS</td>
+<td>result = pass</td>
+</tr>
+<tr class="odd">
+<td>SHP-6022</td>
+<td>Shipment posted</td>
+<td style="text-align: right;">2026-03-25 16:30</td>
+<td>ERP/WMS</td>
+<td>carrier = C1</td>
+</tr>
+</tbody>
+</table>
+<p>The intended process would have predicted that procurement and internal operations could meet the committed shipment date. The event log shows a more precise causal chain:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-delay-causal-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-delay-causal-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-delay-causal-chain">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  PCB["Controller PCB available late"]
+  KIT["Full kit delayed"]
+  ASM["Assembly starts late"]
+  TEST["Functional test fails"]
+  REWORK["Rework is required"]
+  SHIP["Shipment misses committed date"]
+
+  PCB --&gt; KIT
+  KIT --&gt; ASM
+  ASM --&gt; TEST
+  TEST --&gt; REWORK
+  REWORK --&gt; SHIP
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-delay-causal-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Process-mined causal chain for a delayed manufacturing order. The delay originates from late controller PCB availability, propagates to full-kit readiness and assembly start, is amplified by functional-test failure and rework, and finally causes shipment after the committed date.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is the difference between a planning assumption and process evidence.</p>
+</section>
+<section id="directly-follows-view" class="level2">
+<h2 class="anchored" data-anchor-id="directly-follows-view">Directly-follows view</h2>
+<p>A <strong>directly-follows view</strong> is a projection of the event log into adjacent activity relations. The directly-follows relation is:</p>
+<p><span class="math display">
+a &gt;_L b
+</span></p>
+<p>if activity <span class="math inline">a</span> is immediately followed by activity <span class="math inline">b</span> in at least one trace of the log <span class="math inline">L</span>.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>The frequency of the edge <span class="math inline">(a,b)</span> is:</p>
+<p><span class="math display">
+freq_L(a,b)
+=
+\sum_{\sigma \in supp(L)}
+count_L(\sigma)
+\cdot
+|\{k : \sigma_k = a \land \sigma_{k+1}=b\}|
+</span></p>
+<p>At the production-order level, the directly-follows graph may look like this:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-directly-follows" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-directly-follows-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-directly-follows">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  A["Production order created"] --&gt; B["Purchase orders released"]
+  B --&gt; C["Components received"]
+  C --&gt; D["Quality released"]
+  D --&gt; E["Full kit ready"]
+  E --&gt; F["Assembly started"]
+  F --&gt; G["Assembly completed"]
+  G --&gt; H["Functional test"]
+  H --&gt; I["Packing"]
+  I --&gt; J["Shipment"]
+  H --&gt; R["Rework"]
+  R --&gt; H
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-directly-follows-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Simplified directly-follows graph for the manufacturing example. The production order depends on purchase orders, receipts, quality release, full-kit readiness, assembly, testing, possible rework, and shipment.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The rework edge:</p>
+<p><span class="math display">
+Functional\ Test \rightarrow Rework \rightarrow Functional\ Test
+</span></p>
+<p>is especially important. It means that even if component availability is solved, shipment may still be delayed by quality or testing loops.</p>
+<p>The directly-follows graph is useful, but it must be interpreted carefully. Manufacturing contains parallel flows. Many component purchase orders progress at the same time. A directly-follows graph may therefore overstate causality if it is built from an artificial projection. In this example, the graph is a diagnostic view, not the complete process semantics.</p>
+</section>
+<section id="variants" class="level2">
+<h2 class="anchored" data-anchor-id="variants">Variants</h2>
+<p>A manufacturing process is rarely one path. A small set of <strong>variants</strong> may explain most outcomes.</p>
+<table class="table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 21%">
+<col style="width: 28%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Variant</th>
+<th>Trace pattern</th>
+<th style="text-align: right;">Share</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td>Full kit ready → assembly → test passed → shipment</td>
+<td style="text-align: right;">52%</td>
+<td>Normal flow</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td>PCB available late → full kit delayed → assembly → test passed → shipment</td>
+<td style="text-align: right;">21%</td>
+<td>Supplier lead-time issue</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td>Casting received → quality hold → full kit delayed → assembly → shipment</td>
+<td style="text-align: right;">12%</td>
+<td>Quality-release issue</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td>Full kit ready → assembly → test failed → rework → test passed → shipment</td>
+<td style="text-align: right;">9%</td>
+<td>Internal quality or rework issue</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td>Production order released before components available → waiting → assembly</td>
+<td style="text-align: right;">6%</td>
+<td>Planning or release-policy issue</td>
+</tr>
+</tbody>
+</table>
+<p>The process variant set is:</p>
+<p><span class="math display">
+V(L)=\{\sigma:\sigma\in supp(L)\}
+</span></p>
+<p>The probability of a variant is:</p>
+<p><span class="math display">
+p(\sigma)
+=
+\frac{count_L(\sigma)}{|L|}
+</span></p>
+<p><strong>Behavioral entropy</strong> measures how fragmented the manufacturing execution process is:</p>
+<p><span class="math display">
+H(L)
+=
+-
+\sum_{\sigma \in V(L)}
+p(\sigma)\log p(\sigma)
+</span></p>
+<p>A high entropy value is not automatically bad. It may reflect legitimate product variants, engineering configurations, customer-specific options, or legal-entity differences. The disciplined interpretation is conditional:</p>
+<p><span class="math display">
+H(L \mid Z)
+=
+\sum_z \mathbb{P}(Z=z)H(L_z)
+</span></p>
+<p>where <span class="math inline">Z</span> may include product family, supplier, plant, order type, customer segment, or configuration class. If entropy collapses after conditioning on <span class="math inline">Z</span>, variation is structurally explained. If entropy remains high inside homogeneous partitions, it is more likely to represent operational instability.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+</section>
+<section id="conformance-checking" class="level2">
+<h2 class="anchored" data-anchor-id="conformance-checking">Conformance checking</h2>
+<p>The reference model may contain explicit <strong>admissibility rules</strong>. For example:</p>
+<ul>
+<li><strong>Material readiness rule</strong>: a production order should be released only when material availability is confirmed.</li>
+<li><strong>Full-kit rule</strong>: final assembly should start only after full-kit readiness.</li>
+<li><strong>Quality-gate rule</strong>: shipment should occur only after functional test has passed.</li>
+</ul>
+<p><strong>Conformance checking</strong> compares the observed event log:</p>
+<p><span class="math display">
+L_{obs}
+</span></p>
+<p>with the allowed behavior of the reference model:</p>
+<p><span class="math display">
+\mathcal{L}(M)
+</span></p>
+<p>where <span class="math inline">\mathcal{L}(M)</span> is the language of traces allowed by model <span class="math inline">M</span>.</p>
+<p>Typical deviations include:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Deviation</th>
+<th>Interpretation</th>
+<th>Possible owner</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Production order released before critical components are available</td>
+<td>Planning policy or MRP parameter issue</td>
+<td>Production planning</td>
+</tr>
+<tr class="even">
+<td>Assembly started before full-kit readiness</td>
+<td>Release-policy violation or operational workaround</td>
+<td>Production / Planning</td>
+</tr>
+<tr class="odd">
+<td>Assembly started before quality release</td>
+<td>Control violation or incorrect stock status</td>
+<td>Production / Quality</td>
+</tr>
+<tr class="even">
+<td>Component received but not available</td>
+<td>Quality or warehouse release delay</td>
+<td>Quality / Warehouse</td>
+</tr>
+<tr class="odd">
+<td>Test failed and reworked multiple times</td>
+<td>Product, routing, calibration, or supplier quality issue</td>
+<td>Manufacturing engineering</td>
+</tr>
+<tr class="even">
+<td>Purchase order created too late</td>
+<td>Planning lead-time parameter too short</td>
+<td>Procurement / Planning</td>
+</tr>
+<tr class="odd">
+<td>Shipment before complete documentation</td>
+<td>Compliance or process-control issue</td>
+<td>Logistics / Quality</td>
+</tr>
+</tbody>
+</table>
+<p>A simple binary check asks whether:</p>
+<p><span class="math display">
+\sigma \in \mathcal{L}(M)
+</span></p>
+<p>A more informative conformance model computes an alignment distance:</p>
+<p><span class="math display">
+d(\sigma,M)
+=
+\min_{\gamma \in Align(\sigma,M)}
+cost(\gamma)
+</span></p>
+<p>where <span class="math inline">\gamma</span> is an alignment between the observed trace and the model. This allows deviations to be ranked by severity rather than treated as identical exceptions.</p>
+<p>The value is that deviations are not anecdotal. They are <strong>measurable cases</strong>, with frequency, duration, affected objects, attributes, and owners.</p>
+</section>
+<section id="performance-diagnosis" class="level2">
+<h2 class="anchored" data-anchor-id="performance-diagnosis">Performance diagnosis</h2>
+<p>The manufacturing delay can be decomposed into intervals:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Interval</th>
+<th>Formula</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Receipt lead time</td>
+<td><span class="math inline">\operatorname{time}(receipt)-\operatorname{time}(PO\ release)</span></td>
+<td>Supplier and inbound performance</td>
+</tr>
+<tr class="even">
+<td>Availability lead time</td>
+<td><span class="math inline">\operatorname{time}(available)-\operatorname{time}(PO\ release)</span></td>
+<td>Supplier plus quality and warehouse release</td>
+</tr>
+<tr class="odd">
+<td>Quality release time</td>
+<td><span class="math inline">\operatorname{time}(QC\ release)-\operatorname{time}(receipt)</span></td>
+<td>Quality and inspection delay</td>
+</tr>
+<tr class="even">
+<td>Full-kit waiting time</td>
+<td><span class="math inline">T_m^{kit}-\operatorname{time}(production\ order\ creation)</span></td>
+<td>Material readiness delay</td>
+</tr>
+<tr class="odd">
+<td>Assembly time</td>
+<td><span class="math inline">\operatorname{time}(assembly\ complete)-\operatorname{time}(assembly\ start)</span></td>
+<td>Production execution</td>
+</tr>
+<tr class="even">
+<td>Test and rework time</td>
+<td><span class="math inline">\operatorname{time}(test\ passed)-\operatorname{time}(first\ test)</span></td>
+<td>Quality and rework burden</td>
+</tr>
+<tr class="odd">
+<td>Order-to-ship time</td>
+<td><span class="math inline">\operatorname{time}(shipment)-\operatorname{time}(sales\ order\ confirmation)</span></td>
+<td>Customer-facing cycle time</td>
+</tr>
+</tbody>
+</table>
+<p>The total manufacturing cycle time for order <span class="math inline">m</span> can be written as:</p>
+<p><span class="math display">
+CT(m)
+=
+T_m^{ship}
+-
+T_m^{order}
+</span></p>
+<p>A useful decomposition is:</p>
+<p><span class="math display">
+CT(m)
+=
+W_m^{procurement}
++
+W_m^{quality}
++
+W_m^{kit}
++
+T_m^{assembly}
++
+T_m^{test}
++
+W_m^{shipment}
+</span></p>
+<p>where each term represents a waiting or processing component of the total cycle time. This decomposition is not merely descriptive. It tells the organization <em>where to intervene</em>.</p>
+<p>In the example, the delay is not primarily caused by final assembly capacity. The event evidence points to a compound delay mechanism:</p>
+<ul>
+<li><strong>supplier lead-time variability</strong>, which delays component availability;</li>
+<li><strong>quality release delay</strong>, which keeps physically received components unavailable;</li>
+<li><strong>test rework</strong>, which consumes additional time after assembly.</li>
+</ul>
+<p>This changes the managerial conclusion. Adding assembly operators would not solve the dominant cause.</p>
+</section>
+<section id="critical-path-diagnosis" class="level2">
+<h2 class="anchored" data-anchor-id="critical-path-diagnosis">Critical-path diagnosis</h2>
+<p>For each production order <span class="math inline">m</span>, the critical component is:</p>
+<p><span class="math display">
+k^*(m)
+=
+\arg\max_{k \in B_p}
+T_{m,k}^{avail}
+</span></p>
+<p>Aggregating <span class="math inline">k^*(m)</span> across production orders gives a powerful diagnostic:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Critical component</th>
+<th style="text-align: right;">Share of delayed orders</th>
+<th>Main cause</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Controller PCB</td>
+<td style="text-align: right;">44%</td>
+<td>supplier lead-time variability</td>
+</tr>
+<tr class="even">
+<td>Pump head casting</td>
+<td style="text-align: right;">27%</td>
+<td>quality-release delay</td>
+</tr>
+<tr class="odd">
+<td>Pressure sensor</td>
+<td style="text-align: right;">13%</td>
+<td>intermittent shortage</td>
+</tr>
+<tr class="even">
+<td>Electric motor</td>
+<td style="text-align: right;">6%</td>
+<td>rare supplier delay</td>
+</tr>
+<tr class="odd">
+<td>Other</td>
+<td style="text-align: right;">10%</td>
+<td>mixed causes</td>
+</tr>
+</tbody>
+</table>
+<p>This result separates the apparent bottleneck from the real bottleneck. The apparent bottleneck may be final assembly because orders wait before assembly. The real bottleneck may be the controller PCB because it determines full-kit readiness.</p>
+<p>This is also why process mining is useful for manufacturing management. It converts a generic operational statement such as <em>production is late</em> into an evidence-based diagnosis: 44% of delayed orders are constrained by controller PCB availability, and the dominant mechanism is supplier lead-time variability.</p>
+<p>The first statement identifies a symptom. The second identifies a <strong>measurable constraint</strong>, its frequency, and its dominant causal mechanism.</p>
+</section>
+<section id="correcting-planning-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="correcting-planning-parameters">Correcting planning parameters</h2>
+<p>The planning system may currently use:</p>
+<p><span class="math display">
+L_{PCB}^{plan}=30\ days
+</span></p>
+<p>but process mining estimates:</p>
+<p><span class="math display">
+median(\hat{L}_{PCB}^{avail,PM})=34\ days
+</span></p>
+<p>and:</p>
+<p><span class="math display">
+P90(\hat{L}_{PCB}^{avail,PM})=48\ days
+</span></p>
+<p>The planning question is therefore not only:</p>
+<blockquote class="blockquote">
+<p>What is the average lead time?</p>
+</blockquote>
+<p>It is:</p>
+<blockquote class="blockquote">
+<p>Which lead-time percentile should be used for the service level required by this product family?</p>
+</blockquote>
+<p>For example:</p>
+<table class="table">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 40%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Planning policy</th>
+<th style="text-align: right;">Lead-time parameter</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Aggressive</td>
+<td style="text-align: right;">median observed availability lead time</td>
+<td>lower inventory, higher lateness risk</td>
+</tr>
+<tr class="even">
+<td>Balanced</td>
+<td style="text-align: right;">75th percentile observed availability lead time</td>
+<td>moderate buffer</td>
+</tr>
+<tr class="odd">
+<td>Service-oriented</td>
+<td style="text-align: right;">90th percentile observed availability lead time</td>
+<td>higher inventory, lower lateness risk</td>
+</tr>
+</tbody>
+</table>
+<p>The process-mined correction is:</p>
+<p><span class="math display">
+L_{k,s}^{plan}
+\rightarrow
+\hat{L}_{k,s}^{avail,PM}
+</span></p>
+<p>where <span class="math inline">\hat{L}_{k,s}^{avail,PM}</span> should be treated as a distribution, not as a single number.</p>
+<p>This is a first <strong>bridge</strong> between process mining and S&amp;OP. The planning model becomes <em>more empirical</em> because it is calibrated on observed execution rather than on master-data assumptions alone.</p>
+</section>
+<section id="rework-and-exception-loops" class="level2">
+<h2 class="anchored" data-anchor-id="rework-and-exception-loops">Rework and exception loops</h2>
+<p>The example also contains a rework loop:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-test-rework-loop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-test-rework-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-test-rework-loop">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  FAIL["Functional test failed"] --&gt; REWORK["Rework completed"]
+  REWORK --&gt; RETEST["Functional test repeated"]
+  RETEST --&gt; PASS["Functional test passed"]
+  RETEST -. "if still not conforming" .-&gt; REWORK
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-test-rework-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Rework loop after functional test failure. A failed functional test sends the production order to rework; after rework completion, the order returns to functional testing.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Let:</p>
+<p><span class="math display">
+p_{test,rework}
+</span></p>
+<p>be the probability that a production order enters rework after functional test. Process mining estimates:</p>
+<p><span class="math display">
+\hat{p}_{test,rework}
+=
+\frac{
+N_{test \rightarrow rework}
+}{
+N_{test \rightarrow rework}
++
+N_{test \rightarrow pass}
+}
+</span></p>
+<p>where <span class="math inline">N_{a \rightarrow b}</span> is the number of observed directly-follows transitions from activity <span class="math inline">a</span> to activity <span class="math inline">b</span>.</p>
+<p>If the rework probability is high for a specific product variant, supplier batch, pressure sensor type, or work center, the delay should not be attributed only to capacity. The real cause may be calibration, supplier quality, design tolerance, assembly procedure, or test specification.</p>
+<p>Rework also changes the effective capacity model. If <span class="math inline">\rho_{p,t}^{PM}</span> is the process-mined exception or rework intensity for process <span class="math inline">p</span> in period <span class="math inline">t</span>, then the effective capacity may be lower than nominal capacity:</p>
+<p><span class="math display">
+C_{r,t}^{effective}
+=
+C_{r,t}^{nominal}(1-\rho_{p,t}^{PM})
+</span></p>
+<p>This expresses a simple operational fact: a work center may have nominal capacity, but part of that capacity is consumed by rework and exception handling.</p>
+</section>
+<section id="from-process-mining-to-action" class="level2">
+<h2 class="anchored" data-anchor-id="from-process-mining-to-action">From process mining to action</h2>
+<p>A practical action register may be:</p>
+<table class="table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Finding</th>
+<th>Evidence</th>
+<th>Owner</th>
+<th>Action</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PCB is critical in 44% of delayed orders</td>
+<td><span class="math inline">k^*(m)=PCB</span> frequently</td>
+<td>Procurement</td>
+<td>renegotiate lead time, qualify second supplier, increase buffer</td>
+<td>PCB criticality share decreases</td>
+</tr>
+<tr class="even">
+<td>Castings often blocked after receipt</td>
+<td>high <span class="math inline">W_m^{quality}</span></td>
+<td>Quality</td>
+<td>risk-based inspection, supplier quality plan</td>
+<td>QC release time decreases</td>
+</tr>
+<tr class="odd">
+<td>Production orders released before full kit</td>
+<td>conformance deviation</td>
+<td>Planning</td>
+<td>change release rule</td>
+<td>early-release deviations decrease</td>
+</tr>
+<tr class="even">
+<td>Test failures create rework loop</td>
+<td>repeated test → rework → test</td>
+<td>Manufacturing engineering</td>
+<td>root-cause analysis on sensor calibration</td>
+<td>rework rate decreases</td>
+</tr>
+<tr class="odd">
+<td>Lead-time master data too optimistic</td>
+<td><span class="math inline">L^{plan}&lt;P75(\hat{L}^{avail,PM})</span></td>
+<td>Supply planning</td>
+<td>update planning parameters</td>
+<td>schedule adherence improves</td>
+</tr>
+<tr class="even">
+<td>Physical stock differs from available stock</td>
+<td>high <span class="math inline">Q_{k,l,t}</span> or reservation conflicts</td>
+<td>Warehouse / Quality</td>
+<td>improve release and reservation logic</td>
+<td>available-stock mismatch decreases</td>
+</tr>
+</tbody>
+</table>
+<p>The action must be verified with a subsequent event log. Otherwise, process mining remains reporting rather than control.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-action-loop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-action-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-action-loop">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  E["Event evidence"] --&gt; B["Bottleneck and variant diagnosis"]
+  B --&gt; C["Cause classification"]
+  C --&gt; O["Owner assignment"]
+  O --&gt; A["Action"]
+  A --&gt; V["Verification in next event log"]
+  V -. feedback .-&gt; E
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-action-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Manufacturing process-mining action loop. Evidence identifies the bottleneck, the cause is assigned to an owner, an intervention is executed, and the next event log verifies whether the process improved.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is the same governance principle used in the broader process-mining framework: evidence must become accountable action, and action must be checked against subsequent evidence.</p>
+</section>
+<section id="implications-for-sop" class="level2">
+<h2 class="anchored" data-anchor-id="implications-for-sop">Implications for S&amp;OP</h2>
+<p>This example also shows why process mining matters for <strong>S&amp;OP</strong>. The S&amp;OP model should not rely only on master-data lead times, nominal routings, and assumed capacity. It should incorporate <strong>observed execution</strong>.</p>
+<p>Process mining can feed the planning model with:</p>
+<p><span class="math display">
+\hat{D}^{PM},\quad
+\hat{L}^{PM},\quad
+\hat{a}^{PM},\quad
+\hat{C}^{PM},\quad
+\hat{\rho}^{PM},\quad
+\hat{\phi}^{PM}
+</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\hat{D}^{PM}</span> is <em>process-mined demand realization</em>;</li>
+<li><span class="math inline">\hat{L}^{PM}</span> is the <em>empirical lead-time distribution</em>;</li>
+<li><span class="math inline">\hat{a}^{PM}</span> is <em>empirical capacity consumption</em>;</li>
+<li><span class="math inline">\hat{C}^{PM}</span> is <em>effective capacity</em>;</li>
+<li><span class="math inline">\hat{\rho}^{PM}</span> is exception or <em>rework intensity</em>;</li>
+<li><span class="math inline">\hat{\phi}^{PM}</span> is the <em>availability-adjusted output factor</em>.</li>
+</ul>
+<p>For the smart dosing pump, the S&amp;OP implication is clear: the limiting factor is not only final assembly capacity. It is the joint behavior of supplier lead time, quality release, component availability, reservations, and rework.</p>
+<p>A better planning model distinguishes the states that are often collapsed too quickly:</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-manufacturing-planning-state-distinctions" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manufacturing-planning-state-distinctions-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-manufacturing-planning-state-distinctions">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+  REC["Physical receipt"] --&gt; QC["Quality release"]
+  QC --&gt; AV["Available stock"]
+  AV --&gt; KIT["Full-kit readiness"]
+  KIT --&gt; ASM["Assembly start"]
+  ASM --&gt; TEST["Test pass"]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manufacturing-planning-state-distinctions-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Planning-relevant manufacturing states distinguished by process mining. Physical receipt, quality release, available stock, full-kit readiness, assembly start, and test pass are distinct states with different operational meanings.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The important point is that these states are not equivalent. A component can be received but not quality-released; quality-released but not available because it is reserved elsewhere; available in stock but insufficient to complete the full kit; assembled but not yet accepted because functional testing has failed. That distinction is exactly what process mining makes measurable.</p>
+<p>A simplified inventory-availability correction is:</p>
+<p><span class="math display">
+I_{k,l,t}^{available}
+=
+I_{k,l,t}^{physical}
+-
+Q_{k,l,t}
+-
+R_{k,l,t}^{reserved}
+-
+U_{k,l,t}^{unavailable}
+</span></p>
+<p>A simplified capacity correction is:</p>
+<p><span class="math display">
+C_{r,t}^{effective}
+=
+C_{r,t}^{nominal}(1-\rho_{p,t}^{PM})
+</span></p>
+<p>A simplified lead-time correction is:</p>
+<p><span class="math display">
+L_{k,s}^{plan}
+\rightarrow
+\hat{L}_{k,s}^{avail,PM}
+</span></p>
+<p>Together, these corrections change planning from a nominal model to an <strong>empirically calibrated model</strong>.</p>
+</section>
+<section id="minimal-implementation" class="level2">
+<h2 class="anchored" data-anchor-id="minimal-implementation">Minimal implementation</h2>
+<p>A practical implementation can start with one product family and one plant.</p>
+<table class="table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Select product family</td>
+<td>Smart dosing pump</td>
+</tr>
+<tr class="even">
+<td>Define business question</td>
+<td>Why do confirmed orders miss shipment date?</td>
+</tr>
+<tr class="odd">
+<td>Identify systems</td>
+<td>ERP, MES, WMS, QMS, procurement, supplier portal</td>
+</tr>
+<tr class="even">
+<td>Define objects</td>
+<td>Sales order, production order, item, PO line, receipt, quality lot, reservation, shipment</td>
+</tr>
+<tr class="odd">
+<td>Define events</td>
+<td>Order confirmed, PO released, component received, QC released, component available, full kit ready, assembly started, test passed, shipped</td>
+</tr>
+<tr class="even">
+<td>Build event structure</td>
+<td>Object-centric event log</td>
+</tr>
+<tr class="odd">
+<td>Validate semantics</td>
+<td>Check timestamps, reservations, quality status, reversals, partial receipts</td>
+</tr>
+<tr class="even">
+<td>Discover variants</td>
+<td>Normal flow, supplier delay, quality delay, reservation issue, rework loop</td>
+</tr>
+<tr class="odd">
+<td>Measure performance</td>
+<td>Lead times, waiting times, full-kit readiness, critical components</td>
+</tr>
+<tr class="even">
+<td>Check conformance</td>
+<td>Release rules, quality gates, shipment after test, full-kit policy</td>
+</tr>
+<tr class="odd">
+<td>Assign actions</td>
+<td>Procurement, planning, quality, warehouse, manufacturing engineering</td>
+</tr>
+<tr class="even">
+<td>Verify improvement</td>
+<td>Compare next-period event log</td>
+</tr>
+</tbody>
+</table>
+<p>The pilot should remain narrow. The objective is not to mine the entire factory. The objective is to prove that the process can be reconstructed, the bottleneck can be attributed, and the intervention can be verified.</p>
+</section>
+<section id="limits-and-semantic-risks" class="level2">
+<h2 class="anchored" data-anchor-id="limits-and-semantic-risks">Limits and semantic risks</h2>
+<p>The analysis depends on the quality of the event model. Several risks must be controlled:</p>
+<ol type="1">
+<li><p><strong>Timestamps may not represent physical reality.</strong> A component may be physically received before the ERP goods receipt is posted. A MES confirmation may be entered at the end of the shift. A quality release may be backdated.</p></li>
+<li><p><strong>Identifiers may not be stable.</strong> A production order may be split, merged, rescheduled, or technically closed and recreated. A purchase order may be substituted by another supplier. A material may be replaced by an equivalent component.</p></li>
+<li><p><strong>Physical stock is not available stock.</strong> If quality status, reservation, put-away, and allocation logic are not modeled, the analysis may falsely conclude that production waited despite available inventory.</p></li>
+<li><p><strong>A directly-follows graph can be misleading when parallel component flows are projected into a single sequence.</strong> Object-centric modeling reduces this problem because it preserves relationships between events and multiple business objects.</p></li>
+<li><p><strong>Process mining does not by itself prove causality.</strong> It identifies behavioral evidence, temporal relations, deviations, and bottlenecks. Causal interpretation still requires process-owner validation, source-system knowledge, and operational judgment.</p></li>
+</ol>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Manufacturing delays are often explained too generically: supplier delay, capacity issue, quality problem, planning error. Process mining makes these explanations precise.</p>
+<p>In the smart dosing pump example, the relevant question is not simply whether the product was late. The question is which event chain made it late:</p>
+<ul>
+<li>Was the purchase order released too late?</li>
+<li>Was the component receipt delayed?</li>
+<li>Was the component received but blocked in quality inspection?</li>
+<li>Was the component available but reserved for another order?</li>
+<li>Was the full kit incomplete?</li>
+<li>Was final assembly capacity actually constrained?</li>
+<li>Did functional testing generate rework?</li>
+<li>Did packing or shipment introduce the final delay?</li>
+</ul>
+<p>By <strong>reconstructing the process from event data</strong>, the enterprise can identify the <strong>real critical path</strong> for each production order and the dominant causes across many orders.</p>
+<p>The key result is architectural. Manufacturing performance is not only a property of the shop floor. It is an <em>emergent property of procurement, supplier reliability, quality release, inventory availability, reservation logic, planning parameters, production execution, testing, rework, and shipment</em>. <strong>Process mining gives the enterprise a quantitative way to observe that system</strong>.</p>
+<p>The value is not the process map. The value is the governed evidence that tells the organization what to change.</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
+<p>This manufacturing example is deliberately narrow: one product family, purchased components, variable supplier lead times, quality release, full-kit readiness, assembly, test, rework, and shipment. The following articles expand the same problem from three complementary angles: enterprise modeling, process intelligence, and enterprise-architecture capability building.</p>
+<section id="archimate-4-and-the-cartography-of-complexity" class="level3">
+<h3 class="anchored" data-anchor-id="archimate-4-and-the-cartography-of-complexity"><a href="https://4m4.it/longforms/archimate_4_and_the_cartography_of_complexity/index.html">ArchiMate 4 and the Cartography of Complexity</a></h3>
+<p>This article is useful if the manufacturing example raises a modeling question: how should the enterprise represent dependencies among products, processes, applications, data, technology, suppliers, and governance structures?</p>
+<p>The process-mining example shows that manufacturing performance is not caused by one isolated activity. It emerges from the interaction of procurement, inventory, quality, production, warehouse execution, and shipment. The ArchiMate article explains why enterprise architecture needs a disciplined modeling language to describe those dependencies without confusing operational detail with architectural intent. It is the natural companion for readers who want to understand how process evidence can be connected to architecture models, capability maps, application landscapes, and governance views.</p>
+</section>
+<section id="process-mining-as-computational-process-intelligence" class="level3">
+<h3 class="anchored" data-anchor-id="process-mining-as-computational-process-intelligence"><a href="https://4m4.it/longforms/process-mining-as-computational-process-intelligence/">Process Mining as Computational Process Intelligence</a></h3>
+<p>This is the theoretical foundation behind the present example. The manufacturing case applies only a subset of the full framework: event construction, object-centric process modeling, directly-follows analysis, variants, conformance checking, performance diagnosis, and governed action.</p>
+<p>The longform develops the complete argument from first principles. It explains why process mining is not process visualization, but a computational method for reconstructing operational behavior from event data. It also extends the topic toward object-centric process mining, enterprise architecture, data architecture, Celonis, implementation roadmaps, dynamic resource allocation, and S&amp;OP decision models. Readers who want to move from the manufacturing example to the full mathematical and architectural theory should read that article next.</p>
+</section>
+<section id="introducing-enterprise-architecture-in-a-multinational-company-a-roadmap-for-building-the-discipline-from-scratch" class="level3">
+<h3 class="anchored"><a href="https://4m4.it/longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/index.html">Introducing Enterprise Architecture in a Multinational Company: A Roadmap for Building the Discipline from Scratch</a></h3>
+<p>This article is useful if the manufacturing example raises an organizational question: who should own the structural knowledge required to act on process-mining evidence?</p>
+<p>Process mining can identify that supplier lead-time variability, quality-blocked inventory, reservation conflicts, or rework loops are damaging manufacturing performance. But turning that evidence into durable change requires enterprise architecture, governance, ownership, and a roadmap for institutionalizing architectural reasoning. The EA roadmap article explains how to build that capability in a multinational environment: from architectural discovery and governance to knowledge-base creation, strategic planning, delivery integration, and the management of transformation trade-offs.</p>
+<p>Together, these three articles complete the picture. The present article shows a concrete manufacturing use case. The process-mining longform provides the formal theory. The ArchiMate article explains how to represent enterprise complexity. The enterprise-architecture roadmap explains how to make this knowledge operational inside a large organization.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored" data-anchor-id="introducing-enterprise-architecture-in-a-multinational-company-a-roadmap-for-building-the-discipline-from-scratch">See also longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/archimate_4_and_the_cartography_of_complexity/">
+<img class="see-also-card-image" src="../../longforms/archimate_4_and_the_cartography_of_complexity/archimate-cartography.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">ArchiMate 4 and the Cartography of Complexity</h5>
+<div class="see-also-card-subtitle">How ArchiMate 4 simplifies enterprise modeling while enterprise systems grow more complex, shifting the real challenge from notation to semantic governance and operational evidence</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-as-computational-process-intelligence/">
+<img class="see-also-card-image" src="../../longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining as Computational Process Intelligence</h5>
+<div class="see-also-card-subtitle">A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/">
+<img class="see-also-card-image" src="../../longforms/introducing-enterprise-architecture-roadmap-multinational-company-from-scratch/ea-insertion.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Introducing Enterprise Architecture in a Multinational Company: A Roadmap for Building the Discipline from Scratch</h5>
+<div class="see-also-card-subtitle">Building an architectural capability to guide technological evolution, manage structural complexity, and evaluate transformation trade-offs in large multinational enterprises</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/from-s&amp;op-to-continuous-orchestration/">
+<img class="see-also-card-image" src="../../longforms/from-s&amp;op-to-continuous-orchestration/orchestration.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">From S&amp;OP to Continuous Orchestration: Envisioning the Hybrid Enterprise of Humans and AI Agents</h5>
+<div class="see-also-card-subtitle">From calendar-driven cycles to signal-driven enterprise adaptation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/from-planning-to-orchestration-reimagining-enterprise-beyond-S&amp;OP/">
+<img class="see-also-card-image" src="../../longforms/from-planning-to-orchestration-reimagining-enterprise-beyond-S&amp;OP/flow.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">From Planning to Orchestration: Reimagining the Enterprise Beyond S&amp;OP</h5>
+<div class="see-also-card-subtitle">Designing the continuously orchestrated enterprise</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/comprehensive-guide-to-sales-and-operations-planning/">
+<img class="see-also-card-image" src="../../longforms/comprehensive-guide-to-sales-and-operations-planning/cycles.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Comprehensive Guide to Sales &amp; Operations Planning, Sales &amp; Operations Execution and Master Production Scheduling</h5>
+<div class="see-also-card-subtitle">From planning cycles to organisational capability: how integrated planning evolves through execution, feedback and learning</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/process-mining-from-theory-to-execution/">
+<img class="see-also-card-image" src="../../posts/process-mining-from-theory-to-execution/process-mining-celonis.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining: From Theory to Execution</h5>
+<div class="see-also-card-subtitle">Why quantitative process intelligence is becoming essential for enterprise architecture and digital transformation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/architecting-change-interim-management/">
+<img class="see-also-card-image" src="../../posts/architecting-change-interim-management/antonio.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Architecting Change</h5>
+<div class="see-also-card-subtitle">How I blend enterprise architecture, technology, and interim leadership to transform organizations</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>See the general inference chain in <a href="https://4m4.it/longforms/process-mining-as-computational-process-intelligence/">Process Mining as Computational Process Intelligence</a>, where process mining is framed as a governed pipeline from raw operational data to accountable action.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>See the event definition in <a href="https://4m4.it/longforms/process-mining-as-computational-process-intelligence/">Process Mining as Computational Process Intelligence</a>, where an event is represented as an observed state transition with case or object, activity, timestamp, resource, and attributes.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The directly-follows relation follows the process-discovery section of <a href="https://4m4.it/longforms/process-mining-as-computational-process-intelligence/">Process Mining as Computational Process Intelligence</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>See the variants and behavioral-entropy section in <a href="https://4m4.it/longforms/process-mining-as-computational-process-intelligence/">Process Mining as Computational Process Intelligence</a>.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2022-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
