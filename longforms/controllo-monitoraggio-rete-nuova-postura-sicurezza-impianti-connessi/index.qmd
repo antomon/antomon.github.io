@@ -396,7 +396,7 @@ Per un impianto di taglia ordinaria, il modello minimo dovrebbe distinguere alme
 |---|---|---|
 | **Z0 - Campo e dispositivi elettrici** | IED, protezioni, contatori, inverter/PCS, moduli I/O, sensori, attuatori, eventuali apparati IEC 61850. | Non deve essere raggiungibile direttamente da IT, Internet, accessi remoti o reti di servizio non OT. |
 | **Z1 - Controllo locale di impianto** | SCADA, EMS, BMS supervisory layer, server di controllo, HMI, engineering workstation strettamente OT. | È il dominio operativo principale. Deve comunicare solo con campo, servizi OT necessari e apparati Terna secondo flussi autorizzati. |
-| **Z2 - Dominio Terna / controllo, monitoraggio e difesa** | RTU, UPDM, router Terna-compatible, eventuali apparati direttamente richiesti dagli Allegati A.13, A.69 e A.52. | Deve essere trattato come dominio dedicato, non come normale VLAN della LAN OT. Flussi e accessi devono essere strettamente limitati. |
+| **Z2 - Dominio Terna / controllo, monitoraggio e difesa** | RTU, UPDM, router compatibili con l’architettura Terna, eventuali apparati direttamente richiesti dagli Allegati A.13, A.69 e A.52. | Deve essere trattato come dominio dedicato, non come normale VLAN della LAN OT. Flussi e accessi devono essere strettamente limitati. |
 | **Z3 - Servizi OT locali** | Historian locale, server backup OT, server antivirus/patch staging se presente, NTP/PTP/GPS, syslog collector locale, repository configurazioni. | Deve supportare l’OT senza diventare ponte incontrollato verso IT. |
 | **Z4 - OT DMZ** | Jump host, bastion host, relay file, proxy aggiornamenti, concentratore log verso IT/SOC, eventuale broker dati verso sistemi enterprise. | È la zona cuscinetto tra OT e IT. Nessun accesso diretto IT → OT. |
 | **Z5 - IT / corporate / SOC** | SIEM aziendale, SOC, sistemi documentali, ticketing, asset management enterprise, utenti corporate. | Deve ricevere solo dati necessari dalla OT DMZ; non deve amministrare direttamente gli asset OT critici. |
@@ -460,7 +460,7 @@ Il flusso corretto per un fornitore è un accesso terminato e controllato in DMZ
 ```{mermaid}
 %%| label: fig-flussi-accesso-remoto-dmz-jump-host
 %%| fig-cap: "Flusso corretto e flusso vietato per l’accesso remoto di fornitori e manutentori"
-%%| fig-alt: "Diagramma Mermaid che confronta un accesso remoto corretto tramite VPN con MFA, OT DMZ e jump host con un accesso remoto vietato direttamente verso la LAN OT e gli asset critici."
+%%| fig-alt: "Diagramma che confronta un accesso remoto corretto tramite VPN con MFA, OT DMZ e jump host con un accesso remoto vietato direttamente verso la LAN OT e gli asset critici."
 %%| fig-align: center
 %%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
 
@@ -510,7 +510,7 @@ La regola finale è questa: **ogni accesso remoto deve essere un evento autorizz
 
 ### Architettura logica minima
 
-Una rappresentazione semplificata può essere la seguente:
+Una rappresentazione semplificata dell’architettura minima può essere la seguente. Il diagramma non va letto come una distinta base obbligatoria, né come uno schema fisico di dettaglio. Serve a mostrare la separazione logica fra domini che non devono essere confusi: campo, controllo locale, dominio Terna, servizi OT, OT DMZ, IT/SOC, terze parti e servizi ausiliari.
 
 ```{mermaid}
 %%| label: fig-architettura-minima-zone-conduits-terna
@@ -566,7 +566,7 @@ flowchart LR
     subgraph Z2["Z2 - Dominio Terna"]
         RTU["RTU"]
         UPDM["UPDM"]
-        RTR["Router Terna-compatible"]
+        RTR["Router compatibile<br/>con architettura Terna"]
     end
 
     subgraph Z0["Z0 - Campo"]
@@ -636,6 +636,201 @@ flowchart LR
 ```
 
 Il diagramma non implica che ogni impianto debba avere tutti i server rappresentati. Indica però una separazione logica minima: campo, controllo locale, dominio Terna, servizi OT, OT DMZ, IT/SOC, servizi ausiliari e terze parti non devono coincidere nella stessa rete piatta.
+
+La lettura più semplice è questa: **il campo produce segnali e attua comandi; il controllo locale coordina l’impianto; il dominio Terna espone le funzioni richieste dal Gestore; la OT DMZ controlla l’accesso dall’esterno; i servizi OT supportano esercizio, tempo, backup e diagnostica; IT/SOC riceve log ed evidenze senza amministrare direttamente gli asset critici**.
+
+#### Accesso remoto e OT DMZ
+
+La prima parte da isolare è il percorso degli accessi remoti. Vendor, O&M contractor, BoP, telco e manutentori non devono entrare direttamente nella rete OT. Devono terminare l’accesso nella OT DMZ, passare da autenticazione forte, essere autorizzati per una finestra temporale e raggiungere solo gli asset necessari tramite jump host.
+
+```{mermaid}
+%%| label: fig-accesso-remoto-ot-dmz-jump-host
+%%| fig-cap: "Accesso remoto controllato tramite OT DMZ e jump host"
+%%| fig-alt: "Diagramma che mostra fornitori e manutentori che accedono tramite VPN con MFA, firewall, OT DMZ e jump host prima di raggiungere asset OT autorizzati."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart TD
+
+    subgraph EXT["Soggetti esterni"]
+        VENDOR["BoP / O&M / Vendor"]
+        TELCO["Telco / Manutentori"]
+    end
+
+    subgraph IT["IT / Identity"]
+        IAM["Identity / MFA"]
+    end
+
+    FWEXT["Firewall esterno<br/>VPN policy"]
+
+    subgraph DMZ["OT DMZ"]
+        VPNGW["VPN Gateway"]
+        JH["Jump Host / Bastion Host"]
+    end
+
+    FWOT["Firewall OT<br/>deny-by-default"]
+
+    subgraph OT["Asset OT autorizzati"]
+        ENG["Engineering Workstation OT"]
+        SCADA["SCADA / HMI"]
+        EMS["EMS"]
+        BMS["BMS Supervisor"]
+    end
+
+    VENDOR -->|"VPN temporanea"| FWEXT
+    TELCO -->|"VPN temporanea"| FWEXT
+    IAM -->|"MFA / identità"| VPNGW
+    FWEXT --> VPNGW
+    VPNGW --> JH
+    JH -->|"sessione controllata"| FWOT
+    FWOT --> ENG
+    FWOT --> SCADA
+    FWOT --> EMS
+    FWOT --> BMS
+```
+
+Il punto non è introdurre complessità inutile. Il punto è evitare il caso più pericoloso: una VPN del fornitore che entra direttamente nella LAN OT. Il jump host diventa il punto in cui il Titolare può applicare identità nominativa, MFA, autorizzazione temporanea, logging, eventuale registrazione della sessione e revoca dell’accesso. Senza DMZ e jump host, l’accesso remoto resta una porta laterale verso l’impianto.
+
+#### Catena di controllo locale e dominio Terna
+
+La seconda parte da isolare è il rapporto fra controllo locale e dominio Terna. SCADA, EMS, BMS, PCS/inverter, IED, misure e sensori governano il comportamento dell’impianto. RTU, UPDM e router compatibile con l’architettura Terna costituiscono invece il dominio attraverso cui l’impianto diventa osservabile, controllabile o integrabile rispetto ai sistemi Terna.
+
+```{mermaid}
+%%| label: fig-controllo-locale-dominio-terna
+%%| fig-cap: "Separazione fra controllo locale di impianto, campo e dominio Terna"
+%%| fig-alt: "Diagramma che mostra il campo, il controllo locale, RTU, UPDM e router Terna come domini distinti ma interconnessi."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+
+    subgraph FIELD["Z0 - Campo"]
+        PCS["PCS / Inverter"]
+        IED["IED / Protezioni"]
+        METER["Misure / Contatori"]
+        IO["I/O / Sensori / Attuatori"]
+    end
+
+    subgraph CONTROL["Z1 - Controllo locale"]
+        SCADA["SCADA / HMI"]
+        EMS["EMS"]
+        BMS["BMS Supervisor"]
+    end
+
+    subgraph TERNA["Z2 - Dominio Terna"]
+        RTU["RTU"]
+        UPDM["UPDM"]
+        RTR["Router compatibile<br/>con architettura Terna"]
+    end
+
+    EMS <--> PCS
+    BMS <--> PCS
+    SCADA <--> IED
+    SCADA <--> METER
+    UPDM <--> IO
+
+    RTU <--> SCADA
+    RTU --> RTR
+    UPDM --> RTR
+```
+
+Questo sottodiagramma chiarisce un punto essenziale: il dominio Terna non deve essere una normale VLAN della LAN OT. RTU, UPDM e router devono essere trattati come una zona dedicata, con flussi strettamente necessari, regole di accesso esplicite e responsabilità di manutenzione definite. La logica è la stessa delle zone/conduits: il controllo locale resta il dominio operativo dell’impianto; il dominio Terna è il punto governato di esposizione verso controllo, monitoraggio e difesa.
+
+#### Log, monitoraggio e raccolta evidenze
+
+La terza parte da isolare è la raccolta di log, eventi e dati di esercizio. In un impianto proporzionato non serve necessariamente un SOC locale. Serve però che firewall, jump host, SCADA, EMS, BMS, RTU, UPDM e router producano eventi e che questi eventi arrivino a un punto di raccolta, locale o centrale. Il SIEM o il SOC devono ricevere log ed evidenze, non amministrare direttamente gli asset OT critici.
+
+```{mermaid}
+%%| label: fig-log-monitoraggio-evidenze-ot
+%%| fig-cap: "Raccolta log, monitoraggio passivo ed evidenze verso SIEM/SOC"
+%%| fig-alt: "Diagramma che mostra log forwarder, SIEM/SOC, sistemi OT, firewall, RTU, UPDM, router Terna, backup e IDS/NDR passivo."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+
+    subgraph OT["Sistemi OT e dominio Terna"]
+        SCADA["SCADA / HMI"]
+        EMS["EMS"]
+        BMS["BMS Supervisor"]
+        RTU["RTU"]
+        UPDM["UPDM"]
+        RTR["Router compatibile<br/>con architettura Terna"]
+        FWOT["Firewall OT"]
+    end
+
+    subgraph SERVICES["Servizi OT / DMZ"]
+        LOGGW["Log Forwarder<br/>Syslog Relay"]
+        BKP["Backup OT"]
+        IDS["IDS / NDR OT passivo"]
+        FILEGW["File Transfer<br/>Patch Staging"]
+    end
+
+    subgraph IT["IT / SOC / Governance"]
+        SIEM["SIEM / SOC"]
+        ITSM["Ticketing / Asset Register"]
+    end
+
+    SCADA --> LOGGW
+    EMS --> LOGGW
+    BMS --> LOGGW
+    RTU --> LOGGW
+    UPDM --> LOGGW
+    RTR --> LOGGW
+    FWOT --> LOGGW
+
+    LOGGW -->|"log / eventi"| SIEM
+    FILEGW -->|"evidenze / change / ticket"| ITSM
+    BKP --> FILEGW
+
+    IDS -. "TAP / SPAN passivo" .-> OT
+    SIEM -. "nessun accesso diretto agli asset OT" .-> LOGGW
+```
+
+Il valore di questo schema è pratico. Se un accesso remoto fallisce, se una configurazione cambia, se un apparato Terna perde connettività, se un UPDM segnala un’anomalia, se un firewall blocca traffico inatteso o se un sistema OT genera eventi critici, il Titolare deve poterlo vedere e ricostruire. La raccolta log non serve solo alla cybersecurity: serve anche alla manutenzione, al collaudo, alla gestione dei guasti, all’audit e alla dimostrazione della conformità.
+
+#### Servizi ausiliari non OT
+
+La quarta parte da isolare è spesso quella più sottovalutata. Videosorveglianza, controllo accessi fisico, Wi-Fi, rete ospiti e building management possono sembrare sistemi marginali, ma diventano pericolosi se usati come scorciatoia verso la rete OT. Devono quindi essere separati e, al massimo, inviare log o eventi verso il punto di raccolta.
+
+```{mermaid}
+%%| label: fig-servizi-ausiliari-non-ot
+%%| fig-cap: Separazione dei servizi ausiliari non OT dalla rete OT
+%%| fig-alt: Diagramma che mostra videosorveglianza, building management e Wi-Fi separati dalla rete OT, con solo eventuale invio di log verso il log forwarder.
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+
+flowchart LR
+
+    subgraph AUX["Z7 - Servizi ausiliari non OT"]
+        CCTV["Videosorveglianza"]
+        BMSAUX["BMS edificio<br/>controllo accessi"]
+        WIFI["Wi-Fi / rete ospiti"]
+    end
+
+    FWEXT["Firewall esterno<br/>policy di separazione"]
+
+    subgraph DMZ["OT DMZ"]
+        LOGGW["Log Forwarder<br/>Syslog Relay"]
+    end
+
+    subgraph OT["Rete OT critica"]
+        OTBOUND["Boundary OT"]
+        SCADA["SCADA"]
+        EMS["EMS"]
+        UPDM["UPDM"]
+        RTU["RTU"]
+    end
+
+    CCTV -->|"log / eventi se necessari"| LOGGW
+    BMSAUX -->|"log / eventi se necessari"| LOGGW
+    WIFI -. nessun accesso verso OT .-> FWEXT
+    FWEXT -. accesso vietato .-> OTBOUND
+```
+
+Questa separazione è importante perché molti incidenti non nascono dal sistema più critico, ma dal sistema meno presidiato. Una telecamera, una rete Wi-Fi o un sistema di controllo accessi fisico non devono mai diventare un percorso tecnico verso SCADA, EMS, RTU, UPDM o router Terna. La regola è semplice: i servizi ausiliari possono essere monitorati, ma non devono amministrare né raggiungere il dominio OT critico.
+
+Nel complesso, i sottodiagrammi servono a leggere il diagramma generale per parti. La vista completa mostra l’architettura minima; i sottodiagrammi mostrano le quattro logiche da preservare in ogni progetto: **accesso remoto controllato, separazione del dominio Terna, raccolta delle evidenze e isolamento dei servizi ausiliari**.
 
 ### Raccordo minimo con IEC 62443
 
