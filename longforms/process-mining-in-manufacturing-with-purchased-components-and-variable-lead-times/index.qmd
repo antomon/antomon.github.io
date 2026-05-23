@@ -1,10 +1,10 @@
 ---
 title: "Process Mining in Manufacturing with Purchased Components and Variable Lead Times"
-subtitle: "A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction"
-description: "Manufacturing performance is often explained through generic causes such as supplier delay, capacity shortage, quality problems, or planning errors. This article shows how process mining can make those explanations precise by reconstructing manufacturing execution from ERP, MES, WMS, QMS, procurement, and shipment events. Using the example of a smart dosing pump assembled from purchased components and internal operations, the article develops a practical object-centric model that connects sales orders, production orders, purchase orders, components, receipts, quality lots, reservations, assembly, testing, rework, and shipment. It explains how process mining can estimate empirical supplier lead times, distinguish physical stock from available stock, calculate full-kit readiness, identify the critical missing component, detect conformance deviations, measure cycle-time components, and expose rework loops. The article then connects these findings to S&OP by showing how planning parameters, inventory availability, effective capacity, and lead-time assumptions can be corrected with observed execution data. The central argument is that manufacturing delays are not isolated shop-floor events, but emergent effects of procurement, quality, inventory, planning, production, and logistics. Process mining provides the governed evidence needed to identify the real critical path and turn operational traces into accountable improvement actions."
+subtitle: "Manufacturing delays are rarely caused by a single isolated bottleneck. They emerge from the interaction of procurement, supplier lead times, quality release, warehouse availability, material reservations, production execution, testing, rework, and shipment. This article explains how process mining can reconstruct that operational reality from ERP, MES, WMS, QMS, procurement, supplier, and logistics events. Using the example of a smart dosing pump assembled from purchased components and internal operations, it develops an object-centric model that links sales orders, production orders, purchase order lines, receipts, quality lots, reservations, operations, test records, and shipments. The article shows how governed event construction, timestamp control, object linking, and semantic validation are prerequisites for reliable analysis. It then uses the reconstructed event structure to estimate empirical supplier lead times, distinguish physical stock from available stock, compute full-kit readiness, identify the critical missing component, detect conformance deviations, expose rework loops, and correct planning assumptions. The central argument is that process mining becomes valuable when it is treated not as process visualization, but as an IT-enabled evidence pipeline: raw operational data are transformed into governed event structures, interpreted through process semantics, and converted into accountable actions for planning, procurement, quality, warehouse, manufacturing engineering, and S&OP."
 date: "2022-12-13"
 date-modified: "2026-04-14"
-categories: [digital transformation, enterprise architecture, 🇬🇧]
+categories: [digital transformation, enterprise architecture, tutorial, 🇬🇧]
+keywords: process mining, manufacturing, object-centric process mining, event log, event construction, ERP, MES, WMS, QMS, procurement, supplier lead time, variable lead time, purchased components, production order, sales order, purchase order line, quality lot, warehouse receipt, inventory reservation, full-kit readiness, available stock, physical stock, quality-blocked stock, material availability, critical component, critical path, conformance checking, process variants, directly-follows graph, rework loop, manufacturing execution, S&OP, planning parameters, empirical lead time, data lineage, timestamp governance, semantic validation, enterprise architecture, digital transformation, process intelligence
 image: "manufacturing-process-mining.png"
 ---
 
@@ -219,6 +219,14 @@ $$
 
 where $D$ is _raw operational data_ and $L_E$ is the _constructed event-log_ or object-centric event structure.
 
+This function should not be understood as a simple data extraction query. It is a governed transformation from heterogeneous operational records into business events. The transformation has three distinct responsibilities:
+
+1. it must extract the relevant technical records from source systems;
+2. it must interpret those records as meaningful business events;
+3. it must preserve the object relations needed to explain the manufacturing process.
+
+In other words, the event-construction problem is not only technical. It is semantic and architectural. The same database record may be read as a status update, a posting, a confirmation, a reversal, a correction, or a physical event depending on the process context. If that interpretation is wrong, the process-mining model will be precise in form but false in substance.
+
 For the smart dosing pump example, relevant source systems may include:
 
 | Source system | Typical source objects | Example events |
@@ -235,15 +243,225 @@ The semantic problem is to map technical records into business events. For examp
 | Business event | Possible source | Semantic risk |
 |---|---|---|
 | PO released | ERP purchase order approval or release flag | release date may differ from creation date |
+| Supplier confirmed date | supplier portal, procurement confirmation, EDI/message log | latest confirmation may overwrite earlier commitments |
 | Component received | ERP goods receipt or WMS receipt | physical receipt may precede ERP posting |
-| Quality released | QMS inspection usage decision or stock-status change | release may be partial or reversed |
+| Put-away completed | WMS warehouse movement | put-away may be posted in batch after physical execution |
+| Quality inspection started | QMS inspection-lot creation or first inspection record | lot creation may not mean inspection actually started |
+| Quality released | QMS inspection usage decision or stock-status change | release may be partial, reversed, or conditional |
 | Component available | WMS availability plus stock status plus reservation status | physical stock is not equal to usable stock |
-| Full kit ready | computed event from all component availability events | requires pegging or allocation logic |
+| Component reserved | ERP/WMS reservation or pegging record | reservation may be soft, hard, automatic, or manually overridden |
+| Component issued to production | ERP material issue or WMS picking confirmation | issue may be backflushed after physical consumption |
+| Full kit ready | computed event from all component availability events | requires pegging, reservation, substitution, and allocation logic |
 | Assembly started | MES operation start or ERP confirmation | batch posting may distort timestamp |
+| Functional test failed | MES/QMS test result | failed tests may be overwritten by final pass status |
 | Functional test passed | MES/QMS test result | retests and partial tests must be modeled |
+| Rework completed | MES rework operation or quality disposition | rework may be recorded as a separate order, operation, or nonconformity |
+| Packing completed | WMS packing event | packing may not imply shipment availability |
 | Shipment posted | ERP delivery posting or WMS shipment | posting time may differ from physical pickup |
 
-The correctness of $\phi$ determines whether the analysis is meaningful. If _component received_ is treated as equivalent to _component available_, the model will ignore quality holds. If production-order release is treated as material readiness, the model will hide missing-component delays. If test failures are overwritten by final pass status, rework disappears from the event log.
+The correctness of $\phi$ determines whether the analysis is meaningful. If _component received_ is treated as equivalent to _component available_, the model will ignore quality holds. If production-order release is treated as material readiness, the model will hide missing-component delays. If failed tests are overwritten by final pass status, rework disappears from the event log.
+
+### Event construction as an IT architecture problem
+
+From an IT architecture perspective, $\phi$ is a controlled data product. It should be designed with explicit source ownership, extraction rules, transformation logic, lineage, access control, and validation procedures.
+
+A minimal architecture contains four layers:
+
+| Layer | Purpose | Typical artefacts |
+|---|---|---|
+| Source layer | Preserve the operational records in their original systems | ERP tables, MES records, WMS movements, QMS lots, supplier messages, shipment records |
+| Extraction layer | Retrieve source records without changing their operational meaning | extraction specification, incremental-load rule, source timestamp, extraction timestamp |
+| Semantic transformation layer | Convert technical records into business events | event catalogue, transformation rules, object-linking logic, timestamp hierarchy |
+| Analytical event layer | Expose validated events for process mining and performance diagnosis | object-centric event log, lineage table, validation report, analytical views |
+
+The source layer remains the system of record. The process-mining layer should not become a parallel operational system. Its role is to reconstruct process evidence from governed data, not to replace ERP, MES, WMS, or QMS execution logic.
+
+This distinction matters because a process-mining model is only as trustworthy as its lineage. Each generated event should remain traceable to the source record or records that produced it:
+
+$$
+lineage(e) = \{d_1,d_2,\ldots,d_n\}
+$$
+
+where $e$ is the constructed event and $d_1,\ldots,d_n$ are the source records used to derive it.
+
+For example, the event _Component available_ may require several source facts:
+
+$$
+component\ available
+=
+receipt
++
+quality\ release
++
+putaway
+-
+quality\ block
+-
+reservation\ conflict
+$$
+
+This event is therefore not a primitive source-system event. It is a computed event. Its reliability depends on whether the underlying receipt, inspection, stock-status, put-away, and reservation records are correctly interpreted.
+
+### Object linking and identifier reconciliation
+
+Manufacturing event construction requires stable object relations. The following objects must be connected:
+
+| Object | Why it matters |
+|---|---|
+| Sales order | identifies customer commitment and requested or confirmed shipment date |
+| Production order | identifies the manufacturing execution object |
+| Finished item | identifies product family, configuration, and BOM |
+| BOM component | identifies required materials and quantities |
+| Purchase order line | links purchased components to suppliers and promised dates |
+| Warehouse receipt | identifies physical inbound material movement |
+| Quality lot | identifies inspection, hold, release, rejection, and nonconformity |
+| Inventory reservation | identifies whether stock is usable for the production order |
+| Operation | identifies routing execution and work-center activity |
+| Test record | identifies pass, fail, retest, and rework behavior |
+| Shipment | identifies customer-facing completion |
+
+The object-linking function can be written as:
+
+$$
+rel(e) = \{o \in O : link(e,o)=true\}
+$$
+
+The difficult part is not the formula. The difficult part is the practical rule behind $link(e,o)$. In a real system, links may be direct, derived, or inferred.
+
+| Link type | Example | Risk |
+|---|---|---|
+| Direct link | production order number stored on a MES operation | usually robust, but may fail after order split or rework order creation |
+| Derived link | PO line linked to production order through pegging or MRP trace | may change after replanning |
+| Inferred link | component receipt associated with delayed order by item, batch, date, and reservation | useful but weaker; requires explicit confidence rule |
+
+For this reason, the event model should distinguish hard relations from soft relations. A hard relation is supported by an explicit source-system identifier. A soft relation is reconstructed through business logic. Soft relations are often necessary, but they should be marked as such, because they affect the strength of the diagnosis.
+
+A minimal object-linking table may look like this:
+
+| Relation | Preferred key | Fallback key | Confidence |
+|---|---|---|---|
+| Sales order → production order | make-to-order reference | item, customer, requested date, production batch | high if explicit, medium if inferred |
+| Production order → BOM component | production order BOM line | item and effective BOM version | high |
+| BOM component → PO line | pegging record or requirement reference | item, supplier, due date, quantity | high if pegged, medium if inferred |
+| Receipt → PO line | PO line reference | supplier, item, receipt date, quantity | high |
+| Receipt → quality lot | inspection lot reference | item, batch, receipt date | high to medium |
+| Quality lot → available stock | stock-status transition | item, batch, warehouse, quality decision | medium |
+| Available stock → production order | hard reservation or issue transaction | item, batch, production order, issue date | high if reserved, medium if inferred |
+| Test record → production order | production order operation reference | serial number, batch, work center, date | high to medium |
+
+This is where object-centric process mining becomes operationally necessary. Without object linking, the analysis collapses into disconnected fragments: procurement lead time, warehouse movement, quality release, production execution, and shipment. With object linking, the same delayed shipment can be reconstructed as a chain of related events.
+
+### Timestamp governance
+
+Timestamps are not neutral. A timestamp may represent physical occurrence, system posting, approval, confirmation, message receipt, or batch update. Therefore, each event type should have a timestamp rule.
+
+A minimal timestamp hierarchy is:
+
+| Priority | Timestamp type | Meaning |
+|---:|---|---|
+| 1 | physical execution timestamp | when the physical event actually occurred |
+| 2 | operational confirmation timestamp | when the operator, machine, scanner, or workflow confirmed it |
+| 3 | system posting timestamp | when the transaction was posted in the source system |
+| 4 | integration timestamp | when the record was transferred to another system |
+| 5 | extraction timestamp | when the analytical pipeline extracted the record |
+
+For process mining, the preferred timestamp is the one that best represents the business event being analyzed. For _goods receipt_, a WMS scan may be closer to physical reality than the ERP posting time. For _quality release_, the QMS decision timestamp may be more relevant than the subsequent inventory-status update. For _shipment_, carrier pickup may be more operationally meaningful than invoice or delivery posting.
+
+The event catalogue should therefore define, for each event:
+
+| Event | Preferred timestamp | Fallback timestamp | Known distortion |
+|---|---|---|---|
+| PO released | approval/release timestamp | PO status-change timestamp | approval workflow may be bypassed |
+| Component received | WMS receipt scan | ERP goods receipt posting | ERP posting may occur later |
+| Quality released | QMS usage decision | inventory-status change | release may be partial or reversed |
+| Component available | computed timestamp from stock-status and reservation state | latest timestamp among required availability conditions | depends on allocation logic |
+| Assembly started | MES start timestamp | ERP operation confirmation | ERP confirmation may be entered after execution |
+| Test failed | test execution timestamp | QMS/MES result posting | failed tests may be overwritten |
+| Shipment completed | carrier pickup or WMS shipment confirmation | ERP delivery posting | posting may differ from physical dispatch |
+
+This control is essential because most process-mining metrics are time differences. If timestamps are semantically inconsistent, lead times and waiting times become numerical artefacts rather than operational evidence.
+
+### Reversals, corrections, and partial events
+
+Manufacturing systems often contain reversals, corrections, partial receipts, partial releases, substitutions, and rework orders. These events should not be silently removed because they are often the evidence of the real process.
+
+For example, a purchase order line may be partially received:
+
+$$
+receipt(j) = \{(q_1,t_1),(q_2,t_2),\ldots,(q_n,t_n)\}
+$$
+
+where $q_i$ is the quantity received at time $t_i$.
+
+The availability of a component for a production order depends not on the first receipt but on the first time at which usable quantity satisfies the requirement:
+
+$$
+T_{m,k}^{avail}
+=
+\inf \{t : A_{m,k}(t) \geq b_{p,k}\}
+$$
+
+This means that partial events must be preserved. If the model keeps only the first receipt, it may underestimate delay. If it keeps only the last receipt, it may overestimate delay. The correct interpretation depends on the required quantity, the accepted quantity, the quality status, and the reservation rule.
+
+The same applies to reversals. If a quality release is reversed, the event log should not contain only the final state. It should contain both the release and the reversal, because the temporary release may have influenced reservation, picking, or production scheduling.
+
+### Semantic validation
+
+The constructed event log should be validated before it is mined. Validation is not a formal courtesy; it is a control against false precision.
+
+A practical validation cycle uses sampled traces:
+
+| Validation object | Reviewer | Question |
+|---|---|---|
+| one delayed production order | production planner | does the reconstructed sequence match the planning history? |
+| one late purchased component | procurement owner | does the PO release, confirmation, receipt, and delay history match supplier communication? |
+| one quality-blocked receipt | quality owner | does the inspection and release sequence match the lot history? |
+| one reservation conflict | warehouse/inventory owner | does the availability calculation match actual stock usability? |
+| one rework loop | manufacturing engineering | does the test-fail-rework-retest sequence match technical execution? |
+| one late shipment | logistics owner | does shipment completion match physical dispatch? |
+
+The validation should produce a correction log:
+
+| Issue found | Example | Correction |
+|---|---|---|
+| wrong timestamp | ERP posting used instead of WMS receipt scan | change timestamp rule |
+| missing relation | quality lot not linked to receipt | add lot-receipt relation |
+| false availability | stock counted despite quality block | include stock-status filter |
+| overwritten failure | test failures hidden by final pass | model all test attempts |
+| duplicated event | ERP and WMS both generate receipt event | define source priority |
+| missing reversal | quality release reversal ignored | model reversal as event |
+
+Only after this validation does it make sense to discover variants, measure lead times, compute full-kit readiness, or perform conformance checking.
+
+### Minimum data contract
+
+A minimal process-mining pilot should define a data contract for each event type. The contract does not need to be complex, but it should be explicit.
+
+| Field | Purpose |
+|---|---|
+| event id | uniquely identifies the constructed event |
+| event type | defines the business activity or state transition |
+| event timestamp | defines when the event occurred according to the selected timestamp rule |
+| source system | identifies where the source record comes from |
+| source record id | preserves lineage to the operational record |
+| object references | links the event to sales order, production order, PO line, item, lot, reservation, operation, or shipment |
+| resource | identifies supplier, work center, operator role, system, or organizational unit |
+| quantity | preserves partial receipts, issues, releases, and consumption |
+| status before / status after | captures state transitions rather than final state only |
+| reversal flag | identifies cancellation, reversal, or correction events |
+| confidence level | distinguishes direct evidence from inferred linkage |
+
+This data contract is the practical expression of $\phi$. It makes the event log auditable, repeatable, and governable.
+
+The resulting object-centric event structure is therefore not just a table of activities and timestamps. It is a reconstructed operational graph:
+
+$$
+G_{event} = (E,O,rel,time,act,attr,lineage)
+$$
+
+where events, objects, relations, timestamps, attributes, and lineage are all required to preserve the meaning of the manufacturing process.
+
+This is the architectural foundation for the rest of the analysis. Component lead times, available stock, full-kit readiness, critical-path diagnosis, conformance checking, and S&OP correction are all downstream of this construction step. If event construction is weak, the later analysis only gives the appearance of precision. If event construction is governed, process mining becomes a disciplined way to transform operational traces into accountable manufacturing intelligence.
 
 ## Component lead times
 
@@ -913,24 +1131,77 @@ Together, these corrections change planning from a nominal model to an **empiric
 
 ## Minimal implementation
 
-A practical implementation can start with one product family and one plant.
+A practical implementation should be treated as a small IT and process-transformation project, not as a reporting exercise. The first release should remain deliberately narrow: one plant, one product family, one shipment-delay question, and a limited set of source systems. The objective is not to mine the entire factory. The objective is to prove that operational events can be extracted, semantically reconstructed, validated by process owners, and converted into governed improvement actions.
 
-| Step | Output |
+The minimal project can be organized as a staged roadmap.
+
+| Phase | Main question | Lead actors | Supporting actors | Tools and artefacts | Exit criterion |
+|---:|---|---|---|---|---|
+| 1 | What business problem is being solved? | Business sponsor, plant manager, supply-chain/process owner | Production planning, procurement, quality, warehouse, manufacturing engineering | Project charter, scope statement, KPI baseline, delay taxonomy | One precise business question is approved, for example: why do confirmed orders miss shipment date? |
+| 2 | Which process objects must be connected? | Process owner, enterprise architect, business analyst | ERP key user, MES/WMS/QMS key users, data owner | Object model, process-context map, source-system inventory | Sales order, production order, purchase order line, item, receipt, quality lot, reservation, operation, test, and shipment are formally defined |
+| 3 | Which events are reliable enough to use? | Data analyst, data engineer, source-system owners | Process owners, IT application owners | Event catalogue, timestamp assessment, data-quality profile, extraction specification | Each event has a source table/API/file, timestamp logic, business meaning, owner, and known limitation |
+| 4 | How will the event structure be built? | Data engineer, solution architect | IT operations, cybersecurity, data governance | Data pipeline, staging area, transformation rules, object-linking logic, access-control model | A reproducible object-centric event structure is generated from source systems |
+| 5 | Is the reconstructed process semantically correct? | Process owner, production planner, quality owner, warehouse owner | Data analyst, enterprise architect | Validation workshops, sample trace review, exception list, semantic correction log | Business users confirm that reconstructed traces correspond to operational reality |
+| 6 | What does the process evidence show? | Data analyst, process-mining analyst | Process owners, business analyst | Variant analysis, conformance checks, lead-time analysis, full-kit readiness calculation, critical-component diagnosis | The pilot identifies measurable delay patterns, bottlenecks, deviations, and responsible process domains |
+| 7 | Which actions will be governed? | Business sponsor, process owner, plant manager | Procurement, quality, warehouse, manufacturing engineering, planning | Action register, owner matrix, benefit hypothesis, control metric | Each finding is translated into an assigned action with expected operational effect |
+| 8 | Did the intervention work? | Process owner, data analyst, business sponsor | IT, process owners, plant functions | Next-period event log, before/after comparison, KPI dashboard, lessons learned | Improvement is verified against subsequent event evidence rather than anecdotal feedback |
+
+The tooling does not need to be large at the beginning. A minimal technical stack contains five capabilities:
+
+| Capability | Purpose |
 |---|---|
-| Select product family | Smart dosing pump |
-| Define business question | Why do confirmed orders miss shipment date? |
-| Identify systems | ERP, MES, WMS, QMS, procurement, supplier portal |
-| Define objects | Sales order, production order, item, PO line, receipt, quality lot, reservation, shipment |
-| Define events | Order confirmed, PO released, component received, QC released, component available, full kit ready, assembly started, test passed, shipped |
-| Build event structure | Object-centric event log |
-| Validate semantics | Check timestamps, reservations, quality status, reversals, partial receipts |
-| Discover variants | Normal flow, supplier delay, quality delay, reservation issue, rework loop |
-| Measure performance | Lead times, waiting times, full-kit readiness, critical components |
-| Check conformance | Release rules, quality gates, shipment after test, full-kit policy |
-| Assign actions | Procurement, planning, quality, warehouse, manufacturing engineering |
-| Verify improvement | Compare next-period event log |
+| Data extraction and integration | Retrieve relevant records from ERP, MES, WMS, QMS, procurement, supplier collaboration, and logistics systems |
+| Data staging and transformation | Normalize timestamps, identifiers, quantities, statuses, reversals, partial receipts, and object relations |
+| Event catalogue and semantic mapping | Document how technical records become business events |
+| Process-mining and analytical workspace | Discover variants, compute lead times, check conformance, identify bottlenecks, and calculate full-kit readiness |
+| Action and governance workspace | Register findings, assign owners, track decisions, verify interventions, and preserve auditability |
 
-The pilot should remain narrow. The objective is not to mine the entire factory. The objective is to prove that the process can be reconstructed, the bottleneck can be attributed, and the intervention can be verified.
+The key architectural point is that the process-mining layer should not become an uncontrolled shadow system. It should consume governed data, preserve lineage to source records, document transformation logic, and expose results through controlled analytical views. The project therefore needs both business ownership and IT ownership.
+
+A minimal responsibility model is:
+
+| Responsibility | Accountable actor |
+|---|---|
+| Business question and expected benefit | Business sponsor |
+| Process interpretation and operational validation | Process owner |
+| Plant-level feasibility and action execution | Plant manager |
+| Planning assumptions and lead-time parameters | Production planning / supply planning |
+| Supplier lead-time interpretation | Procurement |
+| Quality-release interpretation | Quality |
+| Stock, reservation, and availability interpretation | Warehouse / inventory management |
+| Rework and test-loop interpretation | Manufacturing engineering |
+| Source-system access and extraction | IT application owners |
+| Data model, pipelines, and lineage | Data engineering |
+| Cross-system process structure | Enterprise architecture |
+| Access control, segregation, and data protection | IT security / data governance |
+
+The pilot should be managed through a controlled backlog. The first backlog items should not be generic dashboards. They should be traceable analytical questions:
+
+| Backlog item | Required evidence | Decision enabled |
+|---|---|---|
+| Calculate actual availability lead time by component and supplier | PO release, receipt, quality release, available-stock transition | Whether planning lead times are too optimistic |
+| Identify the critical missing component per delayed order | BOM, reservations, quality release, stock availability, production order | Which component family drives full-kit delay |
+| Detect release before material readiness | Production-order release, material availability, reservation status | Whether release policy is being violated |
+| Measure quality-blocked waiting time | Receipt, inspection start, quality decision, stock-status transition | Whether quality release is a relevant constraint |
+| Measure test and rework loops | Test start, test fail, rework start, rework complete, retest, test pass | Whether effective capacity is reduced by exception handling |
+| Compare shipment lateness by variant | Sales order, production order, full-kit readiness, assembly, test, shipment | Which delay pattern dominates customer-facing lateness |
+
+The implementation should pass through three governance gates.
+
+| Gate | Question | Minimum evidence |
+|---:|---|---|
+| Gate 1 — Scope validation | Is the pilot narrow enough and economically meaningful? | Approved product family, plant, KPI, process owner, and delay question |
+| Gate 2 — Semantic validation | Does the event log represent operational reality? | Sample traces validated by planning, warehouse, quality, production, and procurement |
+| Gate 3 — Action validation | Can findings be converted into accountable operational changes? | Action register with owners, target metric, baseline value, and verification period |
+
+The first release is successful only if it proves four things:
+
+1. the same production order can be connected to its sales order, purchase orders, component receipts, quality lots, reservations, operations, test events, and shipment;
+2. the organization can distinguish physical receipt, quality release, available stock, full-kit readiness, assembly start, test pass, and shipment;
+3. at least one dominant delay mechanism can be quantified and assigned to an accountable owner;
+4. the next event log can verify whether the corrective action changed the process.
+
+This is the minimum viable implementation. It is not a full factory-wide process-mining program. It is a controlled IT-enabled diagnostic loop: extract events, reconstruct the object-centric process, validate semantics, measure deviations, assign actions, and verify improvement.
 
 ## Limits and semantic risks
 
