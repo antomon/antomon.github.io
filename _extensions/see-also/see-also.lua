@@ -93,6 +93,21 @@ local function extract_front_matter(content)
   return body
 end
 
+local function add_category(meta, raw_category)
+  local label = strip_quotes(raw_category or "")
+  label = trim(label):gsub("%s+", " ")
+
+  local key = normalize_category(label)
+  if key == "" or is_excluded_category(key) then
+    return
+  end
+
+  if not meta.category_labels[key] then
+    meta.category_labels[key] = label
+    table.insert(meta.categories, key)
+  end
+end
+
 local function parse_yaml_front_matter(content)
   local yaml = extract_front_matter(content)
   if not yaml then
@@ -105,7 +120,8 @@ local function parse_yaml_front_matter(content)
     date = nil,
     date_modified = nil,
     image = nil,
-    categories = {}
+    categories = {},
+    category_labels = {}
   }
 
   local current_key = nil
@@ -131,10 +147,7 @@ local function parse_yaml_front_matter(content)
           local inline = value:match("^%[(.*)%]$")
           if inline then
             for cat in inline:gmatch("[^,]+") do
-              local c = normalize_category(strip_quotes(cat))
-              if c ~= "" and not is_excluded_category(c) then
-                table.insert(meta.categories, c)
-              end
+              add_category(meta, cat)
             end
           end
         end
@@ -142,10 +155,7 @@ local function parse_yaml_front_matter(content)
     else
       local item = line:match("^%s*%-%s*(.-)%s*$")
       if item and current_key == "categories" then
-        local c = normalize_category(strip_quotes(item))
-        if c ~= "" and not is_excluded_category(c) then
-          table.insert(meta.categories, c)
-        end
+        add_category(meta, item)
       end
     end
   end
@@ -172,6 +182,15 @@ local function overlap_score(a, b)
     end
   end
   return score
+end
+
+local function has_category(categories, target_category)
+  for _, category in ipairs(categories or {}) do
+    if category == target_category then
+      return true
+    end
+  end
+  return false
 end
 
 local function canonical_key(path)
@@ -268,6 +287,41 @@ local function html_escape(s)
   return s
 end
 
+local function url_encode_component(s)
+  return (s or ""):gsub("([^%w%-_%.~])", function(char)
+    return string.format("%%%02X", string.byte(char))
+  end)
+end
+
+local function sort_related_by_modified_date(related, use_score_tiebreaker)
+  table.sort(related, function(x, y)
+    local x_sort = x.date_modified ~= "" and x.date_modified or x.date
+    local y_sort = y.date_modified ~= "" and y.date_modified or y.date
+
+    if x_sort ~= y_sort then
+      return x_sort > y_sort
+    end
+
+    if use_score_tiebreaker and x.score ~= y.score then
+      return x.score > y.score
+    end
+
+    return x.title < y.title
+  end)
+end
+
+local function related_item(key, meta, score)
+  return {
+    title = meta.title,
+    subtitle = meta.subtitle,
+    href = href_from_key(key),
+    image = image_href_from_key_and_meta(key, meta),
+    date = meta.date or "",
+    date_modified = meta.date_modified or "",
+    score = score or 0
+  }
+end
+
 local function collect_related(project_root, current_key, current_categories, collection)
   local files = list_collection_index_files(project_root, collection)
   local related = {}
@@ -283,40 +337,79 @@ local function collect_related(project_root, current_key, current_categories, co
           local score = overlap_score(current_categories, meta.categories)
 
           if score > 0 then
-            table.insert(related, {
-              title = meta.title,
-              subtitle = meta.subtitle,
-              href = href_from_key(key),
-              image = image_href_from_key_and_meta(key, meta),
-              date = meta.date or "",
-              date_modified = meta.date_modified or "",
-              score = score
-            })
+            table.insert(related, related_item(key, meta, score))
           end
         end
       end
     end
   end
 
-  table.sort(related, function(x, y)
-    local x_sort = x.date_modified ~= "" and x.date_modified or x.date
-    local y_sort = y.date_modified ~= "" and y.date_modified or y.date
-
-    if x_sort ~= y_sort then
-      return x_sort > y_sort
-    end
-
-    if x.score ~= y.score then
-      return x.score > y.score
-    end
-
-    return x.title < y.title
-  end)
+  -- Posts remain ordered primarily by date-modified descending.
+  -- The publication date is used only when date-modified is absent.
+  sort_related_by_modified_date(related, true)
 
   return related
 end
 
-local function render_cards_html(heading, items, max_items)
+local function collect_related_longforms_for_category(project_root, current_key, category)
+  local files = list_collection_index_files(project_root, "longforms")
+  local related = {}
+
+  for _, file in ipairs(files) do
+    local key = canonical_key(file)
+
+    if key and key ~= current_key then
+      local content = read_file(file)
+      if content then
+        local meta = parse_yaml_front_matter(content)
+        if meta
+          and meta.title
+          and trim(meta.title) ~= ""
+          and meta.categories
+          and has_category(meta.categories, category)
+        then
+          table.insert(related, related_item(key, meta, 0))
+        end
+      end
+    end
+  end
+
+  sort_related_by_modified_date(related, false)
+
+  return related
+end
+
+local function sorted_current_categories(meta)
+  local categories = {}
+
+  for _, key in ipairs(meta.categories or {}) do
+    table.insert(categories, {
+      key = key,
+      label = meta.category_labels[key] or key
+    })
+  end
+
+  table.sort(categories, function(x, y)
+    if x.key ~= y.key then
+      return x.key < y.key
+    end
+    return x.label < y.label
+  end)
+
+  return categories
+end
+
+local function longform_heading_html(category)
+  local href = "https://4m4.it/index.html#category=" .. url_encode_component(category.label)
+
+  return 'See also <a href="'
+    .. html_escape(href)
+    .. '">'
+    .. html_escape(category.label)
+    .. '</a> longforms'
+end
+
+local function render_cards_html(heading, items, max_items, heading_is_html)
   if not items or #items == 0 then
     return nil
   end
@@ -392,7 +485,8 @@ local function render_cards_html(heading, items, max_items)
   </style>
 ]])
 
-  table.insert(html, '<h2>' .. html_escape(heading) .. '</h2>')
+  local rendered_heading = heading_is_html and heading or html_escape(heading)
+  table.insert(html, '<h2>' .. rendered_heading .. '</h2>')
   table.insert(html, '<div class="see-also-cards">')
 
   for i = 1, n do
@@ -427,8 +521,8 @@ local function render_cards_html(heading, items, max_items)
   return table.concat(html, "\n")
 end
 
-local function append_related_section(doc, heading, items, max_items)
-  local html = render_cards_html(heading, items, max_items)
+local function append_related_section(doc, heading, items, max_items, heading_is_html)
+  local html = render_cards_html(heading, items, max_items, heading_is_html)
   if not html then
     return
   end
@@ -461,12 +555,32 @@ function Pandoc(doc)
   end
 
   local current_categories = current_meta.categories
+  local ordered_categories = sorted_current_categories(current_meta)
 
-  local related_longforms = collect_related(project_root, current_key, current_categories, "longforms")
-  local related_posts = collect_related(project_root, current_key, current_categories, "posts")
+  for _, category in ipairs(ordered_categories) do
+    local related_longforms = collect_related_longforms_for_category(
+      project_root,
+      current_key,
+      category.key
+    )
 
-  append_related_section(doc, "See also longforms", related_longforms, 6)
-  append_related_section(doc, "See also posts", related_posts, 6)
+    append_related_section(
+      doc,
+      longform_heading_html(category),
+      related_longforms,
+      3,
+      true
+    )
+  end
+
+  local related_posts = collect_related(
+    project_root,
+    current_key,
+    current_categories,
+    "posts"
+  )
+
+  append_related_section(doc, "See also posts", related_posts, 6, false)
 
   return doc
 end
