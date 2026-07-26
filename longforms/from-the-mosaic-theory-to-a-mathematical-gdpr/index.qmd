@@ -1,13 +1,4317 @@
 ---
 title: "From the Mosaic Theory to a Mathematical GDPR"
 subtitle: "Toward an Information-Theoretic Framework for Inferential Privacy, Surveillance, and AI-Era Data Governance"
-description: ""
-abstract: "pippo"
-date: "2026-06-12"
-date-modified: "2026-06-12"
-categories: [cybersecurity, essay, privacy, 🇬🇧]
-keywords: pippo
-image: ""
+description: "A legal, mathematical, and cryptographic proposal for moving European privacy protection from post-collection controller promises toward wallet-mediated, pre-disclosure constraints."
+author: "Antonio Montano"
+abstract: |
+  Digital privacy is increasingly determined not by isolated records but by the inferences that become possible when records, requests, identities, and outputs are combined. This article develops that observation from the mosaic theory of surveillance into a proposed European privacy architecture. Its central thesis is that the GDPR's controller- and endpoint-centred duties should be supplemented by a subject-side personal privacy wallet: a reference monitor that receives typed requests, evaluates regulator-issued mandatory policies and valid user restrictions, selects a minimally informative response mechanism, composes privacy expenditure across transactions, and commits the resulting state before any output is released.
+
+  The article distinguishes direct disclosure, participation privacy, linkability, target-specific inference, protocol leakage, numerical error, and trust assumptions. These quantities cannot be reduced to one fungible scalar. The formal model therefore represents privacy state as a product of ordered resource domains. Some coordinates admit exact accounting; others require conservative threat models, statistical upper bounds, or external review. Differential-privacy parameters are reserved for mechanisms that satisfy a specified differential-privacy definition, while mutual information, maximal leakage, posterior concentration, and same-user distinguishing advantage address different inferential questions.
+
+  Cryptographic credentials, commitments, selective disclosure, zero-knowledge proofs, secure multiparty computation, homomorphic encryption, and trusted execution can reduce plaintext transfer. They do not by themselves establish legal authorisation or composition safety. A sequence of valid proofs or securely computed outputs may still reconstruct a protected secret. The proposed protocol consequently binds every response to an authenticated request, regulatory profile, recipient context, privacy-state root, mechanism profile, and typed cost. Concurrency, retry, recovery, migration, and policy updates preserve state through atomic commitment and rollback-resistant continuity.
+
+  The proposal builds on the GDPR, the European Digital Identity framework, current credential and presentation standards, and existing certification and conformance work, but it is not identical to the legally defined European Digital Identity Wallet. Its most ambitious inferential-accounting components remain research- and context-dependent. Deployment should therefore follow progressive enforceability: begin with typed requests, registered recipients, exact disclosure constraints, structural linkability rules, mature cryptographic minimisation, atomic receipts, rights workflows, and state continuity; add model-dependent inferential ceilings only where targets, coalitions, estimators, uncertainty sets, and drift controls have been independently validated.
+
+  A mathematical GDPR is not a claim that law can be reduced to equations. It is an institutional and technical method for converting a defined subset of determinate privacy obligations into verifiable pre-disclosure constraints, while preserving human legal judgment, controller accountability, supervisory enforcement, voluntary use, portability, and adequate non-wallet alternatives.
+date: "2026-07-25"
+date-modified: "2026-07-25"
+categories: [privacy, data protection, cryptography, artificial intelligence, law, 🇬🇧]
+image: "from-the-mosaic-theory-to-a-mathematical-gdpr.jpeg"
 draft: true
 ---
+
+## Introduction: from endpoint compliance to wallet-mediated governance
+
+Digital privacy law was built around entities that collect and process data. A controller identifies a purpose and lawful basis, determines means, provides information, applies safeguards, answers rights requests, and remains accountable for downstream processing. This structure is indispensable, but it begins from an architectural fact that is rarely questioned: the endpoint receives personal information first and is governed afterwards.
+
+That sequence is increasingly unstable. Once plaintext enters an endpoint-controlled environment, the subject cannot ordinarily verify all subsequent copying, joining, feature engineering, model training, retention, onward transfer, or inference. Legal duties remain applicable, yet technical control over the resulting informational capability becomes weak. The problem is not merely unauthorised disclosure of an existing fact. It is the production of new knowledge from combinations of facts that appeared innocuous when considered separately.
+
+This article calls that problem the **mosaic problem**. A mosaic is an interaction history whose joint informational properties differ from the properties of its parts. The privacy-relevant object may be a sequence of locations, purchases, predicates, credential presentations, denials, model outputs, or timing events. What matters is not only what each record says, but what an observer can infer after combining the records with auxiliary information.
+
+The proposed response is a **personal privacy wallet**: user-side infrastructure that mediates data-consuming requests before information leaves the subject-side boundary. It is not merely a credential container, a consent dashboard, or a password manager. It is a stateful reference monitor with five responsibilities:
+
+1. receive an authenticated and typed request;
+2. evaluate an executable projection of mandatory law and valid user restrictions;
+3. construct the least informative adequate response plan;
+4. compose the response's typed privacy cost with prior transactions;
+5. commit the resulting state before releasing the response.
+
+The endpoint therefore asks for a defined result rather than an unspecified dossier. A bank might request proof that income exceeds a threshold, a platform proof that age exceeds a statutory limit, a public body a registered entitlement predicate, or a research service the output of a formally private computation. The wallet may deny the request, permit it, transform it into a less informative mechanism, or route it to external review.
+
+The central thesis is that European privacy regulation should supplement controller- and endpoint-centred obligations with wallet-mediated governance. Mandatory rules remain regulator-defined; user settings can only narrow discretionary permissions. Privacy expenditure is typed rather than reduced to a universal score. Cryptographic proofs or minimised computations replace raw-data transfer where feasible. Transaction state survives retries, concurrency, recovery, migration, and policy updates.
+
+This thesis has three limits:
+
+1. The personal privacy wallet developed here is an article-specific construct. It can build on the European Digital Identity Wallet, but it is not identical to that legally defined system. The European Digital Identity framework supplies a substantial substrate for secure credential storage, selective disclosure, relying-party governance, certification, and interoperability; the proposed architecture adds general privacy-policy evaluation, composition, inferential accounting, and rights workflows.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eidas-framework]
+
+2. Mathematical admission is not complete legal lawfulness. Necessity, fairness, proportionality, freely given consent, public-interest authority, discrimination, and rights limitations often require contestable legal and factual judgment. Executable profiles can encode determinate projections adopted by competent authorities, not replace the authorities, courts, controllers, or democratic processes from which those projections derive.
+
+3. Not every privacy coordinate is currently measurable with production validity. Direct claim disclosure and stable-identifier use can often be tracked exactly. Differential-privacy expenditure can be composed when mechanisms, adjacency relations, and protected contribution units are formally specified. Target-specific inference and coalition linkability frequently depend on uncertain models. The architecture must represent that uncertainty rather than assign an invented zero.
+
+The article proceeds from the mosaic problem to the European legal baseline, then develops a formal wallet, typed privacy state, cryptographic response mechanisms, secure computation, cross-recipient composition, operational semantics, machine-readable policy, security and recovery, a limited United States comparison, and a staged deployment programme. The conclusion states the resulting design criterion: privacy protection should move, where technically and institutionally defensible, from promises made after collection toward constraints verified before transfer.
+
+## The mosaic problem: aggregation, inference, and regulatory blind spots
+
+The term **mosaic theory** originated in intelligence analysis, where individually unclassified fragments could collectively reveal a protected structure. Its later use in privacy and surveillance law challenged an atomistic method under which each observation was assessed in isolation.[^from-the-mosaic-theory-to-a-mathematical-gdpr-pozen-mosaic] Legal scholarship subsequently examined whether the Fourth Amendment should assess a surveillance programme as a whole rather than as a series of isolated acts, while also identifying serious administrability and threshold problems.[^from-the-mosaic-theory-to-a-mathematical-gdpr-kerr-mosaic]
+
+The theory's enduring contribution is epistemic: aggregation can change what is knowable.
+
+Let a sensitive target be a random variable $Y$, such as a health condition, political affiliation, religious practice, identity, future location, or eligibility status. Let interaction $j$ produce an observable variable $Z_j$. The transcript through $n$ interactions is
+
+$$
+T_n=(Z_0,\ldots,Z_{n-1}).
+$$
+
+The mosaic exposure of $Y$ given auxiliary information $W$ is
+
+$$
+E_Y(T_n\mid W)=I(Y;T_n\mid W),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-mosaic-exposure}
+
+where $I(\cdot;\cdot\mid\cdot)$ is conditional mutual information.[^from-the-mosaic-theory-to-a-mathematical-gdpr-shannon-information]
+
+The chain rule gives
+
+$$
+I(Y;T_n\mid W)
+=
+\sum_{j=0}^{n-1}
+I(Y;Z_j\mid W,Z_0,\ldots,Z_{j-1}).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-mosaic-chain-rule}
+
+Equation @eq-from-the-mosaic-theory-to-a-mathematical-gdpr-mosaic-chain-rule does not assign a fixed leakage value to each response type. The contribution of $Z_j$ depends on the observer's prior transcript. A Boolean answer that is nearly redundant at one stage may isolate the target after a sequence of adaptive questions.
+
+The simplest example is binary search. Let secret $S$ be an integer in $\{0,\ldots,M-1\}$. An endpoint asks predicates
+
+$$
+B_j=\mathbb 1[S\ge a_j]
+$$
+
+and chooses each threshold $a_j$ from previous answers. After at most $\lceil\log_2 M\rceil$ well-chosen responses, the candidate set can contain one value. Each output reveals one bit; the sequence reveals the secret.
+
+Mosaic effects are not always additive. Partial-information decomposition distinguishes information that two sources provide redundantly, uniquely, or synergistically.[^from-the-mosaic-theory-to-a-mathematical-gdpr-williams-beer] If variables $Z_1$ and $Z_2$ are individually uninformative about $Y$ but jointly determine it, then
+
+$$
+I(Y;Z_1)=I(Y;Z_2)=0
+$$
+
+while
+
+$$
+I(Y;Z_1,Z_2)>0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-synergistic-disclosure}
+
+Static data categories cannot fully represent this phenomenon. A location coordinate may be directly identifying; it may instead be harmless in one context and decisive when combined with a clinic appointment, a timetable, and public records. A credential proof may hide undisclosed attributes but expose a rare combination of disclosed predicates. A denial may reveal that a wallet contains or lacks a credential. Timing may connect presentations that use different pseudonyms.
+
+Machine learning industrialises the mosaic. Behavioural traces can be mapped to latent attributes without direct access to the protected label. Research on digital records has repeatedly shown that apparently ordinary behavioural variables can support predictions of sensitive traits, although the validity, transportability, and social meaning of those predictions remain setting-dependent.[^from-the-mosaic-theory-to-a-mathematical-gdpr-kosinski-digital-records] The regulatory implication is not that every prediction is accurate. It is that sensitivity is partly a property of inferential context, not only of the raw field name.
+
+Consent models are strained by the same temporal asymmetry. A data subject may understand the immediate disclosure but cannot enumerate every future model, auxiliary dataset, coalition, or purpose. The collector may have better information about future reuse and analytic value. This does not render consent legally meaningless; it shows why consent cannot carry the complete burden of inferential governance.
+
+Differential privacy is one formal response to auxiliary-information risk. For adjacent datasets $D\sim D'$, a randomized mechanism $M$ is $(\varepsilon,\delta)$-differentially private when, for every measurable output set $S$,
+
+$$
+\Pr[M(D)\in S]
+\le
+e^\varepsilon\Pr[M(D')\in S]+\delta.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-dp-definition}
+
+The guarantee is stable under post-processing and admits composition under specified assumptions.[^from-the-mosaic-theory-to-a-mathematical-gdpr-dwork-roth] It protects a defined participation relation, not every attribute inference. The symbols $\varepsilon$ and $\delta$ should therefore be reserved for mechanisms satisfying a stated differential-privacy definition; they should not be reused as generic privacy-risk labels.
+
+Several regulatory blind spots follow from the mosaic problem.
+
+| Atomistic control | What it can establish | Mosaic blind spot |
+|---|---|---|
+| Field-level minimisation | Fewer named fields were disclosed | A small field set may identify or reveal a sensitive target jointly |
+| One-request consent | The user approved one described interaction | Future adaptive queries and coalition composition remain unknown |
+| Credential selective disclosure | Undisclosed claims were not transmitted | Disclosed claims, proof metadata, and repeated presentations may be linkable |
+| Encryption in transit | Network plaintext was protected | Recipient-side inference and downstream combination remain possible |
+| Retention limit | A duty to delete exists after a period | Knowledge, derivatives, backups, or model parameters may persist |
+| Organisational separation | Data are stored by nominally distinct entities | Affiliates, shared infrastructure, and identifier matching may create one observer |
+| Short observation interval | Collection duration is limited | A short observation may be semantically decisive |
+
+: Atomistic controls and the inferential questions they do not resolve. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-mosaic-blind-spots}
+
+The mosaic problem does not imply that all data must remain local or that all inference is impermissible. It implies that privacy assessment must be stateful, conditional, and recipient-aware. A suitable architecture must reason about histories and coalitions before releasing the next observation.
+
+
+The political economy of the mosaic amplifies the technical effect. Individual data points often have modest standalone value; persistent aggregation supports prediction, segmentation, behavioural influence, and market power. Platform scale can therefore deepen inferential asymmetry even when each collection event appears ordinary. Accounts of surveillance capitalism and state legibility describe different institutions, but both illuminate how systems gain power by reducing uncertainty about populations.[^from-the-mosaic-theory-to-a-mathematical-gdpr-zuboff-surveillance-capitalism][^from-the-mosaic-theory-to-a-mathematical-gdpr-scott-legibility]
+
+Sensor fusion extends the same mechanism beyond web activity. Mobile telemetry, biometrics, payments, vehicles, smart homes, workplace systems, and public records can be joined into behavioural models. The relevant risk is not simply that a person is watched. It is that the person becomes computationally legible across domains that were previously costly to connect.
+
+
+## The European Baseline: GDPR, eIDAS 2.0, and Data Protection by Design
+
+The European legal baseline is broader than a disclosure-control system. The GDPR regulates processing through principles, lawful bases, rights, controller and processor obligations, security duties, accountability, and supervisory enforcement.[^from-the-mosaic-theory-to-a-mathematical-gdpr-gdpr-official] Article 25 requires data protection by design and by default, including technical and organisational measures intended to implement principles such as data minimisation and to ensure that, by default, only personal data necessary for each specific purpose are processed.[^from-the-mosaic-theory-to-a-mathematical-gdpr-edpb-design-default]
+
+The proposed wallet is best understood as one possible Article 25 architecture. It can make some minimisation decisions before disclosure, preserve evidence of the rule and mechanism used, and constrain user interfaces that otherwise present broad data transfer as the default. It cannot discharge every controller duty. The controller remains responsible for purpose, lawful basis, fairness, downstream use, retention, rights, security, and consequences.
+
+Let $q$ be a typed request and $\omega$ its complete legal context. Define the legal predicate
+
+$$
+\mathsf{Legal}_t(q,\omega)
+\in
+\{\mathsf{permitted},\mathsf{prohibited},\mathsf{unresolved}\}.
+$$
+
+The wallet does not compute this predicate directly from the full body of law. Instead, a competent authority publishes an executable projection
+
+$$
+\Pi_t:
+(q,\omega)
+\mapsto
+\mathsf{mode},
+$$
+
+where
+
+$$
+\mathsf{mode}
+\in
+\{
+\mathsf{forbidden},
+\mathsf{discretionary},
+\mathsf{nonconsensual\text{-}basis},
+\mathsf{review}
+\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-legal-mode-projection}
+
+The projection is intentionally incomplete. A request classified as $\mathsf{nonconsensual\text{-}basis}$ may rely on a legal obligation, public task, vital interest, contract, legitimate interest, or another basis, depending on the profile. The endpoint must authenticate the asserted role and basis. The wallet must not convert every transaction into consent, and user approval must not be represented as proof that consent was freely given.
+
+The Charter of Fundamental Rights distinguishes respect for private and family life from the protection of personal data and requires data processing to be fair, for specified purposes, and subject to an independent authority.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eu-charter] That institutional structure matters. A user-side mechanism cannot legitimately define mandatory rights by itself; it must consume public rules issued under lawful competence.
+
+The amended eIDAS framework adds a practical substrate. Regulation (EU) 2024/1183 establishes the European Digital Identity framework and requires Member States to provide at least one European Digital Identity Wallet under specified conditions. The framework emphasises user control, voluntary use, selective disclosure, relying-party registration, certification, privacy, security, pseudonymity, and measures against unnecessary tracking.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eidas-framework] Commission implementing regulations adopted in 2024 define aspects of wallet integrity, core functionality, certification, protocols, interfaces, and relying-party interaction.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-implementing-regulations]
+
+The current Architecture and Reference Framework supplies a versioned technical account of the ecosystem, including wallet providers, relying parties, issuers, trust infrastructure, wallet secure cryptographic applications and devices, presentation flows, and privacy risks.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-arf]
+
+The proposed personal privacy wallet extends that baseline in four directions.
+
+1. **General request mediation.** The request expresses purpose, recipient, output, function, retention, linkability mode, policy version, and legal mode—not only a credential presentation query.
+2. **Typed cumulative state.** The wallet composes direct disclosure, linkability, participation privacy, and inference across time.
+3. **Mechanism selection.** The wallet may transform a request into a credential proof, zero-knowledge predicate, local computation, secure computation, or denial.
+4. **Machine-readable rights and governance.** Regulator-issued profiles define exact rules, rights workflows, mechanism status, updates, and conflict semantics.
+
+The roles remain distinct.
+
+| Role | Primary responsibility | What the wallet must not infer |
+|---|---|---|
+| Controller or public authority | Determine and justify processing; comply with rights and accountability duties | That wallet approval establishes complete lawfulness |
+| Relying party or endpoint | Submit an authenticated, typed request and honour the resulting constraints | That possession of a valid credential authorises every use |
+| Issuer | Attest claims, schemas, validity, and status | That the requested purpose is lawful |
+| Wallet provider | Implement the reference monitor, state continuity, update, and portability rules | That provider policy may weaken regulatory policy |
+| User | Add discretionary restrictions, confirm exceptional transactions, exercise rights | That the user may waive mandatory protections |
+| Regulator or competent authority | Publish legal projections, mechanism profiles, ceilings, and rights workflows | That executable profiles replace adjudication |
+| Certification and assessment bodies | Evaluate implementation claims within defined scope | That certification establishes future security or complete lawfulness |
+
+: Separation of legal, technical, and user roles in wallet-mediated governance. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-european-role-separation}
+
+A dual architecture follows:
+
+$$
+\mathsf{PrivacyProtection}
+=
+\mathsf{ExAnteWalletMediation}
++
+\mathsf{ExPostControllerAccountability}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-dual-privacy-architecture}
+
+The first limits what is released. The second governs the recipient's purpose, use, retention, decisions, rights, and remedies. Neither term subsumes the other.
+
+## Formal Model of a Personal Privacy Wallet
+
+Let the principal sets be:
+
+- $\mathcal U$: users;
+- $\mathcal E$: data-consuming endpoints;
+- $\mathcal I$: credential issuers;
+- $\mathcal G$: competent regulatory or supervisory authorities;
+- $\mathcal V$: physical wallet units or devices;
+- $\Omega$: legal and factual evaluation contexts.
+
+For user $u\in\mathcal U$, the logical wallet may span several physical units
+
+$$
+\mathcal V_u=\{v_{u,1},\ldots,v_{u,m}\}.
+$$
+
+The logical wallet, not an individual device replica, is the reference monitor. Every supported disclosure must pass through the same committed privacy state.
+
+### Request envelope
+
+A canonical request envelope is
+
+$$
+\widehat q=
+\left(
+\mathsf{rid},
+e,
+\mathsf{role},
+p,
+\mathsf{basis},
+\mathsf{input},
+\mathsf{output},
+\mathsf{recipient},
+\mathsf{retention},
+\mathsf{linkMode},
+\nu,
+t_{\mathrm{exp}},
+v_{\mathcal R},
+\sigma_e
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-request-envelope}
+
+Its fields identify:
+
+- a unique transaction identifier $\mathsf{rid}$;
+- endpoint $e$ and authenticated role;
+- purpose $p$ and asserted legal basis;
+- the requested credential, predicate, or function input;
+- the permitted output space;
+- the recipient and declared transfer context;
+- retention and linkability conditions;
+- nonce $\nu$ and expiry time $t_{\mathrm{exp}}$;
+- regulatory-profile version $v_{\mathcal R}$;
+- endpoint signature $\sigma_e$.
+
+A request is well formed at time $t$ when
+
+$$
+\begin{aligned}
+\mathsf{WellFormed}(\widehat q,t)=1
+\quad\Longleftrightarrow\quad
+&
+\mathsf{SchemaValid}(\widehat q)=1
+\\
+&{}\land
+\mathsf{VerifyEndpoint}(e,\sigma_e,\widehat q)=1
+\\
+&{}\land
+\mathsf{Registered}(e,p,\mathsf{output})=1
+\\
+&{}\land
+t<t_{\mathrm{exp}}
+\\
+&{}\land
+\mathsf{NonceFresh}(e,\nu)=1
+\\
+&{}\land
+\mathsf{ProfileKnown}(v_{\mathcal R})=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-well-formed-request}
+
+Structured authorisation requests already have a standards precedent: OAuth 2.0 Rich Authorization Requests defines a mechanism for carrying fine-grained authorisation data rather than relying only on flat scope strings.[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9396]
+
+A missing or untrusted legal assertion does not default to permission. It yields denial or review under the installed profile.
+
+### Committed wallet state
+
+The committed state before transaction $j$ is
+
+$$
+\Sigma_u^j=
+\left(
+\mathcal C_u^j,
+\mathcal P_u^j,
+\mathbf c_u^j,
+\mathcal K_u^j,
+\mathcal H_u^j
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-state}
+
+where:
+
+- $\mathcal C_u^j$ is the credential and local-data state;
+- $\mathcal P_u^j$ is the user's valid discretionary restriction policy;
+- $\mathbf c_u^j$ is the consumed typed privacy state;
+- $\mathcal K_u^j$ is the cryptographic key, device, and trust state;
+- $\mathcal H_u^j$ is the transaction, rights, update, and recovery history.
+
+The state root is
+
+$$
+R_u^j
+=
+H\!\left(
+\mathsf{state}
+\parallel
+\mathsf{Encode}(\Sigma_u^j)
+\parallel
+v_{\mathcal R}^j
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-state-root}
+
+where $H$ is a collision-resistant hash and $\mathsf{state}$ is a domain-separation string.
+
+The history stores commitments and evidence needed for continuity and audit. It need not expose a public subject-level transaction log.
+
+### Response plans
+
+A response plan is
+
+$$
+\mu=
+\left(
+\mathsf{mid},
+\mathsf{fid},
+\theta,
+\mathcal C_{\mathrm{in}},
+\mathcal O_{\mathrm{out}},
+\boldsymbol\kappa,
+L,
+T,
+E,
+v_{\mathcal R}
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-response-plan}
+
+where:
+
+- $\mathsf{mid}$ identifies the response mechanism;
+- $\mathsf{fid}$ identifies the credential predicate or computation;
+- $\theta$ contains pinned mechanism parameters;
+- $\mathcal C_{\mathrm{in}}$ identifies admissible local inputs;
+- $\mathcal O_{\mathrm{out}}$ is the permitted output space;
+- $\boldsymbol\kappa$ is the typed privacy cost;
+- $L$ is the declared protocol leakage;
+- $T$ is the trust-assumption profile;
+- $E$ is the error profile;
+- $v_{\mathcal R}$ binds the plan to one policy version.
+
+Let $\mathfrak P_{\mathcal R}(\kappa)$ be the plan set admitted by the regulatory profile in evaluation context $\kappa$, and $\mathfrak P_{\mathcal P_u}(\kappa)$ the set permitted by the user's valid restrictions. The combined set is
+
+$$
+\mathfrak P_{\mathcal R,\mathcal P_u}(\kappa)
+=
+\mathfrak P_{\mathcal R}(\kappa)
+\cap
+\mathfrak P_{\mathcal P_u}(\kappa).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-combined-plan-set}
+
+The user-policy monotonicity invariant is
+
+$$
+\mathfrak P_{\mathcal R,\mathcal P_u}(\kappa)
+\subseteq
+\mathfrak P_{\mathcal R}(\kappa).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-user-policy-monotonicity}
+
+A user may remove a discretionary plan. The user cannot add a plan excluded by mandatory regulation.
+
+### Decision function
+
+The total evaluator returns
+
+$$
+\mathsf{Eval}_u
+\left(
+\widehat q,\Sigma_u^j,\mathcal R
+\right)
+\in
+\left\{
+\mathsf{deny},
+\mathsf{permit}(\mu),
+\mathsf{transform}(\mu),
+\mathsf{review}
+\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-evaluator}
+
+A transformed plan is one that answers the legitimate function through a less informative mechanism than the endpoint requested. Examples include:
+
+- proof of age rather than date of birth;
+- proof of qualification rather than the full educational record;
+- a local risk calculation rather than transaction history;
+- a differentially private statistic rather than individual records;
+- a zero-knowledge predicate rather than a signed attribute bundle.
+
+Let $\preceq_{\mathrm B}$ be Blackwell's order on statistical experiments: $X\preceq_{\mathrm B}Y$ when $X$ can be generated by post-processing $Y$.[^from-the-mosaic-theory-to-a-mathematical-gdpr-blackwell-order] Among functionally adequate and admissible plans, the planner should select a minimal element under the applicable information, leakage, trust, and error orders:
+
+$$
+\mu^\star
+\in
+\operatorname{Min}
+\left\{
+\mu:
+\mathsf{Adequate}(\mu,\widehat q)=1
+\land
+\mu\in\mathfrak P_{\mathcal R,\mathcal P_u}(\kappa)
+\land
+\mathsf{BudgetSafe}(\mu,\Sigma_u^j)=1
+\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-minimal-response-plan}
+
+The minimum may not be unique. Incomparable plans require a profile-defined tie-breaker or review.
+
+### Reference-monitor execution
+
+The wallet's logical execution pipeline is shown in @fig-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-state-machine.
+
+```{mermaid}
+%%| label: fig-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-state-machine
+%%| fig-cap: "Wallet-mediated transaction pipeline in which validation, policy evaluation, planning, composition, execution, and atomic commitment precede response release."
+%%| fig-alt: "Flow diagram beginning with a signed typed endpoint request, passing through request validation, legal-mode classification, regulatory and user-policy intersection, minimal response planning, typed privacy composition, protected execution, atomic state commitment, and response release. Denial and review branches leave the pipeline before protected output release."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    A[Endpoint request<br/>typed + signed + fresh] --> B[Validate schema, identity,<br/>registration, nonce, profile]
+    B -->|invalid| X[Commit coarse denial<br/>no protected output]
+    B --> C[Classify legal mode<br/>forbidden / discretionary / basis / review]
+    C -->|forbidden| X
+    C -->|unresolved| Y[External review<br/>no protected output]
+    C --> D[Intersect regulatory rules<br/>with user restrictions]
+    D --> E[Enumerate adequate plans<br/>proof / claim / local compute / MPC / HE / TEE]
+    E --> F[Choose minimal plan<br/>under information and trust orders]
+    F --> G[Compose typed cost<br/>against committed history]
+    G -->|unsafe| X
+    G --> H[Execute in protected buffer<br/>bind request + policy + state]
+    H --> I[Atomic commit<br/>privacy state + journal + receipt]
+    I --> J[Release response<br/>and authorisation receipt]
+```
+
+The reference monitor must satisfy complete mediation and fail-safe defaults: every supported release is checked, and failures do not silently widen access.[^from-the-mosaic-theory-to-a-mathematical-gdpr-saltzer-schroeder]
+
+The core output-confinement property is
+
+$$
+\mathsf{emit}(\mathsf{rid},z,\rho)=1
+\quad\Longrightarrow\quad
+z\in\mathcal O_{\mathrm{out}}(\mu)
+\subseteq
+\mathcal O(\widehat q).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-output-confinement}
+
+The core temporal property is
+
+$$
+\mathsf{emit}(\mathsf{rid},z,\rho)
+\quad\Longrightarrow\quad
+\mathsf{CommittedBefore}(\mathsf{rid},z,\rho).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-commit-before-release}
+
+The following sections refine the abstract cost $\boldsymbol\kappa$, mechanism set, composition, and commit semantics.
+
+## A Vector Privacy Budget for Disclosure, Linkability, and Inference
+
+The phrase *privacy budget* often suggests a non-negative scalar that decreases after each release. That representation is appropriate only for a narrow class of additive or residuated quantities. Direct disclosure is naturally a knowledge lattice; linkability may be a graph or distinguishing experiment; differential privacy uses an accountant tied to an adjacency relation; inferential exposure is target- and model-dependent.
+
+The formal budget is therefore a product of ordered resource domains.
+
+### Ordered privacy-resource domains
+
+Let $\mathsf K$ index the budget coordinates. For each $k\in\mathsf K$, define
+
+$$
+\mathfrak B_k
+=
+\left(
+B_k,\preceq_k,\oplus_k,0_k,\mathfrak F_k
+\right),
+$$
+
+where:
+
+- $B_k$ is the coordinate's state space;
+- $\preceq_k$ orders states by no greater exposure or consumption;
+- $\oplus_k$ is the coordinate-specific update operator;
+- $0_k$ is the least consumed state;
+- $\mathfrak F_k\subseteq B_k$ is the feasible lower set.
+
+The product space is
+
+$$
+\mathbb B
+=
+\prod_{k\in\mathsf K}B_k,
+$$
+
+with coordinatewise order
+
+$$
+\mathbf x\preceq\mathbf y
+\quad\Longleftrightarrow\quad
+x_k\preceq_k y_k
+\quad
+\text{for every }k\in\mathsf K.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-budget-product-space}
+
+The update is
+
+$$
+\mathbf c^{j+1}
+=
+\mathbf c^j\oplus\boldsymbol\kappa_j,
+$$
+
+where
+
+$$
+(\mathbf c^j\oplus\boldsymbol\kappa_j)_k
+=
+c_k^j\oplus_k\kappa_{j,k}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-typed-budget-update}
+
+The global feasible region is
+
+$$
+\mathfrak F
+\subseteq
+\mathbb B.
+$$
+
+Admission requires
+
+$$
+\mathbf c^j\oplus\boldsymbol\kappa_j
+\in
+\mathfrak F.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-budget-admission}
+
+There is no general subtraction operation. A remaining-budget vector exists only for coordinates whose algebra supports a sound residual.
+
+### Participation-privacy coordinate
+
+For mechanisms that satisfy a specified differential-privacy definition, the wallet stores a privacy accountant rather than an informal score.
+
+A Rényi differential privacy profile is a function
+
+$$
+\rho:
+(1,\infty)\rightarrow[0,\infty],
+$$
+
+where $\rho(\alpha)$ bounds the order-$\alpha$ Rényi divergence between output distributions on adjacent inputs. Under adaptive sequential composition, compatible profiles add pointwise:
+
+$$
+\rho_{0:n}(\alpha)
+=
+\sum_{j=0}^{n-1}\rho_j(\alpha).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-rdp-composition}
+
+The composition is meaningful only when the profile specifies compatible adjacency relations, protected units, contribution bounds, populations, and accounting epochs.[^from-the-mosaic-theory-to-a-mathematical-gdpr-mironov-rdp]
+
+The wallet stores the descriptor
+
+$$
+a_j^{\mathrm{DP}}
+=
+\left(
+\rho_j,
+\mathsf{Adj}_j,
+\mathsf{Unit}_j,
+\mathsf{Bound}_j,
+\mathsf{Population}_j,
+\mathsf{Epoch}_j
+\right).
+$$
+
+Numerical profiles are not summed when these semantics are incompatible.
+
+### Direct-disclosure coordinate
+
+Let $\mathcal A_u$ be the finite or finitely represented universe of atomic claims concerning user $u$. A response $z$ directly entails a claim set
+
+$$
+\mathsf{Entails}(z)\subseteq\mathcal A_u.
+$$
+
+For coalition $A$ and purpose compartment $p$, let $\mathcal G_{A,p}^j$ be the $\sigma$-algebra or finite claim closure directly available after transaction $j$. The update is
+
+$$
+\mathcal G_{A,p}^{j+1}
+=
+\mathcal G_{A,p}^j
+\vee
+\sigma\!\left(\mathsf{Entails}(z_j)\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-direct-disclosure-update}
+
+where $\vee$ is the join of information structures.
+
+A profile can prohibit specific joins, cap a disclosure category, or require that the new closure remain in a downward-closed family
+
+$$
+\mathfrak D_{A,p}
+\subseteq
+\mathsf{SubAlg}(\mathcal A_u).
+$$
+
+Direct disclosure covers what the output semantically states or logically entails. Statistical inference beyond that closure belongs to a separate coordinate.
+
+### Linkability coordinate
+
+Let $c$ and $c'$ be two contexts. Define the same-user and different-user transcript distributions
+
+$$
+P_{c,c'}^{=}
+\quad\text{and}\quad
+P_{c,c'}^{\ne}.
+$$
+
+The optimal distinguishing advantage is
+
+$$
+\lambda_{c,c'}
+=
+\left\|
+P_{c,c'}^{=}
+-
+P_{c,c'}^{\ne}
+\right\|_{\mathrm{TV}},
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-linkability-advantage}
+
+where $\|\cdot\|_{\mathrm{TV}}$ is total-variation distance.
+
+The linkability state may be represented as a matrix
+
+$$
+\boldsymbol\Lambda^j
+=
+\left(
+\lambda_{c,c'}^j
+\right)_{c,c'\in\mathcal C_{\mathrm{ctx}}}.
+$$
+
+Exact cryptographic rules can dominate estimated values. Reuse of a universal identifier sets the relevant structural linkability flag to one even if no empirical attack has been run. Pairwise pseudonyms reduce one linkage channel, but shared attributes, timing, device attestation, status identifiers, or network metadata may remain.
+
+### Inferential coordinate
+
+Let $\mathcal Y$ be the regulated sensitive-target set and $\mathfrak S$ the approved threat scenarios. Scenario $s$ defines a recipient coalition, auxiliary information $K_s$, and probability-model class $\mathfrak M_s$.
+
+For target $Y^{(r)}\in\mathcal Y$, model $P$, and transcript $T^j$, define
+
+$$
+E_{r,s,P}^j
+=
+I_P
+\left(
+Y^{(r)};
+T^j
+\mid
+K_s
+\right).
+$$
+
+The robust account is
+
+$$
+E_{r,s}^{j,\mathrm{rob}}
+=
+\sup_{P\in\mathfrak M_s}
+I_P
+\left(
+Y^{(r)};
+T^j
+\mid
+K_s
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-robust-inferential-exposure}
+
+For a fixed model, the conditional increment is
+
+$$
+\Delta E_{r,s,P}^j
+=
+I_P
+\left(
+Y^{(r)};
+Z_j
+\mid
+K_s,T^j,\widehat q_j
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-conditional-inferential-increment}
+
+Where the model class is uncertain, the wallet can use the conservative bound
+
+$$
+\overline{\Delta E}_{r,s}^j
+=
+\sup_{P\in\mathfrak M_s}
+I_P
+\left(
+Y^{(r)};
+Z_j
+\mid
+K_s,T^j,\widehat q_j
+\right).
+$$
+
+Summing model-wise suprema may overestimate the supremum of cumulative exposure, but it avoids undercharging caused by model switching.
+
+Mutual information is an average under a distribution. A regulator concerned with worst-case improvement in guessing may instead use maximal leakage.[^from-the-mosaic-theory-to-a-mathematical-gdpr-maximal-leakage] A regulator concerned with a consequential posterior threshold may impose
+
+$$
+\sup_{P\in\mathfrak M_s}
+\Pr_P
+\left[
+\Pr_P(Y^{(r)}=y^\star\mid T^j,K_s)
+\ge\tau
+\right]
+\le\beta.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-posterior-concentration}
+
+These quantities answer different questions and must not be treated as interchangeable.
+
+### Coordinate semantics
+
+| Coordinate | Protected object | State space | Update | Typical ceiling | Automatic reset? |
+|---|---|---|---|---|---|
+| Participation privacy | Defined contribution under adjacency | RDP profile or another certified accountant | Accountant composition | Profile-specific $(\varepsilon,\delta)$ or RDP limit | Only under formal epoch semantics |
+| Direct disclosure | Semantically disclosed claims | Claim lattice or $\sigma$-algebra | Join | Forbidden claims or permitted disclosure family | Normally no |
+| Linkability | Same-user distinguishability across contexts | Matrix, graph, or structural flags | Transcript extension and closure | Context-pair bound | Normally no |
+| Inferential exposure | Regulated sensitive target | Model-indexed information or posterior bounds | Conditional update | Target- and coalition-specific ceiling | No calendar reset |
+| Protocol leakage | Metadata, timing, sizes, aborts, attestations | Experiment or leakage profile | Sequential composition | Mechanism-profile bound | Only if threat model justifies |
+| Error and trust | Correctness and assumption profile | Partial orders, not expendable capacity | Plan substitution | Maximum error and allowed trust base | Not a privacy reset |
+
+: Semantics of the typed privacy-state coordinates. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-budget-coordinate-semantics}
+
+### Non-substitutability and rebasing
+
+The feasible region is generally not a weighted half-space. If one coordinate exceeds its ceiling, unused capacity elsewhere cannot compensate:
+
+$$
+\exists k:
+c_k\notin\mathfrak F_k
+\quad\Longrightarrow\quad
+\mathbf c\notin\mathfrak F.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-budget-nonsubstitutability}
+
+Expiry of a credential or retention period does not erase recipient knowledge. Direct disclosure, linkability, and inference should therefore not reset merely because time passes.
+
+A policy-authorised rebase is an explicit mapping
+
+$$
+\mathsf{Rebase}_U:
+\mathbb B_{\mathrm{old}}
+\rightarrow
+\mathbb B_{\mathrm{new}}
+$$
+
+bound to an update object $U$. Sound rebasing preserves exposure:
+
+$$
+\mathsf{Embed}_U(\mathbf c_{\mathrm{old}})
+\preceq
+\mathsf{Rebase}_U(\mathbf c_{\mathrm{old}}).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-rebase-monotonicity}
+
+Recovery, migration, or a new calendar period cannot silently invoke this mapping.
+
+## Cryptographic Disclosure: Credentials, Commitments, and Zero-Knowledge Proofs
+
+Cryptographic mechanisms can change the object transferred to an endpoint. Instead of disclosing a source document, the wallet can disclose selected claims, a predicate, or evidence that a registered computation was performed correctly.
+
+This reduction must be stated precisely. Cryptographic authenticity establishes origin and integrity under specified keys. Selective disclosure hides undisclosed elements under the scheme's assumptions. Zero knowledge limits what a proof transcript reveals beyond its public statement. None of these properties establishes a lawful purpose, prevents repeated-query reconstruction, or controls later use of an intentionally disclosed output.
+
+### Credential authenticity
+
+A digital signature scheme is
+
+$$
+\mathsf{DS}
+=
+\left(
+\mathsf{KeyGen},
+\mathsf{Sign},
+\mathsf{Verify}
+\right).
+$$
+
+Issuer $i$ generates
+
+$$
+(\mathsf{sk}_i,\mathsf{pk}_i)
+\leftarrow
+\mathsf{KeyGen}(1^\lambda)
+$$
+
+and signs credential message $\mathbf m$:
+
+$$
+\sigma_i
+\leftarrow
+\mathsf{Sign}_{\mathsf{sk}_i}(\mathbf m).
+$$
+
+Credential authenticity requires
+
+$$
+\mathsf{Verify}_{\mathsf{pk}_i}
+\left(
+\mathbf m,\sigma_i
+\right)=1
+$$
+
+together with valid issuer authority, schema, status, and time.
+
+The W3C Verifiable Credentials Data Model 2.0 defines an issuer-holder-verifier data model, while Verifiable Credential Data Integrity 1.0 and related securing specifications define methods for integrity and authenticity.[^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-vc-data-model][^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-data-integrity]
+
+A valid signature does not imply that every claim is true beyond the issuer's competence, that the holder is the legitimate presenter, or that the verifier is entitled to the claim.
+
+### Selective disclosure
+
+Partition credential claims into disclosed and hidden components:
+
+$$
+\mathbf m
+=
+\left(
+\mathbf m_D,\mathbf m_H
+\right).
+$$
+
+A selective-disclosure presentation allows the verifier to authenticate $\mathbf m_D$ without receiving $\mathbf m_H$.
+
+RFC 9901 defines selective disclosure for JSON Web Tokens through salted disclosures referenced by digests and supports optional transaction-specific key binding.[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9901] W3C's BBS cryptosuite work defines BBS-based selective disclosure and unlinkable derived proofs, but the applicable publication status and exact profile must be pinned rather than referred to generically.[^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-bbs]
+
+Selective disclosure reduces direct claim transfer. It does not necessarily conceal:
+
+- issuer and credential type;
+- disclosure count and structure;
+- holder-binding key;
+- status-list access;
+- proof suite and version;
+- rare disclosed combinations;
+- presentation timing and network metadata.
+
+### Commitments
+
+A commitment scheme is
+
+$$
+\mathsf{COM}
+=
+\left(
+\mathsf{Setup},
+\mathsf{Commit},
+\mathsf{Open},
+\mathsf{VerifyOpen}
+\right).
+$$
+
+For message $m$ and randomness $r$,
+
+$$
+C
+=
+\mathsf{Commit}(m;r).
+$$
+
+Hiding requires that $C$ reveal negligible or no information about $m$ under the specified definition. Binding requires that an adversary cannot open $C$ to two distinct messages.
+
+In a group $\mathbb G$ of prime order $q$, a Pedersen commitment is
+
+$$
+C=g^m h^r,
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-pedersen-commitment}
+
+where the discrete-log relation between independent generators $g$ and $h$ is unknown. The scheme is perfectly hiding and computationally binding under its assumptions.[^from-the-mosaic-theory-to-a-mathematical-gdpr-pedersen-commitments]
+
+A commitment can bind an endpoint to a model, function, request, or recipient context without immediately revealing the committed value. It does not prove that the value is lawful or correct.
+
+### Zero-knowledge predicates
+
+Let $\mathcal R_{\mathrm{zk}}$ be an NP relation over public statement $x$ and witness $w$. A proof system contains
+
+$$
+\mathsf{Prove}(x,w)
+\quad\text{and}\quad
+\mathsf{Verify}(x,\pi).
+$$
+
+Completeness requires valid witnesses to verify. Soundness prevents proving false statements, subject to the proof definition. Zero knowledge requires the verifier's view to be simulatable from the public statement without the witness.[^from-the-mosaic-theory-to-a-mathematical-gdpr-gmr-zero-knowledge]
+
+A request-bound statement should contain at least
+
+$$
+x_{\mathrm{req}}
+=
+\left(
+\mathsf{predicate},
+h(\widehat q),
+e,
+p,
+\nu,
+t_{\mathrm{exp}},
+v_{\mathcal R}
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-request-bound-statement}
+
+The proof is
+
+$$
+\pi
+\leftarrow
+\mathsf{Prove}
+\left(
+x_{\mathrm{req}},
+w
+\right).
+$$
+
+Binding the request digest, endpoint, purpose, nonce, expiry, and policy version prevents a proof generated for one interaction from being replayed as authorisation for another.
+
+Computational zero knowledge does not imply literal zero Shannon information in the transcript. The correct claim is computational indistinguishability from a simulator under the stated setup and adversary model.
+
+### Anonymous credentials and pseudonyms
+
+Anonymous-credential systems can support proof of credential possession, selective attribute disclosure, predicates, and repeated use without revealing a stable credential identifier.[^from-the-mosaic-theory-to-a-mathematical-gdpr-camenisch-lysyanskaya] A pairwise pseudonym for endpoint domain $d$ can be derived as
+
+$$
+N_{u,d}
+=
+H_{\mathbb G}(d)^{x_u},
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-pairwise-pseudonym}
+
+where $x_u$ is a holder secret and $H_{\mathbb G}$ maps the domain into an appropriate group.
+
+Pairwise pseudonyms reduce cross-domain linkage through the pseudonym itself. Reuse within one domain remains linkable by design. Cross-domain linkage may still arise from disclosed attributes, timing, issuer information, status evidence, device attestation, or colluding endpoints.
+
+### Credential status
+
+A verifier may need to determine whether a credential is valid, suspended, or revoked. Per-credential status queries can become a surveillance channel because the status provider learns when and where a credential is presented.
+
+Bitstring Status List v1.0 publishes compressed status information for many credentials, reducing the need for an online issuer query for each presentation.[^from-the-mosaic-theory-to-a-mathematical-gdpr-bitstring-status] Its privacy properties still depend on list design, caching, index allocation, network behaviour, and presentation protocol.
+
+A status proof should bind:
+
+$$
+\left(
+\mathsf{credentialCommitment},
+\mathsf{statusPurpose},
+\mathsf{statusEpoch},
+\mathsf{freshness},
+h(\widehat q)
+\right)
+$$
+
+without exposing a reusable per-presentation identifier where the mechanism permits.
+
+### Mechanism comparison
+
+| Mechanism | Intentionally revealed | Principal privacy advantage | Principal residual risk |
+|---|---|---|---|
+| Full signed credential | Complete credential and signature metadata | Simple verification | Maximum direct disclosure and stable correlation |
+| SD-JWT disclosure | Selected claims, issuer token structure, disclosures, optional key binding | Claim-level minimisation | Disclosed combinations and holder binding may link |
+| BBS-derived proof | Selected statements and proof metadata | Selective disclosure with stronger unlinkability potential | Suite maturity, public statement, and metadata still matter |
+| Zero-knowledge predicate | Predicate result and public statement | Hides witness and undisclosed values | Repeated predicates can reconstruct the secret |
+| Pairwise pseudonym | Domain-scoped pseudonym | Prevents one universal identifier | Linkable within domain; attributes and infrastructure may bridge domains |
+| Local computation proof | Function result and proof of approved execution | Avoids source-data release | Output and function metadata remain informative |
+
+: Privacy properties of representative cryptographic disclosure mechanisms. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-selective-disclosure-families}
+
+### Cryptographic response invariant
+
+For a cryptographic plan $\mu$, define
+
+$$
+\begin{aligned}
+\mathsf{CryptoSafe}(\mu,\widehat q,\Sigma_u^j)=1
+\quad\Longleftrightarrow\quad
+&
+\mathsf{CredentialAuthentic}(\mu)=1
+\\
+&{}\land
+\mathsf{HolderAuthorised}(\mu)=1
+\\
+&{}\land
+\mathsf{RequestBound}(\mu,\widehat q)=1
+\\
+&{}\land
+\mathsf{StatusValid}(\mu)=1
+\\
+&{}\land
+\mathsf{MechanismAllowed}_{\mathcal R}(\mu)=1
+\\
+&{}\land
+\mathsf{OutputConfined}(\mu,\widehat q)=1
+\\
+&{}\land
+\mathsf{BudgetSafe}(\mu,\Sigma_u^j)=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-cryptographic-response-invariant}
+
+Cryptography changes what can be verified without disclosure. It does not remove the need for recipient governance, composition, or legal authority.
+
+## Computing Without Plaintext Disclosure
+
+Selective disclosure changes which claims an endpoint receives. Secure computation changes whether it receives the underlying inputs at all.
+
+Let $x_u\in\mathcal X_u$ be user-controlled data, $x_e\in\mathcal X_e$ endpoint input, and
+
+$$
+f:\mathcal X_u\times\mathcal X_e\rightarrow\mathcal Y
+$$
+
+an authorised function. The endpoint's legitimate objective is output
+
+$$
+y=f(x_u,x_e),
+$$
+
+not unrestricted access to $x_u$.
+
+Let $S$ denote protected wallet state, $Y=f(S,x_e)$ the authorised output, and $\Pi$ the remaining endpoint-visible protocol transcript. The information revealed by the complete interaction decomposes as
+
+$$
+I(S;Y,\Pi\mid x_e)
+=
+I(S;Y\mid x_e)
++
+I(S;\Pi\mid Y,x_e).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-computation-leakage-decomposition}
+
+The first term is unavoidable once $Y$ is released. The second is protocol leakage beyond the authorised output. A computationally secure protocol ordinarily replaces an information-theoretic equality with a simulation claim: the real endpoint view should be computationally indistinguishable from a view generated using only authorised inputs, outputs, and declared leakage.
+
+No cryptographic construction can make $I(S;Y\mid x_e)$ disappear unless the output itself is independent of $S$. The output must therefore be charged to the disclosure and inferential coordinates even when protocol execution is ideal.
+
+### Local execution
+
+Where the wallet possesses the data and can execute the registered function, local computation has the smallest distributed trust surface.
+
+The endpoint-visible ideal view is
+
+$$
+\mathsf{View}_e^{\mathrm{loc}}
+=
+\left(
+\mathsf{Public}(\widehat q),
+y,
+\mathsf{PublicReceipt}(\rho)
+\right).
+$$
+
+A local plan may include proof $\pi_f$ that approved function $\mathsf{fid}$ was evaluated under regulatory profile $v_{\mathcal R}$:
+
+$$
+\mathsf{VerifyComp}
+\left(
+\mathsf{fid},
+h(x_e),
+y,
+v_{\mathcal R},
+\pi_f
+\right)=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-local-computation-proof}
+
+Local execution is appropriate for threshold tests, qualification checks, local filtering, public scoring rules, credential selection, and formally private randomisation. Its public function identifier, output, proof, timing, and receipt remain part of the privacy account.
+
+### Secure multiparty computation
+
+Secure multiparty computation allows parties with inputs $x_1,\ldots,x_n$ to evaluate functionality
+
+$$
+\mathcal F_f(x_1,\ldots,x_n)
+=
+(y_1,\ldots,y_n)
+$$
+
+without exposing complete inputs to one another. General feasibility results established secure computation for arbitrary efficiently computable functions under appropriate cryptographic and corruption assumptions.[^from-the-mosaic-theory-to-a-mathematical-gdpr-gmw-secure-computation]
+
+For adversary $\mathcal A$ controlling corruption set $\mathcal C$, protocol $\Pi_f$ securely realises $\mathcal F_f$ when there exists simulator $\mathcal S$ such that
+
+$$
+\left\{
+\operatorname{Real}_{\Pi_f,\mathcal A}
+(\mathbf x,\lambda)
+\right\}_{\lambda}
+\approx_c
+\left\{
+\operatorname{Ideal}_{\mathcal F_f,\mathcal S}
+(\mathbf x,\lambda)
+\right\}_{\lambda}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-mpc-real-ideal}
+
+The claim is incomplete unless it states:
+
+- static or adaptive corruption;
+- semi-honest or malicious behaviour;
+- corruption threshold;
+- fairness and output delivery;
+- synchronous or asynchronous network;
+- setup assumptions;
+- abort semantics;
+- explicit leakage;
+- concrete security level.
+
+Let $L_{\mathrm{MPC}}(f,\mathbf x)$ be the approved leakage function. The endpoint-visible output is
+
+$$
+Z_j^{\mathrm{MPC}}
+=
+\left(
+y,
+L_{\mathrm{MPC}},
+\mathsf{PublicReceipt}(\rho)
+\right).
+$$
+
+Secure execution protects inputs relative to the model. It does not make the output, party identities, message dimensions, timing, or selective aborts privacy-neutral.
+
+### Homomorphic encryption
+
+A homomorphic-encryption scheme is
+
+$$
+\mathsf{HE}
+=
+\left(
+\mathsf{KeyGen},
+\mathsf{Enc},
+\mathsf{Dec},
+\mathsf{Eval}
+\right).
+$$
+
+The wallet computes
+
+$$
+c_x\leftarrow\mathsf{Enc}_{\mathsf{pk}}(x_u),
+$$
+
+the endpoint computes
+
+$$
+c_y
+\leftarrow
+\mathsf{Eval}_{\mathsf{evk}}
+(C_f,c_x,x_e),
+$$
+
+and the wallet decrypts
+
+$$
+\widetilde y
+=
+\mathsf{Dec}_{\mathsf{sk}}(c_y).
+$$
+
+For exact arithmetic,
+
+$$
+\Pr
+\left[
+\widetilde y=f(x_u,x_e)
+\right]
+\ge
+1-\operatorname{negl}(\lambda).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-he-correctness}
+
+Gentry's construction established the first fully homomorphic encryption scheme capable in principle of evaluating arbitrary circuits over encrypted data.[^from-the-mosaic-theory-to-a-mathematical-gdpr-gentry-fhe]
+
+Input confidentiality does not establish evaluation integrity. A malicious evaluator may return malformed ciphertexts or execute another circuit. The response plan should therefore bind $C_f$, model or function commitment, parameters, ciphertext-validation rules, and—where necessary—a proof of correct evaluation.
+
+Approximate schemes require a separate error account. Let
+
+$$
+\widetilde y
+=
+y
++
+\epsilon_{\mathrm{model}}
++
+\epsilon_{\mathrm{poly}}
++
+\epsilon_{\mathrm{enc}}
++
+\epsilon_{\mathrm{num}}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-approximate-error-decomposition}
+
+An admitted profile must provide
+
+$$
+\Pr
+\left[
+\|\widetilde y-y\|
+\le
+\overline\epsilon_f
+\right]
+\ge
+1-\beta_f.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-approximate-output-bound}
+
+The CKKS construction supports approximate arithmetic over encoded complex values and uses rescaling to manage magnitude and precision.[^from-the-mosaic-theory-to-a-mathematical-gdpr-ckks] For threshold decision $d(y)=\mathbb 1[y\ge\tau]$, the decision is stable only when
+
+$$
+|y-\tau|>\overline\epsilon_f.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-threshold-stability}
+
+Near the threshold, the result should be indeterminate, recomputed at greater precision, or evaluated through another mechanism.
+
+Function confidentiality creates an additional conflict. If endpoint model parameters $\theta_e$ remain hidden, the wallet may be unable to verify the purpose, target variables, error profile, or inferential cost. A regulator-certified model commitment and proof of execution can narrow that gap, but cannot make an opaque model fully interpretable.
+
+### Trusted execution environments
+
+A trusted execution environment may decrypt and process data within a hardware-enforced boundary. Let $\mathsf{meas}(C)$ be a cryptographic measurement of code and configuration. Remote-attestation evidence is
+
+$$
+E_{\mathrm{att}}
+=
+\mathsf{Attest}
+\left(
+\mathsf{meas}(C),
+\mathsf{config},
+\nu,
+\mathsf{claims}
+\right).
+$$
+
+Under the Remote ATtestation procedureS architecture, an Attester supplies Evidence, a Verifier appraises it with reference values and policy, and a Relying Party consumes the resulting Attestation Result.[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9334]
+
+The wallet admits a TEE plan only if:
+
+$$
+\begin{aligned}
+\mathsf{TEEAdmit}(\mu,\widehat q,t)=1
+\quad\Longleftrightarrow\quad
+&
+\mathsf{VerifyAttestation}(E_{\mathrm{att}})=1
+\\
+&{}\land
+\mathsf{Fresh}(E_{\mathrm{att}},\nu,t)=1
+\\
+&{}\land
+\mathsf{meas}(C)\in\mathcal M_{\mathrm{approved}}
+\\
+&{}\land
+\mathsf{ConfigAllowed}(\mathsf{config})=1
+\\
+&{}\land
+\mathsf{RequestBound}(E_{\mathrm{att}},\widehat q)=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-tee-admission}
+
+Attestation authenticates appraised platform claims. It does not prove that the code implements law correctly, that source code is vulnerability-free, that the compiler preserved semantics, or that side channels are absent.
+
+The leakage profile must include timing, memory access, I/O dimensions, abort behaviour, platform metadata, and persistent-state exposure.
+
+### Mechanism order
+
+| Mechanism | Plaintext location | Endpoint learns by design | Principal trust assumption | Residual exposure |
+|---|---|---|---|---|
+| Local wallet computation | Wallet | Authorised output | Wallet integrity and optional proof security | Output, timing, receipt, proof metadata |
+| Secure multiparty computation | Secret-shared or protocol-distributed | Authorised output and declared leakage | Protocol and corruption model | Party identities, dimensions, aborts, coalition threshold |
+| Homomorphic encryption | Wallet at input and decryption; ciphertext at evaluator | Ciphertexts and released output | Encryption parameters and optional evaluation proof | Circuit identity, dimensions, key reuse, output |
+| Trusted execution environment | Protected execution boundary | Output and attestation result | Hardware, firmware, verifier, trusted computing base | Side channels, host I/O, rollback, platform metadata |
+| Plain endpoint computation | Endpoint | Raw input and output | Endpoint security and legal compliance | Complete downstream use and inference |
+
+: Plaintext location, trust, and residual leakage of computation mechanisms. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-secure-computation-mechanisms}
+
+Let $\mu_1\preceq_{\mathrm{comp}}\mu_2$ when $\mu_1$ is no more informative, requires no larger trust set, and has no worse admissible error profile than $\mu_2$. The planner should select a minimal element of the adequate and budget-safe set. The order is partial: lower leakage may require a larger hardware trust base, and exact computation may reveal a function that an endpoint is entitled to keep confidential.
+
+The computation-security invariant is
+
+$$
+\begin{aligned}
+\mathsf{ComputeSafe}(\mu,\widehat q,\Sigma_u^j)=1
+\quad\Longleftrightarrow\quad
+&
+\mathsf{FunctionBound}(\mu,\widehat q)=1
+\\
+&{}\land
+\mathsf{InputConfidential}(\mu)=1
+\\
+&{}\land
+\mathsf{OutputCorrect}(\mu)=1
+\\
+&{}\land
+\mathsf{LeakageDeclared}(\mu)=1
+\\
+&{}\land
+\mathsf{TrustAdmissible}(\mu)=1
+\\
+&{}\land
+\mathsf{ErrorAdmissible}(\mu)=1
+\\
+&{}\land
+\mathsf{BudgetSafe}(\mu,\Sigma_u^j)=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-computation-security-invariant}
+
+## Composition Across Requests, Recipients, and Time
+
+A mechanism can satisfy its local cryptographic specification while the sequence of outputs violates cumulative privacy constraints. Composition must distinguish:
+
+1. **cryptographic composition**: whether protocol security survives repeated or concurrent execution;
+2. **informational composition**: what the joint outputs and leakage reveal;
+3. **institutional composition**: which recipients can combine or reconstruct those observations.
+
+Success in one dimension does not imply success in the others.
+
+### Global history and coalition views
+
+The committed interaction history is
+
+$$
+\mathbb T_u^0=\varnothing,
+\qquad
+\mathbb T_u^{j+1}
+=
+\left(
+\mathbb T_u^j,
+\widehat q_j,
+Z_j,
+\rho_j
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-global-history}
+
+The object is formal; no entity is required to hold every plaintext transaction.
+
+For recipient coalition $A$, define
+
+$$
+V_A^j
+=
+\operatorname{Proj}_A
+\left(
+\mathbb T_u^j,
+K_A^j
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-coalition-view}
+
+where $K_A^j$ is coalition auxiliary information and $\operatorname{Proj}_A$ models direct access, authorised transfer, shared infrastructure, common ownership, public records, identifiers, and other approved threat channels.
+
+Complete exposure is
+
+$$
+I(Y^{(r)};V_A^j).
+$$
+
+The incremental contribution of wallet transactions beyond prior knowledge is
+
+$$
+I
+\left(
+Y^{(r)};
+\mathbb T_{u,A}^j
+\mid
+K_A^j
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-coalition-incremental-exposure}
+
+These quantities answer different questions. The first describes the coalition's total epistemic state; the second isolates the wallet-mediated contribution.
+
+### Adaptive requests
+
+Let $\mathcal F_j^A=\sigma(V_A^j)$ be the coalition's information before request $j$. A request-selection policy is non-anticipating when the request depends only on prior view and fresh randomness, not on unmodelled direct access to the target:
+
+$$
+I
+\left(
+Y^{(r)};
+\widehat q_j
+\mid
+V_A^j
+\right)=0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-request-nonanticipation}
+
+If
+
+$$
+V_A^{j+1}
+=
+\left(
+V_A^j,\widehat q_j,Z_j^A
+\right),
+$$
+
+then
+
+$$
+I(Y^{(r)};V_A^n)
+=
+I(Y^{(r)};K_A^0)
++
+\sum_{j=0}^{n-1}
+I
+\left(
+Y^{(r)};
+Z_j^A
+\mid
+V_A^j,\widehat q_j
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-adaptive-exposure-chain-rule}
+
+The conditional term, not a catalogue-wide constant, is the relevant increment.
+
+### Cryptographic versus informational composition
+
+Suppose protocols $\Pi_0,\ldots,\Pi_{n-1}$ compose securely so that their joint real execution is simulatable from outputs $\mathbf Y_n$, declared leakage $\mathbf L_n$, and requests:
+
+$$
+\operatorname{Real}(\Pi_{0:n-1})
+\approx_c
+\mathcal S
+\left(
+\mathbf Y_n,\mathbf L_n,\widehat q_{0:n-1}
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-composed-protocol-simulation}
+
+The remaining privacy exposure is still
+
+$$
+I
+\left(
+S;
+\mathbf Y_n,\mathbf L_n
+\mid
+K
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-secure-output-sequence-exposure}
+
+The output sequence may determine $S$ even when each cryptographic transcript is ideal. Secure execution is not the same as a safe sequence of functionalities.
+
+### Recipient closure
+
+Let
+
+$$
+\operatorname{Cl}_j:
+2^{\mathcal E}
+\rightarrow
+2^{\mathcal E}
+$$
+
+be the transfer-and-access closure at transaction $j$. It is extensive, monotone, and idempotent:
+
+$$
+B\subseteq\operatorname{Cl}_j(B),
+$$
+
+$$
+B_1\subseteq B_2
+\Longrightarrow
+\operatorname{Cl}_j(B_1)
+\subseteq
+\operatorname{Cl}_j(B_2),
+$$
+
+$$
+\operatorname{Cl}_j(\operatorname{Cl}_j(B))
+=
+\operatorname{Cl}_j(B).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-recipient-closure}
+
+A statement disclosed to endpoint $e$ is charged to every coalition intersecting $\operatorname{Cl}_j(\{e\})$.
+
+A later merger, processor appointment, transfer, or identifier resolution may enlarge the closure. That can create retrospective exposure without a new wallet output:
+
+$$
+\Delta_{\mathrm{retro}}E_{r,A}^{j+1}
+=
+I(Y^{(r)};V_A^{j+1})
+-
+I(Y^{(r)};V_A^j).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-retrospective-exposure}
+
+The wallet cannot observe every institutional change. Endpoint reporting and supervision remain necessary.
+
+### Linkability composition
+
+Because an earlier transcript is a projection of a longer transcript, cumulative linkability cannot decrease merely by appending observations:
+
+$$
+\lambda_{c,c'}^{n+1}
+\ge
+\lambda_{c,c'}^n.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-linkability-monotonicity}
+
+If every conditional same-user versus different-user observation differs by at most $\delta_j$ in total variation, uniformly over prior histories, then a sequential coupling bound gives
+
+$$
+\lambda_{c,c'}^n
+\le
+1-\prod_{j=0}^{n-1}(1-\delta_j)
+\le
+\min\left\{1,\sum_{j=0}^{n-1}\delta_j\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-linkability-composition-bound}
+
+These are upper bounds under the stated uniform condition, not empirical guarantees from one tested classifier.
+
+### Time and forgetting
+
+Let $V_A(t)$ be coalition view at time $t$. If the view only accumulates, then for $t_1<t_2$ the earlier view is a function of the later one, and the data-processing inequality gives
+
+$$
+I(Y;V_A(t_1))
+\le
+I(Y;V_A(t_2)).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-temporal-exposure-monotonicity}
+
+Authorisation expiry, credential expiry, retention expiry, accounting epoch, and epistemic forgetting are distinct. A retention duty may require deletion; it does not prove that every copy, derivative, backup, or model parameter is unrecoverable.
+
+A genuine forgetful transformation $F$ satisfies
+
+$$
+\widetilde V_A=F(V_A),
+$$
+
+and therefore
+
+$$
+I(Y;\widetilde V_A)
+\le
+I(Y;V_A).
+$$
+
+The inequality describes the transformation if it occurs. It does not establish that the endpoint performed it.
+
+### Concurrency
+
+Two plans may each be safe against the same pre-state while their joint cost is unsafe:
+
+$$
+\mathbf c^j\oplus\boldsymbol\kappa_a\in\mathfrak F,
+$$
+
+$$
+\mathbf c^j\oplus\boldsymbol\kappa_b\in\mathfrak F,
+$$
+
+but
+
+$$
+\mathbf c^j
+\oplus
+\boldsymbol\kappa_a
+\oplus
+\boldsymbol\kappa_b
+\notin
+\mathfrak F.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-concurrent-overspend}
+
+The logical wallet therefore requires serializable privacy-state transitions. Let $\prec_{\mathrm{lin}}$ be a total order extending real-time precedence. Each committed transaction must be evaluated against all prior commits in that order.
+
+### Multi-device and cross-wallet state
+
+Online devices can commit through an atomic compare-and-swap on state roots:
+
+$$
+\mathsf{CAS}
+\left(
+R_{\mathrm{pre}},
+R_{\mathrm{post}}
+\right).
+$$
+
+A successful update linearises the transaction; a failed update releases nothing.
+
+Offline operation can use pre-allocated capabilities. Let $\mathfrak C_{u,k}$ be the local cost region assigned to wallet unit $v_{u,k}$. Sound allocation requires
+
+$$
+\bigoplus_{k=1}^{m}
+\mathfrak C_{u,k}
+\subseteq
+\operatorname{Res}
+\left(
+\mathbf c_u^j,\overline{\mathbf c}_u
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-offline-capability-allocation}
+
+This is practical for some additive coordinates. It is weak for inferential exposure because outputs generated on separate devices can interact synergistically.
+
+Cross-wallet composition creates a deeper trade-off. A universal identifier or central ledger simplifies global accounting but creates a powerful linkage structure. Scoped encrypted synchronization, anonymous expenditure credentials, threshold checks, conservative per-wallet limits, and endpoint-side coalition accounting each weaken a different requirement. No known design simultaneously supplies perfect global composition, perfect unlinkability, unrestricted offline use, and no coordinating trust component.
+
+### Composition invariant
+
+Assume:
+
+1. $\mathbf c_u^0\in\mathfrak F_u$;
+2. every committed transaction has one linearization point;
+3. each transaction is evaluated against all prior commits;
+4. the cost profile includes all applicable coordinates and coalition effects;
+5. a transaction commits only if its post-state is feasible;
+6. no device releases an uncommitted response.
+
+Then every committed prefix satisfies
+
+$$
+\mathbf c_u^j\in\mathfrak F_u.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-serializable-composition-invariant}
+
+The proof is induction over the serialization order. The result is conditional on complete cost profiles and sound threat models.
+
+## Protocol Semantics and Wallet State Transitions
+
+The preceding model specifies what should be admitted. Protocol semantics specifies the order in which the wallet validates, reserves, executes, commits, emits, retries, recovers, and updates.
+
+Let a configuration be
+
+$$
+\Gamma
+=
+\left\langle
+\Sigma_u,
+\mathcal R,
+\mathcal M,
+\mathcal B,
+\mathcal E_{\mathrm{trace}}
+\right\rangle,
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-protocol-configuration}
+
+where:
+
+- $\Sigma_u$ is durable committed state;
+- $\mathcal R$ is the installed regulatory profile;
+- $\mathcal M$ maps transaction identifiers to transaction records;
+- $\mathcal B$ is a protected buffer of computed but unreleased responses;
+- $\mathcal E_{\mathrm{trace}}$ is the external event trace.
+
+Structural operational semantics represents behaviour through labelled transitions $\Gamma\xrightarrow{\ell}\Gamma'$.[^from-the-mosaic-theory-to-a-mathematical-gdpr-plotkin-sos]
+
+### Transaction phases
+
+The phase set is
+
+$$
+\begin{aligned}
+\mathcal S_{\mathrm{tx}}
+=
+\{
+&
+\mathsf{received},
+\mathsf{validated},
+\mathsf{classified},
+\mathsf{planned},
+\mathsf{reserved},
+\\
+&
+\mathsf{executed},
+\mathsf{committed},
+\mathsf{emitted},
+\mathsf{denied},
+\mathsf{review},
+\mathsf{aborted}
+\}.
+\end{aligned}
+$$
+
+A transaction record contains
+
+$$
+\begin{aligned}
+\mathsf{tr}_{r}
+=
+\big(
+&
+s,
+h_q,
+\widehat q,
+m,
+\mu,
+\boldsymbol\kappa,
+R_{\mathrm{pre}},
+R_{\mathrm{post}},
+\\
+&
+h_z,
+\rho,
+f,
+v_{\mathcal R}
+\big).
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-transaction-record}
+
+A duplicate transaction identifier is an idempotent retry only if the canonical request digest is identical. Reusing the identifier with a different request is denied.
+
+### Validation, classification, and planning
+
+Reception inserts a $\mathsf{received}$ record without changing committed privacy state.
+
+Validation applies Equation @eq-from-the-mosaic-theory-to-a-mathematical-gdpr-well-formed-request. Classification applies the legal-mode projection. Forbidden requests become durable denials; unresolved requests enter review and cannot release protected output.
+
+Planning computes
+
+$$
+\mu
+=
+\mathsf{Plan}
+\left(
+\widehat q,\Sigma_u,\mathcal R
+\right)
+$$
+
+and stores its cost, policy version, and pre-state root.
+
+A plan is invalidated when the current root or policy version no longer matches its bound values.
+
+### Reservation and execution
+
+Reservation establishes an exclusive conditional right to attempt the state transition. Let
+
+$$
+\Sigma_{u,r}^{+}
+=
+\mathsf{ApplyCost}
+\left(
+\Sigma_u,\boldsymbol\kappa_r,r,v_{\mathcal R}
+\right).
+$$
+
+The reservation token is
+
+$$
+\vartheta_r
+=
+H
+\left(
+\mathsf{reserve}
+\parallel
+r
+\parallel
+R_{\mathrm{pre}}
+\parallel
+h(\boldsymbol\kappa_r)
+\parallel
+v_{\mathcal R}
+\parallel
+\nu_r
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-reservation-token}
+
+Execution computes response $z$ into protected buffer $\mathcal B[r]$. It does not release even a partial proof, decryption share, timing-dependent success signal, or application result unless that observation is separately accounted for.
+
+### Atomic commit
+
+Commit is the linearization point for a successful transaction. Linearizability requires each concurrent operation to appear as though it took effect atomically between invocation and response.[^from-the-mosaic-theory-to-a-mathematical-gdpr-herlihy-wing]
+
+The commit-ready predicate is
+
+$$
+\begin{aligned}
+\mathsf{CommitReady}(r,\Gamma)=1
+\quad\Longleftrightarrow\quad
+&
+\mathcal M[r].s=\mathsf{executed}
+\\
+&{}\land
+\mathcal M[r].R_{\mathrm{pre}}=R_u^j
+\\
+&{}\land
+\mathsf{ReservationValid}(\vartheta_r)=1
+\\
+&{}\land
+\mathbf c_u^j\oplus\boldsymbol\kappa_r\in\mathfrak F_u
+\\
+&{}\land
+\mathsf{ResponseConforms}(z,\mu,\widehat q)=1
+\\
+&{}\land
+\mathsf{PolicyCurrent}(v_{\mathcal R})=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-commit-ready}
+
+The receipt is
+
+$$
+\begin{aligned}
+\rho_r
+=
+\big(
+&
+r,
+h_q,
+h(\mu),
+h(z),
+v_{\mathcal R},
+R_{\mathrm{pre}},
+R_{\mathrm{post}},
+\\
+&
+h(\boldsymbol\kappa_r),
+t_c,
+\sigma_w
+\big).
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-commit-receipt}
+
+The state update, journal insertion, and receipt creation are one durable action. Only a committed record can be emitted.
+
+If the pre-state root changed, commit fails and the buffered response is destroyed. A proof or randomized output bound to a stale state is not reused after replanning.
+
+### Denial and review
+
+A denial can leak information. Internal failure reason $f$ is mapped to a coarse public code
+
+$$
+d=\mathsf{DenyView}(f).
+$$
+
+The denial receipt binds the request digest, public code, policy version, state root, time, and wallet signature. The observable denial experiment includes timing and retry metadata and therefore enters linkability and inferential accounting.
+
+Review produces no protected output. A later human or institutional approval enters as a new authenticated authority fact and is re-evaluated against current state and policy.
+
+### Idempotent retry
+
+For committed transaction identifier $r$, a valid retry returns the same response and receipt digests:
+
+$$
+\mathsf{emit}(r,z_1,\rho_1),
+\mathsf{emit}(r,z_2,\rho_2)
+\in
+\mathcal E_{\mathrm{trace}}
+$$
+
+implies
+
+$$
+h(z_1)=h(z_2),
+\qquad
+h(\rho_1)=h(\rho_2).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-retry-idempotence}
+
+No new randomness is sampled and no additional cost is charged.
+
+### Crash recovery
+
+The durable projection excludes an uncommitted volatile response unless persistence provides equivalent confidentiality and integrity:
+
+$$
+\mathsf{Dur}(\Gamma)
+=
+\left(
+\Sigma_u,\mathcal R,\mathcal M_{\mathrm{dur}}
+\right).
+$$
+
+After recovery:
+
+- planned or reserved transactions are aborted or replanned;
+- executed but uncommitted responses are not emitted;
+- committed responses may be re-emitted without another charge;
+- incompatible pending transactions are aborted after policy change.
+
+The invariant is
+
+$$
+\mathsf{NotCommitted}(r)
+\Longrightarrow
+\mathsf{NotExternallyRecoverable}(z_r).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-uncommitted-output-unrecoverable}
+
+### Policy installation and synchronization
+
+A signed update object binds old and new versions, content digests, effective time, migration, compatibility, authority, and signature. Uncommitted transactions bound to an incompatible version are aborted.
+
+For multi-device operation, the authoritative root is changed through atomic compare-and-swap:
+
+$$
+\mathsf{CAS}
+\left(
+R_{\mathrm{pre}},
+R_{\mathrm{post}}
+\right)=1.
+$$
+
+A failed compare-and-swap releases no response.
+
+### Safety theorem
+
+Assume:
+
+1. the initial consumed state is feasible;
+2. cryptographic digests and signatures satisfy their stated properties;
+3. successful output is produced only by the emission rule;
+4. successful commit is atomic and uses a complete typed cost;
+5. transaction identifiers cannot be substituted;
+6. committed journal entries cannot be rolled back without detection.
+
+Then every reachable configuration satisfies:
+
+- no release before commitment;
+- at-most-once privacy charging;
+- feasible-state preservation;
+- request-response binding;
+- policy-version consistency;
+- retry idempotence;
+- output confinement.
+
+The proof is induction over the transition sequence. Reception, validation, planning, reservation, and execution do not release output or modify consumed state. Commit checks feasibility and records the bound transaction atomically. Emission requires the committed record. Retry leaves state unchanged. Failed synchronization aborts without release.
+
+The theorem establishes safety under idealised semantics. It does not establish liveness, scientific validity of cost estimators, or security of the implementation.
+
+## Regulatory Policy Profiles and Machine-Readable Rights
+
+The wallet consumes functions such as
+
+$$
+\mathsf{Mode}_{\mathcal R},
+\quad
+\mathsf{Plan},
+\quad
+\mathsf{BudgetSafe},
+\quad
+\mathsf{TrustAdmissible},
+\quad
+\mathsf{DenyView}.
+$$
+
+These functions cannot be permanently embedded in provider code. Their contents depend on jurisdiction, sector, authority, data category, legal role, technological risk, and policy version. They belong in authenticated regulatory profiles.
+
+A profile is not law. It is a machine-enforceable projection with derivative authority, explicit scope, provenance, and safe failure semantics.
+
+### Profile structure
+
+Define
+
+$$
+\begin{aligned}
+\mathcal R
+=
+\big(
+&
+\mathsf{Hdr},
+\mathsf{Voc},
+\mathsf{Sch},
+\mathsf{Auth},
+\mathsf{Rules},
+\\
+&
+\mathsf{Mech},
+\mathsf{Bud},
+\mathsf{Rights},
+\mathsf{Comb},
+\mathsf{Upd}
+\big).
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-regulatory-profile}
+
+The components contain:
+
+- identity, issuer, jurisdiction, sector, version, validity, status, and signature;
+- versioned vocabularies for purposes, data, processing, roles, risks, and rights;
+- typed request, credential, proof, receipt, and rights schemas;
+- competence scopes, delegations, and verification keys;
+- prohibitions, constraints, classifications, and review rules;
+- approved cryptographic and computation mechanisms;
+- budget domains, ceilings, estimators, coalitions, and compartments;
+- stateful rights workflows;
+- conflict and uncertainty semantics;
+- update, migration, suspension, and rollback-prevention rules.
+
+The profile is authentic when its authority chain and signature verify, its canonical digest matches, its validity interval includes the current time, and its status is active. Signature validation does not establish legal competence; competence is a separately validated scope.
+
+### Rule language
+
+An executable rule is
+
+$$
+r=
+\left(
+\mathsf{id}_r,
+a_r,
+S_r,
+e_r,
+g_r,
+\mathfrak P_r,
+\mathfrak O_r,
+\pi_r
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-regulatory-rule}
+
+where:
+
+- $a_r$ is the issuing authority;
+- $S_r$ is the jurisdictional, sectoral, actor, purpose, and temporal scope;
+- $e_r$ is one of $\mathsf{prohibit}$, $\mathsf{constrain}$, $\mathsf{classify}$, $\mathsf{require}$, or $\mathsf{review}$;
+- $g_r$ is a typed guard returning $0$, $1$, or $\mathsf{unknown}$;
+- $\mathfrak P_r(\kappa)$ is the admitted plan set;
+- $\mathfrak O_r(\kappa)$ is the generated obligation set;
+- $\pi_r$ records legal provenance, rationale, tests, and limitations.
+
+The guard language must terminate within a declared resource bound. Mandatory $\mathsf{unknown}$ results yield denial or review, not false.
+
+A prohibition has
+
+$$
+\mathfrak P_r(\kappa)=\varnothing.
+$$
+
+A rule requiring an unlinkable age proof may admit only plans with Boolean output, approved proof suite, no stable identifier, and a bounded linkability profile.
+
+Generic policy languages and vocabularies can provide building blocks. ODRL defines permissions, prohibitions, duties, constraints, profiles, and conflict strategies.[^from-the-mosaic-theory-to-a-mathematical-gdpr-odrl] The Data Privacy Vocabulary provides terms for purposes, processing, personal data, roles, legal bases, risks, technologies, and rights, but its community-specification status and exact version must be represented accurately.[^from-the-mosaic-theory-to-a-mathematical-gdpr-dpv] Neither supplies the complete legal hierarchy, typed budget, rights workflow, or safe conflict semantics proposed here.
+
+### Authority and combination
+
+Let $a_1\succeq_{\kappa}a_2$ mean that authority $a_1$ controls or constrains authority $a_2$ for evaluation context $\kappa$. The relation is a contextual partial order, not a universal numerical priority.
+
+A subordinate rule is a valid refinement only if
+
+$$
+\mathfrak P_{r_{\mathrm{sub}}}(\kappa)
+\subseteq
+\mathfrak P_{r_{\mathrm{sup}}}(\kappa).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-subordinate-refinement}
+
+Let $\mathsf{App}_{\mathcal R}(\kappa)$ be the applicable rule set. The regulator-admissible plan set is
+
+$$
+\mathfrak P_{\mathcal R}(\kappa)
+=
+\mathfrak P_{\mathrm{univ}}(\kappa)
+\cap
+\bigcap_{r\in\mathsf{App}_{\mathcal R}(\kappa)}
+\mathfrak P_r(\kappa).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-regulatory-intersection}
+
+This intersection implements non-substitutability. A plan must satisfy every independent mandatory constraint.
+
+If incomparable competent rules have disjoint plan sets, the result is review or denial under the profile. There is no implicit permission merely because no prohibition string matched.
+
+### Mechanism and budget registries
+
+A mechanism profile pins:
+
+$$
+\left(
+\mathsf{mid},
+\mathsf{family},
+\mathsf{version},
+\mathsf{params},
+\mathsf{security},
+\mathsf{leakage},
+\mathsf{error},
+\mathsf{status},
+\tau
+\right).
+$$
+
+Status belongs to
+
+$$
+\{
+\mathsf{approved},
+\mathsf{restricted},
+\mathsf{deprecated},
+\mathsf{prohibited}
+\}.
+$$
+
+A family name such as “zero knowledge,” “homomorphic encryption,” or “trusted execution” is not enough. The profile must identify ciphersuite, parameter set, canonicalisation, challenge length, setup, corruption model, circuit or code commitment, leakage, validation, and deprecation semantics.
+
+The budget registry pins coordinate domains, feasible regions, cost algorithms, model sets, coalition closures, compartments, and rebasing rules. A robust cost evaluator may return set
+
+$$
+\mathfrak K_{\mu,\kappa}\subseteq\mathbb B.
+$$
+
+Admission requires
+
+$$
+\mathbf c_u^j\oplus\boldsymbol\kappa
+\in\mathfrak F
+\quad
+\text{for every }
+\boldsymbol\kappa\in\mathfrak K_{\mu,\kappa}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-robust-profile-admission}
+
+Missing a required coordinate does not authorise the wallet to substitute zero.
+
+### Machine-readable rights
+
+A right is not generally a Boolean setting. It may require initiation, identity verification, controller response, evidence, deadlines, limitations, and escalation.
+
+For right $h$, define workflow
+
+$$
+\mathfrak X_h
+=
+\left(
+S_h,E_h,\delta_h,s_h^0,F_h,\Delta_h,\mathsf{Evidence}_h
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-rights-workflow}
+
+where:
+
+- $S_h$ is the state set;
+- $E_h$ is the event set;
+- $\delta_h$ is the transition function;
+- $F_h$ is the terminal-state set;
+- $\Delta_h$ is the context-dependent deadline;
+- $\mathsf{Evidence}_h$ defines transition evidence.
+
+States may include
+
+$$
+\{
+\mathsf{available},
+\mathsf{initiated},
+\mathsf{identity\text{-}pending},
+\mathsf{accepted},
+\mathsf{in\text{-}progress},
+\mathsf{fulfilled},
+\mathsf{partially\text{-}fulfilled},
+\mathsf{refused},
+\mathsf{contested},
+\mathsf{escalated},
+\mathsf{closed}
+\}.
+$$
+
+The wallet can create an authenticated rights request, track signed responses, detect a protocol-level overdue state, and prepare escalation evidence. It cannot compel a controller or mark fulfilment without the evidence required by the profile.
+
+Rights history is sensitive. The wallet should store the least informative history that still enforces the workflow and disclose only the dispute-specific audit projection.
+
+### Profile validation and updates
+
+A profile is installable only if it is authentic, competence-valid, schema-valid, vocabulary-closed, typed, terminating, deterministic, conflict-safe, mechanism-complete, budget-complete, rights-well-formed, and update-safe.
+
+Conformance of implementation $\mathfrak I$ to profile $\mathcal R$ does not imply legal soundness:
+
+$$
+\mathsf{Conform}(\mathfrak I,\mathcal R)=1
+\not\Rightarrow
+\mathsf{LegalSound}(\mathcal R,\Lambda_t)=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-conformance-legal-nonimplication}
+
+The converse also fails. Profile validation and implementation certification are separate assurance tasks.
+
+A signed update binds old and new versions, old and new digests, effective time, migration, compatibility, reason, authority, and signature. Migration must preserve consumed privacy state under a regulator-approved embedding. If no sound embedding exists, old and new compartments remain separate and cross-version transactions are restricted.
+
+Emergency suspension may target a compromised profile, mechanism, issuer key, wallet version, circuit, attestation measurement, or estimator. It must be scoped, signed, auditable, and time-bounded. Uncommitted dependent transactions are aborted; already emitted information cannot be recalled.
+
+### Policy-enforcement theorem
+
+Assume:
+
+1. the installed profile is valid;
+2. every applicable rule is evaluated;
+3. rule combination uses Equation @eq-from-the-mosaic-theory-to-a-mathematical-gdpr-regulatory-intersection;
+4. user policy satisfies Equation @eq-from-the-mosaic-theory-to-a-mathematical-gdpr-user-policy-monotonicity;
+5. the planner selects only from the combined set;
+6. the receipt binds request, plan, profile version, and state root;
+7. release follows commit.
+
+Then every emitted discretionary plan $\mu$ satisfies
+
+$$
+\mu
+\in
+\mathfrak P_{\mathcal R}(\kappa)
+\cap
+\mathfrak P_{\mathcal P_u}(\kappa).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-policy-enforcement}
+
+The theorem is relative to the installed profile. It does not establish complete lawfulness:
+
+$$
+\mu\in\mathfrak P_{\mathcal R}(\kappa)
+\not\Rightarrow
+\mathsf{Legal}_t(\mu,\omega)=\mathsf{permitted}.
+$$
+
+## Security, Recovery, Coercion, and Wallet Governance
+
+The wallet concentrates functions that endpoint-centred systems distribute among browsers, identity providers, credential stores, consent interfaces, update services, and compliance systems. Concentration makes pre-disclosure enforcement possible, but creates a high-value target.
+
+The security objective cannot be “the wallet is trusted.” It must identify components, assets, corruption sets, leakage, and preserved properties.
+
+### Components and assets
+
+Let
+
+$$
+\begin{aligned}
+\mathcal C_{\mathrm{sys}}
+=
+\{
+&
+\mathsf{UI},
+\mathsf{Engine},
+\mathsf{Store},
+\mathsf{CryptoApp},
+\mathsf{CryptoDevice},
+\mathsf{OS},
+\\
+&
+\mathsf{Sync},
+\mathsf{Recovery},
+\mathsf{Update},
+\mathsf{PolicyDist},
+\mathsf{Attest}
+\}.
+\end{aligned}
+$$
+
+The asset set is
+
+$$
+\mathcal A_{\mathrm{wallet}}
+=
+\left\{
+\mathcal C_u,
+\mathcal K_u,
+\mathbf c_u,
+\mathcal H_u,
+\mathcal P_u,
+\mathcal R,
+\mathsf{UIState},
+\mathsf{Receipts}
+\right\}.
+$$
+
+For asset $a$, define
+
+$$
+\mathbf s(a)
+=
+\left(
+\mathsf{Conf}(a),
+\mathsf{Int}(a),
+\mathsf{Avail}(a),
+\mathsf{Fresh}(a),
+\mathsf{Origin}(a)
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-asset-security-vector}
+
+A public profile need not be confidential, but its origin, integrity, and freshness are critical. Credentials require confidentiality and authenticity. Privacy-state roots require integrity and monotonicity.
+
+For corruption set $C\subseteq\mathcal C_{\mathrm{sys}}$, a complete claim has form
+
+$$
+\mathsf{Secure}
+\left(
+\Pi,C,L_C,\mathcal P_{\mathrm{sec}}
+\right)=1,
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-parameterised-security}
+
+where $L_C$ is admitted leakage and $\mathcal P_{\mathrm{sec}}$ the preserved property set.
+
+The European wallet implementing framework already distinguishes wallet solutions, user-specific wallet units, instances, and secure cryptographic applications or devices.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-integrity] The personal privacy wallet adds privacy-state continuity, regulator-profile integrity, and inferential accounting to the critical-asset set.
+
+| Compromised component | Adversarial capability | Principal consequence | Required containment |
+|---|---|---|---|
+| User interface | Misdescribe purpose or output; conceal warnings | Semantically different transaction appears approved | Protected rendering and confirmation binding |
+| Policy engine | Ignore prohibitions or miscompute costs | Invalid plan appears locally permitted | Independent conformance, measurement, and receipt verification |
+| Store | Read or replace credentials and history | Identity theft, profiling, forged local state | Encryption, integrity, isolated keys, state-root checks |
+| Secure cryptographic component | Use or extract keys | Undetectable proof generation or impersonation | Usage policy, revocation, counters, independent confirmation |
+| Operating system | Overlay UI, inspect memory, delay updates | Complete application compromise | Reduced trusted computing base, secure attention path, isolation |
+| Synchronisation provider | Observe metadata, fork state, omit transactions | Budget rollback, overspending, behavioural profiling | Encrypted state, consistency proofs, independent witnesses |
+| Recovery subsystem | Replace wallet authority | Takeover presented as legitimate recovery | Threshold approval, delay, notification, revocation |
+| Update system | Install malicious or obsolete software | Persistent compromise | Threshold signing, expiry, target delegation, transparency |
+| Policy distributor | Serve stale or targeted profiles | Selective weakening of protections | Signed version chains, mirrors, transparency, consistency |
+| Attestation service | Misstate platform or revocation | Unsafe code treated as approved | Independent appraisal, freshness, multiple trust anchors |
+
+: Component compromise and containment obligations. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-compromise-classes}
+
+### Rollback and forking
+
+An authentic old backup can be as dangerous as a modified current state. Let state roots form a successor chain:
+
+$$
+R_u^{j+1}
+=
+H
+\left(
+\mathsf{state}
+\parallel
+R_u^j
+\parallel
+h(\mathsf{tx}_j)
+\parallel
+h(\Sigma_u^{j+1})
+\parallel
+v_{\mathcal R}^{j+1}
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-state-root-chain}
+
+A signed checkpoint is
+
+$$
+\chi_u^j
+=
+\left(
+u^\star,j,R_u^j,v_{\mathcal R}^j,t_j,\sigma_w^j
+\right),
+$$
+
+where $u^\star$ is wallet-scoped rather than a universal public identifier.
+
+Candidate checkpoint $\chi_u^k$ is accepted relative to trusted $\chi_u^j$ only if $k\ge j$ and a valid successor proof connects the roots.
+
+A malicious synchronisation provider can fork one valid root into two branches:
+
+$$
+R_u^j\leadsto R_{u,1}^{j+1},
+\qquad
+R_u^j\leadsto R_{u,2}^{j+1},
+\qquad
+R_{u,1}^{j+1}\neq R_{u,2}^{j+1}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-state-fork}
+
+Detecting a coherent private fork requires an observation path outside the equivocating provider. Authenticated transparency structures such as those developed for key transparency illustrate how personalised bindings and consistency proofs can make equivocation detectable without publishing private content.[^from-the-mosaic-theory-to-a-mathematical-gdpr-coniks]
+
+The log should contain software, profile, issuer-key, revocation, certificate, and state-commitment information—not plaintext personal transactions.
+
+### Recovery without budget reset
+
+Let recovery secret $k_u\in\mathbb F_p$ be shared through a $(t,n)$ polynomial secret-sharing scheme. Choose
+
+$$
+q(X)=k_u+\sum_{i=1}^{t-1}a_iX^i
+$$
+
+and give holder $i$ share
+
+$$
+s_i=(i,q(i)).
+$$
+
+Any set $T$ of at least $t$ shares reconstructs
+
+$$
+k_u
+=
+\sum_{i\in T}
+q(i)
+\prod_{\substack{j\in T\\j\ne i}}
+\frac{-j}{i-j}
+\pmod p.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-threshold-recovery}
+
+Under the classical model, fewer than $t$ shares reveal no information about the secret.[^from-the-mosaic-theory-to-a-mathematical-gdpr-shamir]
+
+If at most $c$ holders collude and at most $f$ are unavailable, a feasible threshold satisfies
+
+$$
+c<t\le n-f.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-recovery-threshold-condition}
+
+Threshold sharing is only one component. Recovery also needs identity re-establishment, latest-state verification, delay, notification, challenge, new-key commitment, policy validation, old-device revocation, and dispute handling.
+
+A recovery transition
+
+$$
+\Sigma_u^{j+1}
+=
+\mathsf{ReKey}
+\left(
+\Sigma_u^j,\mathcal K_u^{j+1}
+\right)
+$$
+
+must satisfy
+
+$$
+\mathsf{Embed}
+\left(
+\mathbf c_u^j
+\right)
+\preceq
+\mathbf c_u^{j+1},
+$$
+
+and
+
+$$
+\mathcal H_u^j
+\subseteq
+\mathcal H_u^{j+1}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-recovery-preservation}
+
+Recovery may rotate keys and invalidate devices. It may not restore an earlier privacy budget.
+
+Recovery availability and non-usurpation are distinct:
+
+$$
+\Pr[
+\mathsf{RecoverSuccess}
+\mid
+\#\mathsf{Unavailable}\le f
+]
+\ge 1-\beta_{\mathrm{rec}},
+$$
+
+$$
+\Pr[
+\mathsf{RecoverSuccess}_{\mathcal A}
+\mid
+\#\mathsf{Corrupted}\le c
+]
+\le\operatorname{negl}(\lambda).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-recovery-properties}
+
+A provider-controlled reset can be available but unsafe; an unrecoverable user seed can be safe against provider takeover but unavailable after loss.
+
+### Coercion
+
+Authenticated approval does not imply voluntariness:
+
+$$
+\mathsf{Approve}_u(q,t)=1
+\not\Rightarrow
+\mathsf{Voluntary}_u(q,t)=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-approval-voluntariness}
+
+A biometric, hardware button, or qualified signature can strengthen evidence of device control. None reveals whether the person acted under pressure, deception, dependency, or incapacity.
+
+Coercion resistance requires a user counter-strategy whose observer view is indistinguishable from compliance while achieving an allowed outcome. The concept has been formalised most extensively in electronic voting.[^from-the-mosaic-theory-to-a-mathematical-gdpr-coercion-resistant-elections] A general wallet cannot satisfy it for arbitrary publicly verifiable disclosures.
+
+If a coercer controls the verifier and demands proof $\pi$ accepted exactly when
+
+$$
+\mathsf{Verify}(x,\pi)=1,
+$$
+
+soundness lets the coercer distinguish a valid proof from non-compliance. Public verifiability and verifier-controlled coercion are therefore incompatible with general receipt-free resistance.
+
+Mitigation is contextual: prohibit high-risk requests without independent process, delay irreversible transactions, provide cancellation through another channel, use designated-verifier proofs where appropriate, permit external review, preserve non-wallet alternatives, and analyse any duress signal for its own risks.
+
+### Interface integrity
+
+Let $\mathsf{Sem}(\widehat q)$ be the policy engine's canonical meaning and $\mathsf{Render}(\widehat q)$ the user-facing representation. Rendering integrity requires
+
+$$
+\mathsf{Meaning}
+\left(
+\mathsf{Render}(\widehat q)
+\right)
+=
+\mathsf{Sem}(\widehat q).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-rendering-integrity}
+
+For each decision-relevant request predicate $g$, there must be a display predicate $\widehat g$ such that
+
+$$
+g(\widehat q)
+=
+\widehat g
+\left(
+\pi_{\mathrm{UI}}(\widehat q)
+\right).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-interface-completeness}
+
+The interface must preserve requester, purpose, output, recipient closure, retention, linkability mode, budget effect, legal mode, and exceptional consequences.
+
+A confirmation digest can bind request and display:
+
+$$
+h_{\mathrm{confirm}}
+=
+H
+\left(
+\mathsf{display}
+\parallel
+h(\widehat q)
+\parallel
+h(\pi_{\mathrm{UI}}(\widehat q))
+\right).
+$$
+
+Complex legal semantics cannot always fit a small trusted display. Automation of mandatory protections is therefore more reliable than demanding expert evaluation from users.
+
+### Provider metadata
+
+A synchronisation provider may not decrypt wallet contents but can observe timing, device count, state size, recovery events, policy versions, revocation checks, and network origin.
+
+Let provider-visible transcript be
+
+$$
+V_{\mathrm P}^j
+=
+\left(
+M_{\mathrm{sync}}^j,
+M_{\mathrm{net}}^j,
+M_{\mathrm{update}}^j,
+M_{\mathrm{recovery}}^j
+\right).
+$$
+
+Provider-view confinement requires
+
+$$
+V_{\mathrm P}^j
+\approx_c
+\mathcal S_{\mathrm P}
+\left(
+L_{\mathrm P}(\Sigma_u^j)
+\right),
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-provider-view-confinement}
+
+for a minimal declared leakage function $L_{\mathrm P}$. Provider observations enter the linkability and inferential account. The provider must not become the implicit coalition hub that reconnects otherwise separate contexts.
+
+### Update and policy-distribution security
+
+Signed updates must address arbitrary installation, rollback, freeze, fast-forward, mix-and-match, wrong-target installation, dependency substitution, and signing-key compromise. The Update Framework provides a mature model of role separation, threshold signing, versioning, expiry, and target delegation for these threats.[^from-the-mosaic-theory-to-a-mathematical-gdpr-tuf]
+
+A wallet update manifest binds target, software version, binary and dependency digests, minimum policy version, platform, expiry, roles, thresholds, and signatures.
+
+A valid signature does not prove that correctly authorised code is benign. Governance must add independent review, build verification, transparency, staged rollout, vulnerability reporting, emergency revocation, measurement, and liability.
+
+Profile and key transparency should provide inclusion and consistency proofs from signed log checkpoints. It detects targeted split views only when inconsistent roots can reach independent monitors or wallets. The log must exclude user transaction identifiers, remaining budgets, rights histories, and recovery relationships.
+
+### Certification and continuous assurance
+
+Commission Implementing Regulation (EU) 2024/2981 establishes certification procedures and reference requirements for European Digital Identity Wallets.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-certification] As of July 25, 2026, ENISA's publicly available EUDIW candidate cybersecurity certification material remains a draft rather than a final adopted scheme.[^from-the-mosaic-theory-to-a-mathematical-gdpr-enisa-eudiw-draft]
+
+A certificate binds product, version, configuration, scope, assurance level, evaluator, scheme, issue and expiry dates, exclusions, and signature. It applies only when version, configuration, scope, and status match.
+
+Certification is bounded evidence:
+
+$$
+\mathsf{CertApplies}(\mathsf{cert},\mathfrak I,t_0)=1
+\not\Rightarrow
+\mathsf{Secure}(\mathfrak I,t_1)=1
+$$
+
+for arbitrary $t_1>t_0$.
+
+Critical vulnerabilities, cryptographic deprecation, key compromise, backend changes, state-fork evidence, recovery abuse, or failed assessment require event-driven reassessment.
+
+### Governance concentration
+
+Let $\mathcal D$ be the critical dependency set. Define minimum governance cut
+
+$$
+\kappa^\star
+=
+\min
+\left\{
+|C|:
+C\subseteq\mathcal D
+\land
+\mathsf{Break}(C)=1
+\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-governance-cut}
+
+A value $\kappa^\star=1$ identifies a single dependency whose failure defeats the property. Correlated failures must also be modelled: nominally separate actors may share software, ownership, infrastructure, or legal exposure.
+
+Governance should provide multiple conformant providers, interoperable migration, independent policy mirrors, diverse trust paths, role separation, alternative service channels, transparent incidents, and no mandatory universal provider account.
+
+The architecture redistributes trust rather than eliminating it. Its defensibility depends on bounded authority, compromise containment, state continuity, independent assessment, and the absence of one actor able to observe or alter every transaction.
+
+## Comparative Note: Endpoint-Centred Privacy in the United States
+
+United States constitutional law contributes an important insight: a sequence of digital observations can reveal a qualitatively different account of a person from any observation considered separately. Its doctrinal domain is nevertheless narrower than the proposed architecture.
+
+### *Jones*
+
+In *United States v. Jones*, investigators installed a GPS device on a vehicle and monitored it for twenty-eight days. The Supreme Court unanimously found a search, but the majority relied on physical occupation of an effect for the purpose of obtaining information.[^from-the-mosaic-theory-to-a-mathematical-gdpr-jones]
+
+The recognisably mosaic reasoning appeared in concurrences. Justice Alito treated prolonged monitoring as violating reasonable expectations of privacy; Justice Sotomayor emphasised the detailed associations revealed by aggregated location records and questioned mechanical third-party doctrine.
+
+The distinction is
+
+$$
+\mathsf{Holding}_{\mathrm{Jones}}
+=
+\mathsf{Trespass}
++
+\mathsf{InformationPurpose},
+$$
+
+while
+
+$$
+\mathsf{MosaicReasoning}_{\mathrm{Jones}}
+\subseteq
+\mathsf{Concurrences}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-jones-distinction}
+
+The Court did not define a mathematical or temporal threshold at which aggregation becomes a search.
+
+### *Carpenter*
+
+In *Carpenter v. United States*, the government obtained historical cell-site location information from wireless carriers. The Court held that acquisition to be a search because individuals possess a reasonable expectation of privacy in the whole of their physical movements.[^from-the-mosaic-theory-to-a-mathematical-gdpr-carpenter]
+
+The decision rejected mechanical reliance on third-party possession for this category of sensitive digital record, but described its holding as narrow. It did not create a general rule for all business records, data brokers, commercial profiles, or private inference.
+
+### *Chatrie*
+
+On June 29, 2026, the Supreme Court held in *Chatrie v. United States* that police acquisition of the petitioner's Google Location History data through a geofence process constituted a Fourth Amendment search.[^from-the-mosaic-theory-to-a-mathematical-gdpr-chatrie] The Court rejected a categorical safe harbour based solely on short duration.
+
+The implication is
+
+$$
+\mathsf{LocationPrivacy}
+\neq
+\mathbb 1[
+\mathsf{Duration}\ge\tau^\star
+].
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-no-duration-safe-harbour}
+
+Duration remains relevant, but precision, retrospective availability, semantic content, and the revealing character of digital location records also matter.
+
+### Constitutional domain
+
+The Fourth Amendment constrains governmental searches and seizures. Let $\mathcal E_{\mathrm{gov}}$ be government or government-attributable endpoints and $\mathcal E_{\mathrm{priv}}$ independent private endpoints.
+
+Schematically,
+
+$$
+e\in\mathcal E_{\mathrm{priv}}
+\land
+\neg\mathsf{GovernmentAttribution}(e,q)
+\Longrightarrow
+\mathsf{FourthAmendmentGate}(e,q)=0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-state-action-boundary}
+
+This is a domain condition, not a complete doctrinal test.
+
+The wallet evaluates a larger endpoint set:
+
+$$
+\mathcal E_{\mathrm{gov}}
+\subsetneq
+\mathcal E_{\mathrm{gov}}
+\cup
+\mathcal E_{\mathrm{priv}}.
+$$
+
+It applies before supported disclosure, whereas constitutional litigation often classifies an acquisition after or during investigation.
+
+### Structural comparison
+
+The United States private-sector baseline remains a combination of federal sectoral statutes, state laws, consumer-protection authority, contracts, common law, and specialised regulators. The Federal Trade Commission has described its principal privacy work as relying on Section 5 and narrower statutes in the absence of comprehensive federal privacy legislation.[^from-the-mosaic-theory-to-a-mathematical-gdpr-ftc-update] In June 2026, the House Energy and Commerce Committee considered H.R. 8413, the proposed SECURE Data Act, in a hearing on comprehensive federal privacy and data-security legislation.[^from-the-mosaic-theory-to-a-mathematical-gdpr-secure-data-act] This article treats that bill as a proposal under consideration, not as an enacted GDPR-equivalent baseline.
+
+| Dimension | United States mosaic reasoning | Proposed European wallet architecture |
+|---|---|---|
+| Principal domain | Government surveillance under the Fourth Amendment | Public and private endpoint requests |
+| Trigger | Search or seizure analysis | Every supported typed request |
+| Central object | Investigative acquisition, sometimes assessed cumulatively | Subject-side transcript across requests, recipients, devices, and time |
+| Decision-maker | Courts | Wallet engine under signed profiles, subject to supervision and review |
+| Intervention | Predominantly adjudicative | Pre-disclosure mediation |
+| Third-party records | Protection possible for defined sensitive records | Possession by another entity does not eliminate minimisation or accounting |
+| Duration | Relevant but not a universal threshold | One factor among semantics, inference, linkability, and coalition access |
+| Output | Constitutional classification and legal consequences | Deny, permit, transform, or review |
+| General data-subject rights | Not supplied by the mosaic cases | Represented through GDPR duties and rights workflows |
+| Mathematical accounting | No general accountant | Typed disclosure, participation, linkability, leakage, and inference state |
+
+: Limited comparison between United States mosaic reasoning and the proposed European architecture. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-us-eu-comparison}
+
+The American cases support transcript-level analysis, rejection of simplistic third-party arguments, and attention to digital scale. They do not supply a comprehensive cross-sector data-governance architecture.
+
+A conclusion that conduct is not a Fourth Amendment search does not imply zero privacy cost or admission under a European profile:
+
+$$
+\mathsf{NotSearch}(a)
+\not\Rightarrow
+\boldsymbol\kappa(a)=\mathbf 0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-not-search-not-zero-cost}
+
+The article adopts the mosaic insight, not the proposition that constitutional search doctrine can substitute for the GDPR.
+
+## Deployment, Standardisation, and Institutional Feasibility
+
+The architecture is not deployable as one indivisible system. Credential protocols, exact disclosure controls, and relying-party registration are more mature than general inferential estimation or cross-wallet composition. Deployment should follow *progressive enforceability*: make a function mandatory only when its semantics, standards profile, conformance tests, security assumptions, and institutional owner are sufficiently defined.
+
+### Existing substrate
+
+The European Digital Identity framework requires Member States to provide wallets under the regulation's timetable, with Commission materials continuing to identify the end of 2026 as the rollout target.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-rollout] The ecosystem includes the Architecture and Reference Framework, official reference implementations, relying-party governance, functional conformance work, implementing regulations, and certification arrangements.[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-reference-implementation][^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-conformance]
+
+OpenID for Verifiable Presentations 1.0 became final on July 9, 2025, and OpenID for Verifiable Credential Issuance 1.0 became final on September 16, 2025.[^from-the-mosaic-theory-to-a-mathematical-gdpr-openid4vp][^from-the-mosaic-theory-to-a-mathematical-gdpr-openid4vci] The OpenID4VC High Assurance Interoperability Profile 1.0 became final in December 2025 and profiles selected issuance, presentation, credential-format, attestation, and security options.[^from-the-mosaic-theory-to-a-mathematical-gdpr-openid-haip]
+
+These standards establish protocol substrates. They do not define the article's complete legal classifier, privacy-resource product, rights engine, recipient closure, or cross-wallet state.
+
+The relationship is
+
+$$
+\mathsf{PersonalPrivacyWallet}
+=
+\mathsf{EUDISubstrate}
++
+\mathsf{RegulatoryMediationExtension}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-extension}
+
+### Deployment layers
+
+| Layer | Existing basis | Proposed extension | Readiness |
+|---|---|---|---|
+| Issuance | OpenID4VCI, schemas, trust infrastructure | Purpose restrictions and privacy metadata | High for profiled use cases |
+| Presentation | OpenID4VP and EUDI flows | Typed purpose, output, recipient closure, profile digest | High to medium |
+| Credential formats | SD-JWT, mdoc, W3C VC securing methods | Scheme-specific disclosure and linkability profiles | Medium to high |
+| Relying-party governance | Registration and intended-use declarations | Coalition, transfer, and purpose semantics | Medium |
+| Policy engine | Wallet disclosure and approval logic | Signed regulatory profiles and conflict semantics | Medium in controlled deployments |
+| Transaction state | Wallet history and secure storage | Atomic typed cost, roots, idempotent receipts | Medium for exact coordinates |
+| Cryptographic minimisation | Selective disclosure and holder binding | Request-bound predicates and proof ordering | Medium |
+| Secure computation | Sector-specific technologies | MPC, HE, and TEE profiles | Low to medium, function-specific |
+| Inferential accounting | Research methods | Target, coalition, and uncertainty profiles | Low, context-dependent |
+| Cross-wallet composition | Synchronisation and recovery | Privacy-preserving global or scoped expenditure | Low |
+| Rights workflows | Controller legal procedures | Authenticated stateful workflows | Medium in integrated sectors |
+| Assurance | EUDI conformance and certification | Profile, accountant, state, UI, and continuous assurance | Incremental |
+
+: Deployment layers and maturity differences. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-deployment-layers}
+
+### Semantic interoperability
+
+Two systems are not interoperable merely because both parse the same message.
+
+For implementation $\mathfrak I$, define
+
+$$
+\begin{aligned}
+\mathsf{ImplProf}(\mathfrak I)
+=
+\big(
+&
+\mathsf{Protocols},
+\mathsf{Formats},
+\mathsf{Suites},
+\mathsf{Schemas},
+\mathsf{Vocabularies},
+\\
+&
+\mathsf{PolicyVersion},
+\mathsf{StateSemantics},
+\mathsf{LeakageProfiles},
+\mathsf{Extensions}
+\big).
+\end{aligned}
+$$
+
+Implementations $\mathfrak I_1$ and $\mathfrak I_2$ are semantically interoperable under profile $\mathcal P$ when, for every conformance transaction, they derive the same request semantics and decision, produce mutually verifiable artefacts, and apply equivalent committed-state transitions.
+
+Syntactic success does not imply semantic equality:
+
+$$
+\mathsf{Parse}_1(m)=1
+\land
+\mathsf{Parse}_2(m)=1
+\not\Rightarrow
+\mathfrak I_1\equiv_{\mathcal P}\mathfrak I_2.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-syntax-semantic-nonimplication}
+
+The profile must freeze vocabulary versions, canonical encoding, credential and predicate semantics, cryptosuites, status, policy combination, cost coordinates, error behaviour, state transitions, and tests.
+
+### Progressive phases
+
+Phase 0 should require signed typed requests, endpoint authentication, registered purpose and output, canonical digest, nonce, legal mode, and receipts. Exact coordinates can track direct claims, stable identifiers, request counts, and certified differential-privacy expenditure.
+
+Phase 1 adds selective disclosure, request-bound predicates, pairwise or one-time holder binding, status profiles, structural linkability rules, and limits on adaptive predicate families.
+
+Phase 2 introduces sectoral secure computation for functions with fixed identifiers, bounded inputs and outputs, declared leakage, stable error, test vectors, and an institutional owner.
+
+Phase 3 enables inferential budgets only where regulators have approved targets, populations, auxiliary-information models, coalition classes, estimators, uncertainty sets, drift detection, and conservative failure behaviour.
+
+Phase 4 extends cross-device and cross-wallet composition where serialisation, encrypted synchronisation, fork detection, scoped coordination, recovery, and provider-view confinement are operational.
+
+### Readiness gates
+
+For feature $x$, define
+
+$$
+\mathbf d_x
+=
+\left(
+d_x^{\mathrm L},
+d_x^{\mathrm S},
+d_x^{\mathrm M},
+d_x^{\mathrm O},
+d_x^{\mathrm A},
+d_x^{\mathrm X}
+\right),
+$$
+
+representing legal determinacy, standards maturity, measurement validity, operational security, auditability, and accessibility.
+
+With threshold vector $\boldsymbol\tau_x$,
+
+$$
+\mathsf{Ready}(x)=1
+\Longleftrightarrow
+\mathbf d_x\succeq\boldsymbol\tau_x.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-readiness-gate}
+
+The comparison is coordinatewise. High engineering maturity cannot compensate for legal indeterminacy; legal clarity cannot compensate for invalid measurement.
+
+| Feature | Main bottleneck | Safe interim rule |
+|---|---|---|
+| Typed requests | Endpoint adoption and schemas | Reject untyped supported flows |
+| Direct-disclosure accounting | Claim taxonomy | Use conservative disclosure classes |
+| Stable-identifier control | Context and credential profile | Prohibit universal identifiers unless required |
+| Differential-privacy accounting | Adjacency and contribution semantics | Do not use DP labels without certified accountant |
+| Statistical linkability | Valid same-user and different-user models | Use structural rules or review |
+| Predicate composition | Query-family registry | Limit repeated refining predicates |
+| Secure computation | Function, leakage, error, adversary model | Use local computation or deny |
+| Inferential mutual information | Distribution and auxiliary-information validity | Apply conservative qualitative restrictions |
+| Cross-wallet state | Coordination without central tracking | Use scoped per-wallet ceilings |
+| Rights automation | Controller evidence integration | Generate authenticated requests and track responses |
+| Coercion-sensitive disclosure | Independent process | Review or non-wallet route |
+
+: Readiness bottlenecks and safe interim behaviour. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-readiness-gates}
+
+### Measurement assurance
+
+Let $\kappa_P(\mu,\kappa)$ be the true privacy cost under model $P$. An approved upper estimator $U_\alpha(D,\mu,\kappa)$ should satisfy
+
+$$
+\Pr_{D\sim P^n}
+\left[
+\kappa_P(\mu,\kappa)
+\preceq
+U_\alpha(D,\mu,\kappa)
+\right]
+\ge
+1-\alpha
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-cost-estimator-coverage}
+
+for every approved model $P$.
+
+Validation must address finite samples, calibration, population shift, auxiliary-information misspecification, coalition error, adaptive selection, rare subgroups, reproducibility, and adversarial inputs.
+
+A tested linkage attack gives a lower bound on optimal advantage:
+
+$$
+\widehat\lambda_{\mathcal A}
+\le
+\lambda^\star.
+$$
+
+Thus
+
+$$
+\widehat\lambda_{\mathcal A}\approx0
+\not\Rightarrow
+\lambda^\star\approx0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-tested-attack-noncertification}
+
+Certification of unlinkability requires an analytical bound, cryptographic reduction, or justified restricted model class.
+
+If current distribution $P_t$ drifts from validation distribution $P_0$ beyond approved threshold,
+
+$$
+\mathsf D(P_t,P_0)>\delta_E,
+$$
+
+the estimator is suspended unless its robust model set covers the change.
+
+### Assurance surfaces
+
+Functional conformance, cybersecurity, policy validity, measurement assurance, and operational monitoring are distinct. A complete predicate is
+
+$$
+\begin{aligned}
+\mathsf{Assured}(\mathfrak I,\mathcal R,t)=1
+\Longleftrightarrow
+&
+\mathsf{ProfileValid}(\mathcal R,t)=1
+\\
+&{}\land
+\mathsf{FunctionallyConformant}(\mathfrak I,\mathcal R)=1
+\\
+&{}\land
+\mathsf{SecurityCertified}(\mathfrak I,t)=1
+\\
+&{}\land
+\mathsf{MeasurementValid}(\mathfrak I,\mathcal R,t)=1
+\\
+&{}\land
+\mathsf{OperationallyMonitored}(\mathfrak I,t)=1.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-complete-assurance}
+
+Conformance suites must include positive, negative, metamorphic, state-history, and adversarial tests. State histories should cover concurrent overspending, crash before commit, crash after commit, randomised retry, rollback, incompatible migration, duplicated offline capability, stale status, and recipient-closure expansion.
+
+Certification should be modular across core engine, cryptography, policy, accountant, synchronisation, recovery, and user interface, but the configured product's assurance is bounded by the weakest dependency required for the claim.
+
+### Institutions and public infrastructure
+
+Law, policy publication, standardisation, implementation, measurement, certification, supervision, and user support should remain institutionally separated.
+
+| Role | Principal responsibility | Must not control alone |
+|---|---|---|
+| Legislatures | Rights, duties, prohibitions, authority allocation | Individual transactions |
+| Commission and Member State structures | Implementing rules and cross-border architecture | Complete legal interpretation |
+| Data-protection authorities and EDPB | Interpretation, supervision, enforcement, risk guidance | Wallet software distribution |
+| Certification authorities and bodies | Security and conformity assessment | Purpose lawfulness |
+| Standards organisations | Protocols, formats, cryptographic profiles | Regulatory permission |
+| Issuers | Claim accuracy, validity, schema, status | Endpoint purpose |
+| Relying parties | Typed request, purpose, basis, receipt retention | Wallet policy reset |
+| Wallet providers | Conformant implementation, updates, portability | Regulatory profile content |
+| Independent laboratories | Functional, cryptographic, estimator, and state testing | Final adjudication |
+| Users | Restrictions, confirmation, rights, provider choice | Waiver of mandatory protections |
+
+: Institutional role allocation. {#tbl-from-the-mosaic-theory-to-a-mathematical-gdpr-institutional-allocation}
+
+Public artefacts—profiles, vocabularies, mechanisms, tests, certificate status, revocations, and transparency roots—should be replicated widely. User credentials, histories, budgets, preferences, and rights records should remain private.
+
+Policy distribution should use caching, common bundles, mirrors, or privacy-preserving retrieval so that the distributor does not learn which rule, endpoint, or ceiling concerns an individual wallet.
+
+### Migration, alternatives, and portability
+
+Legacy endpoints can use a mediation adapter
+
+$$
+\mathsf{Adapt}_e:
+\mathsf{LegacyRequest}_e
+\rightarrow
+\widehat{\mathcal Q}.
+$$
+
+The adapter cannot invent purpose, legal basis, retention, recipient closure, or output semantics. Every mandatory field needs authenticated provenance.
+
+Wallet compatibility does not establish minimisation or lawfulness:
+
+$$
+\mathsf{WalletAccepted}(e,q)=1
+\not\Rightarrow
+\mathsf{DataMinimised}(e,q)=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-wallet-washing}
+
+Using wallet support as a privacy claim while demanding the same excessive dossier is *wallet-washing*.
+
+The European framework's voluntary-use principle should be preserved. An adequate non-wallet alternative must provide equivalent entitlement without punitive cost, disproportionate delay, inaccessible procedures, broader unrelated disclosure, or adverse profiling.
+
+Portability must preserve credentials, policy restrictions, receipts, journal continuity, and consumed privacy state. Exporting credential files while resetting the budget is not semantic portability.
+
+### No-regression deployment
+
+Let $\mathsf{Floor}^{(k)}$ be the mandatory safety floor in phase $k$. A transition is non-regressive when
+
+$$
+\mathsf{Admit}^{(k+1)}(\mu,q)=1
+\Longrightarrow
+\mathsf{Floor}^{(k)}(\mu,q)=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-deployment-no-regression}
+
+A first defensible release should implement:
+
+1. signed typed requests;
+2. authenticated and registered relying parties;
+3. versioned purposes, credential types, predicates, and outputs;
+4. categorical prohibitions and exact constraints;
+5. selective disclosure and mature request-bound proofs;
+6. structural linkability rules;
+7. atomic receipts and state continuity;
+8. user policies that only narrow disclosure;
+9. rights-request creation and evidence tracking;
+10. independent conformance, certification, update, and incident processes.
+
+It should not claim a universal inferential score. Model-dependent budgets should be added only where their targets, models, estimators, uncertainty, and drift controls are validated.
+
+## Conclusion: From Controller Promises to Verifiable Constraints
+
+The GDPR does not lack principles. The architectural weakness is that many safeguards are enforced after personal information has entered recipient-controlled systems. Once plaintext crosses that boundary, the subject cannot ordinarily verify all copying, combination, model training, onward transfer, retention, or inference.
+
+The personal privacy wallet changes the enforcement sequence:
+
+$$
+\begin{aligned}
+&
+\mathsf{AuthenticatedRequest}
+\\
+&\longrightarrow
+\mathsf{RegulatoryClassification}
+\\
+&\longrightarrow
+\mathsf{AdmissiblePlanSelection}
+\\
+&\longrightarrow
+\mathsf{CompositionCheck}
+\\
+&\longrightarrow
+\mathsf{AtomicCommit}
+\\
+&\longrightarrow
+\mathsf{MinimisedResponse}.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-pipeline}
+
+Let $\widehat q$ be the request, $\Sigma_u^j$ committed state, $\mathcal R$ the signed profile, $\mathcal P_u$ the user's valid restrictions, and $\mathfrak F_u$ the feasible privacy-state region. The wallet may release only if there exists a response plan $\mu$ satisfying
+
+$$
+\begin{aligned}
+\mathsf{Admit}^{\star}_u
+\left(
+\widehat q,\Sigma_u^j,\mathcal R,\mathcal P_u
+\right)=1
+\Longleftrightarrow
+\exists\mu:
+&
+\;
+\mu\in
+\mathfrak P_{\mathcal R,\mathcal P_u}(\kappa)
+\\
+&{}\land
+\mathsf{RequestBound}(\mu,\widehat q)=1
+\\
+&{}\land
+\mathsf{MechanismAllowed}_{\mathcal R}(\mu)=1
+\\
+&{}\land
+\mathsf{TrustAdmissible}_{\mathcal R}(\mu)=1
+\\
+&{}\land
+\mathsf{ErrorAdmissible}_{\mathcal R}(\mu)=1
+\\
+&{}\land
+\mathbf c_u^j
+\oplus
+\boldsymbol\kappa(\mu,\kappa)
+\in
+\mathfrak F_u.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-admission}
+
+This is not one weighted score. Strong encryption cannot cure an unlawful purpose. User approval cannot override a prohibition. A small output can be highly inferential. A zero-knowledge proof can be linkable. A valid credential can be requested by an unauthorised recipient. An individually safe response can become unsafe through composition.
+
+The mosaic insight identifies the privacy object as a history rather than an isolated record. For transcript $T_n$,
+
+$$
+\mathsf{Risk}(T_n)
+\neq
+\sum_{j=0}^{n-1}\mathsf{Risk}(Z_j)
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-nonadditivity}
+
+in general, because observations can be redundant, unique, synergistic, or conditionally decisive.
+
+Mathematics is strongest where semantics are exact. It can enforce request typing, recipient registration, prohibition, output confinement, cryptographic binding, compatible differential-privacy accounting, atomic state, idempotent retry, recovery continuity, mechanism deprecation, and rights-protocol evidence.
+
+It cannot decide every question of necessity, proportionality, fairness, freely given consent, discrimination, public authority, or rights limitation. Profile admission is therefore not complete lawfulness:
+
+$$
+\mathsf{ProfileAdmission}=1
+\not\Rightarrow
+\mathsf{CompleteLawfulness}=1.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-lawfulness-nonimplication}
+
+Review is a correct outcome where legal or scientific uncertainty cannot safely be reduced to a rule.
+
+The first deployable core should consist of exact constraints: typed requests, registered recipients, structural minimisation, mature cryptographic proofs, atomic receipts, state continuity, rights workflows, and independent assurance. Inferential budgets should become binding only for defined targets, coalitions, models, estimators, uncertainty sets, and drift controls.
+
+Unknown cost is not zero:
+
+$$
+\mathsf{CostUnknown}(\mu)=1
+\not\Rightarrow
+\boldsymbol\kappa(\mu)=\mathbf 0.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-unknown-cost-not-zero}
+
+Trust is redistributed, not eliminated. A defensible system prevents any one provider, user, endpoint, issuer, or authority from becoming an unbounded bypass. Recovery restores control without restoring an old budget. Synchronisation preserves one logical state without creating a public behavioural dossier. Certification remains scoped and time-bounded. Voluntary use, adequate alternatives, accessibility, and semantic portability prevent privacy infrastructure from becoming exclusionary identity infrastructure.
+
+Wallet mediation also does not eliminate endpoint accountability. After receiving an authorised result, an endpoint may still misuse, retain, transfer, combine, discriminate, or frustrate rights. The complete architecture remains
+
+$$
+\mathsf{ExAnteWalletMediation}
++
+\mathsf{ExPostControllerAccountability}.
+$$
+
+A mathematical GDPR is therefore not a single formula. It is a layered method:
+
+1. type and authenticate requests;
+2. project determinate legal rules into signed profiles;
+3. preserve user preferences as monotone restrictions;
+4. enumerate adequate response mechanisms;
+5. prefer less informative plans;
+6. compose disclosure, participation, linkability, leakage, and inference;
+7. commit state before release;
+8. issue verifiable receipts;
+9. preserve state across retry, recovery, migration, and update;
+10. retain human and institutional review;
+11. supervise downstream use.
+
+The final design criterion is
+
+$$
+\begin{aligned}
+\mu^\star
+\in
+\operatorname{Min}
+\left\{
+\mu:
+\right.
+&
+\left.
+\mathsf{FunctionallyAdequate}(\mu,\widehat q)=1
+\right.
+\\
+&\left.
+{}\land
+\mathsf{RegulatorAdmissible}(\mu,\kappa)=1
+\right.
+\\
+&\left.
+{}\land
+\mathsf{UserPermitted}(\mu,\kappa)=1
+\right.
+\\
+&\left.
+{}\land
+\mathsf{CompositionSafe}(\mu,\Sigma_u^j)=1
+\right\},
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-minimal-plan}
+
+where the minimum is taken under applicable information, leakage, trust, and error orders.
+
+If the set is empty,
+
+$$
+\{\mu:\mathsf{Admissible}(\mu)=1\}
+=
+\varnothing
+\Longrightarrow
+\mathsf{Release}=\bot.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-final-fail-closed}
+
+The endpoint no longer begins by asking for the person's data. It asks for a typed result under a declared purpose, through an approved mechanism, against cumulative state that neither the endpoint nor the wallet provider may silently reset. That is the movement from controller promises to verifiable constraints.
+
+## Appendix A: Formal Syntax and Operational Semantics
+
+This appendix collects the core proposed syntax and transition rules in compact form. It is not an existing European standard.
+
+### Abstract syntax
+
+Let identifiers be drawn from collision-resistant canonical namespaces:
+
+$$
+\begin{aligned}
+r &\in \mathsf{RequestId},\\
+e &\in \mathsf{EndpointId},\\
+p &\in \mathsf{PurposeId},\\
+b &\in \mathsf{LegalBasisId},\\
+m &\in \mathsf{MechanismId},\\
+f &\in \mathsf{FunctionId},\\
+v &\in \mathsf{PolicyVersion}.
+\end{aligned}
+$$
+
+The request grammar is
+
+$$
+\begin{aligned}
+\widehat q ::=
+\{
+&
+\mathsf{rid}:r,
+\mathsf{endpoint}:e,
+\mathsf{role}:\tau_{\mathrm{role}},
+\mathsf{purpose}:p,
+\\
+&
+\mathsf{basis}:b?,
+\mathsf{input}:\tau_{\mathrm{in}},
+\mathsf{output}:\tau_{\mathrm{out}},
+\\
+&
+\mathsf{recipient}:\tau_{\mathrm{recipient}},
+\mathsf{retention}:\tau_{\mathrm{ret}},
+\mathsf{linkMode}:\tau_{\mathrm{link}},
+\\
+&
+\mathsf{nonce}:\mathsf{Nonce},
+\mathsf{expires}:\mathsf{Time},
+\mathsf{policy}:v,
+\mathsf{sig}:\mathsf{Signature}
+\}.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-request-grammar}
+
+A response plan is
+
+$$
+\begin{aligned}
+\mu ::=
+\{
+&
+\mathsf{mechanism}:m,
+\mathsf{function}:f,
+\mathsf{params}:\tau_{\mathrm{params}},
+\mathsf{inputs}:\tau_{\mathrm{local}},
+\\
+&
+\mathsf{outputs}:\mathcal O,
+\mathsf{cost}:\mathbb B,
+\mathsf{leakage}:\tau_L,
+\mathsf{trust}:\tau_T,
+\\
+&
+\mathsf{error}:\tau_E,
+\mathsf{policy}:v
+\}.
+\end{aligned}
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-plan-grammar}
+
+A regulatory rule is
+
+$$
+r_{\mathcal R}
+::=
+\left\langle
+\mathsf{id},
+\mathsf{authority},
+\mathsf{scope},
+\mathsf{effect},
+\mathsf{guard},
+\mathsf{plans},
+\mathsf{obligations},
+\mathsf{provenance}
+\right\rangle.
+$$
+
+A committed state is
+
+$$
+\Sigma
+::=
+\left\langle
+\mathcal C,\mathcal P,\mathbf c,\mathcal K,\mathcal H
+\right\rangle.
+$$
+
+A transaction record is
+
+$$
+\mathsf{tr}
+::=
+\left\langle
+s,h_q,\widehat q,\mathsf{mode},\mu,\boldsymbol\kappa,
+R_{\mathrm{pre}},R_{\mathrm{post}},h_z,\rho,f,v
+\right\rangle.
+$$
+
+### Typing judgments
+
+Write
+
+$$
+\Delta;\mathcal R\vdash x:\tau
+$$
+
+when expression $x$ has type $\tau$ under schema environment $\Delta$ and regulatory profile $\mathcal R$.
+
+A request is typed when
+
+$$
+\frac{
+\begin{array}{c}
+\Delta;\mathcal R\vdash e:\tau_{\mathrm{endpoint}}
+\qquad
+\Delta;\mathcal R\vdash p:\tau_{\mathrm{purpose}}
+\\
+\Delta;\mathcal R\vdash \mathsf{input}:\tau_{\mathrm{in}}
+\qquad
+\Delta;\mathcal R\vdash \mathsf{output}:\tau_{\mathrm{out}}
+\\
+\mathsf{Compatible}_{\mathcal R}
+(\tau_{\mathrm{in}},\tau_{\mathrm{out}},p)=1
+\end{array}
+}{
+\Delta;\mathcal R\vdash\widehat q:\tau_{\mathrm{request}}
+}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-request-typing-rule}
+
+A response plan is typed for request $\widehat q$ when
+
+$$
+\frac{
+\begin{array}{c}
+\Delta;\mathcal R\vdash\mu:\tau_{\mathrm{plan}}
+\\
+\mathcal O_{\mathrm{out}}(\mu)
+\subseteq
+\mathcal O(\widehat q)
+\\
+\mathsf{FunctionMatches}(\mu,\widehat q)=1
+\end{array}
+}{
+\Delta;\mathcal R\vdash\mu:\tau_{\mathrm{plan}}[\widehat q]
+}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-plan-typing-rule}
+
+A cost is well typed when every plan effect maps to the coordinate domain selected by the profile:
+
+$$
+\frac{
+\forall k\in\mathsf K:
+\Delta;\mathcal R\vdash\kappa_k:B_k
+}{
+\Delta;\mathcal R\vdash
+\boldsymbol\kappa:
+\mathbb B
+}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-cost-typing-rule}
+
+Unknown or unsupported coordinates do not satisfy the judgment.
+
+### Decision semantics
+
+Let
+
+$$
+\mathsf{Applicable}_{\mathcal R}(\kappa)
+=
+\{r:
+\mathsf{ScopeMatch}(r,\kappa)=1
+\land
+g_r(\kappa)=1\}.
+$$
+
+Define
+
+$$
+\mathfrak P_{\mathrm{eff}}(\kappa)
+=
+\mathfrak P_{\mathrm{univ}}(\kappa)
+\cap
+\bigcap_{r\in\mathsf{Applicable}_{\mathcal R}(\kappa)}
+\mathfrak P_r(\kappa)
+\cap
+\mathfrak P_{\mathcal P_u}(\kappa).
+$$
+
+The abstract decision rules are:
+
+$$
+\frac{
+\exists r\in\mathsf{Applicable}_{\mathcal R}(\kappa):
+e_r=\mathsf{prohibit}
+}{
+\mathsf{Eval}(\kappa)=\mathsf{deny}
+}
+\quad
+(\textsc{Deny-Prohibited})
+$$
+
+$$
+\frac{
+\mathsf{MandatoryUnknown}(\kappa)=1
+}{
+\mathsf{Eval}(\kappa)=\mathsf{review}
+}
+\quad
+(\textsc{Review-Unknown})
+$$
+
+$$
+\frac{
+\mathsf{Conflict}_{\mathcal R}(\kappa)=1
+}{
+\mathsf{Eval}(\kappa)=\mathsf{review}
+}
+\quad
+(\textsc{Review-Conflict})
+$$
+
+$$
+\frac{
+\mathfrak P_{\mathrm{eff}}(\kappa)=\varnothing
+}{
+\mathsf{Eval}(\kappa)=\mathsf{deny}
+}
+\quad
+(\textsc{Deny-Empty})
+$$
+
+$$
+\frac{
+\mu^\star\in
+\operatorname{Min}
+\{
+\mu\in\mathfrak P_{\mathrm{eff}}(\kappa):
+\mathbf c\oplus\boldsymbol\kappa(\mu,\kappa)\in\mathfrak F
+\}
+}{
+\mathsf{Eval}(\kappa)=
+\mathsf{permitOrTransform}(\mu^\star)
+}
+\quad
+(\textsc{Admit-Minimal}).
+$$
+
+### Small-step transaction rules
+
+Write configuration as
+
+$$
+\Gamma=\langle\Sigma,\mathcal R,\mathcal M,\mathcal B,\mathcal E\rangle.
+$$
+
+Reception:
+
+$$
+\frac{
+r\notin\operatorname{dom}(\mathcal M)
+}{
+\Gamma
+\xrightarrow{\mathsf{recv}(\widehat q)}
+\Gamma[
+\mathcal M[r]\leftarrow
+\mathsf{received}(\widehat q,h(\widehat q),R,v)
+]
+}.
+$$
+
+Validation:
+
+$$
+\frac{
+\mathcal M[r].s=\mathsf{received}
+\qquad
+\mathsf{WellFormed}(\widehat q,t)=1
+}{
+\Gamma
+\xrightarrow{\mathsf{validate}(r)}
+\Gamma[
+\mathcal M[r].s\leftarrow\mathsf{validated}
+]
+}.
+$$
+
+Planning:
+
+$$
+\frac{
+\mathcal M[r].s=\mathsf{classified}
+\qquad
+\mathsf{Eval}(\kappa)=\mathsf{permitOrTransform}(\mu)
+}{
+\Gamma
+\xrightarrow{\mathsf{plan}(r)}
+\Gamma[
+\mathcal M[r]\leftarrow
+\mathsf{planned}(\mu,\boldsymbol\kappa,R,v)
+]
+}.
+$$
+
+Reservation:
+
+$$
+\frac{
+\mathcal M[r].s=\mathsf{planned}
+\qquad
+\mathbf c\oplus\boldsymbol\kappa_r\in\mathfrak F
+\qquad
+R_{\mathrm{pre}}=R
+}{
+\Gamma
+\xrightarrow{\mathsf{reserve}(r)}
+\Gamma[
+\mathcal M[r]\leftarrow
+\mathsf{reserved}(\vartheta_r,R_{\mathrm{post}})
+]
+}.
+$$
+
+Execution:
+
+$$
+\frac{
+\mathcal M[r].s=\mathsf{reserved}
+\qquad
+z\leftarrow\mathsf{Execute}(\mu,\Sigma,\widehat q)
+}{
+\Gamma
+\xrightarrow{\mathsf{execute}(r)}
+\Gamma[
+\mathcal B[r]\leftarrow z,
+\mathcal M[r].s\leftarrow\mathsf{executed},
+\mathcal M[r].h_z\leftarrow h(z)
+]
+}.
+$$
+
+Commit:
+
+$$
+\frac{
+\mathsf{CommitReady}(r,\Gamma)=1
+}{
+\Gamma
+\xrightarrow{\mathsf{commit}(r)}
+\Gamma[
+\Sigma\leftarrow\mathsf{ApplyTransaction}(\Sigma,r),
+\mathcal M[r].s\leftarrow\mathsf{committed},
+\mathcal M[r].\rho\leftarrow\rho_r
+]
+}.
+$$
+
+Emission:
+
+$$
+\frac{
+\mathcal M[r].s=\mathsf{committed}
+\qquad
+\mathcal B[r]=z
+\qquad
+h(z)=\mathcal M[r].h_z
+}{
+\Gamma
+\xrightarrow{\mathsf{emit}(r,z,\rho_r)}
+\Gamma[
+\mathcal M[r].s\leftarrow\mathsf{emitted},
+\mathcal E\leftarrow\mathcal E\mathbin{\|}\mathsf{emit}(r,z,\rho_r)
+]
+}.
+$$
+
+Retry:
+
+$$
+\frac{
+\mathsf{Committed}(r)=1
+\qquad
+h(\widehat q')=h_q(r)
+\qquad
+h(z)=h_z(r)
+}{
+\Gamma
+\xrightarrow{\mathsf{retry}(r)}
+\Gamma
+\xrightarrow{\mathsf{emit}(r,z,\rho_r)}
+\Gamma'
+}.
+$$
+
+Policy update:
+
+$$
+\frac{
+\mathsf{Installable}(U,\Gamma,t)=1
+}{
+\Gamma
+\xrightarrow{\mathsf{install}(U)}
+\mathsf{AbortIncompatiblePending}
+\left(
+\mathsf{Migrate}_U(\Gamma)
+\right)
+}.
+$$
+
+### Safety obligations
+
+A conformant implementation must refine the abstract rules while preserving:
+
+$$
+\mathsf{Emit}(r)
+\Longrightarrow
+\mathsf{CommittedBefore}(r),
+$$
+
+$$
+\#\mathsf{Charges}(r)\le1,
+$$
+
+$$
+\mathbf c^j\in\mathfrak F
+\quad
+\text{for every committed }j,
+$$
+
+$$
+h(\widehat q)=h_q(\rho),
+\qquad
+h(z)=h_z(\rho),
+$$
+
+$$
+v_{\mathcal R}(\widehat q)
+=
+v_{\mathcal R}(\mu)
+=
+v_{\mathcal R}(\rho),
+$$
+
+and
+
+$$
+z\in\mathcal O_{\mathrm{out}}(\mu)
+\subseteq\mathcal O(\widehat q).
+$$
+
+Mechanised verification would require a concrete profile language, state representation, cryptographic API model, and failure semantics. The rules above define the intended refinement boundary.
+
+## Appendix B: Budget Composition and Inferential Bounds
+
+This appendix collects the principal mathematical composition results and their assumptions.
+
+### Conditional mutual-information composition
+
+Let $Y$ be a sensitive target, $W$ auxiliary information, $\widehat q_j$ a non-anticipating adaptive request, and $Z_j$ the response. If
+
+$$
+I(Y;\widehat q_j\mid W,T_j)=0
+$$
+
+and
+
+$$
+T_{j+1}=(T_j,\widehat q_j,Z_j),
+$$
+
+then
+
+$$
+I(Y;T_n\mid W)
+=
+\sum_{j=0}^{n-1}
+I(Y;Z_j\mid W,T_j,\widehat q_j).
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-mi-composition}
+
+**Derivation.** Apply the chain rule:
+
+$$
+\begin{aligned}
+I(Y;T_{j+1}\mid W)
+&=
+I(Y;T_j,\widehat q_j,Z_j\mid W)
+\\
+&=
+I(Y;T_j\mid W)
++
+I(Y;\widehat q_j\mid W,T_j)
+\\
+&\quad+
+I(Y;Z_j\mid W,T_j,\widehat q_j).
+\end{aligned}
+$$
+
+The second term is zero by non-anticipation. Summing the recurrence yields the result.
+
+If the request itself reveals unmodelled information about $Y$, the omitted term must be restored.
+
+### Robust model classes
+
+Let $\mathfrak M$ be a common model class. Define
+
+$$
+\overline\Delta_j
+=
+\sup_{P\in\mathfrak M}
+I_P(Y;Z_j\mid W,T_j,\widehat q_j).
+$$
+
+For each fixed $P$,
+
+$$
+I_P(Y;T_n\mid W)
+\le
+\sum_{j=0}^{n-1}\overline\Delta_j.
+$$
+
+Therefore
+
+$$
+\sup_{P\in\mathfrak M}
+I_P(Y;T_n\mid W)
+\le
+\sum_{j=0}^{n-1}\overline\Delta_j.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-robust-mi-upper-bound}
+
+The bound can be loose because the model attaining one supremum need not attain another. It is conservative under a common class. If the model class changes over time, the profile must define how old exposures are embedded into the new class.
+
+### Maximal-leakage composition
+
+Suppose every conditional channel satisfies
+
+$$
+\mathcal L_{\max}
+\left(
+Y\rightarrow Z_j
+\mid
+T_j=t,\widehat q_j=q,W=w
+\right)
+\le
+\zeta_j
+$$
+
+uniformly over admitted histories and auxiliary information. Sequential composition gives
+
+$$
+\mathcal L_{\max}
+\left(
+Y\rightarrow Z_{0:n-1}
+\mid
+W
+\right)
+\le
+\sum_{j=0}^{n-1}\zeta_j.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-maximal-leakage}
+
+The uniform condition is essential. An average over histories is insufficient for a worst-case guarantee.
+
+### Rényi differential-privacy composition
+
+For compatible mechanisms $M_j$ that are $(\alpha,\rho_j(\alpha))$-RDP under the same protected relation,
+
+$$
+\rho_{0:n}(\alpha)
+=
+\sum_{j=0}^{n-1}\rho_j(\alpha).
+$$
+
+An RDP profile converts to an $(\varepsilon,\delta)$ guarantee through
+
+$$
+\varepsilon(\delta)
+=
+\inf_{\alpha>1}
+\left[
+\rho_{0:n}(\alpha)
++
+\frac{\log(1/\delta)}{\alpha-1}
+\right],
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-rdp-to-epsilon}
+
+using the applicable conversion theorem and parameter convention.
+
+The wallet must store adjacency, contribution unit, bounds, population, and epoch with the numerical profile. Without those semantics, addition has no stable protected object.
+
+### Linkability bounds
+
+Let $P_n^{=}$ and $P_n^{\ne}$ be same-user and different-user transcript distributions through $n$ observations. Define
+
+$$
+\lambda_n=\|P_n^{=}-P_n^{\ne}\|_{\mathrm{TV}}.
+$$
+
+Transcript extension cannot reduce optimal distinguishability:
+
+$$
+\lambda_{n+1}\ge\lambda_n.
+$$
+
+Suppose conditional distributions of observation $j$ satisfy
+
+$$
+\sup_h
+\left\|
+P(Z_j\in\cdot\mid h,\mathsf H_=)
+-
+P(Z_j\in\cdot\mid h,\mathsf H_{\ne})
+\right\|_{\mathrm{TV}}
+\le\delta_j.
+$$
+
+Then
+
+$$
+\lambda_n
+\le
+1-\prod_{j=0}^{n-1}(1-\delta_j)
+\le
+\min\left\{1,\sum_{j=0}^{n-1}\delta_j\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-linkability-bound}
+
+The result is useful for profile-level upper bounds. An empirical attack achieving advantage $\widehat\lambda$ establishes only
+
+$$
+\widehat\lambda\le\lambda_n.
+$$
+
+### Adaptive predicate reconstruction
+
+Let $S\in\{0,\ldots,M-1\}$ and output
+
+$$
+B_j=\mathbb 1[S\ge a_j].
+$$
+
+Let $\mathcal I_j$ be the candidate set after $j$ answers. The update is
+
+$$
+\mathcal I_{j+1}
+=
+\begin{cases}
+\{s\in\mathcal I_j:s\ge a_j\},&B_j=1,\\
+\{s\in\mathcal I_j:s<a_j\},&B_j=0.
+\end{cases}
+$$
+
+Choosing a midpoint threshold yields
+
+$$
+|\mathcal I_j|
+\le
+\left\lceil\frac{M}{2^j}\right\rceil.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-binary-search-bound}
+
+Thus at most $\lceil\log_2M\rceil$ zero-knowledge threshold proofs can determine $S$ exactly. The proof transcript may be zero knowledge relative to each public predicate; the public predicate results themselves compose to reveal the witness value.
+
+### Direct-disclosure closure
+
+Let $\mathcal G_j$ be the directly known claim algebra and $C_j$ the new disclosed statement. Then
+
+$$
+\mathcal G_{j+1}
+=
+\mathcal G_j\vee\sigma(C_j).
+$$
+
+The sequence is monotone:
+
+$$
+\mathcal G_j\subseteq\mathcal G_{j+1}.
+$$
+
+A profile-defined feasible family $\mathfrak D$ should be downward closed:
+
+$$
+\mathcal G\in\mathfrak D
+\land
+\mathcal G'\subseteq\mathcal G
+\Longrightarrow
+\mathcal G'\in\mathfrak D.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-disclosure-downward-closure}
+
+### Temporal exposure
+
+If earlier view $V(t_1)$ is a measurable function of later view $V(t_2)$ for $t_1<t_2$, then
+
+$$
+I(Y;V(t_1))
+\le
+I(Y;V(t_2)).
+$$
+
+A retention deadline changes legal permission and may trigger deletion duties. It does not by itself create a reverse information channel.
+
+### Concurrency proof obligation
+
+Let each transaction be linearised in total order $\prec_{\mathrm{lin}}$. Assume:
+
+$$
+\mathbf c^0\in\mathfrak F
+$$
+
+and every commit $j$ checks
+
+$$
+\mathbf c^{j+1}
+=
+\mathbf c^j\oplus\boldsymbol\kappa_j
+\in\mathfrak F.
+$$
+
+Then induction gives
+
+$$
+\forall j:\mathbf c^j\in\mathfrak F.
+$$
+
+This proof fails if two transactions evaluate against the same pre-state and both release before one observes the other's commit.
+
+### Statistical coverage and drift
+
+Let $U_\alpha(D,\mu,\kappa)$ be a conservative cost bound estimated from $D\sim P^n$. Required coverage is
+
+$$
+\inf_{P\in\mathfrak M}
+\Pr_{D\sim P^n}
+\left[
+\kappa_P(\mu,\kappa)
+\preceq
+U_\alpha(D,\mu,\kappa)
+\right]
+\ge1-\alpha.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-uniform-cost-coverage}
+
+The infimum makes robustness explicit. Pointwise validation at one convenient $P$ does not establish the claim.
+
+Let $P_0$ be validation distribution and $P_t$ current distribution. If an approved drift statistic satisfies
+
+$$
+\mathsf D(P_t,P_0)>\delta_E,
+$$
+
+the estimator should be suspended unless the validated model class covers $P_t$.
+
+### Limits of the bounds
+
+The equations in this appendix do not create universal numerical ceilings. A regulator must still define:
+
+- the protected target;
+- the observer or coalition;
+- auxiliary information;
+- model class;
+- adjacency relation;
+- contribution unit;
+- context partition;
+- acceptable uncertainty;
+- normative ceiling.
+
+Mathematics can make assumptions and consequences explicit. It cannot supply the normative choice by itself.
+
+## Appendix C: Cryptographic Protocol Profiles
+
+This appendix gives proposed profile templates. Each deployment must pin exact versions, parameters, key resolution, status, leakage, revocation, and certification. The templates are not substitutes for the cited standards.
+
+### Common profile envelope
+
+Every mechanism profile contains
+
+```yaml
+mechanism_id: urn:example:wallet:mechanism:<name>:<version>
+family: <credential|proof|mpc|he|tee|status|update>
+status: <approved|restricted|deprecated|prohibited>
+effective_from: <timestamp>
+effective_until: <timestamp>
+protocol_versions: []
+algorithm_suites: []
+parameter_sets: []
+request_binding:
+  fields: [request_digest, endpoint, purpose, nonce, expiry, policy_version]
+output_schema: <schema-id>
+leakage_profile: <profile-id>
+trust_profile: <profile-id>
+error_profile: <profile-id>
+revocation_profile: <profile-id>
+conformance_suite: <suite-id>
+certification_requirements: []
+```
+
+The envelope is proposed. Exact serialisation should use a standards process and canonical encoding.
+
+### SD-JWT selective disclosure profile
+
+A production profile based on RFC 9901 should pin:
+
+```yaml
+family: credential
+protocol_versions:
+  - RFC 9901
+requirements:
+  issuer_signature:
+    algorithms: [profile-pinned algorithms]
+    key_resolution: profile-pinned
+  disclosures:
+    salt_entropy_bits_min: profile-pinned
+    canonical_claim_paths: required
+  key_binding:
+    required_for: [profile-pinned transaction classes]
+    audience_bound: true
+    nonce_bound: true
+    issued_at_window: profile-pinned
+  request_binding:
+    include: [request_digest, endpoint, purpose, nonce, expiry, policy_version]
+  privacy:
+    stable_subject_identifier: prohibited-unless-profile-authorised
+    disclosure_set_cost: direct-disclosure-coordinate
+    holder_key_cost: linkability-coordinate
+```
+
+The wallet must charge disclosed claims, issuer and format metadata, holder-binding identifiers, status evidence, and repeated presentation structure.
+
+### W3C Verifiable Credential profile
+
+A W3C VC profile should pin:
+
+- Verifiable Credentials Data Model 2.0;
+- one securing method;
+- one canonicalisation and proof suite where applicable;
+- media types;
+- issuer-key resolution;
+- holder binding;
+- status mechanism;
+- schema version;
+- context and vocabulary allowlist;
+- privacy and accessibility requirements.
+
+Unrestricted remote contexts or extension vocabularies should not be accepted in high-assurance transactions without profile review.
+
+### BBS-derived proof profile
+
+As of the article date, W3C's Data Integrity BBS Cryptosuites v1.0 material is not represented here as a final W3C Recommendation. A deployment profile must record its exact status and snapshot.
+
+A profile should pin:
+
+```yaml
+family: proof
+proof_system: BBS-derived-proof
+specification_snapshot: <exact W3C snapshot>
+canonicalization: <exact algorithm and version>
+mandatory_statements: <schema rule>
+selective_statements: <schema rule>
+holder_binding: <required|optional|prohibited>
+domain_binding: required
+challenge_binding: required
+proof_expiry: <duration>
+unlinkability_claim:
+  scope: proof-transcript-only
+  exclusions:
+    - disclosed-attribute-combination
+    - network-metadata
+    - status-metadata
+    - device-attestation
+```
+
+The profile must not describe the complete presentation as unlinkable merely because the derived proof randomises one cryptographic component.
+
+### General zero-knowledge predicate profile
+
+A predicate profile pins:
+
+```yaml
+family: proof
+relation_id: <registered NP relation>
+circuit_or_statement_digest: <digest>
+proof_system: <exact proof system and version>
+setup:
+  type: <transparent|universal|circuit-specific>
+  parameters_digest: <digest>
+public_inputs:
+  - predicate_id
+  - request_digest
+  - endpoint_id
+  - purpose_id
+  - nonce
+  - expiry
+  - policy_version
+witness_schema: <schema-id>
+soundness_bits: <minimum>
+zero_knowledge_claim: computational
+proof_size_limit: <bytes>
+verification_time_limit: <duration>
+predicate_family_account: <account-id>
+```
+
+The predicate-family account prevents adaptive threshold reconstruction even when each proof satisfies zero knowledge.
+
+### MPC profile
+
+A secure-multiparty-computation profile pins:
+
+```yaml
+family: mpc
+function_id: <registered functionality>
+protocol: <exact protocol and version>
+parties: <roles and count>
+corruption:
+  threshold: <value>
+  timing: <static|adaptive>
+  behaviour: <semi-honest|malicious>
+network: <synchronous|asynchronous>
+setup: <none|PKI|CRS|preprocessing|other>
+fairness: <guaranteed|not-guaranteed>
+output_delivery: <guaranteed|abort-possible>
+leakage:
+  message_lengths: <rule>
+  timing: <rule>
+  aborts: <rule>
+  identities: <rule>
+input_validation: <rule>
+output_schema: <schema-id>
+security_level_bits: <minimum>
+```
+
+A generic statement that “participants never see one another's data” is non-conformant because it omits the real–ideal claim and corruption model.
+
+### Homomorphic-encryption profile
+
+A homomorphic-encryption profile pins:
+
+```yaml
+family: he
+scheme: <exact scheme and library version>
+parameter_set: <named parameter set>
+security_estimate:
+  model: <classical|quantum>
+  bits: <minimum>
+plaintext_space: <ring or encoding>
+ciphertext_modulus: <value>
+multiplicative_depth: <value>
+bootstrapping: <enabled|disabled>
+circuit_digest: <digest>
+ciphertext_validation: required
+evaluation_proof: <required|optional>
+key_rotation: <rule>
+error:
+  type: <exact|approximate>
+  norm: <norm>
+  bound: <value>
+  failure_probability: <value>
+threshold_decision:
+  indeterminate_margin: <value>
+```
+
+Approximate profiles must include an indeterminate region for consequential thresholds unless decision stability is proved.
+
+### Trusted-execution profile
+
+A TEE profile pins:
+
+```yaml
+family: tee
+platform_family: <identifier>
+attestation_profile: RFC-9334-derived
+verifier: <approved verifier>
+reference_values: <registry>
+approved_measurements: <set or registry>
+configuration_constraints: <rules>
+freshness:
+  nonce_required: true
+  maximum_age: <duration>
+request_binding: required
+state_rollback_protection: <mechanism>
+side_channel_profile:
+  timing: <bound or unresolved>
+  memory_access: <bound or unresolved>
+  io_sizes: <bound>
+  aborts: <bound>
+  platform_metadata: <disclosed fields>
+```
+
+An unresolved side-channel field cannot be represented as zero leakage.
+
+### Status profile
+
+A status profile based on Bitstring Status List v1.0 should pin:
+
+- status purpose;
+- list length and allocation policy;
+- cache and retrieval policy;
+- freshness interval;
+- issuer signature and key resolution;
+- index privacy;
+- proof or presentation binding;
+- failure semantics;
+- suspension and revocation distinction.
+
+Direct per-credential issuer queries should be prohibited where a privacy-preserving bulk mechanism is sufficient.
+
+### Update profile
+
+An update profile inspired by TUF should pin:
+
+```yaml
+family: update
+root_role:
+  threshold: <t-of-n>
+targets_role:
+  threshold: <t-of-n>
+snapshot_role:
+  threshold: <t-of-n>
+timestamp_role:
+  threshold: <t-of-n>
+version_monotonicity: required
+expiry: required
+target_delegation: required
+dependency_digest: required
+platform_binding: required
+rollback_object:
+  ordinary: prohibited
+  emergency: separately-authorised
+transparency:
+  inclusion_proof: required
+  consistency_proof: required
+```
+
+A correctly signed malicious build remains possible. The profile must be combined with independent review, build verification, certificate status, and incident response.
+
+### Profile selection rule
+
+Given candidate mechanism set $\mathfrak M(q)$, the wallet selects
+
+$$
+\mu^\star
+\in
+\operatorname{Min}_{\preceq_{\mathrm{comp}}}
+\left\{
+\mu\in\mathfrak M(q):
+\mathsf{ProfileValid}(\mu,t)=1
+\land
+\mathsf{Adequate}(\mu,q)=1
+\land
+\mathsf{BudgetSafe}(\mu,\Sigma)=1
+\right\}.
+$$ {#eq-from-the-mosaic-theory-to-a-mathematical-gdpr-appendix-profile-selection}
+
+If a required profile field is unresolved, the wallet applies the field's declared safe failure rule. It must not infer approval from the presence of a protocol implementation.
+
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eidas-framework]: European Parliament and Council of the European Union. (2024). **Regulation (EU) 2024/1183 amending Regulation (EU) No 910/2014 as regards establishing the European Digital Identity Framework**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg/2024/1183/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-pozen-mosaic]: Pozen, D. E. (2005). **The Mosaic Theory, National Security, and the Freedom of Information Act**. _Yale Law Journal, 115_(3), 628–679. [DOI](https://doi.org/10.2307/20455745)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-shannon-information]: Shannon, C. E. (1948). **A Mathematical Theory of Communication**. _Bell System Technical Journal, 27_(3–4), 379–423, 623–656. [DOI](https://doi.org/10.1002/j.1538-7305.1948.tb01338.x)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-williams-beer]: Williams, P. L., & Beer, R. D. (2010). **Nonnegative Decomposition of Multivariate Information**. _arXiv_. [URL](https://arxiv.org/abs/1004.2515)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-kosinski-digital-records]: Kosinski, M., Stillwell, D., & Graepel, T. (2013). **Private Traits and Attributes Are Predictable from Digital Records of Human Behavior**. _Proceedings of the National Academy of Sciences, 110_(15), 5802–5805. [DOI](https://doi.org/10.1073/pnas.1218772110)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-dwork-roth]: Dwork, C., & Roth, A. (2014). **The Algorithmic Foundations of Differential Privacy**. _Foundations and Trends in Theoretical Computer Science, 9_(3–4), 211–407. [DOI](https://doi.org/10.1561/0400000042)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-zuboff-surveillance-capitalism]: Zuboff, S. (2019). **The Age of Surveillance Capitalism: The Fight for a Human Future at the New Frontier of Power**. _PublicAffairs_. [Publisher](https://www.hachettebookgroup.com/titles/shoshana-zuboff/the-age-of-surveillance-capitalism/9781610395700/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-scott-legibility]: Scott, J. C. (1998). **Seeing Like a State: How Certain Schemes to Improve the Human Condition Have Failed**. _Yale University Press_. [Publisher](https://yalebooks.yale.edu/book/9780300078152/seeing-like-a-state/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-gdpr-official]: European Parliament and Council of the European Union. (2016). **Regulation (EU) 2016/679 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-edpb-design-default]: European Data Protection Board. (2020). **Guidelines 4/2019 on Article 25 Data Protection by Design and by Default, Version 2.0**. _European Data Protection Board_. [Official guidance](https://www.edpb.europa.eu/documents/guideline/guidelines-42019-on-article-25-data-protection-by-design-and-by-default_en)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eu-charter]: European Union. (2016). **Charter of Fundamental Rights of the European Union**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/treaty/char_2016/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-implementing-regulations]: European Commission. (2024). **Commission Implementing Regulation (EU) 2024/2979 as regards the integrity and core functionalities of European Digital Identity Wallets**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2024/2979/oj/eng); European Commission. (2024). **Commission Implementing Regulation (EU) 2024/2981 as regards the certification of European Digital Identity Wallets**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2024/2981/oj/eng); European Commission. (2024). **Commission Implementing Regulation (EU) 2024/2982 as regards protocols and interfaces to be supported by the European Digital Identity Framework**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2024/2982/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-arf]: European Commission. (2026). **European Digital Identity Wallet Architecture and Reference Framework, Version 2.9.0**. _European Digital Identity_. [Official technical framework](https://eudi.dev/2.9.0/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-blackwell-order]: Blackwell, D. (1953). **Equivalent Comparisons of Experiments**. _Annals of Mathematical Statistics, 24_(2), 265–272. [DOI](https://doi.org/10.1214/aoms/1177729032)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-saltzer-schroeder]: Saltzer, J. H., & Schroeder, M. D. (1975). **The Protection of Information in Computer Systems**. _Proceedings of the IEEE, 63_(9), 1278–1308. [DOI](https://doi.org/10.1109/PROC.1975.9939)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-mironov-rdp]: Mironov, I. (2017). **Rényi Differential Privacy**. _2017 IEEE 30th Computer Security Foundations Symposium_, 263–275. [DOI](https://doi.org/10.1109/CSF.2017.11)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-maximal-leakage]: Issa, I., Wagner, A. B., & Kamath, S. (2020). **An Operational Approach to Information Leakage**. _IEEE Transactions on Information Theory, 66_(3), 1625–1657. [DOI](https://doi.org/10.1109/TIT.2019.2962804)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-vc-data-model]: World Wide Web Consortium. (2025). **Verifiable Credentials Data Model v2.0**. _W3C Recommendation_. [Official specification](https://www.w3.org/TR/vc-data-model-2.0/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-data-integrity]: World Wide Web Consortium. (2025). **Verifiable Credential Data Integrity 1.0**. _W3C Recommendation_. [Official specification](https://www.w3.org/TR/vc-data-integrity/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9901]: Fett, D., Yasuda, K., & Campbell, B. (2025). **Selective Disclosure for JSON Web Tokens**. _RFC 9901_. [Official specification](https://www.rfc-editor.org/rfc/rfc9901.html)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-w3c-bbs]: World Wide Web Consortium. (2026). **Data Integrity BBS Cryptosuites v1.0**. _Candidate Recommendation Draft_. [Official specification](https://www.w3.org/TR/vc-di-bbs/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-pedersen-commitments]: Pedersen, T. P. (1992). **Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing**. _Advances in Cryptology—CRYPTO ’91_, 129–140. [DOI](https://doi.org/10.1007/3-540-46766-1_9)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-gmr-zero-knowledge]: Goldwasser, S., Micali, S., & Rackoff, C. (1989). **The Knowledge Complexity of Interactive Proof Systems**. _SIAM Journal on Computing, 18_(1), 186–208. [DOI](https://doi.org/10.1137/0218012)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-camenisch-lysyanskaya]: Camenisch, J., & Lysyanskaya, A. (2001). **An Efficient System for Non-transferable Anonymous Credentials with Optional Anonymity Revocation**. _Advances in Cryptology—EUROCRYPT 2001_, 93–118. [DOI](https://doi.org/10.1007/3-540-44987-6_7)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-bitstring-status]: World Wide Web Consortium. (2025). **Bitstring Status List v1.0**. _W3C Recommendation_. [Official specification](https://www.w3.org/TR/vc-bitstring-status-list/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-gmw-secure-computation]: Goldreich, O., Micali, S., & Wigderson, A. (1987). **How to Play Any Mental Game**. _Proceedings of the 19th Annual ACM Symposium on Theory of Computing_, 218–229. [DOI](https://doi.org/10.1145/28395.28420)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-gentry-fhe]: Gentry, C. (2009). **Fully Homomorphic Encryption Using Ideal Lattices**. _Proceedings of the 41st Annual ACM Symposium on Theory of Computing_, 169–178. [DOI](https://doi.org/10.1145/1536414.1536440)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-ckks]: Cheon, J. H., Kim, A., Kim, M., & Song, Y. (2017). **Homomorphic Encryption for Arithmetic of Approximate Numbers**. _Advances in Cryptology—ASIACRYPT 2017_, 409–437. [DOI](https://doi.org/10.1007/978-3-319-70694-8_15)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9334]: Birkholz, H., Thaler, D., Richardson, M., Smith, N., & Pan, W. (2023). **Remote ATtestation procedureS Architecture**. _RFC 9334_. [Official specification](https://doi.org/10.17487/RFC9334)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-plotkin-sos]: Plotkin, G. D. (2004). **A Structural Approach to Operational Semantics**. _Journal of Logic and Algebraic Programming, 60–61_, 17–139. [DOI](https://doi.org/10.1016/j.jlap.2004.03.001)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-herlihy-wing]: Herlihy, M. P., & Wing, J. M. (1990). **Linearizability: A Correctness Condition for Concurrent Objects**. _ACM Transactions on Programming Languages and Systems, 12_(3), 463–492. [DOI](https://doi.org/10.1145/78969.78972)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-odrl]: World Wide Web Consortium. (2018). **ODRL Information Model 2.2**. _W3C Recommendation_. [Official specification](https://www.w3.org/TR/odrl-model/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-dpv]: Data Privacy Vocabularies and Controls Community Group. (2024). **Data Privacy Vocabulary, Version 2.0**. _W3C Community Group Final Report_. [Community specification](https://www.w3.org/community/reports/dpvcg/CG-FINAL-dpv-20240801/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-integrity]: European Commission. (2024). **Commission Implementing Regulation (EU) 2024/2979 as regards the integrity and core functionalities of European Digital Identity Wallets**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2024/2979/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-coniks]: Melara, M. S., Blankstein, A., Bonneau, J., Felten, E. W., & Freedman, M. J. (2015). **CONIKS: Bringing Key Transparency to End Users**. _24th USENIX Security Symposium_, 383–398. [Official publication](https://www.usenix.org/conference/usenixsecurity15/technical-sessions/presentation/melara)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-shamir]: Shamir, A. (1979). **How to Share a Secret**. _Communications of the ACM, 22_(11), 612–613. [DOI](https://doi.org/10.1145/359168.359176)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-coercion-resistant-elections]: Juels, A., Catalano, D., & Jakobsson, M. (2005). **Coercion-Resistant Electronic Elections**. _Proceedings of the 2005 ACM Workshop on Privacy in the Electronic Society_, 61–70. [DOI](https://doi.org/10.1145/1102199.1102213)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-tuf]: The Update Framework Project. (n.d.). **The Update Framework Specification, Version 1.0.26**. _Official specification_. [Specification](https://theupdateframework.github.io/specification/v1.0.26/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-certification]: European Commission. (2024). **Commission Implementing Regulation (EU) 2024/2981 as regards the certification of European Digital Identity Wallets**. _Official Journal of the European Union_. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2024/2981/oj/eng)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-enisa-eudiw-draft]: European Union Agency for Cybersecurity. (2026). **Draft Candidate EUDIW Scheme, Version 0.4.614, for Public Review**. _European Cybersecurity Certification_. [Official draft](https://certification.enisa.europa.eu/publications/draft-candidate-eudiw-scheme-v04614-public-review_en)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-jones]: Supreme Court of the United States. (2012). **United States v. Jones, 565 U.S. 400**. _United States Reports_. [Official opinion](https://www.govinfo.gov/content/pkg/USREPORTS-565/pdf/USREPORTS-565-400.pdf)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-carpenter]: Supreme Court of the United States. (2018). **Carpenter v. United States, 585 U.S. 296**. _United States Reports_. [Official opinion](https://www.supremecourt.gov/opinions/17pdf/16-402_h315.pdf)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-chatrie]: Supreme Court of the United States. (2026). **Chatrie v. United States, No. 25-112**. _Slip opinion, June 29, 2026_. [Official opinion](https://www.supremecourt.gov/opinions/25pdf/25-112_0am4.pdf)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-rollout]: European Commission. (2026). **European Digital Identity (EUDI) Regulation**. _Shaping Europe’s Digital Future_. [Official policy page](https://digital-strategy.ec.europa.eu/en/policies/eudi-regulation)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-reference-implementation]: European Commission. (2026). **EUDI Wallet Reference Implementation**. _European Digital Identity_. [Official documentation](https://docs.eudi.dev/latest/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-eudi-conformance]: European Commission. (2026). **Functional Conformance Assessment Framework for the European Digital Identity Wallet**. _European Digital Identity_. [Official framework](https://conformance.eudi.dev/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-openid4vp]: Terbu, O., Lodderstedt, T., Yasuda, K., Fett, D., & Heenan, J. (2025). **OpenID for Verifiable Presentations 1.0**. _OpenID Final Specification_. [Official specification](https://openid.net/specs/openid-4-verifiable-presentations-1_0-final.html)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-openid4vci]: Lodderstedt, T., Yasuda, K., Looker, T., & Bastian, P. (2025). **OpenID for Verifiable Credential Issuance 1.0**. _OpenID Final Specification_. [Official specification](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-final.html)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-openid-haip]: Yasuda, K., Lodderstedt, T., Bormann, C., & Heenan, J. (2025). **OpenID4VC High Assurance Interoperability Profile 1.0**. _OpenID Final Specification_. [Official specification](https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0-final.html)
+
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-rfc-9396]: Lodderstedt, T., Richer, J., & Campbell, B. (2023). **OAuth 2.0 Rich Authorization Requests**. _RFC 9396_. [Official specification](https://www.rfc-editor.org/rfc/rfc9396.html)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-kerr-mosaic]: Kerr, O. S. (2012). **The Mosaic Theory of the Fourth Amendment**. _Michigan Law Review, 111_(3), 311–354. [Publisher](https://repository.law.umich.edu/mlr/vol111/iss3/1/)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-ftc-update]: Federal Trade Commission. (2024). **The Federal Trade Commission 2023 Privacy and Data Security Update**. _Federal Trade Commission_. [Official report](https://www.ftc.gov/system/files/ftc_gov/pdf/2024.03.21-PrivacyandDataSecurityUpdate-508.pdf)
+
+[^from-the-mosaic-theory-to-a-mathematical-gdpr-secure-data-act]: U.S. House Committee on Energy and Commerce. (2026). **Examining Legislation to Establish a Federal Comprehensive Privacy and Data Security Law**. _Legislative hearing on H.R. 8413, SECURE Data Act, June 3, 2026_. [Official hearing notice](https://energycommerce.house.gov/posts/chairmen-guthrie-and-bilirakis-announce-hearing-on-establishing-a-federal-data-privacy-law)
 
