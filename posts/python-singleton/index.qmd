@@ -1,10 +1,15 @@
 ---
 title: "Singletons in Python"
 subtitle: "Ensuring a single instance for shared resources"
-description: "The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments."
+description: "A practical guide to implementing the singleton pattern in Python using `__new__`, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments."
+abstract: |
+  This article explains the singleton design pattern and presents several Python implementations based on `__new__`, inheritance, decorators, and metaclasses. Each approach is illustrated with a shared logger example and evaluated in terms of readability, reuse, coupling, and separation of responsibilities.
+  It also examines the pattern’s disadvantages, including global state, testing difficulties, and possible violations of the Single Responsibility Principle. Thread-safe variants demonstrate how explicit locking can prevent concurrent instance creation, including in Python environments where the Global Interpreter Lock may not provide the assumptions on which older implementations relied.
 date: "2018-03-08"
 date-modified: "2023-12-11"
-categories: [programming, Python, tutorial, 🇬🇧]
+categories: [software development, tutorial, 🇬🇧]
+audiences: technical specialist
+difficulty: intermediate
 image: "singletons.webp"
 ---
 
@@ -26,27 +31,23 @@ Design patterns can be categorized into three main types:
 
 A **creational design pattern** focuses on how objects are created, helping developers manage complex instantiation processes in a more adaptable and reusable manner. By abstracting the object creation process, creational patterns allow the code to be more flexible and maintainable. Some common creational design patterns include:
 
-- Factory Method: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.
+- **Factory method**: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.
 
-- Abstract Factory: Provides an interface for creating families of related objects without specifying their concrete classes.
+- **Abstract factory**: Provides an interface for creating families of related objects without specifying their concrete classes.
 
-- Builder: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.
+- **Builder**: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.
 
-- Prototype: Creates new objects by copying an existing instance, which serves as a prototype.
+- **Prototype**: Creates new objects by copying an existing instance, which serves as a prototype.
 
-- Singleton: Ensures that a class has only one instance while providing a global access point to that instance.
+- **Singleton**: Ensures that a class has only one instance while providing a global access point to that instance.
 
 ## More on singletons
 
 The **singleton pattern** serves two primary purposes:
 
-1. Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance.
+1. Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance. This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.
 
-   This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.
-
-2. Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes.
-
-   By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.
+2. Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes. By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.
 
 So, the singleton pattern is especially helpful when dealing with shared resources, where having multiple instances would lead to inefficiency, resource conflicts, or inconsistencies.
 
@@ -97,11 +98,11 @@ In this example, the `Logger` class ensures that only one instance is created by
 
 While the singleton pattern offers advantages like centralized control and resource efficiency, it also has some notable downsides:
 
-- Increased Coupling: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.
+- **Increased coupling**: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.
 
-- Global State: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.
+- **Global state**: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.
 
-- Testing Challenges: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.
+- **Testing challenges**: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.
 
 Due to these potential issues, some developers view the singleton pattern as an antipattern and recommend using it only when its benefits outweigh the disadvantages.
 
@@ -392,7 +393,7 @@ Each of the three implementations of the singleton pattern—using a base class,
 
 ## Taking into account thread-safety
 
-It's crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the Global Interpreter Lock (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.
+It's crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the **Global Interpreter Lock** (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.
 
 To make singleton implementations thread-safe, we need to ensure that multiple threads do not create multiple instances simultaneously. Below are thread-safe versions of the singleton pattern implemented using a base class, a decorator, and a metaclass.
 

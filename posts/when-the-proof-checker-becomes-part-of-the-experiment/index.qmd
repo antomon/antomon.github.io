@@ -3,15 +3,17 @@ title: "When the Proof Checker Becomes Part of the Experiment"
 subtitle: "Lean, Collatz, and the epistemology of proof abundance"
 description: "A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance."
 abstract: |
-    Lean-based mathematical research separates candidate generation from deductive verification. Human mathematicians, tactics, search procedures, and increasingly AI systems may generate proof attempts, while Lean’s elaborator translates those attempts into core expressions and its kernel checks whether the resulting proof terms inhabit the claimed propositions. This architecture is central to Terence Tao’s vision of mathematical AI: stochastic and unreliable generators can become useful when coupled to verification mechanisms with substantially different failure modes.
+    Lean-based mathematical research separates candidate generation from deductive verification. Human mathematicians, tactics, search procedures, metaprograms, and increasingly AI systems may generate proof attempts, while Lean’s elaborator translates those attempts into core expressions and its kernel checks whether the resulting proof terms and declarations satisfy the rules of its dependent type theory. This architecture is central to Terence Tao’s vision of mathematical AI: stochastic and unreliable generators can become useful when coupled to verification mechanisms with substantially different failure modes.
 
-    The July 2026 CollatzLean incident exposes a qualification to that architecture. A Lean development claimed an axiom-free, witness-free refutation of the Collatz conjecture and advertised a verification pipeline containing fresh kernel replay, dependency checks, proof export, and independent checking. The result was invalid. Review reduced it to a soundness defect in Lean’s processing of nested inductive declarations: ill-typed parametric arguments could escape checking, permitting a checked declaration from which `False` could be derived.
+    The July 2026 CollatzLean incident exposes both the power and the conditional nature of that architecture. An AI-assisted Lean development claimed a `sorry`-free, axiom-free, witness-free refutation of the Collatz conjecture and presented a verification pipeline containing fresh kernel replay, dependency checks, proof export, and checking by the independent Nanoda kernel. The mathematical result was invalid. Expert review reduced the development to a proof of `False` that exploited a soundness defect in Lean’s processing of nested inductive declarations: phantom parameters could disappear from generated auxiliary types and thereby escape type checking.
 
-    The incident does not show that formal proof is less reliable than informal proof, nor does it provide evidence against the Collatz conjecture. It shows that machine checking is an implemented scientific process whose epistemic force depends on kernel correctness, faithful artifact export, checker independence, semantic fidelity, and end-to-end pipeline provenance. In a regime of abundant automated proof generation, these assumptions become more consequential because optimization systems can search not only mathematical spaces but also the accidental behavior of their verifiers.
+    Leonardo de Moura’s subsequent postmortem established that the independent-checking stage had also genuinely accepted the malformed artifact, but for a different reason. The repository pinned an outdated Nanoda release containing a separate projection-validation defect. The same adversarial construction therefore lay in the intersection of two distinct implementation failure regions. This was not evidence that Lean’s intended type theory is inconsistent, nor did it provide evidence against the Collatz conjecture. It was an implementation and verification-pipeline failure involving specific vulnerable checker versions.
 
-    The case therefore supplies concrete evidence for the thesis developed in _Proof Abundance and the New Practice of Mathematics_: theorem generation, formal verification, semantic review, exposition, community digestion, and canonicalization are distinct stages of mathematical knowledge production. A green kernel verdict is an important threshold, but it is neither an infallible oracle nor the terminal state of discovery.
-date: "2026-08-01"
-date-modified: "2026-08-01"
+    The incident shows that machine checking is an implemented scientific process whose epistemic force depends on kernel correctness, checker diversity, version freshness, faithful artifact export, dependency control, semantic fidelity, and end-to-end provenance. In a regime of abundant automated proof generation, these assumptions become increasingly consequential because optimization systems interact with executable acceptance predicates and may discover not only valid derivations but also rare combinations of verifier defects.
+
+    The case therefore provides concrete evidence for the thesis developed in _Proof Abundance and the New Practice of Mathematics_: theorem generation, formal verification, semantic review, adversarial testing, exposition, community digestion, and canonicalization are distinct stages of mathematical knowledge production. A green kernel verdict remains a powerful form of evidence, but it is neither an infallible oracle nor the terminal state of discovery. In this episode, the initial artifact appeared to discover a nonterminating Collatz orbit; the complete research process instead discovered defects in the instruments used to certify proofs.
+date: "2026-07-31"
+date-modified: "2026-08-02"
 categories: [machine learning, mathematics, 🇬🇧]
 audiences: researcher, technical specialist
 difficulty: advanced
@@ -650,3 +652,95 @@ In proof-abundant mathematics, the proof checker is no longer invisible infrastr
 [^when-the-proof-checker-becomes-part-of-the-experiment-lean4lean]: Carneiro, M. (2024). **Lean4Lean: Towards a Verified Typechecker for Lean, in Lean**. *arXiv*. [DOI](https://doi.org/10.48550/arXiv.2403.14064).
 
 [^when-the-proof-checker-becomes-part-of-the-experiment-bakelite]: American Chemical Society. (n.d.). **Leo Hendrik Baekeland and the Invention of Bakelite**. *National Historic Chemical Landmarks*. [Official history](https://www.acs.org/education/whatischemistry/landmarks/bakelite.html).
+
+## Update, August 1, 2026: Leonardo de Moura’s postmortem
+
+After this article was completed, Leonardo de Moura published a technical postmortem that clarifies several aspects of the CollatzLean incident, including the chronology, the exact kernel defect, the role of the external Nanoda checker, and the measures subsequently taken by the Lean Focused Research Organization.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]
+
+De Moura is one of the central figures in automated reasoning and the main architect of Lean, as well as of Z3, Yices 1.0, and SAL. He is currently a senior principal applied scientist in the Automated Reasoning Group at Amazon Web Services and serves as chief architect, co-founder, and a board member of the Lean FRO.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-profile] His account is therefore not an external interpretation of the event but a postmortem written by Lean’s principal architect.
+
+### A more precise chronology
+
+According to de Moura, Ramana Kumar published the CollatzLean repository on July 25, 2026. The repository contained a `sorry`-free purported disproof of the Collatz conjecture produced with AI assistance. On July 28, Kiran Gopinathan reduced the development to a small proof of `False` and opened Lean issue `#14576`. The Lean developers produced a correction approximately one hour after the report. Joachim Breitner reviewed the change and suggested improvements before it was merged, after which corrected patch releases were issued.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]
+
+The postmortem confirms that the development did not expose an inconsistency in Lean’s intended type theory. It exploited an implementation error in the reference kernel’s handling of nested inductive types.
+
+The affected transformation concerned an occurrence of an inductive type $T$ with parameters $D_1,\ldots,D_m$. When those parameters were *phantom*—that is, when they did not occur in the constructor fields—they disappeared from the generated auxiliary inductive type. Because the parameters were no longer present in that generated declaration, the kernel failed to type-check them. An ill-typed argument placed in the unchecked position could consequently make the kernel accept a declaration from which `False` was derivable.
+
+De Moura emphasizes that the ordinary Lean frontend would have rejected the malformed declaration. The exploit was reachable through metaprogramming, which constructed the declaration directly and submitted it to the kernel. This does not make the kernel failure less significant. Lean’s elaborator and metaprogramming facilities are deliberately outside the trusted computing base. Kernel soundness cannot depend on an untrusted frontend refusing to generate malformed input. The kernel must reject every invalid declaration independently, including declarations produced adversarially or written directly into compiled artifacts.
+
+This separation is one of the principal advantages of proof terms: complex and potentially unreliable construction procedures can remain untrusted only when the final checker validates their outputs without relying on those procedures to behave correctly.
+
+### Why Nanoda also accepted the development
+
+The postmortem resolves the most important uncertainty left open in the original article. The CollatzLean repository did pass an independent checker, but it used a week-old version of Nanoda that contained a separate soundness defect.
+
+Nanoda is an independent Lean kernel implemented in Rust by Chris Bailey. It did not share Lean’s missing check for phantom parameters in nested inductive declarations. Nanoda checked the location that the official Lean kernel had omitted. However, the older Nanoda version failed to verify that the type name encoded in a projection node matched the type to which the projection was being applied.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]
+
+The two implementations therefore accepted the same malformed artifact for different reasons:
+
+* the official Lean kernel failed to inspect an ill-typed argument eliminated during nested-inductive processing;
+* the old Nanoda kernel inspected that part of the declaration but failed to validate the type name of a projection node.
+
+The Nanoda defect had already been reported by Jeremy Chen and corrected approximately one week before the Lean defect was reported. CollatzLean nevertheless pinned and executed the older vulnerable Nanoda release. The expression hidden from the official Lean kernel was constructed so that the same artifact was also accepted by the outdated Nanoda implementation.
+
+The original statement that the development passed two checkers was therefore operationally correct. It was checked by two distinct implementations. The inference that this constituted decisive independent confirmation was nevertheless false because the particular versions of both checkers were unsound on different components of the same artifact.
+
+Let $a$ denote the malformed artifact, $K_L$ the affected Lean kernel, and $K_N^{\mathrm{old}}$ the outdated Nanoda kernel. The observed result was
+
+$$
+\operatorname{Accept}*{K_L}(a)=1
+\quad\land\quad
+\operatorname{Accept}*{K_N^{\mathrm{old}}}(a)=1,
+$$
+
+although $a$ was not a valid object in the intended Lean type theory. The conjunction of two checker verdicts increased the apparent strength of the evidence, but it did not transform implementation soundness from an engineering assumption into a logical theorem.
+
+This is a more consequential result than a shared implementation error. The artifact lay in the intersection of two distinct failure regions. Independent checking reduced the probability of an invalid object passing, but automated or adversarial search found an object satisfying both defective acceptance predicates.
+
+De Moura reports that Kumar regarded the timing as probably coincidental but could not exclude the possibility that the AI model had encountered information about the previously reported Nanoda defect. Breitner proposed another hypothesis: the apparent coincidence may reflect the arrival of sufficiently capable models able to find rare verifier weaknesses. Neither explanation has been established. The available evidence does not determine whether the system intentionally combined known vulnerabilities, reproduced patterns present in its training context, or reached the construction through search without knowledge of the earlier report.
+
+The fact that can be established is narrower and already important: an AI-assisted formal development produced an artifact that simultaneously exploited unrelated defects in two proof-checker implementations.
+
+### The status of Lean4Lean
+
+The postmortem also clarifies why Lean4Lean did not provide an additional independent barrier. Lean4Lean formalizes Lean’s type theory and develops a Lean implementation of its type checker intended for eventual verification. Its treatment of inductive declarations was ported from the reference kernel and consequently inherited the same defect.
+
+At the time of the CollatzLean incident, the Lean4Lean proof of consistency did not yet cover inductive types. The implementation was therefore part of an ongoing verification project, not a completely verified checker for the relevant declaration path. De Moura states that the bug would have been discovered when attempting to complete the verification of this component.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]
+
+This distinction is important for evaluating formally developed infrastructure. An implementation written inside a theorem prover is not automatically verified. Its assurance depends on the exact correctness statements that have been formulated and proved. Uncovered components remain ordinary software and may reproduce defects inherited from the reference implementation.
+
+### Remediation and defensive use of AI
+
+The Lean FRO’s response extended beyond the immediate one-line class of correction. The original exploit and a related non-uniform-parameter case were added to Kernel Arena as regression tests. A follow-up change strengthened the kernel’s treatment of nested parameters by checking that they genuinely behave as parameters, rather than merely rechecking their types. The developers also hardened additional internal kernel invariants.[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]
+
+The response itself illustrates the dual role of automated search. Daniel Selsam at OpenAI assisted the Lean FRO using an AI system specialized in cybersecurity. The audit found additional programming errors in the Lean kernel. According to the postmortem, all were corrected, and all were detected by the current Nanoda implementation. Like the original defect, these additional errors were reachable through metaprogramming rather than the ordinary frontend.
+
+The Lean infrastructure was also changed so that `comparator.live` runs Nanoda by default and tracks its upstream version daily. This directly addresses one of the incident’s central operational lessons: an independent checker provides protection only when the version actually executed contains the relevant corrections.
+
+The constructive lesson is that automated adversarial search can be placed on both sides of the verification boundary. A theorem generator may accidentally or strategically discover a path to acceptance that is not a valid proof. A defensive auditing system can search the same implementation space for disagreements, malformed declarations, missing checks, and invariant violations before those paths appear in published mathematical artifacts.
+
+### What the postmortem adds to proof abundance
+
+De Moura concludes that independent kernel checking remains effective because the CollatzLean artifact required two distinct defects in two implementations. That conclusion is compatible with the argument of this article, but it makes the operational conditions of independence more precise.
+
+Independent verification is not a timeless property of a theorem. It is a dated relation among:
+
+* a particular mathematical statement;
+* a particular proof artifact;
+* a particular dependency environment;
+* a particular primary-kernel version;
+* a particular external-checker version;
+* and a particular orchestration procedure.
+
+A result checked by an outdated vulnerable binary is epistemically different from the same result replayed by its corrected successor. Version identity is part of the evidential record.
+
+The postmortem also provides a concrete example of the distinction between proof abundance and knowledge abundance. The automated system generated an artifact that satisfied several operational acceptance tests. The surrounding research process—reduction, expert inspection, differential checking, issue reporting, kernel repair, regression testing, and public postmortem—was required to determine what had actually been discovered.
+
+The apparent product of the first stage was a refutation of the Collatz conjecture. The durable product of the complete process was different: a characterization of two verifier defects, an improved test corpus, corrected kernel releases, stronger checker orchestration, and a more precise model of the risks created when automated systems optimize against executable proof criteria.
+
+The update therefore reinforces the central thesis rather than merely correcting a technical detail. In proof-abundant mathematics, the relevant scientific object is not only the proof term. It is the complete, versioned, and adversarially tested verification pipeline through which the term acquires epistemic authority.
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-profile]: de Moura, L. (n.d.). **About Me**. *Leonardo de Moura*. [Official profile](https://leodemoura.github.io/about/)
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-de-moura-postmortem]: de Moura, L. (2026, August 1). **Postmortem for Kernel Soundness Bug #14576**. *Leonardo de Moura*. [Article](https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/)

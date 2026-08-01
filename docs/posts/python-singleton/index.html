@@ -8,7 +8,7 @@
 
 <meta name="author" content="Antonio Montano">
 <meta name="dcterms.date" content="2018-03-08">
-<meta name="description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+<meta name="description" content="A practical guide to implementing the singleton pattern in Python using __new__, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments.">
 
 <title>Singletons in Python – Random Bits of Knowledge</title>
 <style>
@@ -139,11 +139,11 @@ registerElkWhenMermaidIsReady();
 
 <link rel="stylesheet" href="../../style.css">
 <meta property="og:title" content="Singletons in Python – Random Bits of Knowledge">
-<meta property="og:description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+<meta property="og:description" content="A practical guide to implementing the singleton pattern in Python using __new__, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments.">
 <meta property="og:image" content="https://antomon.github.io/posts/python-singleton/singletons.webp">
 <meta property="og:site_name" content="Random Bits of Knowledge">
 <meta name="twitter:title" content="Singletons in Python – Random Bits of Knowledge">
-<meta name="twitter:description" content="The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.">
+<meta name="twitter:description" content="A practical guide to implementing the singleton pattern in Python using __new__, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments.">
 <meta name="twitter:image" content="https://antomon.github.io/posts/python-singleton/singletons.webp">
 <meta name="twitter:card" content="summary_large_image">
 </head>
@@ -261,12 +261,11 @@ registerElkWhenMermaidIsReady();
             <p class="subtitle lead">Ensuring a single instance for shared resources</p>
                   <div>
         <div class="description">
-          The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.
+          A practical guide to implementing the singleton pattern in Python using <code>__new__</code>, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments.
         </div>
       </div>
                           <div class="quarto-categories">
-                <div class="quarto-category">programming</div>
-                <div class="quarto-category">Python</div>
+                <div class="quarto-category">software development</div>
                 <div class="quarto-category">tutorial</div>
                 <div class="quarto-category">🇬🇧</div>
               </div>
@@ -299,6 +298,12 @@ registerElkWhenMermaidIsReady();
       
     </div>
     
+  <div>
+    <div class="abstract">
+      <div class="block-title">Abstract</div>
+      <p>This article explains the singleton design pattern and presents several Python implementations based on <code>__new__</code>, inheritance, decorators, and metaclasses. Each approach is illustrated with a shared logger example and evaluated in terms of readability, reuse, coupling, and separation of responsibilities. It also examines the pattern’s disadvantages, including global state, testing difficulties, and possible violations of the Single Responsibility Principle. Thread-safe variants demonstrate how explicit locking can prevent concurrent instance creation, including in Python environments where the Global Interpreter Lock may not provide the assumptions on which older implementations relied.</p>
+    </div>
+  </div>
   
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
@@ -753,7 +758,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <p>Before diving into different implementations of a Python <strong>singleton</strong>, it’s essential to understand the concept from both theoretical and practical perspectives.</p>
 <div class="article-standfirst">
-<p>The singleton pattern is a creational design pattern that ensures a class has only one instance while providing a global point of access to that instance. This post explores the concept of singletons in Python, exploring various implementation methods including naive approaches, base classes, decorators, and metaclasses. We also discuss the advantages and disadvantages of using singletons, their impact on design principles like the Single Responsibility Principle, and provide thread-safe implementations for concurrent environments.</p>
+<p>A practical guide to implementing the singleton pattern in Python using __new__, base classes, decorators, and metaclasses. It compares their design trade-offs, examines coupling and testability concerns, and shows how to preserve single-instance behavior in multithreaded environments.</p>
 </div>
 <section id="what-is-a-design-pattern" class="level2">
 <h2 class="anchored" data-anchor-id="what-is-a-design-pattern">What is a design pattern?</h2>
@@ -769,21 +774,19 @@ document.addEventListener("DOMContentLoaded", function () {
 <h2 class="anchored" data-anchor-id="what-is-a-creational-design-pattern">What is a creational design pattern?</h2>
 <p>A <strong>creational design pattern</strong> focuses on how objects are created, helping developers manage complex instantiation processes in a more adaptable and reusable manner. By abstracting the object creation process, creational patterns allow the code to be more flexible and maintainable. Some common creational design patterns include:</p>
 <ul>
-<li><p>Factory Method: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.</p></li>
-<li><p>Abstract Factory: Provides an interface for creating families of related objects without specifying their concrete classes.</p></li>
-<li><p>Builder: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.</p></li>
-<li><p>Prototype: Creates new objects by copying an existing instance, which serves as a prototype.</p></li>
-<li><p>Singleton: Ensures that a class has only one instance while providing a global access point to that instance.</p></li>
+<li><p><strong>Factory method</strong>: Defines an interface for creating an object but lets subclasses decide the specific type of object to create.</p></li>
+<li><p><strong>Abstract factory</strong>: Provides an interface for creating families of related objects without specifying their concrete classes.</p></li>
+<li><p><strong>Builder</strong>: Separates the construction of a complex object from its representation, allowing the construction process to produce different outcomes.</p></li>
+<li><p><strong>Prototype</strong>: Creates new objects by copying an existing instance, which serves as a prototype.</p></li>
+<li><p><strong>Singleton</strong>: Ensures that a class has only one instance while providing a global access point to that instance.</p></li>
 </ul>
 </section>
 <section id="more-on-singletons" class="level2">
 <h2 class="anchored" data-anchor-id="more-on-singletons">More on singletons</h2>
 <p>The <strong>singleton pattern</strong> serves two primary purposes:</p>
 <ol type="1">
-<li><p>Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance.</p>
-<p>This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.</p></li>
-<li><p>Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes.</p>
-<p>By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.</p></li>
+<li><p>Ensure that a class has only one instance: The main goal of the singleton pattern is to control the number of instances of a class. This pattern is particularly useful when managing shared resources, such as database connections or configuration files. If an object already exists, any subsequent request to create the class should return the existing instance. This behavior cannot be easily implemented using a typical constructor, as constructors are designed to return new objects each time they are invoked.</p></li>
+<li><p>Provide a global access point to the instance: The singleton pattern also allows the instance to be accessed globally, similar to a global variable. However, unlike global variables, the singleton pattern ensures that the instance cannot be accidentally overwritten or modified by other parts of the code, reducing the risk of errors and crashes. By encapsulating the logic that guarantees a single instance within the class itself, the code remains more organized and consistent.</p></li>
 </ol>
 <p>So, the singleton pattern is especially helpful when dealing with shared resources, where having multiple instances would lead to inefficiency, resource conflicts, or inconsistencies.</p>
 <section id="naive-implementation" class="level3">
@@ -852,9 +855,9 @@ document.addEventListener("DOMContentLoaded", function () {
 <h3 class="anchored" data-anchor-id="disadvantages">Disadvantages</h3>
 <p>While the singleton pattern offers advantages like centralized control and resource efficiency, it also has some notable downsides:</p>
 <ul>
-<li><p>Increased Coupling: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.</p></li>
-<li><p>Global State: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.</p></li>
-<li><p>Testing Challenges: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.</p></li>
+<li><p><strong>Increased coupling</strong>: Since singletons provide a global point of access, they can increase coupling between different components of an application. This can make refactoring or isolating parts of the system for testing more challenging.</p></li>
+<li><p><strong>Global state</strong>: Introducing a global state can lead to unpredictable behavior, making it difficult to track changes and understand the state of the application.</p></li>
+<li><p><strong>Testing challenges</strong>: Singletons can complicate testing because enforcing a single instance can make it difficult to create isolated testing scenarios or simulate different states.</p></li>
 </ul>
 <p>Due to these potential issues, some developers view the singleton pattern as an antipattern and recommend using it only when its benefits outweigh the disadvantages.</p>
 </section>
@@ -1237,7 +1240,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </section>
 <section id="taking-into-account-thread-safety" class="level2">
 <h2 class="anchored" data-anchor-id="taking-into-account-thread-safety">Taking into account thread-safety</h2>
-<p>It’s crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the Global Interpreter Lock (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.</p>
+<p>It’s crucial to understand when explicit thread safety management is needed, as it comes with a computational cost. In Python, the <strong>Global Interpreter Lock</strong> (GIL) ensures that only one thread executes Python bytecode at a time, which can mitigate the need for additional thread safety in simpler scenarios. However, more advanced data structures involving non-atomic operations still require explicit thread safety with locks to prevent issues when multiple threads are accessing or modifying shared resources.</p>
 <p>To make singleton implementations thread-safe, we need to ensure that multiple threads do not create multiple instances simultaneously. Below are thread-safe versions of the singleton pattern implemented using a base class, a decorator, and a metaclass.</p>
 <section id="using-a-base-class-1" class="level3">
 <h3 class="anchored" data-anchor-id="using-a-base-class-1">Using a base class</h3>
@@ -1542,14 +1545,32 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   </style>
 
-<h2 class="anchored">See also posts</h2>
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=software%20development">software development</a> longforms</h2>
 <div class="see-also-cards">
 <article class="see-also-card">
-<a class="see-also-card-link" href="../../posts/color-space-sampling-101/">
-<img class="see-also-card-image" src="../../posts/color-space-sampling-101/colors101.png" alt="">
+<a class="see-also-card-link" href="../../longforms/the-mathematics-behind-a-racing-shell/">
+<img class="see-also-card-image" src="../../longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png" alt="">
 <div class="see-also-card-body">
-<h5 class="see-also-card-title anchored">Color Space Sampling 101</h5>
-<div class="see-also-card-subtitle">How to uniformly sample a color space?</div>
+<h5 class="see-also-card-title anchored">The Mathematics Behind a Racing Shell</h5>
+<div class="see-also-card-subtitle">Why rowing-boat simulation is a difficult multiphysics engineering problem</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/category-theory-functional-programming-compositionality/">
+<img class="see-also-card-image" src="../../longforms/category-theory-functional-programming-compositionality/monad_diagram.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell</h5>
+<div class="see-also-card-subtitle">The power of compositionality</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/python-as-interface/">
+<img class="see-also-card-image" src="../../longforms/python-as-interface/programming-human-languages.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Python as an Interface Between Human Thought and Machine Execution</h5>
+<div class="see-also-card-subtitle">Why Python became a cognitive, architectural, and computational bridge</div>
 </div>
 </a>
 </article>
