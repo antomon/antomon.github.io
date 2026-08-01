@@ -1,0 +1,650 @@
+---
+title: "When the Proof Checker Becomes Part of the Experiment"
+subtitle: "Lean, Collatz, and the epistemology of proof abundance"
+description: "A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance."
+abstract: |
+    Lean-based mathematical research separates candidate generation from deductive verification. Human mathematicians, tactics, search procedures, and increasingly AI systems may generate proof attempts, while Lean’s elaborator translates those attempts into core expressions and its kernel checks whether the resulting proof terms inhabit the claimed propositions. This architecture is central to Terence Tao’s vision of mathematical AI: stochastic and unreliable generators can become useful when coupled to verification mechanisms with substantially different failure modes.
+
+    The July 2026 CollatzLean incident exposes a qualification to that architecture. A Lean development claimed an axiom-free, witness-free refutation of the Collatz conjecture and advertised a verification pipeline containing fresh kernel replay, dependency checks, proof export, and independent checking. The result was invalid. Review reduced it to a soundness defect in Lean’s processing of nested inductive declarations: ill-typed parametric arguments could escape checking, permitting a checked declaration from which `False` could be derived.
+
+    The incident does not show that formal proof is less reliable than informal proof, nor does it provide evidence against the Collatz conjecture. It shows that machine checking is an implemented scientific process whose epistemic force depends on kernel correctness, faithful artifact export, checker independence, semantic fidelity, and end-to-end pipeline provenance. In a regime of abundant automated proof generation, these assumptions become more consequential because optimization systems can search not only mathematical spaces but also the accidental behavior of their verifiers.
+
+    The case therefore supplies concrete evidence for the thesis developed in _Proof Abundance and the New Practice of Mathematics_: theorem generation, formal verification, semantic review, exposition, community digestion, and canonicalization are distinct stages of mathematical knowledge production. A green kernel verdict is an important threshold, but it is neither an infallible oracle nor the terminal state of discovery.
+date: "2026-08-01"
+date-modified: "2026-08-01"
+categories: [machine learning, mathematics, 🇬🇧]
+image: "proof-checker-failure.png"
+---
+
+## Lean as the verification layer of a mathematical research pipeline
+
+Lean is simultaneously a functional programming language, an interactive theorem prover, and an extensible environment for constructing machine-checkable mathematical objects. It is not, by itself, an autonomous theorem-discovery system. Its central epistemic role is narrower and more precise: Lean converts user-facing declarations and proof scripts into expressions in a core dependent type theory and checks whether those expressions satisfy the rules implemented by its kernel.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-reference-pipeline]
+
+A typical proof begins as source text containing definitions, theorem statements, notation, tactics, macros, references to library results, and possibly metaprograms that generate declarations. The source then passes through several computational stages.
+
+1. The parser converts characters into syntax trees.
+2. Macro expansion replaces convenient surface notation with more primitive syntax.
+3. The elaborator resolves implicit arguments, overloaded notation, coercions, type-class instances, metavariables, and other information omitted from the source.
+4. Tactics execute as part of elaboration and attempt to construct a core proof term.
+5. The kernel checks the resulting definitions, inductive declarations, and proof terms before admitting them to the environment.
+6. Optional export and independent-checking stages serialize some representation of the formal development for replay by another implementation.
+7. Human reviewers determine whether the formal statement corresponds to the intended mathematical claim and whether the result is significant, novel, intelligible, and reusable.
+
+The distinction between elaboration and kernel checking is essential. Lean’s elaborator is intentionally powerful and extensible. It performs search, inference, normalization, syntax processing, and tactic execution. Such code may be large, heuristic, and fallible. The kernel is intended to be a smaller trusted component that does not trust the elaborator’s conclusions. Instead, it checks the elaborated object according to Lean’s core type theory.[^when-the-proof-checker-becomes-part-of-the-experiment-lean4-system]
+
+Under the propositions-as-types interpretation, a proposition $\varphi$ is represented as a type and a proof $p$ of that proposition is represented as a term of that type. If $\Gamma$ denotes the environment of definitions, previously established theorems, imported declarations, and axioms, a successful formal derivation has the judgment
+
+$$
+\Gamma \vdash_T p : \varphi,
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-proof-judgment}
+
+where $T$ denotes the intended type theory. The expression states that, under environment $\Gamma$, the term $p$ has type $\varphi$ according to the rules of $T$.
+
+A tactic proof does not bypass this obligation. The tactic is a program that searches for and constructs $p$. Once elaboration finishes, the resulting term is submitted to the kernel. A tactic bug should normally cause failure, inefficiency, or the production of a term that the kernel rejects. This is the architectural significance of the de Bruijn criterion: sophisticated and untrusted proof construction can be tolerated when a small trusted checker independently validates the final certificate.
+
+The word *trusted* is easily misunderstood. In formal verification, the trusted computing base is not software that has already been proved correct merely by being designated trusted. It is the set of components whose correctness must be assumed for the assurance argument to succeed. Reducing the trusted computing base reduces the number and complexity of load-bearing assumptions. It does not eliminate those assumptions.
+
+The official Lean documentation accordingly distinguishes ordinary proof development from validation under adversarial conditions. For unreviewed or potentially malicious metaprograms—including automatically generated code—additional replay and auditing steps may be necessary. It also distinguishes the question _does this formal theorem have a valid proof?_ from the question _what does the theorem statement mean?_[^when-the-proof-checker-becomes-part-of-the-experiment-lean-proof-validation]
+
+| Layer                | Principal object                      | Intended guarantee                             | Representative failure                       |
+| -------------------- | ------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| Informal formulation | Mathematical question $q$             | The problem is correctly posed                 | Ambiguous quantifier, omitted hypothesis     |
+| Formalization        | Proposition $\varphi=\tau(q)$         | $\varphi$ faithfully represents $q$            | Valid proof of a mistranslated theorem       |
+| Proof generation     | Candidate term or proof script        | Search has produced a possible derivation      | Hallucinated lemma, unresolved goal          |
+| Elaboration          | Core term $p$ and declarations        | Surface syntax has been resolved consistently  | Elaborator or metaprogramming defect         |
+| Kernel checking      | Judgment $\Gamma\vdash_T p:\varphi$   | The term follows the implemented core rules    | Kernel soundness bug                         |
+| Artifact export      | Serialized environment or certificate | The checked object is preserved faithfully     | Missing declaration, altered dependency      |
+| Independent replay   | Verdict from checker $K_2$            | Reduced dependence on checker $K_1$            | Shared semantics, shared bug, wrong artifact |
+| Semantic review      | Human interpretation                  | Formal and intended claims coincide            | Correct theorem with unintended meaning      |
+| Digestion            | Exposition and contextualization      | The result becomes understandable and reusable | Correct but opaque or sterile artifact       |
+
+: Operational assurance layers in a Lean-based mathematical workflow. {#tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers}
+
+The stages in @tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers establish different claims. No single stage subsumes all the others. Kernel checking does not reconstruct the author’s intention. Human semantic review does not replace term checking. A second executable does not provide meaningful independence unless it checks the relevant artifact through a sufficiently different implementation path.
+
+```{mermaid}
+%%| label: fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack
+%%| fig-cap: "Lean-based verification inside a proof-abundant mathematical research stack. Colors distinguish problem specification, heuristic generation, trusted verification, independent assurance, and the human processes that convert accepted proofs into mathematical knowledge."
+%%| fig-alt: "Color-coded flow diagram. Blue nodes represent mathematical intent and formalization; amber nodes represent heuristic and potentially unreliable proof generation; red nodes mark the trusted Lean kernel and its acceptance boundary; green nodes represent artifact export and independent checking; purple nodes represent semantic review, publication, community digestion, and canonicalization. Red dashed feedback paths return rejected or defective artifacts to earlier stages. A legend explains the colors."
+%%| fig-align: center
+%%{init: {
+  "theme": "neo",
+  "look": "handDrawn",
+  "layout": "elk",
+  "themeVariables": {
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": "15px",
+    "lineColor": "#475569",
+    "primaryTextColor": "#172033",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#cbd5e1"
+  }
+}}%%
+flowchart TD
+
+    subgraph S1["1 · Mathematical specification"]
+        direction TB
+        A[Informal problem<br/>definitions + intended claim]
+        B[Formalization<br/>proposition + environment]
+        A --> B
+    end
+
+    subgraph S2["2 · Heuristic construction"]
+        direction TB
+        C[Candidate generation<br/>human + tactics + search + AI]
+        D[Parsing and macros]
+        E[Elaboration<br/>implicit data + tactic execution]
+        F[Core declarations<br/>proof term]
+        C --> D --> E --> F
+    end
+
+    subgraph S3["3 · Trusted verification boundary"]
+        direction TB
+        G[Lean kernel<br/>type checking]
+        H{Kernel verdict}
+        G --> H
+    end
+
+    subgraph S4["4 · Independent assurance"]
+        direction TB
+        I[Exported artifact<br/>versioned environment + digest]
+        J[Independent checker<br/>different implementation]
+        K{Independent verdict}
+        I --> J --> K
+    end
+
+    subgraph S5["5 · Mathematical knowledge formation"]
+        direction TB
+        L[Semantic audit<br/>formal claim versus intended claim]
+        M[Expert review<br/>scope + novelty + explanation]
+        N[Exposition and publication]
+        O[Community digestion<br/>reuse + criticism]
+        P[Canonicalization<br/>libraries + theory + teaching]
+        L --> M --> N --> O --> P
+    end
+
+    B --> C
+    F --> G
+
+    H -->|accepted| I
+    H -.->|rejected proof term| C
+
+    K -->|accepted| L
+    K -.->|checker disagreement| B
+
+    L -.->|statement mismatch| B
+    M -.->|mathematical defect| C
+
+    X[Kernel defect or malformed declaration<br/>can convert implementation acceptance<br/>into apparent formal validity]
+    X -.-> G
+
+    subgraph LEGEND["Legend"]
+        direction LR
+        LA[Problem and formal specification]
+        LB[Heuristic or untrusted construction]
+        LC[Trusted computing base]
+        LD[Independent technical assurance]
+        LE[Human and institutional validation]
+        LF[Failure, disagreement, or return path]
+    end
+
+    classDef specification fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172033;
+    classDef generation fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#3f2a06;
+    classDef kernel fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#450a0a;
+    classDef assurance fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#052e16;
+    classDef knowledge fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#2e1065;
+    classDef decision fill:#fff7ed,stroke:#c2410c,stroke-width:2px,color:#431407;
+    classDef hazard fill:#fef2f2,stroke:#b91c1c,stroke-width:3px,stroke-dasharray:6 4,color:#450a0a;
+    classDef failure fill:#f8fafc,stroke:#b91c1c,stroke-width:2px,stroke-dasharray:6 4,color:#450a0a;
+
+    class A,B,LA specification;
+    class C,D,E,F,LB generation;
+    class G,LC kernel;
+    class H,K decision;
+    class I,J,LD assurance;
+    class L,M,N,O,P,LE knowledge;
+    class X hazard;
+    class LF failure;
+
+    style S1 fill:#eff6ff,stroke:#93c5fd,stroke-width:1px
+    style S2 fill:#fffbeb,stroke:#fcd34d,stroke-width:1px
+    style S3 fill:#fff1f2,stroke:#f87171,stroke-width:2px
+    style S4 fill:#f0fdf4,stroke:#86efac,stroke-width:1px
+    style S5 fill:#faf5ff,stroke:#d8b4fe,stroke-width:1px
+    style LEGEND fill:#ffffff,stroke:#94a3b8,stroke-width:1px
+```
+
+@fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack locates Lean’s kernel in a larger research system. This position is crucial to the argument advanced by Terence Tao and developed in *Proof Abundance and the New Practice of Mathematics*. Tao’s analysis does not treat a contemporary language model as a theorem oracle. It treats it as a stochastic generator: a system capable of producing useful constructions, lemmas, proof sketches, code, or formal terms at a nonzero success rate, but also capable of producing persuasive errors.
+
+The architectural response is to separate generation from verification. An unreliable generator can still be valuable when incorrect outputs are inexpensive to reject and when the verifying component has better-understood, substantially less correlated failure modes. Formal proof assistants are attractive in this setting because they transform some questions of correctness into mechanically checkable interface conditions.[^when-the-proof-checker-becomes-part-of-the-experiment-tao-proof-abundance]
+
+Tao’s broader thesis goes further. Mathematical work cannot be reduced to generating accepted proof objects. He separates proof generation from verification, exposition, community acceptance, digestion, and canonicalization. Under the working hypothesis that AI systems will perform a material fraction of research-level tasks, generation and some forms of verification may scale faster than the institutions that explain, contextualize, select, and integrate results. Mathematics then moves from proof scarcity toward proof abundance, with verification and digestion becoming limiting resources.[^when-the-proof-checker-becomes-part-of-the-experiment-montano-proof-abundance]
+
+Lean fits this vision as a verification and formalization layer, not as the complete epistemic system. The CollatzLean incident matters because it occurred precisely at the interface that was expected to convert unreliable generation into reliable deduction.
+
+## Why the Collatz conjecture is a severe test
+
+The Collatz conjecture concerns the iteration of an elementary arithmetic function. 
+
+Define $C:\mathbb{N}*{>0}\rightarrow\mathbb{N}*{>0}$ by
+
+$$
+C(n)=
+\begin{cases}
+n/2, & n\equiv 0 \pmod 2,\
+3n+1, & n\equiv 1 \pmod 2,
+\end{cases}
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-map}
+
+where $\mathbb{N}_{>0}$ is the set of positive integers. Starting from $n$, repeated application produces the orbit
+
+$$
+n,\ C(n),\ C^2(n),\ C^3(n),\ldots,
+$$
+
+where $C^k$ denotes the $k$-fold iterate of $C$. The conjecture states
+
+$$
+\forall n\in\mathbb{N}_{>0};\exists k\in\mathbb{N}
+\quad C^k(n)=1.
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-conjecture}
+
+After reaching $1$, the orbit enters the cycle $1\mapsto4\mapsto2\mapsto1$.
+
+The problem is mathematically important not because a major physical technology is known to depend on its solution, but because it isolates a striking form of global unpredictability. The local transition rule is trivial to compute. The universal behavior of its trajectories has resisted proof.
+
+The difficulty arises from the interaction of multiplication and division along a parity sequence generated by the orbit itself. An odd step replaces $n$ by $3n+1$, producing an even integer. Subsequent divisions by powers of two can produce a substantial decrease, but the number of such divisions depends on the arithmetic structure of $3n+1$. Probabilistic heuristics suggest an average downward tendency, yet the process is deterministic and a universal theorem cannot be inferred from average behavior.[^when-the-proof-checker-becomes-part-of-the-experiment-lagarias-collatz]
+
+Large finite verification is relevant but logically insufficient. Checking that every $n\leq B$ reaches $1$ proves the bounded proposition
+
+$$
+\forall n\leq B;\exists k;C^k(n)=1,
+$$
+
+not the unbounded statement in @eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-conjecture. No finite bound $B$ excludes a counterexample larger than $B$.
+
+Terence Tao’s major partial result illustrates the difference between strong statistical control and a universal proof. Let
+
+$$
+C_{\min}(N)=\inf_{k\in\mathbb{N}} C^k(N)
+$$
+
+denote the smallest value attained by the orbit of $N$. Tao proved that, for any function $f(N)$ tending to infinity, $C_{\min}(N)<f(N)$ for almost all $N$ in logarithmic density. Informally, almost every orbit eventually descends to a value that is small relative to its starting point, under a very strong notion of _almost every._ The result does not imply that every orbit reaches $1`, and it does not eliminate an exceptional set containing a possible counterexample.[^when-the-proof-checker-becomes-part-of-the-experiment-tao-collatz]
+
+The logical negation of the Collatz conjecture is
+
+$$
+\exists n\in\mathbb{N}_{>0};\forall k\in\mathbb{N}
+\quad C^k(n)\neq1.
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-negation}
+
+A refutation could therefore take two forms. It could exhibit a concrete integer and prove that its orbit never reaches $1`. Alternatively, in a sufficiently expressive formal system, it could establish the existence of such an integer without computing an explicit witness in a familiar numeral form. The latter possibility makes formal verification particularly important: a purported proof may be logically decisive even when direct numerical simulation cannot display the exceptional orbit.
+
+This was the form of the CollatzLean claim.
+
+## The CollatzLean claim and what actually happened
+
+### An apparent refutation
+
+The event began not as a report about theorem-prover engineering but as an apparent solution to a famous mathematical problem. At commit `a793574`, the CollatzLean repository presented a Lean development whose exported result asserted the existence of a positive integer with a nonterminating Collatz orbit:
+
+```lean
+Collatz.exists_nonterminating_orbit : ∃ n, Collatz.Diverges n
+```
+
+From this theorem, the repository derived the formal negation of the Collatz conjecture:
+
+```lean
+Collatz.not_conjecture : ¬ Collatz.Conjecture
+```
+
+The claim was stronger than a large computational search. It did not report a new starting value whose trajectory had been simulated for an unusually long time. It purported to prove that some positive integer never reaches $1`. Moreover, the argument was described as *witness-free*: it claimed the existence of such an integer without reducing the result to a concrete numeral that could be inspected by direct computation.[^when-the-proof-checker-becomes-part-of-the-experiment-collatzlean-readme]
+
+This form of result is mathematically legitimate in principle. A formal existence proof need not always provide a readily printable witness. If the derivation is valid, the absence of an explicit integer does not weaken the logical refutation. The decisive question is whether the proof term establishing the existential proposition has been constructed and checked according to the rules of the formal theory.
+
+The repository appeared to answer that question affirmatively. It pinned Lean and Mathlib to version 4.32.1 and supplied a verification script containing several layers of checking:
+
+* warnings were treated as errors;
+* the development was replayed using ordinary and fresh `leanchecker` runs;
+* declarations were subjected to safety, closure, kernel, and axiom-dependency checks;
+* the public theorem was exported using `lean4export`;
+* the exported result was reportedly checked by a pinned Nanoda executable with no permitted axioms.
+
+The claim therefore appeared to have crossed the boundary separating a speculative proof attempt from a certified formal theorem. It used Lean’s ordinary natural numbers, had an explicit public theorem type, compiled under a pinned environment, appeared to have no hidden axiomatic dependencies, and was presented as having survived an independent checker.[^when-the-proof-checker-becomes-part-of-the-experiment-collatzlean-readme]
+
+Had these checks provided the guarantees attributed to them, the result would have constituted a genuine refutation of the Collatz conjecture. No further numerical counterexample would have been logically necessary.
+
+### Review changed the object of discovery
+
+The situation changed during expert review. The proof was not rejected because a mathematician found an incorrect inequality, an invalid induction, or a missing number-theoretic lemma. Instead, inspection of the Lean development revealed that it exercised a malformed declaration path inside the theorem prover.
+
+On July 28, 2026, the problem was reduced to a small, self-contained Lean example and reported as Lean issue `#14576`. The issue demonstrated that Lean could accept a checked declaration containing a projection associated with the wrong structure. After that declaration had entered the environment, ordinary Lean code could derive a theorem of type `False`.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-issue]
+
+This reduction was important because it separated the mathematical surface of the claim from its computational cause. The failure did not depend on the complexity of Collatz dynamics. It did not depend on Mathlib’s theory of iteration, parity, descent, or natural numbers. The minimal reproducer imported Lean itself and constructed raw expressions using Lean’s metaprogramming interface.
+
+The reproducer was adversarial, but it did not disable checking. It used the ordinary checked `addDecl` path and was accepted with `--trust=0`. It did not rely on `sorry`, `unsafeCast`, `debug.skipKernelTC`, unchecked declaration insertion, a foreign-function interface, or manual corruption of a compiled `.olean` file. Lean’s own axiom-reporting commands stated that the resulting contradiction depended on no axioms.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-issue]
+
+The crucial sequence was therefore:
+
+1. metaprogramming constructed a malformed declaration;
+2. the declaration was submitted through Lean’s checked declaration interface;
+3. the kernel accepted it;
+4. the admitted declaration allowed Lean to derive `False`;
+5. a theorem whose type expressed the negation of the Collatz conjecture could consequently receive apparent kernel certification.
+
+The logical significance of step 4 is fundamental. In a consistent deductive system, there should be no closed proof of `False`. Once an environment admits such a proof, the principle of explosion permits the derivation of an arbitrary proposition $\psi$:
+
+$$
+\Gamma \vdash \bot
+\quad\Longrightarrow\quad
+\Gamma \vdash \psi.
+$$
+
+Here $\Gamma$ denotes the formal environment and $\bot$ denotes falsity. The problem is not merely that one suspicious Collatz lemma has been admitted. The acceptance of a contradiction destroys the discriminating function of the checker within the affected environment: true and false conclusions can both be made to appear derivable.
+
+It is therefore misleading to describe the episode simply as “a wrong proof of Collatz.” The formal development was not an unsuccessful number-theoretic argument in the ordinary sense. The decisive mechanism was an implementation defect that allowed an invalid declaration to cross the trusted boundary. The Collatz conjecture supplied the high-profile proposition attached to the exploit, but the underlying failure was independent of Collatz arithmetic.
+
+### From theorem claim to kernel incident
+
+The Lean maintainers identified the defect in the handling of nested inductive declarations. During Lean’s transformation of a nested inductive occurrence, parametric arguments were removed from generated auxiliary declarations. Under the affected path, those arguments could escape the type checking that should have rejected them.
+
+A correction was proposed and merged on July 28, the same day the reduced issue was filed. The patch added the missing validation once the inductive types under declaration were available.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-fix]
+
+The epistemic status of the result was thereby reversed. Before review, the salient public object was an apparent machine-checked refutation of the Collatz conjecture. After reduction, the salient object was a reproducible Lean kernel soundness bug. The mathematical conclusion disappeared, but a genuine technical discovery remained: a specific implementation path violated the soundness contract expected of the trusted checker.
+
+Lawrence Paulson’s commentary, published on July 30, captured the resulting dramatic structure. A sensational theorem had apparently been checked by Lean and independently rechecked; it was nevertheless wrong because it exploited a kernel bug.[^when-the-proof-checker-becomes-part-of-the-experiment-paulson-kernel] Paulson used the incident to question the amount of sophisticated inductive machinery placed inside trusted kernels and to contrast such designs with systems that derive more functionality outside a smaller logical core.
+
+The exact status of the advertised Nanoda check requires more care than the initial public account suggested. The CollatzLean README stated that Nanoda had checked the exported result with no permitted axioms, and the original continuous-integration run reportedly displayed a successful Nanoda stage. Subsequent analysis of the reduced reproducer, however, found that Nanoda rejected an appropriately exported version of the malformed declaration. Nanoda checked the complete constructor type through a path different from Lean’s nested-inductive reconstruction and therefore encountered the ill-typed projection that Lean had missed.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-fix]
+
+The public record has not yet conclusively explained why the original repository reported a successful Nanoda check while the reduced exported reproducer was rejected. It cannot therefore be stated without qualification that Lean and Nanoda independently accepted the same invalid certificate. The failure may lie partly in artifact selection, export, checker invocation, or continuous-integration orchestration rather than in two independent kernels sharing one soundness defect.
+
+The established sequence is nevertheless sufficient for the argument of this article:
+
+* a repository claimed a formal refutation of Collatz;
+* Lean’s affected kernel accepted the development;
+* the repository presented several green verification stages, including an advertised independent check;
+* expert review reduced the result to an axiom-free proof of `False`;
+* the defect was traced to missing validation in nested-inductive processing;
+* Lean’s maintainers repaired the kernel;
+* the Collatz conjecture remained unresolved.
+
+The case is consequently not evidence that formal verification failed to produce knowledge. Formal review produced highly specific and reproducible knowledge about the verifier itself. But the object of discovery was misidentified during the first stage of the process. What initially appeared to be a theorem about integer orbits was actually an observation about the behavior of a software implementation.
+
+The next section examines the defect at the kernel boundary in technical detail.
+
+## The defect at the kernel boundary
+
+An inductive declaration introduces a type through constructors. A simple example is a list type whose constructors produce either an empty list or a new list from an element and an existing list. A nested inductive declaration is more complex: the inductive type being defined occurs underneath another type constructor. For example, a tree type might contain a list of subtrees rather than containing subtrees directly.
+
+Lean’s kernel supports inductive types that are mutually recursive or nested under other inductive types. To check such declarations, the implementation performs transformations that introduce auxiliary declarations, check positivity and structural constraints, and reconstruct the intended nested object. These transformations are logically delicate because constructors, parameters, indices, recursors, projections, universes, and definitional equality must remain aligned.
+
+In the reported defect, the kernel transformed a nested occurrence schematically written as
+
+$$
+I;D_1;\cdots;D_m;i_1;\cdots;i_r,
+$$
+
+where $I$ is an inductive type, $D_1,\ldots,D_m$ are parametric arguments, and $i_1,\ldots,i_r$ are indices. The generated auxiliary representation omitted the $D_j$ arguments at a stage where they should have been checked. An ill-typed argument could therefore be hidden inside a declaration that the kernel admitted.
+
+The minimal reproducer constructed a projection labelled as belonging to one structure but applied it to a value of another type. It also engineered expression properties used by the official kernel’s definitional-equality path. Once the malformed inductive declaration had entered the environment, ordinary Lean code could derive a contradiction.
+
+This breaks the intended implication between implementation acceptance and abstract derivability. Let
+
+* $K$ be a concrete kernel implementation;
+* $\Gamma$ be the checked environment;
+* $p$ be a candidate proof term;
+* $\varphi$ be the proposition assigned to $p$;
+* $T$ be the intended formal calculus.
+
+The software event
+
+$$
+\operatorname{Accept}_K(\Gamma,p,\varphi)=1
+$$
+
+supports the mathematical judgment
+
+$$
+\Gamma\vdash_T p:\varphi
+$$
+
+only when $K$ correctly implements the relevant rules of $T$. More explicitly,
+
+$$
+\operatorname{Accept}_K(\Gamma,p,\varphi)=1
+;\land;
+\operatorname{Refines}(K,T)
+\quad\Longrightarrow\quad
+\Gamma\vdash_T p:\varphi,
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-kernel-refinement}
+
+where $\operatorname{Refines}(K,T)$ states that every artifact accepted by $K$ corresponds to a valid derivation in $T`.
+
+The CollatzLean incident invalidated the refinement premise for the affected kernel versions and declaration path. It did not discover an inconsistency in elementary arithmetic. Nor did it show that Lean’s intended type theory proves `False`. It showed that a concrete implementation accepted an object that the intended theory should reject.
+
+### The Nanoda discrepancy
+
+The independent-checking claim requires careful qualification. The CollatzLean README reported that its verification pipeline included Nanoda checking with no permitted axioms. Paulson’s initial commentary consequently stated that Nanoda had also failed to detect the error.[^when-the-proof-checker-becomes-part-of-the-experiment-paulson-kernel]
+
+Subsequent discussion on the Lean fix reported a different result for the reduced reproducer. When the relevant declaration was exported through the kernel-testing infrastructure, Nanoda rejected it while the official kernel and Lean4Lean accepted it. According to that analysis, Nanoda independently type-checked the complete constructor signature and detected the invalid projection that the official nested-inductive path had failed to check.[^when-the-proof-checker-becomes-part-of-the-experiment-lean-fix]
+
+The original repository’s continuous-integration record nevertheless showed the advertised Nanoda stage passing. The currently available public discussion does not conclusively reconstruct why that pipeline reported success. Several classes of explanation are possible:
+
+* the exported artifact may not have contained the malformed declaration in a form Nanoda would reject;
+* the check may have targeted a theorem or environment different from the one readers assumed;
+* the export procedure may have reconstructed or omitted part of the relevant object;
+* the orchestration script may have treated an incomplete check as successful;
+* the reduced reproducer and the original repository may have exercised different external-checking paths.
+
+These are hypotheses, not established findings. The defensible conclusion is narrower: the advertised end-to-end verification pipeline did not provide the independent assurance attributed to it. It is not presently justified to conclude that Nanoda necessarily implemented the same kernel defect.
+
+This distinction demonstrates why checker independence is an end-to-end property. A second executable contributes little if it receives the wrong certificate, ignores a relevant declaration, shares a defective exporter, or reports a verdict that the surrounding pipeline misinterprets.
+
+## What the incident establishes and what it does not
+
+The CollatzLean incident establishes four technical facts:
+
+1. The affected Lean kernel admitted a malformed checked declaration. 
+2. That declaration could support an axiom-free proof of `False`. 
+3. The defect was associated with missing validation of parametric arguments during nested-inductive processing. 
+4. The published verification workflow did not prevent the invalid Collatz result from being presented as independently checked.
+
+The incident does **not** establish that the Collatz conjecture is false. It supplies no exceptional orbit and no valid existence proof of one.
+
+It does **not** establish that formal verification is generally less reliable than ordinary peer review. The defect was rapidly minimized, publicly documented, repaired, and converted into regression tests. Formal artifacts made the failure unusually reproducible.
+
+It does **not** establish that every theorem checked with the affected Lean versions is invalid. The exploit required a specific unsound declaration path. Ordinary proofs that do not depend on malformed declarations are not refuted merely because the implementation contained a latent bug.
+
+It does **not** establish that all independent checkers are ineffective. The later Nanoda analysis suggests the opposite for the reduced artifact: a sufficiently different validation path could detect the defect.
+
+Finally, the incident does not by itself settle the architectural debate over dependent type theory, proof objects, or kernel size. Paulson interprets the event as evidence for moving more constructions outside the trusted kernel and deriving recursive machinery from a smaller primitive calculus. Lean’s design instead places support for several expressive type-theoretic features in its core checker. The event demonstrates that every primitive kernel feature is soundness-critical; it does not alone determine the optimal balance among kernel simplicity, expressiveness, performance, proof-object portability, and usability.
+
+Work such as Lean4Lean aims to strengthen assurance by reimplementing and ultimately verifying Lean’s type checker in a formal environment. That project illustrates both the promise and the difficulty of independent verification. A second checker may find implementation mistakes, but it can reproduce a defect when it follows the same algorithm or formalizes the same mistaken specification. Diversity of source code is weaker than diversity of assumptions.[^when-the-proof-checker-becomes-part-of-the-experiment-lean4lean]
+
+## CollatzLean as a concrete case of proof abundance
+
+The central thesis of *Proof Abundance and the New Practice of Mathematics* is that AI-assisted mathematics should be evaluated as a multistage knowledge-production system. Candidate generation, deductive verification, semantic validation, exposition, expert review, community digestion, and canonicalization are different transformations. Faster theorem production does not automatically increase the rate at which dependable, understandable mathematics enters the field.
+
+CollatzLean makes this thesis concrete because the artifact appeared to pass the stage that is usually treated as the hardest boundary between plausible output and valid mathematics.
+
+### Verification is an interface contract
+
+In the proof-abundance framework, verification is an interface contract between an unreliable generator and the rest of mathematics. The generator may be an LLM, a reinforcement-learning prover, a tactic, a brute-force search program, a metaprogram, or a human author. Its output is admitted only when a verifier confirms a well-defined property.
+
+For a Lean development, the nominal contract is:
+
+> Given environment $\Gamma$, proposition $\varphi$, and term $p$, the kernel accepts exactly when $p$ is a valid proof of $\varphi$ under $\Gamma$.
+
+The incident shows that this contract has at least three implementations:
+
+1. the abstract logical contract defined by the intended type theory;
+2. the executable contract implemented by the kernel;
+3. the operational contract implemented by the complete build and checking pipeline.
+
+These contracts can diverge. The kernel may fail to implement the abstract calculus. The pipeline may fail to check the artifact it claims to check. A theorem may be valid in the formal calculus but formalize the wrong informal proposition.
+
+The phrase *machine-checked proof* therefore compresses multiple propositions:
+
+* a particular program returned success;
+* a particular artifact was submitted to that program;
+* the artifact has a particular proposition as its type;
+* the implementation correctly realizes the intended logic;
+* the formal proposition matches the intended theorem;
+* the dependency environment contains only acceptable assumptions.
+
+A rigorous claim should make these layers explicit.
+
+### From proof abundance to acceptance abundance
+
+Proof abundance concerns an increased supply of candidate and verified derivations. The Collatz case identifies a pathological neighboring regime: **acceptance abundance**. Acceptance abundance occurs when automated systems produce many artifacts satisfying an operational acceptance predicate without a commensurate guarantee that the predicate tracks formal validity.
+
+Let $g$, $v$, $e$, $d$, and $c$ denote the sustainable capacities of proof generation, verification, exposition, digestion, and canonicalization. The original bottleneck model gives
+
+$$
+R\leq\min{g,v,e,d,c},
+$$
+
+where $R$ is the rate at which results enter dependable mathematical theory.
+
+To represent defective outputs, let $q_g,q_v,q_e,q_d,q_c\in[0,1]$ denote the effective epistemic yields of those stages: the fractions of outputs that actually satisfy the contract attributed to each stage. A reliability-adjusted bound is then
+
+$$
+R_{\mathrm{dep}}
+\leq
+\min{q_g g,;q_v v,;q_e e,;q_d d,;q_c c},
+$$ {#eq-when-the-proof-checker-becomes-part-of-the-experiment-reliability-adjusted-throughput}
+
+where $R_{\mathrm{dep}}$ is the throughput of dependable results. @eq-when-the-proof-checker-becomes-part-of-the-experiment-reliability-adjusted-throughput is an analytical model, not an empirical law. Its purpose is to make a simple point: increasing checker throughput $v$ is insufficient when the effective validity yield $q_v$ is compromised.
+
+A fast but defective checker can increase the production of authoritative-looking artifacts faster than it increases knowledge.
+
+### Goodhart’s law reaches the kernel boundary
+
+Tao invokes Goodhart’s law to warn that once a proxy becomes an optimization target, the proxy can cease to track the underlying objective. In automated theorem proving, _accepted by Lean_ is an exceptionally useful proxy for _formally valid in Lean’s type theory._ The proxy is useful precisely because ordinary proof search cannot easily fake a valid term.
+
+An optimization system, however, interacts with the implemented acceptance predicate rather than with mathematical truth directly. Given enough search, instrumentation, and metaprogramming access, it may discover any reliable route to a positive verdict:
+
+* a genuine proof;
+* an unintended axiom;
+* a mistranslated theorem;
+* an unsound declaration mechanism;
+* a serialization discrepancy;
+* a timeout or exception interpreted as success;
+* a bug in definitional equality;
+* a checker-orchestration error.
+
+From the optimizer’s perspective, these routes can be observationally equivalent if they produce the same reward.
+
+This is structurally analogous to reward hacking in machine learning and specification gaming in software verification. The intended objective is mathematical validity. The machine-readable objective is an implementation’s acceptance bit. The difference between them is the attack surface.
+
+The CollatzLean development need not have been autonomously generated by an AI system for the case to be relevant to AI-assisted mathematics. The publicly cited sources do not establish the precise proportion of human, tactic, metaprogram, or language-model contribution to the artifact. The structural lesson is independent of authorship: once automated systems can search formal-expression space at scale, latent verifier behavior becomes part of the effective discovery environment.
+
+### Independent verification must mean independent failure modes
+
+The proof-abundance framework relies on asymmetric error control. A generator may be unreliable if its errors can be filtered by a verifier that fails differently. The qualification _fails differently_ is load-bearing.
+
+Two checkers are not epistemically independent merely because they have different executable names. Their errors may be correlated through:
+
+* a common formal specification;
+* copied algorithms;
+* shared parsers or exporters;
+* identical normalization procedures;
+* common libraries;
+* a common serialized artifact;
+* a shared orchestration script;
+* common hardware or compiler assumptions.
+
+Conversely, a relatively small checker may provide strong additional assurance when it reconstructs the relevant judgment from a simple certificate using an independently developed semantics.
+
+The Nanoda discrepancy is therefore more informative than a simple story in which two kernels shared one bug. It exposes artifact lineage as part of verification. Before saying that a theorem has been checked twice, one must establish:
+
+1. what exact proposition was checked;
+2. what exact proof object and environment were supplied;
+3. which dependencies were reconstructed;
+4. which checker version ran;
+5. which exit status and diagnostic were produced;
+6. how the orchestration layer converted that result into a published claim.
+
+### The model is not the research system
+
+A further thesis of *Proof Abundance and the New Practice of Mathematics* is that the model should not be treated as the complete research system. The same applies to the kernel. Neither the generator nor the checker is the whole epistemic process.
+
+The CollatzLean result passed from formal source to public mathematical claim through a chain of technical and human decisions:
+
+* the Collatz conjecture was encoded in particular Lean definitions;
+* a dependent construction was selected as the proof architecture;
+* metaprogramming produced declarations;
+* the kernel accepted those declarations;
+* verification scripts selected checks;
+* export tools selected artifacts;
+* continuous integration summarized the checks;
+* readers interpreted green stages as independent certification;
+* expert review challenged the result;
+* a reduced reproducer shifted attention from number theory to kernel engineering;
+* maintainers repaired the implementation.
+
+The discovery process did not terminate at kernel acceptance. It continued through adversarial review and incident analysis. The final scientific result was not a theorem about integer dynamics but a theorem-prover defect and a refined understanding of verification infrastructure.
+
+## Software bugs as participants in discovery
+
+The original analogy with Bakelite captures an important but limited idea. Scientific procedures can fail relative to their intended output and still generate valuable discoveries. Baekeland’s work on phenol–formaldehyde chemistry involved systematic control of composition, heat, and pressure to produce a commercially useful thermosetting material. It should not be reduced to a single accidental clogged vessel.[^when-the-proof-checker-becomes-part-of-the-experiment-bakelite]
+
+The analogy also breaks at a decisive point. In an experimental science, an anomalous material can disclose a property imposed by an external physical system. Even when the recipe is wrong, the resulting substance has measurable behavior independent of the scientist’s expectations.
+
+A verifier defect is different. The anomaly can originate inside the instrument that assigns evidential status to the result. The invalid proof does not reveal a hidden nonterminating Collatz orbit in the way an unexpected resin reveals a physical polymer. It reveals that the acceptance mechanism can manufacture a false positive.
+
+The closer analogies are instrument artifacts:
+
+* a detector artifact mistaken for a particle;
+* numerical instability mistaken for a physical singularity;
+* contamination mistaken for a chemical signal;
+* an image-processing defect mistaken for astronomical structure;
+* a database join error mistaken for an epidemiological association.
+
+In each case, software or instrumentation does not merely record the discovery. It participates in producing the apparent phenomenon.
+
+Formal mathematics has often been described as unusually insulated from this problem because a proof can, in principle, be reduced to explicit symbolic steps. The Collatz incident shows the limit of that insulation. The symbolic object is processed by parsers, elaborators, kernels, exporters, compilers, checkers, build systems, and human interfaces. A defect in those layers can temporarily determine which statement appears to have acquired theorem status.
+
+The result is not radical skepticism. Instrument-mediated science remains possible because instruments can be calibrated, cross-checked, modeled, and improved. Formal mathematics should adopt the same posture toward proof infrastructure.
+
+## Engineering requirements for proof-abundant mathematics
+
+A mature verification regime should attach evidence to each epistemic layer rather than collapsing the entire process into a single badge.
+
+### Statement fidelity
+
+The formal theorem must be displayed in a form that domain experts can compare with the intended informal claim. Definitions of divergence, iteration, positivity, equality, finiteness, and imported assumptions should be inspectable. Formal validity cannot compensate for a theorem that encodes the wrong problem.
+
+### Reproducible environments
+
+Toolchain versions, library commits, build options, platform information, and relevant environment variables should be pinned. A source repository without a reproducible environment does not identify a unique checking experiment.
+
+### Content-addressed artifacts
+
+The proof term or exported environment subjected to independent checking should be identified by a cryptographic digest. The digest should appear in both the production and verification logs. This prevents ambiguity about whether the external checker received the artifact associated with the published theorem.
+
+### Independent checker evidence
+
+The verification record should preserve the checker executable version, invocation, standard output, standard error, exit status, checked theorem name, permitted axioms, and artifact digest. _Independent checker passed_ is not sufficiently specific.
+
+### Diverse validation paths
+
+Where the mathematical stakes are high, replay should use checkers with meaningfully different implementations. Diversity may include implementation language, parser, serialization format, normalization strategy, and treatment of inductive declarations. The objective is not ceremonial duplication but decorrelation of failure modes.
+
+### Adversarial testing
+
+Kernel testing should include fuzzing, malformed declarations, randomized proof terms, differential checking, mutation testing, and search explicitly optimized to produce disagreements among checkers. In a proof-abundant regime, adversarial generators should be used defensively against the verification layer before hostile or reward-seeking generators discover the same paths.
+
+### Minimal trusted bases
+
+Features placed inside the kernel should be evaluated according to their assurance cost as well as convenience and performance. Paulson’s _honest toil_ proposal—derive rich recursive machinery from a smaller calculus outside the kernel—is one response. Verified-kernel projects and multiple reference checkers are another. These approaches are not mutually exclusive.
+
+### Incident-aware dependency management
+
+A kernel soundness defect should trigger a machine-readable advisory identifying affected versions, relevant declaration classes, corrected releases, regression tests, and recommended replay procedures. Formal libraries need the equivalent of software supply-chain vulnerability management because theorem validity can depend on implementation versions.
+
+### Human semantic and explanatory review
+
+Even perfect kernel soundness would not settle whether a theorem is important, intended, original, comprehensible, or reusable. Expert review should therefore continue after formal verification. In Tao’s terminology, verification is followed by exposition, digestion, acceptance, and canonicalization.
+
+## Conclusion
+
+Lean’s architecture is well suited to AI-assisted mathematics because it separates fallible construction from rigorous checking. Tactics, language models, search algorithms, and metaprograms may explore aggressively while a compact kernel rejects invalid proof terms. This division of labor is one of the strongest available responses to unreliable but powerful mathematical generation.
+
+The CollatzLean incident does not overturn that architecture. It reveals its conditional structure.
+
+A kernel verdict is evidence generated by a software implementation. Its mathematical force depends on the implementation correctly realizing the intended calculus. An independent-checking badge is evidence about a pipeline. Its force depends on artifact fidelity, checker diversity, correct invocation, and faithful reporting. A formally valid theorem is evidence about a formal statement. Its force as ordinary mathematics depends on semantic fidelity and expert interpretation.
+
+These distinctions become more important as proof generation scales. A human author usually searches for a derivation that satisfies the intended logic. A sufficiently capable optimizer searches the behavior of the entire environment exposed to it. Kernel defects, exporter omissions, orchestration errors, and specification gaps then become potential solution paths.
+
+This is the concrete lesson CollatzLean adds to *Proof Abundance and the New Practice of Mathematics*. The transition is not merely from human-written proofs to machine-written proofs. It is from individual derivations to engineered knowledge-production pipelines. Verification, provenance, semantic review, exposition, and canonicalization must scale together with generation.
+
+The Collatz conjecture remains unresolved by this episode. What was discovered was not a nonterminating arithmetic orbit but a nonconforming execution path through the trusted kernel. That is still a real scientific discovery—one about the instrument rather than the mathematical object.
+
+In proof-abundant mathematics, the proof checker is no longer invisible infrastructure. It is part of the experiment.
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean-reference-pipeline]: Lean Project. (n.d.). **Elaboration and Compilation**. *Lean Language Reference*. [Official documentation](https://lean-lang.org/doc/reference/latest/Elaboration-and-Compilation/).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean4-system]: de Moura, L., & Ullrich, S. (2021). **The Lean 4 Theorem Prover and Programming Language**. *Automated Deduction—CADE 28*. [DOI](https://doi.org/10.1007/978-3-030-79876-5_37).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean-proof-validation]: Lean Project. (n.d.). **Validating a Lean Proof**. *Lean Language Reference*. [Official documentation](https://lean-lang.org/doc/reference/latest/ValidatingProofs/).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-tao-proof-abundance]: Tao, T. (2026, July 24). **Mathematics in the Age of AI**. *Public lecture, International Congress of Mathematicians 2026*. [Slides](https://teorth.github.io/tao-web/slides/age-of-ai-icm-2026.pdf).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-montano-proof-abundance]: Montano, A. (2026). **Proof Abundance and the New Practice of Mathematics**. *Random Bits of Knowledge*. [Article](https://4m4.it/posts/proof-abundance-and-the-new-practice-of-mathematics/).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lagarias-collatz]: Lagarias, J. C. (2021). **The 3x+1 Problem: An Overview**. *arXiv*. [DOI](https://doi.org/10.48550/arXiv.2111.02635).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-tao-collatz]: Tao, T. (2022). **Almost all orbits of the Collatz map attain almost bounded values**. *Forum of Mathematics, Pi, 10*, e12. [DOI](https://doi.org/10.1017/fmp.2022.8).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-collatzlean-readme]: Kumar, R. (2026). **CollatzLean: A Lean formalization of the Collatz map and its global behavior**. *GitHub, commit a793574*. [Source code](https://github.com/xrchz/CollatzLean/blob/a79357462a33d2a6babd4cf6c8d8bcd25425d653/README.md).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean-issue]: kiranandcode. (2026). **Kernel accepts wrong-structure projections, allowing an axiom-free proof of False**. *Lean 4 issue tracker*. [Issue 14576](https://github.com/leanprover/lean4/issues/14576).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean-fix]: de Moura, L. (2026). **Fix: Missing check at kernel inductive declaration**. *Lean 4 pull request*. [Pull request 14577](https://github.com/leanprover/lean4/pull/14577).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-paulson-kernel]: Paulson, L. C. (2026). **Why is it all in the kernel?** *Machine Logic*. [Article](https://lawrencecpaulson.github.io/2026/07/30/Collatz.html).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-lean4lean]: Carneiro, M. (2024). **Lean4Lean: Towards a Verified Typechecker for Lean, in Lean**. *arXiv*. [DOI](https://doi.org/10.48550/arXiv.2403.14064).
+
+[^when-the-proof-checker-becomes-part-of-the-experiment-bakelite]: American Chemical Society. (n.d.). **Leo Hendrik Baekeland and the Invention of Bakelite**. *National Historic Chemical Landmarks*. [Official history](https://www.acs.org/education/whatischemistry/landmarks/bakelite.html).
