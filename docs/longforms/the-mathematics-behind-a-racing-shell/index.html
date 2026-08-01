@@ -1,0 +1,2923 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2016-04-07">
+<meta name="keywords" content="rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling">
+<meta name="description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+
+<title>The Mathematics Behind a Racing Shell – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-f95f4a17e9d5bb76c4506342f1760542.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@17.0.3/dist/twemoji.min.js" integrity="sha384-Y5xukbGJwykbHHkTbLJykYLcBPFxrwipTbEh0puxhkz9CZ90raTPGe2Ks4vCxsYU" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.twemoji) {
+      twemoji.parse(document.body, {
+        folder: "svg",
+        ext: ".svg"
+      });
+    }
+  });
+</script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../style.css">
+<meta property="og:title" content="The Mathematics Behind a Racing Shell – Random Bits of Knowledge">
+<meta property="og:description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+<meta property="og:image" content="https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="1086">
+<meta property="og:image:width" content="1448">
+<meta name="twitter:title" content="The Mathematics Behind a Racing Shell – Random Bits of Knowledge">
+<meta name="twitter:description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+<meta name="twitter:image" content="https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png">
+<meta name="twitter:image-height" content="1086">
+<meta name="twitter:image-width" content="1448">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">The Mathematics Behind a Racing Shell</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">The Mathematics Behind a Racing Shell</h1>
+            <p class="subtitle lead">Why rowing-boat simulation is a difficult multiphysics engineering problem</p>
+                  <div>
+        <div class="description">
+          A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">essay</div>
+                <div class="quarto-category">mathematics</div>
+                <div class="quarto-category">professional &amp; research work</div>
+                <div class="quarto-category">software development</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author">Antonio Montano <a href="mailto:antonio.montano.contact@gmail.com" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0009-0007-2429-1921" class="quarto-title-author-orcid" aria-label="ORCID profile for Antonio Montano"> <img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              4M4
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 7, 2016</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">December 3, 2024</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  <div>
+    <div class="abstract">
+      <div class="block-title">Abstract</div>
+      <p>A competition rowing boat is not merely a hull acted upon by a prescribed propulsive force. It is an intermittently forced multiphysics system in which the athletes constitute moving internal masses, the oars transmit forces through constrained mechanical linkages, and the hull interacts with a deformable free surface. The observable motion emerges from the coupling of rigid-body dynamics, human kinematics, hydrostatics, viscous resistance, wave generation, and radiation damping.</p>
+      <p>This article reconstructs the mathematical architecture of a computational model developed for racing sculls. It explains how momentum balances for the hull, rowers, and oars reduce to a nonlinear system of ordinary differential equations; how a linearized radiation problem converts free-surface effects into added-mass and damping operators; and why geometric preprocessing, motion reconstruction, hydrodynamic calibration, and time integration are inseparable from the theoretical derivation.</p>
+      <p>The analysis also examines the scientific reception of the work through verified examples of later publications that cited, extended, compared, or simplified the model. Citation counts are treated as evidence of scholarly uptake rather than proof of correctness. The stronger evidence of research depth lies in the explicit assumptions, conservation laws, scale separation, numerical architecture, falsifiable outputs, and acknowledgement of unresolved validation questions.</p>
+      <p>Computational tractability is obtained by restricting the original motion to the hull symmetry plane and replacing fully unsteady viscous free-surface flow with a combination of stationary resistance estimates and linear potential-flow corrections. The resulting system is neither a complete virtual experiment nor an empirical curve fit. It is a reduced multiphysics model intended to retain the mechanisms most relevant to preliminary hull design, crew arrangement, and rowing-style analysis.</p>
+    </div>
+  </div>
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#why-a-racing-shell-is-not-a-simple-boat" id="toc-why-a-racing-shell-is-not-a-simple-boat" class="nav-link active" data-scroll-target="#why-a-racing-shell-is-not-a-simple-boat">Why a racing shell is not a simple boat</a></li>
+  <li><a href="#coupled-mechanics-of-hull-rowers-and-oars" id="toc-coupled-mechanics-of-hull-rowers-and-oars" class="nav-link" data-scroll-target="#coupled-mechanics-of-hull-rowers-and-oars">Coupled mechanics of hull, rowers, and oars</a>
+  <ul class="collapse">
+  <li><a href="#kinematics-in-the-hull-fixed-frame" id="toc-kinematics-in-the-hull-fixed-frame" class="nav-link" data-scroll-target="#kinematics-in-the-hull-fixed-frame">Kinematics in the hull-fixed frame</a></li>
+  <li><a href="#the-oar-as-a-constrained-force-transformer" id="toc-the-oar-as-a-constrained-force-transformer" class="nav-link" data-scroll-target="#the-oar-as-a-constrained-force-transformer">The oar as a constrained force transformer</a></li>
+  <li><a href="#a-time-dependent-mechanical-mass-matrix" id="toc-a-time-dependent-mechanical-mass-matrix" class="nav-link" data-scroll-target="#a-time-dependent-mechanical-mass-matrix">A time-dependent mechanical mass matrix</a></li>
+  </ul></li>
+  <li><a href="#free-surface-waves-added-mass-and-radiation-damping" id="toc-free-surface-waves-added-mass-and-radiation-damping" class="nav-link" data-scroll-target="#free-surface-waves-added-mass-and-radiation-damping">Free-surface waves, added mass, and radiation damping</a>
+  <ul class="collapse">
+  <li><a href="#why-radiation-is-not-ordinary-drag" id="toc-why-radiation-is-not-ordinary-drag" class="nav-link" data-scroll-target="#why-radiation-is-not-ordinary-drag">Why radiation is not ordinary drag</a></li>
+  <li><a href="#the-linear-radiation-problem" id="toc-the-linear-radiation-problem" class="nav-link" data-scroll-target="#the-linear-radiation-problem">The linear radiation problem</a></li>
+  <li><a href="#extracting-the-hydrodynamic-matrices" id="toc-extracting-the-hydrodynamic-matrices" class="nav-link" data-scroll-target="#extracting-the-hydrodynamic-matrices">Extracting the hydrodynamic matrices</a></li>
+  <li><a href="#frequency-dependence-and-hydrodynamic-memory" id="toc-frequency-dependence-and-hydrodynamic-memory" class="nav-link" data-scroll-target="#frequency-dependence-and-hydrodynamic-memory">Frequency dependence and hydrodynamic memory</a></li>
+  </ul></li>
+  <li><a href="#from-mathematical-model-to-engineering-software" id="toc-from-mathematical-model-to-engineering-software" class="nav-link" data-scroll-target="#from-mathematical-model-to-engineering-software">From mathematical model to engineering software</a>
+  <ul class="collapse">
+  <li><a href="#dynamic-immersion-and-hydrostatic-pressure" id="toc-dynamic-immersion-and-hydrostatic-pressure" class="nav-link" data-scroll-target="#dynamic-immersion-and-hydrostatic-pressure">Dynamic immersion and hydrostatic pressure</a></li>
+  <li><a href="#mean-resistance" id="toc-mean-resistance" class="nav-link" data-scroll-target="#mean-resistance">Mean resistance</a></li>
+  <li><a href="#boundary-elements-for-the-radiation-problem" id="toc-boundary-elements-for-the-radiation-problem" class="nav-link" data-scroll-target="#boundary-elements-for-the-radiation-problem">Boundary elements for the radiation problem</a></li>
+  <li><a href="#the-six-state-online-problem" id="toc-the-six-state-online-problem" class="nav-link" data-scroll-target="#the-six-state-online-problem">The six-state online problem</a></li>
+  <li><a href="#verification-before-experimental-validation" id="toc-verification-before-experimental-validation" class="nav-link" data-scroll-target="#verification-before-experimental-validation">Verification before experimental validation</a></li>
+  </ul></li>
+  <li><a href="#scientific-influence-validation-limits-and-open-problems" id="toc-scientific-influence-validation-limits-and-open-problems" class="nav-link" data-scroll-target="#scientific-influence-validation-limits-and-open-problems">Scientific influence, validation limits, and open problems</a>
+  <ul class="collapse">
+  <li><a href="#what-the-original-numerical-evidence-supports" id="toc-what-the-original-numerical-evidence-supports" class="nav-link" data-scroll-target="#what-the-original-numerical-evidence-supports">What the original numerical evidence supports</a></li>
+  <li><a href="#verification-calibration-and-validation-are-different-tasks" id="toc-verification-calibration-and-validation-are-different-tasks" class="nav-link" data-scroll-target="#verification-calibration-and-validation-are-different-tasks">Verification, calibration, and validation are different tasks</a></li>
+  <li><a href="#the-limits-are-part-of-the-scientific-result" id="toc-the-limits-are-part-of-the-scientific-result" class="nav-link" data-scroll-target="#the-limits-are-part-of-the-scientific-result">The limits are part of the scientific result</a></li>
+  <li><a href="#open-extensions" id="toc-open-extensions" class="nav-link" data-scroll-target="#open-extensions">Open extensions</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("the-mathematics-behind-a-racing-shell.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.</p>
+</div>
+<section id="why-a-racing-shell-is-not-a-simple-boat" class="level2">
+<h2 class="anchored" data-anchor-id="why-a-racing-shell-is-not-a-simple-boat">Why a racing shell is not a simple boat</h2>
+<p>A racing shell appears mechanically elementary: an elongated hull, one or more athletes, and a set of oars. That visual simplicity is deceptive. From the modeller’s perspective, the boat is a rigid-body–fluid system driven by forces that are neither steady nor entirely external. The athletes accelerate a substantial fraction of the system’s mass relative to the hull; the blades enter and leave the water; the wetted surface changes as the boat heaves and pitches; and each stroke generates free-surface waves that remove energy from the mechanical system.</p>
+<p>The research problem is therefore not simply to estimate drag at a prescribed speed. It is to determine the motion of the athlete–oar–hull assembly while the forces acting on that assembly depend on the motion being calculated.</p>
+<p>The model developed in <em>A model for the dynamics of rowing boats</em> represented the complete motion of a scull in its longitudinal symmetry plane. The three retained rigid-body degrees of freedom were horizontal translation, vertical translation, and pitch. Particular attention was given to the smaller oscillatory movements superimposed on the mean forward progression and to the energy radiated through the water by those movements.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div id="fig-the-mathematics-behind-a-racing-shell-original-article-page" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-the-mathematics-behind-a-racing-shell-original-article-page-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="article-1st-page.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:85.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-the-mathematics-behind-a-racing-shell-original-article-page-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: First page of <em>A model for the dynamics of rowing boats</em>, showing the title, authors, journal information, abstract, publication dates, and keywords.
+</figcaption>
+</figure>
+</div>
+<p>Let <span class="math inline">\mathbf X</span> denote a spatial point, <span class="math inline">t</span> time, and <span class="math inline">\mathbf V(\mathbf X,t)</span> its absolute velocity. The basic kinematic decomposition is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-velocity-decomposition"><span class="math display">
+\mathbf V(\mathbf X,t)
+=
+\overline{\mathbf V}(\mathbf X,t)
++
+\mathbf u(\mathbf X,t),
+\tag{1}</span></span></p>
+<p>where <span class="math inline">\overline{\mathbf V}</span> is the slowly varying mean motion and <span class="math inline">\mathbf u</span> is the stroke-induced <strong>secondary motion</strong>. The secondary component contains the within-stroke surge fluctuation, heave, and pitch. It is approximated as periodic with the rowing cadence.</p>
+<p>Equation <a href="#eq-the-mathematics-behind-a-racing-shell-velocity-decomposition" class="quarto-xref">Equation&nbsp;1</a> is a scale-separation assumption, not an identity supplied by nature. Its usefulness depends on whether the mean and oscillatory components can be modelled at different levels of fidelity without losing the mechanisms that materially affect performance.</p>
+<p>The hull configuration is represented by</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-generalized-coordinates"><span class="math display">
+\mathbf q(t)
+=
+\begin{bmatrix}
+G_X^h(t)\\
+G_Z^h(t)\\
+\theta(t)
+\end{bmatrix},
+\tag{2}</span></span></p>
+<p>where <span class="math inline">G_X^h</span> and <span class="math inline">G_Z^h</span> are the horizontal and vertical coordinates of the hull centre of mass and <span class="math inline">\theta</span> is the pitch angle. The superscript <span class="math inline">h</span> distinguishes the hull centre from the centre of mass of the complete hull–crew system. That distinction is essential because the latter moves relative to the boat as the athletes slide and rotate their bodies.</p>
+<p>At the highest level, the model has the form</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-compact-model"><span class="math display">
+\mathsf M
+\left(
+\mathbf q,\boldsymbol\xi,t
+\right)
+\ddot{\mathbf q}
++
+\mathbf c
+\left(
+\mathbf q,\dot{\mathbf q},
+\boldsymbol\xi,\dot{\boldsymbol\xi},
+\ddot{\boldsymbol\xi},t
+\right)
+=
+\mathbf f_{\mathrm{oar}}(t)
++
+\mathbf f_{\mathrm{hyd}}
+\left(
+\mathbf q,\dot{\mathbf q},t
+\right)
++
+\mathbf f_g,
+\tag{3}</span></span></p>
+<p>where <span class="math inline">\boldsymbol\xi(t)</span> collects the prescribed internal kinematics of the rowers, <span class="math inline">\mathsf M</span> is the effective inertia matrix, <span class="math inline">\mathbf c</span> contains inertial and geometric coupling terms, <span class="math inline">\mathbf f_{\mathrm{oar}}</span> is the generalized forcing transmitted through the oarlocks, <span class="math inline">\mathbf f_{\mathrm{hyd}}</span> is the hydrodynamic reaction, and <span class="math inline">\mathbf f_g</span> is gravity.</p>
+<p>This compact equation conceals the real research effort. Every term must be derived, reconstructed from measurements, approximated from another physical model, or computed numerically.</p>
+<p>The theoretical difficulty is to close <a href="#eq-the-mathematics-behind-a-racing-shell-compact-model" class="quarto-xref">Equation&nbsp;3</a> without violating mechanics. Forces measured at the oarlocks must be related to reactions at the athletes’ hands, seats, and foot stretchers. Body segments move in a rotating and accelerating frame fixed to the hull, so their accelerations contain translational, tangential, centripetal, and Coriolis terms. Hydrodynamic forces depend on the instantaneous immersion, while wave radiation introduces frequency-dependent inertia and dissipation.</p>
+<p>The engineering difficulty is complementary. A derivation alone does not produce a useful simulator. The hull geometry must be reconstructed and discretized; motion-capture trajectories must be converted into smooth functions that can be differentiated twice; force profiles must be synchronized with the drive and recovery phases; stationary flow calculations must be reduced to reusable resistance coefficients; and the assembled equations must remain stable under repeated time integration.</p>
+<p>A fully resolved unsteady Reynolds-averaged Navier–Stokes computation could represent more flow physics, but its cost would make large design or crew studies impractical. The objective was therefore not simply maximum fidelity. It was a controlled reduction that remained physically interpretable and fast enough for preliminary design. The original study reports computations taking minutes rather than the several hours required by the more complete approaches considered by the authors.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>The subsequent citation record shows that this formulation entered the scientific literature. On 1 August 2026, the publisher’s page displayed 38 citing works. The number is database- and date-dependent, so it should be understood as evidence of uptake, not a universal or immutable measure of impact.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>The stronger basis for calling the work serious research is structural. It transformed a familiar sporting gesture into an auditable hierarchy of conservation laws, kinematic inputs, hydrodynamic approximations, numerical operators, and falsifiable outputs. The remainder of this article reconstructs that hierarchy.</p>
+</section>
+<section id="coupled-mechanics-of-hull-rowers-and-oars" class="level2">
+<h2 class="anchored" data-anchor-id="coupled-mechanics-of-hull-rowers-and-oars">Coupled mechanics of hull, rowers, and oars</h2>
+<p>The mechanical problem contains three interacting subsystems:</p>
+<ol type="1">
+<li>a rigid hull with known mass and pitch inertia;</li>
+<li>rowers represented by moving anatomical masses;</li>
+<li>oars represented as constrained mechanical levers.</li>
+</ol>
+<p>The main modelling challenge is that the forces at the hands, seats, foot stretchers, and oarlocks are largely internal to the combined system. They must not be counted twice, and their action–reaction signs must remain consistent when the subsystem equations are combined.</p>
+<section id="kinematics-in-the-hull-fixed-frame" class="level3">
+<h3 class="anchored" data-anchor-id="kinematics-in-the-hull-fixed-frame">Kinematics in the hull-fixed frame</h3>
+<p>Let <span class="math inline">\mathbf G^h(t)</span> be the inertial position of the hull centre of mass. A point whose coordinates in the hull frame are <span class="math inline">\mathbf x</span> has inertial position</p>
+<p><span class="math display">
+\mathbf X
+=
+\mathbf G^h
++
+\mathbf Q(\theta)\mathbf x,
+</span></p>
+<p>with</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-rotation"><span class="math display">
+\mathbf Q(\theta)
+=
+\begin{bmatrix}
+\cos\theta &amp; 0 &amp; \sin\theta\\
+0 &amp; 1 &amp; 0\\
+-\sin\theta &amp; 0 &amp; \cos\theta
+\end{bmatrix}.
+\tag{4}</span></span></p>
+<p>The matrix <span class="math inline">\mathbf Q</span> maps hull-fixed components into the inertial frame. Define the planar skew operator <span class="math inline">\mathbf J</span> by</p>
+<p><span class="math display">
+\mathbf J\mathbf a
+=
+\mathbf e_Y\times\mathbf a,
+</span></p>
+<p>where <span class="math inline">\mathbf e_Y</span> is perpendicular to the longitudinal symmetry plane. For <span class="math inline">\mathbf a=(a_x,0,a_z)^\mathsf T</span>,</p>
+<p><span class="math display">
+\mathbf J\mathbf a
+=
+(a_z,0,-a_x)^\mathsf T,
+\qquad
+\mathbf J^2\mathbf a=-\mathbf a.
+</span></p>
+<p>Suppose <span class="math inline">\mathbf x_{ij}(t)</span> is the hull-frame position of body segment <span class="math inline">i</span> of rower <span class="math inline">j</span>. Its inertial position is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-segment-position"><span class="math display">
+\mathbf X_{ij}(t)
+=
+\mathbf G^h(t)
++
+\mathbf Q(\theta(t))\mathbf x_{ij}(t).
+\tag{5}</span></span></p>
+<p>Differentiating twice gives</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-segment-acceleration"><span class="math display">
+\ddot{\mathbf X}_{ij}
+=
+\ddot{\mathbf G}^h
++
+\mathbf Q
+\left[
+\ddot{\mathbf x}_{ij}
++
+2\dot\theta\,\mathbf J\dot{\mathbf x}_{ij}
++
+\ddot\theta\,\mathbf J\mathbf x_{ij}
+-
+\dot\theta^{\,2}\mathbf x_{ij}
+\right].
+\tag{6}</span></span></p>
+<p>The terms inside the brackets are, respectively, relative acceleration, Coriolis acceleration, tangential acceleration, and centripetal acceleration. Omitting them would amount to treating the hull-fixed frame as inertial, which is inconsistent when heave and pitch are explicitly resolved.</p>
+<p>The original implementation divided each athlete into twelve anatomical masses. Motion-capture data were converted into analytic periodic trajectories for the relevant segment centres, providing <span class="math inline">\mathbf x_{ij}</span>, <span class="math inline">\dot{\mathbf x}_{ij}</span>, and <span class="math inline">\ddot{\mathbf x}_{ij}</span> throughout the stroke.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>This conversion is an engineering necessity. Numerical differentiation of noisy marker positions would amplify measurement error, especially in the accelerations that enter <a href="#eq-the-mathematics-behind-a-racing-shell-segment-acceleration" class="quarto-xref">Equation&nbsp;6</a>.</p>
+</section>
+<section id="the-oar-as-a-constrained-force-transformer" class="level3">
+<h3 class="anchored" data-anchor-id="the-oar-as-a-constrained-force-transformer">The oar as a constrained force transformer</h3>
+<p>Let <span class="math inline">\mathbf F_{oj}</span> be the force transmitted to the hull at the oarlock associated with rower <span class="math inline">j</span>, and let <span class="math inline">\mathbf F_{hj}</span> be the force applied at the rower’s hands. In the original reduction, the oar is rigid, massless, and in instantaneous static equilibrium.</p>
+<p>Let <span class="math inline">L</span> be the blade-to-hand lever distance and <span class="math inline">r_h</span> the inboard distance between the oarlock and the hands. Moment balance gives</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-oar-lever"><span class="math display">
+\mathbf F_{hj}
+=
+-
+\frac{L-r_h}{L}\mathbf F_{oj}.
+\tag{7}</span></span></p>
+<p>The negative sign denotes opposing reactions. This is not a complete blade–water model: it omits shaft elasticity, oar inertia, blade slip, ventilation, and unsteady vortex dynamics. Its purpose is narrower. It provides a mechanically consistent force path between the water, oar, athlete, and hull.</p>
+<p>When the rower, seat, and foot-stretcher balances are combined with the hull balance, the internal support reactions cancel. The resulting translational equation can be written</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-reduced-translation"><span class="math display">
+M
+\left(
+\ddot{\mathbf G}^h-\mathbf g
+\right)
+=
+\frac{r_h}{L}
+\sum_{j=1}^{n}\mathbf F_{oj}
+-
+\sum_{j=1}^{n}
+\sum_{i=1}^{p}
+m_{ij}
+\left(
+\ddot{\mathbf X}_{ij}-\mathbf g
+\right)
++
+\mathbf F_w,
+\tag{8}</span></span></p>
+<p>where <span class="math inline">M</span> is the hull mass, <span class="math inline">m_{ij}</span> is a body-segment mass, <span class="math inline">p</span> is the number of segments per rower, <span class="math inline">n</span> is the crew size, <span class="math inline">\mathbf g</span> is gravity, and <span class="math inline">\mathbf F_w</span> is the force exerted by the water.</p>
+<p>The factor <span class="math inline">r_h/L</span> is not an empirical propulsive efficiency. It arises from elimination of the internal force path. Part of the oarlock reaction is returned through the hands and the athlete’s contact with the hull; only the mechanically consistent resultant remains in the combined equation.</p>
+</section>
+<section id="a-time-dependent-mechanical-mass-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="a-time-dependent-mechanical-mass-matrix">A time-dependent mechanical mass matrix</h3>
+<p>The coupling is most transparent through the kinetic energy. Define</p>
+<p><span class="math display">
+M_r
+=
+\sum_{j=1}^{n}
+\sum_{i=1}^{p}m_{ij},
+\qquad
+M_t=M+M_r,
+</span></p>
+<p><span class="math display">
+\mathbf c(t)
+=
+\sum_{j=1}^{n}
+\sum_{i=1}^{p}
+m_{ij}\mathbf x_{ij}(t),
+\qquad
+J_r(t)
+=
+\sum_{j=1}^{n}
+\sum_{i=1}^{p}
+m_{ij}
+\left\lVert
+\mathbf x_{ij}(t)
+\right\rVert^2.
+</span></p>
+<p>Here <span class="math inline">M_r</span> is total rower mass, <span class="math inline">M_t</span> total hull–crew mass, <span class="math inline">\mathbf c</span> the first mass moment of the athletes relative to the hull centre, and <span class="math inline">J_r</span> their instantaneous second mass moment.</p>
+<p>Let</p>
+<p><span class="math display">
+\mathbf a(\theta,t)
+=
+\mathbf Q(\theta)\mathbf J\mathbf c(t).
+</span></p>
+<p>The inertia matrix associated with the generalized accelerations <span class="math inline">(\ddot G_X^h,\ddot G_Z^h,\ddot\theta)</span> is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-mechanical-mass-matrix"><span class="math display">
+\mathsf M_{\mathrm{mech}}(\theta,t)
+=
+\begin{bmatrix}
+M_t &amp; 0 &amp; a_X\\
+0 &amp; M_t &amp; a_Z\\
+a_X &amp; a_Z &amp; I_{YY}+J_r
+\end{bmatrix},
+\tag{9}</span></span></p>
+<p>where <span class="math inline">I_{YY}</span> is the hull pitch moment of inertia.</p>
+<p>The off-diagonal terms mean that translation and pitch are inertially coupled. An angular acceleration can produce a translational reaction because the athletes’ collective centre of mass does not generally coincide with the hull centre. Conversely, a hull acceleration produces a pitch moment when the moving crew mass is offset.</p>
+<p>The symmetry of <a href="#eq-the-mathematics-behind-a-racing-shell-mechanical-mass-matrix" class="quarto-xref">Equation&nbsp;9</a> is a consequence of the kinetic energy. It is also a useful diagnostic: a nonsymmetric inertia matrix would indicate inconsistent coordinates or an omitted reaction term.</p>
+<p>The matrix is positive definite. Its translational block is positive because <span class="math inline">M_t&gt;0</span>. Its Schur complement is</p>
+<p><span class="math display">
+S
+=
+I_{YY}
++
+J_r
+-
+\frac{\lVert\mathbf c\rVert^2}{M_t}.
+</span></p>
+<p>The Cauchy–Schwarz inequality gives</p>
+<p><span class="math display">
+\lVert\mathbf c\rVert^2
+\leq
+M_rJ_r.
+</span></p>
+<p>Therefore,</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-mass-positivity"><span class="math display">
+S
+\geq
+I_{YY}
++
+J_r
+\left(
+1-\frac{M_r}{M_t}
+\right)
+=
+I_{YY}
++
+\frac{M}{M_t}J_r
+&gt;
+0.
+\tag{10}</span></span></p>
+<p>Thus, before fluid added mass is introduced, the instantaneous acceleration problem possesses a physically admissible kinetic-energy metric.</p>
+<p>After the known rower trajectories and their derivatives are moved to the right-hand side, the mechanical system has the form</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-mechanical-system"><span class="math display">
+\mathsf M_{\mathrm{mech}}(\theta,t)
+\ddot{\mathbf q}
+=
+\mathbf f_{\mathrm{oar}}(t)
++
+\mathbf f_{\mathrm{kin}}
+\left(
+\theta,\dot\theta,
+\boldsymbol\xi,\dot{\boldsymbol\xi},
+\ddot{\boldsymbol\xi}
+\right)
++
+\mathbf f_g
++
+\mathbf f_w,
+\tag{11}</span></span></p>
+<p>where <span class="math inline">\mathbf f_{\mathrm{kin}}</span> contains the inertial forcing generated by prescribed crew motion.</p>
+<p>This equation explains a familiar but easily misunderstood observation: the shell accelerates during recovery even though the blades are out of the water. The athletes are moving internal mass, and conservation of momentum requires an opposite response by the hull.</p>
+<p>If external forces are temporarily ignored, the total linear momentum is</p>
+<p><span class="math display">
+\mathbf P
+=
+M_t\dot{\mathbf G}^h
++
+\mathbf Q
+\left(
+\dot{\mathbf c}
++
+\dot\theta\,\mathbf J\mathbf c
+\right).
+</span></p>
+<p>Constant <span class="math inline">\mathbf P</span> implies</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-internal-momentum"><span class="math display">
+\dot{\mathbf G}^h
+=
+\frac{1}{M_t}
+\left[
+\mathbf P
+-
+\mathbf Q
+\left(
+\dot{\mathbf c}
++
+\dot\theta\,\mathbf J\mathbf c
+\right)
+\right].
+\tag{12}</span></span></p>
+<p>Equation <a href="#eq-the-mathematics-behind-a-racing-shell-internal-momentum" class="quarto-xref">Equation&nbsp;12</a> isolates the inertial contribution of rowing technique. Different recovery motions can change the within-stroke hull velocity even when mean oarlock force and cadence remain unchanged.</p>
+<p>The mechanical model is therefore already nonlinear and explicitly time-dependent before the water is introduced. The rowers are not a fixed payload, and the oars are not a prescribed thrust vector. The crew changes the instantaneous inertia, produces inertial forcing in a non-inertial frame, and transmits blade forces through a constrained linkage.</p>
+</section>
+</section>
+<section id="free-surface-waves-added-mass-and-radiation-damping" class="level2">
+<h2 class="anchored" data-anchor-id="free-surface-waves-added-mass-and-radiation-damping">Free-surface waves, added mass, and radiation damping</h2>
+<p>The water performs three mechanically distinct functions. It supports the boat hydrostatically, resists the mean forward motion, and reacts dynamically to periodic surge, heave, and pitch. The third contribution cannot be represented faithfully by a single drag coefficient.</p>
+<p>The hydrodynamic generalized force is decomposed as</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-hydrodynamic-split"><span class="math display">
+\mathbf f_w
+=
+\mathbf f_{\mathrm{mean}}
++
+\mathbf f_{\mathrm{rad}},
+\tag{13}</span></span></p>
+<p>where <span class="math inline">\mathbf f_{\mathrm{mean}}</span> contains hydrostatics and mean resistance, while <span class="math inline">\mathbf f_{\mathrm{rad}}</span> represents the response to secondary motion.</p>
+<section id="why-radiation-is-not-ordinary-drag" class="level3">
+<h3 class="anchored" data-anchor-id="why-radiation-is-not-ordinary-drag">Why radiation is not ordinary drag</h3>
+<p>When a hull oscillates, part of the fluid reaction is in phase with acceleration. The body behaves as if its mass or moment of inertia had increased because surrounding water must also be accelerated. This is <strong>added mass</strong>.</p>
+<p>Another part is in phase opposition to velocity. It represents mechanical energy transported away by outgoing waves. This is <strong>radiation damping</strong>.</p>
+<p>For a constant symmetric added-mass matrix <span class="math inline">\mathbf M_a</span> and generalized secondary velocity <span class="math inline">\mathbf v</span>,</p>
+<p><span class="math display">
+\mathbf f_a
+=
+-\mathbf M_a\dot{\mathbf v}.
+</span></p>
+<p>Over a periodic cycle of duration <span class="math inline">T</span>,</p>
+<p><span class="math display">
+\int_0^T
+\mathbf f_a^\mathsf T\mathbf v\,dt
+=
+-\frac{1}{2}
+\left[
+\mathbf v^\mathsf T
+\mathbf M_a
+\mathbf v
+\right]_0^T
+=
+0.
+</span></p>
+<p>Added mass stores and returns kinetic energy. By contrast, for</p>
+<p><span class="math display">
+\mathbf f_d
+=
+-\mathbf S_r\mathbf v,
+</span></p>
+<p>the work is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-damping-work"><span class="math display">
+\int_0^T
+\mathbf f_d^\mathsf T\mathbf v\,dt
+=
+-
+\int_0^T
+\mathbf v^\mathsf T
+\mathbf S_r
+\mathbf v\,dt
+\leq0
+\tag{14}</span></span></p>
+<p>when the radiation-damping matrix <span class="math inline">\mathbf S_r</span> is positive semidefinite. The inequality expresses passivity: an unforced radiation problem cannot create net mechanical energy.</p>
+</section>
+<section id="the-linear-radiation-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-linear-radiation-problem">The linear radiation problem</h3>
+<p>Let <span class="math inline">L_s</span> be the shell length, <span class="math inline">\lambda</span> a characteristic wavelength of the secondary wave field, and <span class="math inline">A</span> its amplitude. The reduction assumes approximately</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-wave-scales"><span class="math display">
+\lambda\gtrsim L_s,
+\qquad
+A\ll L_s.
+\tag{15}</span></span></p>
+<p>The waves are long enough to interact with the full hull but small enough for the free-surface conditions to be linearized about the undisturbed level.</p>
+<p>The secondary flow is assumed incompressible and irrotational. If <span class="math inline">\Phi(\mathbf X,t)</span> is its velocity potential,</p>
+<p><span class="math display">
+\mathbf u_f=\nabla\Phi,
+\qquad
+\Delta\Phi=0
+\quad\text{in the fluid domain}.
+</span></p>
+<p>Let</p>
+<p><span class="math display">
+\mathbf v(t)
+=
+\begin{bmatrix}
+\dot G_X^s(t)\\
+\dot G_Z^s(t)\\
+\dot\theta^s(t)
+\end{bmatrix}
+</span></p>
+<p>be the generalized velocity of the secondary surge, heave, and pitch motion. At a hull point <span class="math inline">\mathbf r=(x,0,z)^\mathsf T</span> with unit normal <span class="math inline">\mathbf n=(n_X,0,n_Z)^\mathsf T</span>, define the generalized normal</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-generalized-normal"><span class="math display">
+\mathbf N
+=
+\begin{bmatrix}
+n_X\\
+n_Z\\
+z n_X-x n_Z
+\end{bmatrix}.
+\tag{16}</span></span></p>
+<p>The normal hull velocity is</p>
+<p><span class="math display">
+\mathbf u_h\cdot\mathbf n
+=
+\mathbf N^\mathsf T\mathbf v.
+</span></p>
+<p>The same vector <span class="math inline">\mathbf N</span> also converts pressure into the generalized force consisting of horizontal force, vertical force, and pitch moment.</p>
+<p>For one harmonic of angular frequency <span class="math inline">\omega</span>,</p>
+<p><span class="math display">
+v_s(t)
+=
+\operatorname{Re}
+\left\{
+\alpha_s e^{-i\omega t}
+\right\},
+\qquad
+\Phi(\mathbf X,t)
+=
+\operatorname{Re}
+\left\{
+\sum_{s=1}^{3}
+\alpha_s
+\phi_s(\mathbf X;\omega)
+e^{-i\omega t}
+\right\},
+</span></p>
+<p>where <span class="math inline">\alpha_s</span> is a complex velocity amplitude and <span class="math inline">\phi_s</span> is the radiation potential generated by unit velocity in mode <span class="math inline">s</span>.</p>
+<p>Let <span class="math inline">\Gamma_b^0</span> be the mean wetted hull, <span class="math inline">\Gamma_0</span> the undisturbed free surface, and <span class="math inline">\Gamma_H</span> an impermeable bottom at depth <span class="math inline">H</span>. Each potential satisfies</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-problem"><span class="math display">
+\begin{aligned}
+\Delta\phi_s &amp;=0
+&amp;&amp;\text{in }\Omega,\\
+\frac{\partial\phi_s}{\partial Z} &amp;=0
+&amp;&amp;\text{on }\Gamma_H,\\
+\frac{\partial\phi_s}{\partial Z}
+-\frac{\omega^2}{g}\phi_s &amp;=0
+&amp;&amp;\text{on }\Gamma_0,\\
+\frac{\partial\phi_s}{\partial n} &amp;=N_s
+&amp;&amp;\text{on }\Gamma_b^0.
+\end{aligned}
+\tag{17}</span></span></p>
+<p>The free-surface condition combines the linearized kinematic and Bernoulli conditions. The exterior problem also requires an outgoing-wave condition,</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-condition"><span class="math display">
+r^{1/2}
+\left(
+\frac{\partial\phi_s}{\partial r}
+-
+i\kappa\phi_s
+\right)
+\longrightarrow0
+\qquad
+\text{as }r\longrightarrow\infty,
+\tag{18}</span></span></p>
+<p>where <span class="math inline">r</span> is horizontal radial distance and <span class="math inline">\kappa</span> is the gravity-wave number. For finite depth,</p>
+<p><span class="math display">
+\omega^2
+=
+g\kappa\tanh(\kappa H).
+</span></p>
+<p>The radiation condition distinguishes waves travelling away from the boat from waves arriving from infinity. It is therefore not a peripheral numerical detail. It determines the physically relevant solution and the direction of energy transport.</p>
+<p>On a truncated computational domain, the exact exterior operator may be approximated by a first-order condition such as</p>
+<p><span class="math display">
+\frac{\partial\phi_s}{\partial n}
+=
+i\kappa\phi_s
+</span></p>
+<p>on a sufficiently distant artificial boundary.</p>
+</section>
+<section id="extracting-the-hydrodynamic-matrices" class="level3">
+<h3 class="anchored" data-anchor-id="extracting-the-hydrodynamic-matrices">Extracting the hydrodynamic matrices</h3>
+<p>The linearized dynamic pressure is</p>
+<p><span class="math display">
+p_d
+=
+-\rho
+\frac{\partial\Phi}{\partial t},
+</span></p>
+<p>where <span class="math inline">\rho</span> is water density. The corresponding generalized force is</p>
+<p><span class="math display">
+\mathbf f_{\mathrm{rad}}
+=
+-\rho
+\int_{\Gamma_b^0}
+\frac{\partial\Phi}{\partial t}
+\mathbf N\,d\Gamma.
+</span></p>
+<p>For force component <span class="math inline">t</span> generated by radiation mode <span class="math inline">s</span>, define</p>
+<p><span class="math display">
+M_{a,ts}(\omega)
+=
+\rho
+\int_{\Gamma_b^0}
+\operatorname{Re}
+\left[
+\phi_s(\mathbf X;\omega)
+\right]
+N_t\,d\Gamma,
+</span></p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-hydrodynamic-matrices"><span class="math display">
+S_{r,ts}(\omega)
+=
+\rho\omega
+\int_{\Gamma_b^0}
+\operatorname{Im}
+\left[
+\phi_s(\mathbf X;\omega)
+\right]
+N_t\,d\Gamma.
+\tag{19}</span></span></p>
+<p>The resulting force is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-force"><span class="math display">
+\mathbf f_{\mathrm{rad}}(t)
+=
+-\mathbf M_a(\omega)\dot{\mathbf v}(t)
+-
+\mathbf S_r(\omega)\mathbf v(t).
+\tag{20}</span></span></p>
+<p>For a complex velocity amplitude <span class="math inline">\widehat{\mathbf v}</span>,</p>
+<p><span class="math display">
+\widehat{\mathbf f}_{\mathrm{rad}}
+=
+-
+\left[
+\mathbf S_r(\omega)
+-
+i\omega\mathbf M_a(\omega)
+\right]
+\widehat{\mathbf v}.
+</span></p>
+<p>The matrix</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-hydrodynamic-impedance"><span class="math display">
+\mathbf Z_h(\omega)
+=
+\mathbf S_r(\omega)
+-
+i\omega\mathbf M_a(\omega)
+\tag{21}</span></span></p>
+<p>is the hydrodynamic impedance. Its real part is dissipative; its imaginary part is reactive.</p>
+<p>For real time-domain velocities, the radiated energy over <span class="math inline">[t_0,t_1]</span> is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-real-radiated-energy"><span class="math display">
+E_{\mathrm{rad}}
+=
+\int_{t_0}^{t_1}
+\mathbf v^\mathsf T(t)
+\mathbf S_r
+\mathbf v(t)\,dt.
+\tag{22}</span></span></p>
+<p>For a single complex harmonic amplitude, the corresponding mean power is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-complex-radiated-power"><span class="math display">
+\overline P_{\mathrm{rad}}
+=
+\frac{1}{2}
+\widehat{\mathbf v}^{\,*}
+\mathbf S_r(\omega)
+\widehat{\mathbf v},
+\tag{23}</span></span></p>
+<p>where <span class="math inline">*</span> denotes conjugate transpose. The factor <span class="math inline">1/2</span> belongs to the complex-amplitude convention; it does not appear when instantaneous real velocities are integrated directly.</p>
+<p>Reciprocity implies</p>
+<p><span class="math display">
+\mathbf M_a^\mathsf T=\mathbf M_a,
+\qquad
+\mathbf S_r^\mathsf T=\mathbf S_r.
+</span></p>
+<p>Passivity gives</p>
+<p><span class="math display">
+\mathbf S_r\succeq0.
+</span></p>
+<p>The original article described the computed matrices as positive definite. The more general result is positive semidefiniteness; strict positivity additionally requires that no nonzero combination of the retained modes be non-radiating.</p>
+<p>Added mass augments rather than replaces the mechanical inertia. The effective acceleration matrix is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-effective-mass"><span class="math display">
+\mathsf M_{\mathrm{eff}}
+=
+\mathsf M_{\mathrm{mech}}
++
+\mathbf M_a.
+\tag{24}</span></span></p>
+<p>This distinction is fundamental. The crew changes the physical mass distribution; the fluid adds reactive inertia around that already time-dependent mechanical system.</p>
+</section>
+<section id="frequency-dependence-and-hydrodynamic-memory" class="level3">
+<h3 class="anchored" data-anchor-id="frequency-dependence-and-hydrodynamic-memory">Frequency dependence and hydrodynamic memory</h3>
+<p>The radiation problem contains <span class="math inline">\omega</span> explicitly in both the free-surface and far-field conditions. Consequently, <span class="math inline">\mathbf M_a</span> and <span class="math inline">\mathbf S_r</span> depend on frequency as well as geometry. They may be computed offline for a selected cadence, but a substantial cadence change generally requires recomputation or interpolation over a frequency grid.</p>
+<p>A periodic stroke contains harmonics,</p>
+<p><span class="math display">
+\mathbf v(t)
+=
+\sum_{m=-\infty}^{\infty}
+\widehat{\mathbf v}_m
+e^{-im\omega_0t},
+</span></p>
+<p>where <span class="math inline">\omega_0=2\pi/T</span> is the fundamental frequency. Linear radiation theory acts separately on each harmonic:</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-multiharmonic-force"><span class="math display">
+\widehat{\mathbf f}_{\mathrm{rad},m}
+=
+-
+\left[
+\mathbf S_r(m\omega_0)
+-
+im\omega_0\mathbf M_a(m\omega_0)
+\right]
+\widehat{\mathbf v}_m.
+\tag{25}</span></span></p>
+<p>The original implementation retained the fundamental mode because it was found to account for most of the secondary-motion dissipation in the studied cases.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> This is a spectral truncation, not a claim that the stroke itself is perfectly sinusoidal.</p>
+<p>For arbitrary motion, the frequency-dependent force can be represented in the time domain as</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-memory"><span class="math display">
+\mathbf f_{\mathrm{rad}}(t)
+=
+-\mathbf M_\infty\ddot{\mathbf q}^{\,s}(t)
+-
+\int_0^t
+\mathbf K(t-\tau)
+\dot{\mathbf q}^{\,s}(\tau)\,d\tau,
+\tag{26}</span></span></p>
+<p>where <span class="math inline">\mathbf M_\infty</span> is the infinite-frequency added mass and <span class="math inline">\mathbf K</span> is a retardation kernel. The convolution expresses hydrodynamic memory: waves generated earlier continue to influence the present pressure field.</p>
+<p>The reduction from an unbounded free-surface problem to two <span class="math inline">3\times3</span> matrices is therefore substantial. It is also controlled. The assumptions, boundary conditions, signs, dimensions, symmetry, passivity, and frequency range can all be inspected independently.</p>
+</section>
+</section>
+<section id="from-mathematical-model-to-engineering-software" class="level2">
+<h2 class="anchored" data-anchor-id="from-mathematical-model-to-engineering-software">From mathematical model to engineering software</h2>
+<p>A mathematical model becomes an engineering tool only when every symbolic quantity has been connected to geometry, measured or reconstructed data, numerical algorithms, and reproducible computational procedures.</p>
+<p>The software architecture uses an <strong>offline–online decomposition</strong>. Expensive geometry- and frequency-dependent fluid calculations are performed offline. The repeated online calculation advances only a small nonlinear dynamical system.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-the-mathematics-behind-a-racing-shell-computational-pipeline" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-the-mathematics-behind-a-racing-shell-computational-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-the-mathematics-behind-a-racing-shell-computational-pipeline">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    subgraph OFF[Offline preparation]
+        A[Hull geometry&lt;br/&gt;surface + fittings] --&gt; B[Geometric preprocessing&lt;br/&gt;normals + areas + projections]
+        C[Motion-capture records&lt;br/&gt;anthropometric model] --&gt; D[Analytic periodic trajectories&lt;br/&gt;position + velocity + acceleration]
+        A --&gt; E[Stationary RANS calculations&lt;br/&gt;selected speeds + attitudes]
+        E --&gt; F[Resistance coefficients&lt;br/&gt;calibrated database]
+        A --&gt; G[Boundary-element radiation solves&lt;br/&gt;surge + heave + pitch]
+        G --&gt; H[Hydrodynamic matrices&lt;br/&gt;added mass + damping]
+    end
+
+    subgraph ON[Online simulation]
+        I[Scenario parameters&lt;br/&gt;crew + cadence + force + position]
+        B --&gt; J[Current immersion&lt;br/&gt;hydrostatic quadrature]
+        D --&gt; K[Mechanical inertia&lt;br/&gt;kinematic forcing]
+        F --&gt; L[Mean resistance]
+        H --&gt; M[Radiation reaction]
+        I --&gt; J
+        I --&gt; K
+        I --&gt; L
+        I --&gt; M
+        J --&gt; N[Assemble nonlinear&lt;br/&gt;six-state system]
+        K --&gt; N
+        L --&gt; N
+        M --&gt; N
+        N --&gt; O[Adaptive Runge–Kutta&lt;br/&gt;time integration]
+        O --&gt; P[Surge + heave + pitch&lt;br/&gt;speed + energy histories]
+    end
+
+    subgraph LEG[Legend]
+        L1[Geometry or measured inputs]
+        L2[Offline reduced operators]
+        L3[Online scenario inputs]
+        L4[Online physical evaluations]
+        L5[System assembly and solver]
+        L6[Simulation outputs]
+    end
+
+    classDef geom fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:1.5px;
+    classDef offlineop fill:#ede9fe,stroke:#7c3aed,color:#111827,stroke-width:1.5px;
+    classDef scenario fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:1.5px;
+    classDef onlineeval fill:#dcfce7,stroke:#16a34a,color:#111827,stroke-width:1.5px;
+    classDef solver fill:#fde2e4,stroke:#e11d48,color:#111827,stroke-width:1.5px;
+    classDef output fill:#e0f2fe,stroke:#0891b2,color:#111827,stroke-width:1.5px;
+    classDef legendbox fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:1px;
+
+    class A,C geom;
+    class B,D,F,H offlineop;
+    class I scenario;
+    class E,G,J,K,L,M onlineeval;
+    class N,O solver;
+    class P output;
+
+    class L1 geom;
+    class L2 offlineop;
+    class L3 scenario;
+    class L4 onlineeval;
+    class L5 solver;
+    class L6 output;
+
+    style OFF fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px;
+    style ON fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px;
+    style LEG fill:#f9fafb,stroke:#9ca3af,stroke-width:1.5px;
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-the-mathematics-behind-a-racing-shell-computational-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Offline–online decomposition of the rowing-boat simulator. Expensive geometric and hydrodynamic calculations are compressed into reusable operators before repeated time-domain simulations.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="#fig-the-mathematics-behind-a-racing-shell-computational-pipeline" class="quarto-xref">Figure&nbsp;2</a> shows why the method is not a monolithic CFD simulation. Different mechanisms are assigned different computational fidelities and update rates.</p>
+<section id="dynamic-immersion-and-hydrostatic-pressure" class="level3">
+<h3 class="anchored" data-anchor-id="dynamic-immersion-and-hydrostatic-pressure">Dynamic immersion and hydrostatic pressure</h3>
+<p>Let <span class="math inline">\Gamma_h^0</span> be the hull surface in body coordinates. For a point <span class="math inline">\mathbf x=(x,y,z)^\mathsf T</span>, its inertial vertical coordinate is</p>
+<p><span class="math display">
+Z(\mathbf x,t)
+=
+G_Z^h(t)
+-
+x\sin\theta(t)
++
+z\cos\theta(t).
+</span></p>
+<p>If the undisturbed water level is <span class="math inline">h_0</span>, define the local immersion depth</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-immersion-depth"><span class="math display">
+d
+\left(
+\mathbf x;
+G_Z^h,\theta
+\right)
+=
+\max
+\left[
+0,\,
+h_0-G_Z^h+x\sin\theta-z\cos\theta
+\right].
+\tag{27}</span></span></p>
+<p>The positive part ensures that dry points contribute no pressure. If <span class="math inline">\mathbf n(\mathbf x)</span> is the outward hull normal in body coordinates, the hydrostatic force is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-hydrostatic-force"><span class="math display">
+\mathbf S_h(t)
+=
+-\rho g
+\int_{\Gamma_h^0}
+d
+\left(
+\mathbf x;
+G_Z^h(t),\theta(t)
+\right)
+\mathbf Q(\theta(t))
+\mathbf n(\mathbf x)
+\,d\Gamma.
+\tag{28}</span></span></p>
+<p>An analogous moment integral provides the restoring pitch moment. These calculations must remain in the online loop because heave and pitch continually change the submerged part of the hull.</p>
+<p>For a triangular surface mesh with triangle areas <span class="math inline">A_k</span>, normals <span class="math inline">\mathbf n_k</span>, and vertices <span class="math inline">\mathbf x_{k,i}</span>, a nodal quadrature is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-hydrostatic-quadrature"><span class="math display">
+\mathbf S_h(t)
+\approx
+-\frac{\rho g}{3}
+\sum_{k=1}^{N_\triangle}
+A_k
+\mathbf Q(\theta)\mathbf n_k
+\sum_{i=1}^{3}
+d
+\left(
+\mathbf x_{k,i};
+G_Z^h,\theta
+\right).
+\tag{29}</span></span></p>
+<p>When a complete planar triangle is submerged, the untruncated pressure depth is affine and the vertex rule is exact. When the waterline cuts an element, the positive-part operation makes the integrand piecewise affine and introduces a localized geometric error. Mesh resolution near the waterline is therefore important even though the hydrostatic equation itself is elementary.</p>
+<p>Geometric preprocessing must establish consistent units, watertight connectivity, outward normals, nondegenerate elements, and sufficient resolution in regions of high curvature. A defect in the surface representation propagates into buoyancy, trim moments, wetted area, projected areas, and resistance.</p>
+</section>
+<section id="mean-resistance" class="level3">
+<h3 class="anchored" data-anchor-id="mean-resistance">Mean resistance</h3>
+<p>The mean longitudinal resistance is decomposed into shape, viscous, and wave-making components:</p>
+<p><span class="math display">
+R
+=
+R_{\mathrm{shape}}
++
+R_{\mathrm{vis}}
++
+R_{\mathrm{wave}}.
+</span></p>
+<p>A reduced representation is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-resistance"><span class="math display">
+R
+=
+\frac{\rho V_X^2}{2}
+\left[
+C_{dX}A_X
++
+C_f(\mathrm{Re})A_w
++
+C_{dw}A_Z
+\right],
+\tag{30}</span></span></p>
+<p>where <span class="math inline">V_X</span> is forward speed, <span class="math inline">A_X</span> is the wetted-surface projection normal to the longitudinal axis, <span class="math inline">A_Z</span> is the horizontal projection, <span class="math inline">A_w</span> is wetted area, and <span class="math inline">C_{dX}</span>, <span class="math inline">C_f</span>, and <span class="math inline">C_{dw}</span> are shape, friction, and mean wave-resistance coefficients.</p>
+<p>The Reynolds number is</p>
+<p><span class="math display">
+\mathrm{Re}
+=
+\frac{V_XL_s}{\nu_w},
+</span></p>
+<p>where <span class="math inline">\nu_w</span> is the kinematic viscosity of water. The friction coefficient uses the correlation-line form</p>
+<p><span class="math display">
+C_f(\mathrm{Re})
+=
+\frac{0.075}
+{\left[
+\log_{10}(\mathrm{Re})-2
+\right]^2}.
+</span></p>
+<p>The coefficients were obtained from standard formulae and selected stationary RANS calculations performed on the actual hull geometry.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> Those calculations do not disappear from the reduced model: their assumptions and numerical errors are compressed into the calibrated coefficients.</p>
+<p>A reproducible calibration may be written abstractly as</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-resistance-calibration"><span class="math display">
+\boldsymbol\beta_D^\star
+=
+\operatorname*{arg\,min}_{\boldsymbol\beta_D}
+\sum_{\ell=1}^{N_R}
+w_\ell
+\left[
+R_{\mathrm{red}}
+\left(
+V_\ell,\zeta_\ell,\theta_\ell;
+\boldsymbol\beta_D
+\right)
+-
+R_{\mathrm{RANS},\ell}
+\right]^2,
+\tag{31}</span></span></p>
+<p>where <span class="math inline">\zeta_\ell</span> is sinkage, <span class="math inline">\theta_\ell</span> is trim, <span class="math inline">w_\ell</span> is a weighting factor, and <span class="math inline">\boldsymbol\beta_D</span> contains the reduced-law parameters.</p>
+<p>Equation <a href="#eq-the-mathematics-behind-a-racing-shell-resistance-calibration" class="quarto-xref">Equation&nbsp;31</a> is a transparent formulation of the implied fitting task, not a claim that this exact objective was documented in the original implementation. The publication does not report enough detail about the RANS meshes, turbulence closure, convergence tolerances, or fitting algorithm to reproduce that part of the pipeline exactly.</p>
+</section>
+<section id="boundary-elements-for-the-radiation-problem" class="level3">
+<h3 class="anchored" data-anchor-id="boundary-elements-for-the-radiation-problem">Boundary elements for the radiation problem</h3>
+<p>Only the potential on the boundaries is needed to construct the added-mass and damping matrices. The radiation problem was therefore solved with a boundary element method using the free-space Green function and curved quadrilateral elements with eight nodes.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p>For the three-dimensional Laplace operator,</p>
+<p><span class="math display">
+G(\mathbf P,\mathbf Q)
+=
+\frac{1}
+{4\pi
+\lVert
+\mathbf P-\mathbf Q
+\rVert}
+</span></p>
+<p>is the fundamental solution. A boundary-integral equation has the form</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-boundary-integral"><span class="math display">
+c(\mathbf P)\phi_s(\mathbf P)
++
+\int_\Gamma
+\phi_s(\mathbf Q)
+\frac{\partial G(\mathbf P,\mathbf Q)}
+{\partial n_{\mathbf Q}}
+\,d\Gamma_{\mathbf Q}
+=
+\int_\Gamma
+G(\mathbf P,\mathbf Q)
+\frac{\partial\phi_s}
+{\partial n_{\mathbf Q}}
+\,d\Gamma_{\mathbf Q}.
+\tag{32}</span></span></p>
+<p>After interpolation and collocation,</p>
+<p><span class="math display">
+\mathbf H\boldsymbol\phi_s
+=
+\mathbf G_b\boldsymbol q_s,
+</span></p>
+<p>where <span class="math inline">\boldsymbol\phi_s</span> contains nodal potentials and <span class="math inline">\boldsymbol q_s</span> nodal normal derivatives. The free-surface, hull, bottom, and artificial-boundary conditions can be assembled as</p>
+<p><span class="math display">
+\boldsymbol q_s
+=
+\mathbf R_\omega\boldsymbol\phi_s
++
+\boldsymbol b_s,
+</span></p>
+<p>leading to</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-discrete-radiation"><span class="math display">
+\left(
+\mathbf H-\mathbf G_b\mathbf R_\omega
+\right)
+\boldsymbol\phi_s
+=
+\mathbf G_b\boldsymbol b_s.
+\tag{33}</span></span></p>
+<p>At fixed geometry and frequency, the left-hand matrix is the same for surge, heave, and pitch; only the right-hand side changes. Its factorization can therefore be reused for all three modes.</p>
+<p>A conventional dense boundary element implementation requires approximately <span class="math inline">O(N_B^2)</span> storage and assembly for <span class="math inline">N_B</span> unknowns, while a direct dense factorization requires <span class="math inline">O(N_B^3)</span> arithmetic. These are generic complexity estimates rather than measured timings for the original code. They explain why radiation coefficients are calculated offline and reduced to <span class="math inline">3\times3</span> matrices before the repeated simulations begin.</p>
+</section>
+<section id="the-six-state-online-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-six-state-online-problem">The six-state online problem</h3>
+<p>Define</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-state-vector"><span class="math display">
+\mathbf y(t)
+=
+\begin{bmatrix}
+\dot G_X^h&amp;
+\dot G_Z^h&amp;
+\dot\theta&amp;
+G_X^h&amp;
+G_Z^h&amp;
+\theta
+\end{bmatrix}^{\mathsf T}.
+\tag{34}</span></span></p>
+<p>Without radiation corrections, the first-order system is</p>
+<p><span class="math display">
+\mathbf A(t,\mathbf y)
+\dot{\mathbf y}
+=
+\mathbf B(t,\mathbf y).
+</span></p>
+<p>Extend the added-mass and damping matrices to six dimensions:</p>
+<p><span class="math display">
+\widetilde{\mathbf M}_a
+=
+\begin{bmatrix}
+\mathbf M_a&amp;\mathbf0\\
+\mathbf0&amp;\mathbf0
+\end{bmatrix},
+\qquad
+\widetilde{\mathbf S}_r
+=
+\begin{bmatrix}
+\mathbf S_r&amp;\mathbf0\\
+\mathbf0&amp;\mathbf0
+\end{bmatrix}.
+</span></p>
+<p>The complete online problem becomes</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-complete-state-system"><span class="math display">
+\left[
+\mathbf A(t,\mathbf y)
++
+\widetilde{\mathbf M}_a
+\right]
+\dot{\mathbf y}
+=
+\mathbf B(t,\mathbf y)
+-
+\widetilde{\mathbf S}_r\mathbf y.
+\tag{35}</span></span></p>
+<p>Only the velocity block is modified because added mass and damping act on generalized accelerations and velocities, not directly on positions.</p>
+<p>At each function evaluation requested by the ODE solver, the program must:</p>
+<ul>
+<li>evaluate the rower segment trajectories and derivatives at the current stroke phase;</li>
+<li>construct the instantaneous mass moments;</li>
+<li>determine immersion and integrate hydrostatic forces and moments;</li>
+<li>evaluate mean resistance;</li>
+<li>add radiation damping and added mass;</li>
+<li>solve the small linear system in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;35</a>.</li>
+</ul>
+<p>The original program used an explicit adaptive Runge–Kutta method from the GNU Scientific Library.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> The matrix in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;35</a> should be solved rather than explicitly inverted, both for efficiency and numerical stability.</p>
+<p>Adaptive stepping is valuable because the forcing varies strongly across the drive and recovery phases. It does not eliminate the need for smooth input functions. Discontinuous or insufficiently differentiable force profiles can cause repeated step rejection or inaccurate integration near the catch and finish.</p>
+</section>
+<section id="verification-before-experimental-validation" class="level3">
+<h3 class="anchored" data-anchor-id="verification-before-experimental-validation">Verification before experimental validation</h3>
+<p>Several checks can be made without comparing the simulator to a physical boat.</p>
+<p>At static equilibrium,</p>
+<p><span class="math display">
+S_{h,Z}
+=
+M_tg,
+\qquad
+M_h=0,
+</span></p>
+<p>where <span class="math inline">S_{h,Z}</span> is vertical hydrostatic force and <span class="math inline">M_h</span> the hydrostatic pitch moment. Failure indicates a problem with mass data, normal orientation, water level, coordinate transformations, or quadrature.</p>
+<p>Hydrodynamic reciprocity can be monitored using</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-reciprocity-residuals"><span class="math display">
+\varepsilon_M
+=
+\frac{
+\left\lVert
+\mathbf M_a-\mathbf M_a^\mathsf T
+\right\rVert_F
+}{
+\left\lVert
+\mathbf M_a
+\right\rVert_F
+},
+\qquad
+\varepsilon_S
+=
+\frac{
+\left\lVert
+\mathbf S_r-\mathbf S_r^\mathsf T
+\right\rVert_F
+}{
+\left\lVert
+\mathbf S_r
+\right\rVert_F
+},
+\tag{36}</span></span></p>
+<p>where <span class="math inline">\lVert\cdot\rVert_F</span> is the Frobenius norm. These residuals should decrease under refinement.</p>
+<p>Passivity requires that the minimum eigenvalue of the symmetric damping part,</p>
+<p><span class="math display">
+\lambda_{\min}
+\left[
+\frac{
+\mathbf S_r+\mathbf S_r^\mathsf T
+}{2}
+\right],
+</span></p>
+<p>not be materially negative. Large negative values would indicate an error in signs, normals, boundary treatment, or integration.</p>
+<p>The online radiated energy in <a href="#eq-the-mathematics-behind-a-racing-shell-real-radiated-energy" class="quarto-xref">Equation&nbsp;22</a> must remain nonnegative. The calculation should also be repeated with refined surface meshes, smaller ODE tolerances, frozen rower motion, zero oarlock force, and zero damping. These controlled limits test implementation consistency; they do not by themselves validate the physical model.</p>
+<p>The model’s speed follows directly from this architecture. If <span class="math inline">N_s</span> crew or design configurations are studied, a full approach has the approximate cost</p>
+<p><span class="math display">
+C_{\mathrm{full}}
+\approx
+N_s
+C_{\mathrm{unsteady\ CFD}},
+</span></p>
+<p>while the reduced workflow has</p>
+<p><span class="math display">
+C_{\mathrm{reduced}}
+\approx
+C_{\mathrm{stationary\ CFD}}
++
+C_{\mathrm{radiation}}
++
+N_sC_{\mathrm{ODE}}.
+</span></p>
+<p>When <span class="math inline">C_{\mathrm{ODE}}</span> is much smaller than the fluid calculations, the preprocessing cost is amortized across the study. This is what makes systematic comparisons of crew mass, placement, force, and cadence possible.</p>
+</section>
+</section>
+<section id="scientific-influence-validation-limits-and-open-problems" class="level2">
+<h2 class="anchored" data-anchor-id="scientific-influence-validation-limits-and-open-problems">Scientific influence, validation limits, and open problems</h2>
+<p>A direct continuation generalized the mechanics from symmetry-plane motion to all six rigid-body degrees of freedom and introduced a control law to represent the balancing actions of the crew.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> This extension was nontrivial because a narrow shell is unstable in roll and does not possess a useful passive restoring mechanism in yaw.</p>
+<p>Serveto, Barré, Kobus, and Mariot cited the paper while developing an independent multibody model in ADAMS and LifeMOD. Their representation used nineteen body segments and eighteen joints and reported agreement between calculated boat velocity and on-water measurements in the tested setting.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> This is evidence of methodological relevance from a different modelling tradition, not merely continuation by the original authors.</p>
+<p>The reduced dynamics were subsequently used with non-intrusive polynomial chaos methods to investigate sensitivity to rower force, mass, and cadence.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> This use is particularly revealing: the model’s low online cost enabled uncertainty and parameter studies that would have been difficult with a full unsteady flow solver.</p>
+<p>Karmanov and Chernousko cited the work while constructing a deliberately simpler rowing model with periodic oar motion and quadratic resistance.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> Wychowanski and collaborators likewise cited it in a one-dimensional analysis of single-sculling technique.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> These publications place the model at the detailed end of a spectrum ranging from analytically tractable longitudinal descriptions to coupled rigid-body and free-surface simulation.</p>
+<p>The article also appears in later rowing-physiology research on pacing strategy.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> That is weaker evidence of direct methodological influence, but it shows that the work entered an interdisciplinary literature beyond computational fluid dynamics.</p>
+<div id="tbl-the-mathematics-behind-a-racing-shell-citation-roles" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-the-mathematics-behind-a-racing-shell-citation-roles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 36%">
+<col style="width: 48%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Citation role</th>
+<th>Representative later use</th>
+<th>What it establishes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Direct extension</td>
+<td>Six-degree-of-freedom dynamics with active balance control</td>
+<td>The mechanical architecture could support a broader rigid-body formulation</td>
+</tr>
+<tr class="even">
+<td>Independent comparison</td>
+<td>ADAMS/LifeMOD boat–oars–rower model</td>
+<td>Another research group treated the paper as relevant prior art</td>
+</tr>
+<tr class="odd">
+<td>Sensitivity analysis</td>
+<td>Polynomial-chaos study of force, mass, and cadence</td>
+<td>The reduced runtime enabled systematic parameter exploration</td>
+</tr>
+<tr class="even">
+<td>Deliberate simplification</td>
+<td>Elementary and one-dimensional rowing models</td>
+<td>Later authors used the work to delimit what their simpler assumptions omitted</td>
+</tr>
+<tr class="odd">
+<td>Contextual citation</td>
+<td>Experimental work on pacing physiology</td>
+<td>The publication circulated beyond its original modelling community</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-the-mathematics-behind-a-racing-shell-citation-roles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Selected forms of scholarly uptake of the rowing-boat model.
+</figcaption>
+</figure>
+</div>
+<p><a href="#tbl-the-mathematics-behind-a-racing-shell-citation-roles" class="quarto-xref">Table&nbsp;1</a> demonstrates why citation context is more informative than citation quantity. It does not establish predictive accuracy. That requires experimental validation.</p>
+<section id="what-the-original-numerical-evidence-supports" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-original-numerical-evidence-supports">What the original numerical evidence supports</h3>
+<p>The article compared a simulated horizontal-velocity history with measurements from a single scull at 20 strokes per minute. The calculated signal reproduced the main qualitative oscillation, but discrepancies appeared near the beginning of each stroke. Crucial inputs—including athlete characteristics, oarlock force, and exact boat configuration—were not available and had to be reconstructed from plausible values.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<p>This supports qualitative agreement under uncertain inputs. It does not constitute a controlled quantitative validation.</p>
+<p>Given synchronized measured velocities <span class="math inline">V_k</span> and predictions <span class="math inline">\widehat V_k</span>, one useful normalized error is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-validation-error"><span class="math display">
+\varepsilon_2
+=
+\left[
+\frac{
+\sum_{k=1}^{N}
+\left(
+\widehat V_k-V_k
+\right)^2
+}{
+\sum_{k=1}^{N}
+\left(
+V_k-\overline V
+\right)^2
+}
+\right]^{1/2},
+\tag{37}</span></span></p>
+<p>where <span class="math inline">\overline V</span> is the measured mean and the denominator is assumed nonzero.</p>
+<p>A separate mean-speed bias is</p>
+<p><span class="math display">
+b_{\overline V}
+=
+\frac{
+\overline{\widehat V}
+-
+\overline V
+}{
+\overline V
+}.
+</span></p>
+<p>Phase error may be estimated by the lag that maximizes cross-correlation:</p>
+<p><span class="math display">
+\Delta t_\phi
+=
+\operatorname*{arg\,max}_{\tau}
+\int
+\left[
+\widehat V(t+\tau)
+-
+\overline{\widehat V}
+\right]
+\left[
+V(t)-\overline V
+\right]
+dt.
+</span></p>
+<p>These metrics distinguish mean progression, oscillation amplitude, and stroke timing. A model can predict the correct average speed while producing the wrong within-stroke phase, or reproduce a visually plausible waveform while retaining a systematic speed bias.</p>
+<p>The original calculations estimated that secondary-motion dissipation could reach approximately ten per cent of total modelled dissipation in the investigated configurations.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a> If</p>
+<p><span class="math display">
+E_{\mathrm{tot}}
+=
+E_{\mathrm{mean}}
++
+E_{\mathrm{sec}},
+</span></p>
+<p>then the reported quantity is</p>
+<p><span class="math display">
+\eta_{\mathrm{sec}}
+=
+\frac{
+E_{\mathrm{sec}}
+}{
+E_{\mathrm{tot}}
+}
+\lesssim0.10
+</span></p>
+<p>for those simulations. It is not a universal ten-per-cent law. The value depends on geometry, cadence, crew motion, and the frequency-dependent damping matrix.</p>
+<p>Two additional examples demonstrated engineering use rather than validation. Under equal peak oarlock force of <span class="math inline">1200\,\mathrm{N}</span> and equal cadence of <span class="math inline">39.5</span> strokes per minute, the simulated <span class="math inline">106\,\mathrm{kg}</span> rower produced greater sinkage, stronger heave, and lower speed than the <span class="math inline">80\,\mathrm{kg}</span> rower. In a quad-scull positioning study, moving the crew <span class="math inline">0.10\,\mathrm{m}</span> aft was predicted to produce advantages of approximately two and four metres relative to the other tested arrangements over a <span class="math inline">2000\,\mathrm{m}</span> race.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+<p>These results are internally consistent with the model. Greater mass increases displacement and wetted area; longitudinal placement changes trim and hydrodynamic loading. They remain simulation findings until controlled measurements confirm the predicted magnitudes.</p>
+</section>
+<section id="verification-calibration-and-validation-are-different-tasks" class="level3">
+<h3 class="anchored" data-anchor-id="verification-calibration-and-validation-are-different-tasks">Verification, calibration, and validation are different tasks</h3>
+<p>A residual between measurement and simulation contains several error sources. Let <span class="math inline">\boldsymbol\mu</span> collect measured operating inputs, <span class="math inline">\boldsymbol\vartheta</span> uncertain model parameters, <span class="math inline">\mathcal S_h</span> the numerical solver at discretization scale <span class="math inline">h</span>, and <span class="math inline">\mathcal H</span> the observation operator that maps the simulated state to what an instrument measures:</p>
+<p><span class="math display">
+\widehat{\mathbf d}
+=
+\mathcal H
+\left[
+\mathcal S_h
+\left(
+\boldsymbol\mu,
+\boldsymbol\vartheta
+\right)
+\right].
+</span></p>
+<p>For data <span class="math inline">\mathbf d</span>, define</p>
+<p><span class="math display">
+\mathbf e
+=
+\mathbf d-\widehat{\mathbf d}.
+</span></p>
+<p>To first order,</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-error-decomposition"><span class="math display">
+\mathbf e
+\approx
+\mathbf e_{\mathrm{meas}}
++
+\mathbf e_{\mathrm{input}}
++
+\mathbf e_{\mathrm{num}}
++
+\mathbf e_{\mathrm{model}},
+\tag{38}</span></span></p>
+<p>where the terms represent measurement error, uncertain inputs, numerical error, and model-form discrepancy.</p>
+<p>The measured-versus-computed velocity comparison could not separate these contributions because several important inputs were reconstructed. A mismatch near the catch might arise from the force profile, athlete kinematics, idealized blade model, mean resistance, radiation approximation, or measurement uncertainty.</p>
+<p>Numerical error should be assessed first. If <span class="math inline">Q_h</span>, <span class="math inline">Q_{h/r}</span>, and <span class="math inline">Q_{h/r^2}</span> are values of an output on three successively refined discretizations, an observed order is</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-convergence-order"><span class="math display">
+p_{\mathrm{obs}}
+=
+\frac{
+\ln
+\left|
+\dfrac{
+Q_h-Q_{h/r}
+}{
+Q_{h/r}-Q_{h/r^2}
+}
+\right|
+}{
+\ln r
+}.
+\tag{39}</span></span></p>
+<p>This test can be applied independently to hydrostatic forces, hydrodynamic coefficients, mean speed, pitch amplitude, and radiated energy. A smooth-looking trajectory is not evidence of convergence.</p>
+<p>Calibration estimates uncertain parameters from designated observations. Validation tests predictions against data that were not used for calibration. Extrapolation asks whether the result remains reliable for different boats, crews, cadences, or water conditions.</p>
+<p>A Bayesian calibration would make parameter uncertainty and identifiability explicit:</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-bayesian-calibration"><span class="math display">
+p
+\left(
+\boldsymbol\vartheta
+\mid
+\mathbf d
+\right)
+\propto
+p
+\left(
+\mathbf d
+\mid
+\boldsymbol\vartheta
+\right)
+p
+\left(
+\boldsymbol\vartheta
+\right).
+\tag{40}</span></span></p>
+<p>A broad or strongly correlated posterior would indicate that the available measurements cannot uniquely determine the model parameters, even when one fitted trajectory appears convincing.</p>
+<p>On-water biomechanical studies are intrinsically difficult because environmental conditions and full-system measurements are harder to control than in ergometer experiments.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a> A decisive validation dataset would synchronize six-degree-of-freedom hull motion, oarlock forces and moments, blade angles and immersion, athlete segment kinematics, seat and foot-stretcher reactions, rigging, hull geometry, water depth, wind, and current.</p>
+</section>
+<section id="the-limits-are-part-of-the-scientific-result" class="level3">
+<h3 class="anchored" data-anchor-id="the-limits-are-part-of-the-scientific-result">The limits are part of the scientific result</h3>
+<p>The original model is restricted to surge, heave, and pitch. This is defensible for balanced sculling when the main interest lies in the symmetry plane. It cannot predict roll instability, yaw control, asymmetric blade action, or sweep-rowing dynamics. The later six-degree-of-freedom extension demonstrates that the mechanical structure can be generalized, but additional states require a model of active crew control.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<p>The radiation model assumes small-amplitude linear waves around a fixed mean wetted geometry. It omits nonlinear free-surface deformation, repeated wetting and drying in the radiation calculation, breaking waves, viscous secondary-flow losses, and nonlinear interaction between mean speed and oscillatory radiation.</p>
+<p>The fundamental-frequency approximation neglects the distinct hydrodynamic impedance experienced by higher stroke harmonics. A multi-frequency implementation or the memory formulation in <a href="#eq-the-mathematics-behind-a-racing-shell-radiation-memory" class="quarto-xref">Equation&nbsp;26</a> would be more appropriate when the force and motion histories contain substantial high-frequency content.</p>
+<p>The oar is a rigid massless lever. Shaft deflection, blade slip, ventilation, vortex shedding, and three-dimensional blade trajectories are not resolved. Later blade-focused studies have shown that these effects can themselves constitute substantial fluid-mechanical problems.</p>
+<p>The athlete follows prescribed kinematics and force histories. The model predicts what the boat does in response to an imposed stroke; it does not predict how the athlete adapts technique to altered rigging, fatigue, instability, or hydrodynamic feedback. The human is represented principally as a moving mass and forcing subsystem, not as a closed-loop neuromuscular controller.</p>
+<p>Mean resistance is partly calibrated from stationary calculations and empirical formulae. Changing hull geometry or moving far outside the calibrated range of speed, sinkage, trim, and Reynolds number is extrapolation. A reduced model cannot acquire validity outside its training envelope merely because the ODE solver continues to return numbers.</p>
+</section>
+<section id="open-extensions" class="level3">
+<h3 class="anchored">Open extensions</h3>
+<p>A practical multi-frequency radiation model could approximate the memory kernel by auxiliary states:</p>
+<p><span class="math display">
+\dot{\mathbf z}_f
+=
+\mathbf A_f\mathbf z_f
++
+\mathbf B_f\mathbf v,
+</span></p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-state-space"><span class="math display">
+\mathbf f_{\mathrm{rad}}
+=
+-\mathbf M_\infty\dot{\mathbf v}
+-
+\mathbf C_f\mathbf z_f.
+\tag{41}</span></span></p>
+<p>The matrices would be fitted so that the resulting state-space impedance matches <span class="math inline">\mathbf Z_h(\omega)</span> over the relevant cadence and harmonic range. This retains an ODE formulation while representing hydrodynamic memory.</p>
+<p>A more complete blade closure would have the form</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-blade-operator"><span class="math display">
+\mathbf F_b
+=
+\mathcal B
+\left(
+\mathbf U_{\mathrm{rel}},
+\dot{\mathbf U}_{\mathrm{rel}},
+\alpha_b,
+\dot\alpha_b,
+\mathcal W
+\right),
+\tag{42}</span></span></p>
+<p>where <span class="math inline">\mathbf U_{\mathrm{rel}}</span> is blade velocity relative to the local water, <span class="math inline">\alpha_b</span> is blade orientation, and <span class="math inline">\mathcal W</span> represents the disturbed wake. The central engineering challenge would be to preserve sufficient fidelity without making every design evaluation as expensive as a full unsteady CFD calculation.</p>
+<p>The reduced solver is also suitable for robust rather than purely deterministic design. Let <span class="math inline">\boldsymbol\chi</span> contain hull, rigging, crew-position, and stroke variables, while <span class="math inline">\boldsymbol\zeta</span> represents uncertain athlete and environmental inputs. A robust objective could be</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-robust-objective"><span class="math display">
+\min_{\boldsymbol\chi\in\mathcal C}
+\left\{
+\mathbb E
+\left[
+J(\boldsymbol\chi,\boldsymbol\zeta)
+\right]
++
+\gamma_R
+\sqrt{
+\operatorname{Var}
+\left[
+J(\boldsymbol\chi,\boldsymbol\zeta)
+\right]
+}
+\right\},
+\tag{43}</span></span></p>
+<p>where <span class="math inline">\mathcal C</span> is the feasible design set and <span class="math inline">\gamma_R</span> penalizes sensitivity to uncertainty.</p>
+<p>A possible performance functional is</p>
+<p><span class="math display">
+J
+=
+T_{2000}
++
+w_EE_{\mathrm{sec}}
++
+w_\theta
+\int_0^{T_{2000}}
+\theta^2(t)\,dt
++
+w_a
+\int_0^{T_{2000}}
+\left\lVert
+\ddot{\mathbf q}(t)
+\right\rVert^2dt,
+</span></p>
+<p>where <span class="math inline">T_{2000}</span> is predicted race time and the nonnegative weights balance speed, energy loss, pitch, and acceleration.</p>
+<p>The final assessment should therefore be measured. The work established a coherent and computationally efficient framework for studying the coupled dynamics of racing shells, athletes, oars, and free-surface radiation. It provided enough structure to support design comparisons, three-dimensional extensions, independent multibody studies, and uncertainty analysis.</p>
+<p>It did not establish a universally validated digital twin of rowing. Its scientific value lies elsewhere: in making the assumptions explicit, deriving their consequences, reducing the coupled problem to computable operators, providing internal mathematical checks, producing falsifiable predictions, and exposing where further experiments and higher-fidelity models are required. That is the substance of serious research.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored" data-anchor-id="open-extensions">See also <a href="https://4m4.it/index.html#category=mathematics">mathematics</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/satisfiability-modulo-theories-sudoku/">
+<img class="see-also-card-image" src="../../longforms/satisfiability-modulo-theories-sudoku/smt-sudoku.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Sudoku and Satisfiability Modulo Theories</h5>
+<div class="see-also-card-subtitle">You can solve it the standard way or... with Python and math</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/category-theory-functional-programming-compositionality/">
+<img class="see-also-card-image" src="../../longforms/category-theory-functional-programming-compositionality/monad_diagram.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Relationship Between Category Theory, Lambda Calculus, and Functional Programming in Haskell</h5>
+<div class="see-also-card-subtitle">The power of compositionality</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=software%20development">software development</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/python-as-interface/">
+<img class="see-also-card-image" src="../../longforms/python-as-interface/programming-human-languages.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Python as an Interface Between Human Thought and Machine Execution</h5>
+<div class="see-also-card-subtitle">Why Python became a cognitive, architectural, and computational bridge</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-the-proof-checker-becomes-part-of-the-experiment/">
+<img class="see-also-card-image" src="../../posts/when-the-proof-checker-becomes-part-of-the-experiment/proof-checker-failure.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When the Proof Checker Becomes Part of the Experiment</h5>
+<div class="see-also-card-subtitle">Lean, Collatz, and the epistemology of proof abundance</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/proof-abundance-and-the-new-practice-of-mathematics/">
+<img class="see-also-card-image" src="../../posts/proof-abundance-and-the-new-practice-of-mathematics/tao-math.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Proof Abundance and the New Practice of Mathematics</h5>
+<div class="see-also-card-subtitle">Terence Tao on AI, LLM breakthroughs, and the bottleneck of mathematical understanding</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/industrialization-of-intelligence/">
+<img class="see-also-card-image" src="../../posts/industrialization-of-intelligence/industrialization-of-intelligence.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Industrialization of Intelligence</h5>
+<div class="see-also-card-subtitle">Neural networks, computational capital, and the transition from artificial general intelligence to artificial superintelligence</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-a-nobel-laureate-uses-an-llm-to-prove-a-theorem/">
+<img class="see-also-card-image" src="../../posts/when-a-nobel-laureate-uses-an-llm-to-prove-a-theorem/collab-jammed-sys.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When a Nobel Laureate Uses an LLM to Prove a Theorem: A Turning Point for Mathematical Discovery</h5>
+<div class="see-also-card-subtitle">How AI-assisted proof discovery is reshaping the practice of mathematics</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/leiden-declaration-and-the-governance-of-ai-assisted-mathematics/">
+<img class="see-also-card-image" src="../../posts/leiden-declaration-and-the-governance-of-ai-assisted-mathematics/athena.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Leiden Declaration and the Governance of AI-Assisted Mathematics</h5>
+<div class="see-also-card-subtitle">How mathematicians are answering the new cognitive infrastructure of proof</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/new-cognitive-infrastructure-science/">
+<img class="see-also-card-image" src="../../posts/new-cognitive-infrastructure-science/cognitive-infra.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The New Cognitive Infrastructure of Science</h5>
+<div class="see-also-card-subtitle">AI, mathematical thought, and the rise of automated research</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>John Wiley &amp; Sons. (2026). <strong>A model for the dynamics of rowing boats: Article record and citing literature</strong>. <em>Wiley Online Library</em>. Publisher-displayed count observed on 1 August 2026. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Serveto, S., Barré, S., Kobus, J.-M., &amp; Mariot, J.-P. (2010). <strong>A three-dimensional model of the boat–oars–rower system using ADAMS and LifeMOD commercial software</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 75–88. <a href="https://doi.org/10.1243/17543371JSET42">DOI</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>Mola, A., Ghommem, M., &amp; Hajj, M. R. (2011). <strong>Multi-physics modelling and sensitivity analysis of Olympic rowing boat dynamics</strong>. <em>Sports Engineering, 14</em>, 85–94. <a href="https://doi.org/10.1007/s12283-011-0075-2">DOI</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>Karmanov, S., &amp; Chernousko, F. L. (2015). <strong>Simple modelling of the rowing process</strong>. <em>IFAC-PapersOnLine, 48</em>(1), 829–833. <a href="https://doi.org/10.1016/j.ifacol.2015.05.038">DOI</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>Wychowanski, M., Sługocki, G., Orzechowski, G., Staniak, Z., &amp; Radomski, D. (2018). <strong>Results of single sculling technique analysis using 1D mathematical model</strong>. <em>IFAC-PapersOnLine, 51</em>(2), 879–883. <a href="https://doi.org/10.1016/j.ifacol.2018.04.025">DOI</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>Boillet, A., Haas, B., Samozino, P., Morel, B., Bowen, M., Cohen, C., &amp; Messonnier, L. A. (2022). <strong>Is the most commonly used strategy for the first 1,500 m of a 2,000 m rowing ergometer race the most appropriate?</strong> <em>Frontiers in Physiology, 13</em>, 827875. <a href="https://doi.org/10.3389/fphys.2022.827875">DOI</a><a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>Mpimis, T., et al.&nbsp;(2024). <strong>On-water rowing biomechanical assessment: A systematic scoping review</strong>. <em>Sports Medicine - Open, 10</em>, 101. <a href="https://doi.org/10.1186/s40798-024-00760-2">DOI</a><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">CC BY-NC-ND 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{montano2016,
+  author = {Montano, Antonio},
+  title = {The {Mathematics} {Behind} a {Racing} {Shell}},
+  date = {2016-04-07},
+  url = {https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/},
+  langid = {en},
+  abstract = {A competition rowing boat is not merely a hull acted upon
+    by a prescribed propulsive force. It is an intermittently forced
+    multiphysics system in which the athletes constitute moving internal
+    masses, the oars transmit forces through constrained mechanical
+    linkages, and the hull interacts with a deformable free surface. The
+    observable motion emerges from the coupling of rigid-body dynamics,
+    human kinematics, hydrostatics, viscous resistance, wave generation,
+    and radiation damping. This article reconstructs the mathematical
+    architecture of a computational model developed for racing sculls.
+    It explains how momentum balances for the hull, rowers, and oars
+    reduce to a nonlinear system of ordinary differential equations; how
+    a linearized radiation problem converts free-surface effects into
+    added-mass and damping operators; and why geometric preprocessing,
+    motion reconstruction, hydrodynamic calibration, and time
+    integration are inseparable from the theoretical derivation. The
+    analysis also examines the scientific reception of the work through
+    verified examples of later publications that cited, extended,
+    compared, or simplified the model. Citation counts are treated as
+    evidence of scholarly uptake rather than proof of correctness. The
+    stronger evidence of research depth lies in the explicit
+    assumptions, conservation laws, scale separation, numerical
+    architecture, falsifiable outputs, and acknowledgement of unresolved
+    validation questions. Computational tractability is obtained by
+    restricting the original motion to the hull symmetry plane and
+    replacing fully unsteady viscous free-surface flow with a
+    combination of stationary resistance estimates and linear
+    potential-flow corrections. The resulting system is neither a
+    complete virtual experiment nor an empirical curve fit. It is a
+    reduced multiphysics model intended to retain the mechanisms most
+    relevant to preliminary hull design, crew arrangement, and
+    rowing-style analysis.}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-montano2016" class="csl-entry quarto-appendix-citeas" role="listitem">
+Montano, Antonio. 2016. <span>“The Mathematics Behind a Racing
+Shell.”</span> April 7. <a href="https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/">https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2016-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
