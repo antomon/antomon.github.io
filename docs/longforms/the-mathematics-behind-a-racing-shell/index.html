@@ -8,8 +8,8 @@
 
 <meta name="author" content="Antonio Montano">
 <meta name="dcterms.date" content="2016-04-07">
-<meta name="keywords" content="rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling">
-<meta name="description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+<meta name="keywords" content="rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling, fluid-structure coupling, RANS, volume of fluid, VOF, arbitrary Lagrangian-Eulerian, ALE, moving meshes, staggered coupling, engineering simulation, simulation software, Kimè, hull trim, crew positioning">
+<meta name="description" content="A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD.">
 
 <title>The Mathematics Behind a Racing Shell – Random Bits of Knowledge</title>
 <style>
@@ -151,13 +151,13 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../style.css">
 <meta property="og:title" content="The Mathematics Behind a Racing Shell – Random Bits of Knowledge">
-<meta property="og:description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+<meta property="og:description" content="A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD.">
 <meta property="og:image" content="https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png">
 <meta property="og:site_name" content="Random Bits of Knowledge">
 <meta property="og:image:height" content="1086">
 <meta property="og:image:width" content="1448">
 <meta name="twitter:title" content="The Mathematics Behind a Racing Shell – Random Bits of Knowledge">
-<meta name="twitter:description" content="A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.">
+<meta name="twitter:description" content="A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD.">
 <meta name="twitter:image" content="https://antomon.github.io/longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png">
 <meta name="twitter:image-height" content="1086">
 <meta name="twitter:image-width" content="1448">
@@ -277,7 +277,7 @@ window.Quarto = {
             <p class="subtitle lead">Why rowing-boat simulation is a difficult multiphysics engineering problem</p>
                   <div>
         <div class="description">
-          A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.
+          A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD.
         </div>
       </div>
                           <div class="quarto-categories">
@@ -328,15 +328,17 @@ window.Quarto = {
       <div class="block-title">Abstract</div>
       <p>A competition rowing boat is not merely a hull acted upon by a prescribed propulsive force. It is an intermittently forced multiphysics system in which the athletes constitute moving internal masses, the oars transmit forces through constrained mechanical linkages, and the hull interacts with a deformable free surface. The observable motion emerges from the coupling of rigid-body dynamics, human kinematics, hydrostatics, viscous resistance, wave generation, and radiation damping.</p>
       <p>This article reconstructs the mathematical architecture of a computational model developed for racing sculls. It explains how momentum balances for the hull, rowers, and oars reduce to a nonlinear system of ordinary differential equations; how a linearized radiation problem converts free-surface effects into added-mass and damping operators; and why geometric preprocessing, motion reconstruction, hydrodynamic calibration, and time integration are inseparable from the theoretical derivation.</p>
+      <p>The project was driven by practical engineering questions. We wanted to quantify the performance penalty produced by stroke-induced secondary motions, determine how crew mass, placement, cadence, and force history affected sinkage and trim, and provide a computational tool with which alternative hull and crew configurations could be compared before committing to expensive physical trials. The task was therefore not simply to solve a set of equations, but to decide which physical mechanisms had to be represented at each stage of design.</p>
+      <p>To answer those questions, we developed a hierarchy of models rather than a single solver. A stand-alone reduced simulator combined rigid-body dynamics, measured or prescribed rower motion, real hull geometry, empirical and CFD-calibrated resistance, and a potential-flow approximation of wave radiation. In parallel, a higher-fidelity route coupled the structural dynamics to a finite-volume RANS model with turbulence closure, a Volume-of-Fluid representation of the air–water interface, an ALE moving grid, and staggered fluid–structure exchange. The reduced route enabled repeated design studies; the coupled CFD route resolved the feedback between hull motion, free-surface deformation, pressure loads, and the subsequent motion of the boat.[^the-mathematics-behind-a-racing-shell-moxp3-report]</p>
       <p>The analysis also examines the scientific reception of the work through verified examples of later publications that cited, extended, compared, or simplified the model. Citation counts are treated as evidence of scholarly uptake rather than proof of correctness. The stronger evidence of research depth lies in the explicit assumptions, conservation laws, scale separation, numerical architecture, falsifiable outputs, and acknowledgement of unresolved validation questions.</p>
-      <p>Computational tractability is obtained by restricting the original motion to the hull symmetry plane and replacing fully unsteady viscous free-surface flow with a combination of stationary resistance estimates and linear potential-flow corrections. The resulting system is neither a complete virtual experiment nor an empirical curve fit. It is a reduced multiphysics model intended to retain the mechanisms most relevant to preliminary hull design, crew arrangement, and rowing-style analysis.</p>
+      <p>Computational tractability was obtained by assigning different questions to different model fidelities. The reduced model retained the mechanisms needed for rapid studies of hull design, crew arrangement, trim, and rowing style, whereas the coupled CFD formulation provided a more complete representation of nonlinear free-surface and fluid–structure effects. The resulting research was therefore neither a single empirical curve fit nor an attempt to replace every design calculation with full CFD. Its central modelling contribution was the construction of a physically consistent hierarchy in which high-fidelity calculations, reduced operators, experimental inputs, and engineering decisions could inform one another.</p>
     </div>
   </div>
 
   <div>
     <div class="keywords">
       <div class="block-title">Keywords</div>
-      <p>rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling</p>
+      <p>rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling, fluid-structure coupling, RANS, volume of fluid, VOF, arbitrary Lagrangian-Eulerian, ALE, moving meshes, staggered coupling, engineering simulation, simulation software, Kimè, hull trim, crew positioning</p>
     </div>
   </div>
   
@@ -372,6 +374,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#from-mathematical-model-to-engineering-software" id="toc-from-mathematical-model-to-engineering-software" class="nav-link" data-scroll-target="#from-mathematical-model-to-engineering-software">From mathematical model to engineering software</a>
   <ul class="collapse">
+  <li><a href="#the-high-fidelity-cfd-route-closing-the-fluidstructure-loop" id="toc-the-high-fidelity-cfd-route-closing-the-fluidstructure-loop" class="nav-link" data-scroll-target="#the-high-fidelity-cfd-route-closing-the-fluidstructure-loop">The high-fidelity CFD route: closing the fluid–structure loop</a></li>
   <li><a href="#dynamic-immersion-and-hydrostatic-pressure" id="toc-dynamic-immersion-and-hydrostatic-pressure" class="nav-link" data-scroll-target="#dynamic-immersion-and-hydrostatic-pressure">Dynamic immersion and hydrostatic pressure</a></li>
   <li><a href="#mean-resistance" id="toc-mean-resistance" class="nav-link" data-scroll-target="#mean-resistance">Mean resistance</a></li>
   <li><a href="#boundary-elements-for-the-radiation-problem" id="toc-boundary-elements-for-the-radiation-problem" class="nav-link" data-scroll-target="#boundary-elements-for-the-radiation-problem">Boundary elements for the radiation problem</a></li>
@@ -797,13 +800,21 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <div class="article-standfirst">
-<p>A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow.</p>
+<p>A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD.</p>
 </div>
 <section id="why-a-racing-shell-is-not-a-simple-boat" class="level2">
 <h2 class="anchored" data-anchor-id="why-a-racing-shell-is-not-a-simple-boat">Why a racing shell is not a simple boat</h2>
+<p>The work described here grew out of a particular research environment. It was carried out at <strong>MOX — the Laboratory for Modeling and Scientific Computing of the Department of Mathematics at Politecnico di Milano</strong>. MOX had been established in 2002 to promote mathematical modelling and scientific computing in science and engineering, explicitly combining academic research with collaboration on problems arising from external partners.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> The rowing project was therefore closely aligned with the laboratory’s original purpose: start from a real engineering problem, identify the mechanisms that matter, construct a mathematical model, and turn that model into computational tools that can inform design decisions.</p>
+<p>At the time this research programme began, MOX was led by its founder, <strong>Alfio Quarteroni</strong>, who was the Laboratory’s first head from 2002 to 2013 and later served again from 2018 to 2022.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> Quarteroni’s scientific career has been strongly associated with numerical analysis, mathematical modelling, scientific computing, and computational fluid dynamics. That background is relevant to the character of the work presented here: the objective was not mathematics in isolation, nor CFD used simply to produce detailed flow visualizations, but mathematical and computational modelling directed toward an engineering problem.</p>
+<p>Just as importantly, the rowing programme was not developed inside the university without contact with the people designing and building racing shells. Its industrial counterpart was <strong>Filippi Lido S.r.l.</strong>, the Italian racing-boat manufacturer. Contemporary and later sources document a collaboration between Filippi and Politecnico di Milano/MOX beginning in 2003. World Rowing reports that the collaboration involved software for studying the movement of athletes in Olympic rowing boats, the dynamics of the boat in the water, and methods for capturing athlete motion; it also records that these studies contributed to Filippi’s decisions concerning mould shape and the optimization of boats for different athletes.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>The relationship was therefore substantially more than access to a commercial hull. Publications produced during the research acknowledge Filippi’s technical support and, in particular, the continuous suggestions and encouragement of engineer <strong>Alessandro Placido</strong>; related work explicitly records financial as well as technical support from Filippi.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> A subsequent MOX study described the simulations as being performed <em>within the partnership</em> between the research group and Filippi Lido.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> Filippi’s own later R&amp;D documentation makes the connection still more explicit: it describes <strong>KIME</strong> as software developed at the MOX Laboratory within a research project conducted collaboratively by Politecnico di Milano and Filippi Lido.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>This industrial input mattered scientifically. The questions to be answered were not invented merely because they produced interesting equations. They arose from the behaviour of real racing shells and from practical design choices: how athlete motion changed hull dynamics; how sinkage and trim affected resistance; how crew mass and longitudinal position influenced performance; how much energy was lost through motions that did not contribute to forward progression; and how numerical simulation could help distinguish promising configurations before manufacturing or testing them. The resulting research should therefore be read as an instance of <strong>industry-guided mathematical modelling</strong>: practical knowledge of boats and rowing helped define the questions, while mechanics, numerical analysis, CFD, experimental data, and software engineering were used to turn those questions into computable problems.</p>
 <p>A racing shell appears mechanically elementary: an elongated hull, one or more athletes, and a set of oars. That visual simplicity is deceptive. From the modeller’s perspective, the boat is a rigid-body–fluid system driven by forces that are neither steady nor entirely external. The athletes accelerate a substantial fraction of the system’s mass relative to the hull; the blades enter and leave the water; the wetted surface changes as the boat heaves and pitches; and each stroke generates free-surface waves that remove energy from the mechanical system.</p>
 <p>The research problem is therefore not simply to estimate drag at a prescribed speed. It is to determine the motion of the athlete–oar–hull assembly while the forces acting on that assembly depend on the motion being calculated.</p>
-<p>The model developed in <em>A model for the dynamics of rowing boats</em> represented the complete motion of a scull in its longitudinal symmetry plane. The three retained rigid-body degrees of freedom were horizontal translation, vertical translation, and pitch. Particular attention was given to the smaller oscillatory movements superimposed on the mean forward progression and to the energy radiated through the water by those movements.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>That formulation arose from a concrete design problem. Conventional steady-resistance calculations could estimate the cost of moving a fixed hull at a prescribed velocity, but they could not determine the additional cost caused by the rowing stroke itself. During each stroke, the crew displaced a large internal mass, applied an intermittent force through the oars, changed the boat’s immersion and trim, and generated waves through surge, heave, and pitch. Those motions did not directly advance the boat, yet they consumed energy and changed the hydrodynamic resistance.</p>
+<p>The practical objective was to turn these effects into quantities that a designer or coach could compare: mean and within-stroke velocity, sinkage, pitch, hydrodynamic force and moment, energy radiated by secondary waves, and sensitivity to crew mass, longitudinal position, cadence, and oarlock-force history. Existing rowing models were largely restricted to horizontal acceleration and treated secondary-wave losses empirically or ignored them. We therefore set out to construct a model that retained horizontal motion while adding heave, pitch, real-hull hydrostatics, replaceable rower and force laws, and several possible levels of hydrodynamic fidelity.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p>This was also a software-development problem. The early stand-alone implementation, named <strong>Kimè</strong>, was designed so that rower trajectories, force histories, crew configurations, and hydrodynamic closures could be changed without rederiving the entire mechanical system. The same structural model could also be connected to a more expensive free-surface CFD solver when the assumptions of the reduced hydrodynamic model were considered insufficient.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<p>The model developed in <strong>A model for the dynamics of rowing boats</strong> represented the complete motion of a scull in its longitudinal symmetry plane. The three retained rigid-body degrees of freedom were horizontal translation, vertical translation, and pitch. Particular attention was given to the smaller oscillatory movements superimposed on the mean forward progression and to the energy radiated through the water by those movements.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a></p>
 <div id="fig-the-mathematics-behind-a-racing-shell-original-article-page" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-the-mathematics-behind-a-racing-shell-original-article-page-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -863,8 +874,8 @@ G_Z^h(t)\\
 <p>This compact equation conceals the real research effort. Every term must be derived, reconstructed from measurements, approximated from another physical model, or computed numerically.</p>
 <p>The theoretical difficulty is to close <a href="#eq-the-mathematics-behind-a-racing-shell-compact-model" class="quarto-xref">Equation&nbsp;3</a> without violating mechanics. Forces measured at the oarlocks must be related to reactions at the athletes’ hands, seats, and foot stretchers. Body segments move in a rotating and accelerating frame fixed to the hull, so their accelerations contain translational, tangential, centripetal, and Coriolis terms. Hydrodynamic forces depend on the instantaneous immersion, while wave radiation introduces frequency-dependent inertia and dissipation.</p>
 <p>The engineering difficulty is complementary. A derivation alone does not produce a useful simulator. The hull geometry must be reconstructed and discretized; motion-capture trajectories must be converted into smooth functions that can be differentiated twice; force profiles must be synchronized with the drive and recovery phases; stationary flow calculations must be reduced to reusable resistance coefficients; and the assembled equations must remain stable under repeated time integration.</p>
-<p>A fully resolved unsteady Reynolds-averaged Navier–Stokes computation could represent more flow physics, but its cost would make large design or crew studies impractical. The objective was therefore not simply maximum fidelity. It was a controlled reduction that remained physically interpretable and fast enough for preliminary design. The original study reports computations taking minutes rather than the several hours required by the more complete approaches considered by the authors.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
-<p>The subsequent citation record shows that this formulation entered the scientific literature. On 1 August 2026, the publisher’s page displayed 38 citing works. The number is database- and date-dependent, so it should be understood as evidence of uptake, not a universal or immutable measure of impact.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>A fully resolved unsteady Reynolds-averaged Navier–Stokes computation could represent more flow physics, but its cost would make large design or crew studies impractical. The objective was therefore not simply maximum fidelity. It was a controlled reduction that remained physically interpretable and fast enough for preliminary design. The original study reports computations taking minutes rather than the several hours required by the more complete approaches considered by the authors.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a></p>
+<p>The subsequent literature shows that this formulation entered the scientific discussion in several distinct ways. More informative than a point-in-time citation count is the form of reuse: later work extended the model to additional rigid-body degrees of freedom, compared it with independent multibody formulations, and used the reduced dynamics for sensitivity and uncertainty studies.</p>
 <p>The stronger basis for calling the work serious research is structural. It transformed a familiar sporting gesture into an auditable hierarchy of conservation laws, kinematic inputs, hydrodynamic approximations, numerical operators, and falsifiable outputs. The remainder of this article reconstructs that hierarchy.</p>
 </section>
 <section id="coupled-mechanics-of-hull-rowers-and-oars" class="level2">
@@ -936,7 +947,7 @@ G_Z^h(t)\\
 \right].
 \tag{6}</span></span></p>
 <p>The terms inside the brackets are, respectively, relative acceleration, Coriolis acceleration, tangential acceleration, and centripetal acceleration. Omitting them would amount to treating the hull-fixed frame as inertial, which is inconsistent when heave and pitch are explicitly resolved.</p>
-<p>The original implementation divided each athlete into twelve anatomical masses. Motion-capture data were converted into analytic periodic trajectories for the relevant segment centres, providing <span class="math inline">\mathbf x_{ij}</span>, <span class="math inline">\dot{\mathbf x}_{ij}</span>, and <span class="math inline">\ddot{\mathbf x}_{ij}</span> throughout the stroke.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>The original implementation divided each athlete into twelve anatomical masses. Motion-capture data were converted into analytic periodic trajectories for the relevant segment centres, providing <span class="math inline">\mathbf x_{ij}</span>, <span class="math inline">\dot{\mathbf x}_{ij}</span>, and <span class="math inline">\ddot{\mathbf x}_{ij}</span> throughout the stroke.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
 <p>This conversion is an engineering necessity. Numerical differentiation of noisy marker positions would amplify measurement error, especially in the accelerations that enter <a href="#eq-the-mathematics-behind-a-racing-shell-segment-acceleration" class="quarto-xref">Equation&nbsp;6</a>.</p>
 </section>
 <section id="the-oar-as-a-constrained-force-transformer" class="level3">
@@ -1336,7 +1347,17 @@ i\omega\mathbf M_a(\omega)
 i\omega\mathbf M_a(\omega)
 \tag{21}</span></span></p>
 <p>is the hydrodynamic impedance. Its real part is dissipative; its imaginary part is reactive.</p>
-<p>For real time-domain velocities, the radiated energy over <span class="math inline">[t_0,t_1]</span> is</p>
+<p>The published model reports the energy dissipated by secondary motions over one stroke period as</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-published-dissipated-energy"><span class="math display">
+E_d
+=
+\frac{1}{2}
+\int_{t_0}^{t_0+T}
+\mathbf y^\mathsf T(t)
+\widetilde{\mathbf S}_r
+\mathbf y(t)\,dt.
+\tag{22}</span></span></p>
+<p>The factor <span class="math inline">1/2</span> is retained here because it is the convention used in the published calculation from which the reported dissipation values were obtained.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> If instead <span class="math inline">\mathbf f_{\mathrm{rad}}=-\mathbf S_r\mathbf v</span> is interpreted directly as an instantaneous damping force acting on real velocities, its mechanical work over an interval is</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-real-radiated-energy"><span class="math display">
 E_{\mathrm{rad}}
 =
@@ -1344,7 +1365,8 @@ E_{\mathrm{rad}}
 \mathbf v^\mathsf T(t)
 \mathbf S_r
 \mathbf v(t)\,dt.
-\tag{22}</span></span></p>
+\tag{23}</span></span></p>
+<p>The two expressions should therefore not be interchanged when reproducing numerical values from the original publication: the first records the convention actually used there, while the second states the direct real-time work associated with the damping operator.</p>
 <p>For a single complex harmonic amplitude, the corresponding mean power is</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-complex-radiated-power"><span class="math display">
 \overline P_{\mathrm{rad}}
@@ -1353,7 +1375,7 @@ E_{\mathrm{rad}}
 \widehat{\mathbf v}^{\,*}
 \mathbf S_r(\omega)
 \widehat{\mathbf v},
-\tag{23}</span></span></p>
+\tag{24}</span></span></p>
 <p>where <span class="math inline">*</span> denotes conjugate transpose. The factor <span class="math inline">1/2</span> belongs to the complex-amplitude convention; it does not appear when instantaneous real velocities are integrated directly.</p>
 <p>Reciprocity implies</p>
 <p><span class="math display">
@@ -1373,7 +1395,7 @@ E_{\mathrm{rad}}
 \mathsf M_{\mathrm{mech}}
 +
 \mathbf M_a.
-\tag{24}</span></span></p>
+\tag{25}</span></span></p>
 <p>This distinction is fundamental. The crew changes the physical mass distribution; the fluid adds reactive inertia around that already time-dependent mechanical system.</p>
 </section>
 <section id="frequency-dependence-and-hydrodynamic-memory" class="level3">
@@ -1398,8 +1420,8 @@ e^{-im\omega_0t},
 im\omega_0\mathbf M_a(m\omega_0)
 \right]
 \widehat{\mathbf v}_m.
-\tag{25}</span></span></p>
-<p>The original implementation retained the fundamental mode because it was found to account for most of the secondary-motion dissipation in the studied cases.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> This is a spectral truncation, not a claim that the stroke itself is perfectly sinusoidal.</p>
+\tag{26}</span></span></p>
+<p>The original implementation retained the fundamental mode because it was found to account for most of the secondary-motion dissipation in the studied cases.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> This is a spectral truncation, not a claim that the stroke itself is perfectly sinusoidal.</p>
 <p>For arbitrary motion, the frequency-dependent force can be represented in the time domain as</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-radiation-memory"><span class="math display">
 \mathbf f_{\mathrm{rad}}(t)
@@ -1409,15 +1431,17 @@ im\omega_0\mathbf M_a(m\omega_0)
 \int_0^t
 \mathbf K(t-\tau)
 \dot{\mathbf q}^{\,s}(\tau)\,d\tau,
-\tag{26}</span></span></p>
+\tag{27}</span></span></p>
 <p>where <span class="math inline">\mathbf M_\infty</span> is the infinite-frequency added mass and <span class="math inline">\mathbf K</span> is a retardation kernel. The convolution expresses hydrodynamic memory: waves generated earlier continue to influence the present pressure field.</p>
 <p>The reduction from an unbounded free-surface problem to two <span class="math inline">3\times3</span> matrices is therefore substantial. It is also controlled. The assumptions, boundary conditions, signs, dimensions, symmetry, passivity, and frequency range can all be inspected independently.</p>
 </section>
 </section>
 <section id="from-mathematical-model-to-engineering-software" class="level2">
 <h2 class="anchored" data-anchor-id="from-mathematical-model-to-engineering-software">From mathematical model to engineering software</h2>
-<p>A mathematical model becomes an engineering tool only when every symbolic quantity has been connected to geometry, measured or reconstructed data, numerical algorithms, and reproducible computational procedures.</p>
-<p>The software architecture uses an <strong>offline–online decomposition</strong>. Expensive geometry- and frequency-dependent fluid calculations are performed offline. The repeated online calculation advances only a small nonlinear dynamical system.</p>
+<p>A mathematical model becomes an engineering tool only when every symbolic quantity has been connected to geometry, measured or reconstructed data, numerical algorithms, and a decision that the calculation is intended to support. In this project, the principal modelling decision was not to choose one universally “best” solver. It was to build a hierarchy in which computational cost increased only when the engineering question required additional physical fidelity.</p>
+<p>We needed two capabilities that pulled in opposite directions. For preliminary studies, crew comparisons, and repeated parameter sweeps, the simulation had to run rapidly and accept changes in rower mass, position, cadence, force history, and hull configuration. For detailed hydrodynamic investigation, it had to resolve the moving free surface and the feedback between fluid pressure and boat motion. We therefore developed two complementary routes.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a></p>
+<p>The first was the reduced route represented in <a href="#fig-the-mathematics-behind-a-racing-shell-computational-pipeline" class="quarto-xref">Figure&nbsp;2</a>. Its stand-alone implementation combined the mechanical model with dynamically evaluated hydrostatics, reduced resistance laws, and potential-flow radiation operators. Expensive geometry- and frequency-dependent calculations were performed offline, while the repeated online calculation advanced only a small nonlinear dynamical system.</p>
+<p>The second was a higher-fidelity fluid–structure route in which the same boat dynamics exchanged motion and loads with a finite-volume free-surface CFD solver. This route was more expensive, but it relaxed several assumptions embedded in the reduced radiation model and made the interaction between pressure, free-surface deformation, hull attitude, and moving-grid kinematics explicit.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div id="fig-the-mathematics-behind-a-racing-shell-computational-pipeline" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -1498,6 +1522,44 @@ Figure&nbsp;2: Offline–online decomposition of the rowing-boat simulator. Expe
 </div>
 </div>
 <p><a href="#fig-the-mathematics-behind-a-racing-shell-computational-pipeline" class="quarto-xref">Figure&nbsp;2</a> shows why the method is not a monolithic CFD simulation. Different mechanisms are assigned different computational fidelities and update rates.</p>
+<section id="the-high-fidelity-cfd-route-closing-the-fluidstructure-loop" class="level3">
+<h3 class="anchored" data-anchor-id="the-high-fidelity-cfd-route-closing-the-fluidstructure-loop">The high-fidelity CFD route: closing the fluid–structure loop</h3>
+<p>The reduced model was not the only fluid-dynamic formulation developed during the project. When a more complete description was required, the water and air were represented by Reynolds-averaged Navier–Stokes equations discretized with a finite-volume method. A <span class="math inline">k</span>–<span class="math inline">\varepsilon</span> closure supplied the turbulence variables, while a Volume-of-Fluid field identified the evolving air–water interface. The grid motion was treated in an Arbitrary Lagrangian–Eulerian framework so that the computational domain could follow the hull’s heave and pitch.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<p>Let</p>
+<p><span class="math display">
+\mathbf W
+=
+\begin{bmatrix}
+u &amp; v &amp; w &amp; p &amp; k &amp; \varepsilon &amp; c
+\end{bmatrix}^{\mathsf T}
+</span></p>
+<p>denote the fluid state, where <span class="math inline">u</span>, <span class="math inline">v</span>, and <span class="math inline">w</span> are the velocity components, <span class="math inline">p</span> is pressure, <span class="math inline">k</span> and <span class="math inline">\varepsilon</span> are turbulence variables, and <span class="math inline">c</span> is the Volume-of-Fluid fraction. Let <span class="math inline">\mathbf y</span> denote the boat state and let <span class="math inline">\mathbf x(\mathbf y)</span> describe the moving grid. The coupled problem can be summarized schematically as</p>
+<p><span id="eq-the-mathematics-behind-a-racing-shell-two-way-cfd-coupling"><span class="math display">
+\frac{d}{dt}
+\left[
+\mathcal S(\mathbf x)\mathbf W
+\right]
++
+\mathcal F_c
+\left(
+\mathbf W,
+\mathbf x(\mathbf y),
+\dot{\mathbf x}(\mathbf y)
+\right)
+=
+\mathcal R(\mathbf W),
+\qquad
+\mathsf A(\mathbf y,t)\dot{\mathbf y}
+=
+\mathcal F_s
+\left(
+\mathbf f_{\mathrm{ext}}(\mathbf W)
+\right).
+\tag{28}</span></span></p>
+<p>Here <span class="math inline">\mathcal S</span> represents the finite-volume geometry, <span class="math inline">\mathcal F_c</span> the ALE transport operator, <span class="math inline">\mathcal R</span> the stress, turbulence, and source terms, and <span class="math inline">\mathbf f_{\mathrm{ext}}(\mathbf W)</span> the hydrodynamic loads extracted from the fluid solution. The first equation depends on the hull motion through the moving mesh; the second depends on the fluid through drag, vertical force, and pitch moment. Neither subsystem can therefore be solved once and regarded as an independent input to the other.</p>
+<p>We implemented this interaction through a staggered coupling strategy. The fluid solver received the current hull position, boundary conditions, body forces, and grid motion, and returned velocity and pressure fields. Post-processing converted the pressure and stress distributions into longitudinal force, vertical force, and pitch moment. The structural solver then computed the boat accelerations and updated its motion for the next fluid step. Heave and pitch were communicated through displacement and velocity of the moving grid, while longitudinal motion was introduced through the corresponding acceleration treatment.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a></p>
+<p>This distinction is important when assessing the work as modelling rather than equation manipulation. The task was to define the interface between two independently complex numerical systems: which quantities each solver required, which quantities it returned, how their coordinate systems and signs were reconciled, how the grid followed the structure, and in which order loads and motions were exchanged. The CFD calculation was not performed merely to produce a visualization of the wake. Its practical purpose was to compute the pressure field and free-surface response that generated the boat loads, then feed those loads back into the dynamics that changed the next fluid configuration.</p>
+</section>
 <section id="dynamic-immersion-and-hydrostatic-pressure" class="level3">
 <h3 class="anchored" data-anchor-id="dynamic-immersion-and-hydrostatic-pressure">Dynamic immersion and hydrostatic pressure</h3>
 <p>Let <span class="math inline">\Gamma_h^0</span> be the hull surface in body coordinates. For a point <span class="math inline">\mathbf x=(x,y,z)^\mathsf T</span>, its inertial vertical coordinate is</p>
@@ -1523,7 +1585,7 @@ G_Z^h,\theta
 0,\,
 h_0-G_Z^h+x\sin\theta-z\cos\theta
 \right].
-\tag{27}</span></span></p>
+\tag{29}</span></span></p>
 <p>The positive part ensures that dry points contribute no pressure. If <span class="math inline">\mathbf n(\mathbf x)</span> is the outward hull normal in body coordinates, the hydrostatic force is</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-hydrostatic-force"><span class="math display">
 \mathbf S_h(t)
@@ -1538,7 +1600,7 @@ G_Z^h(t),\theta(t)
 \mathbf Q(\theta(t))
 \mathbf n(\mathbf x)
 \,d\Gamma.
-\tag{28}</span></span></p>
+\tag{30}</span></span></p>
 <p>An analogous moment integral provides the restoring pitch moment. These calculations must remain in the online loop because heave and pitch continually change the submerged part of the hull.</p>
 <p>For a triangular surface mesh with triangle areas <span class="math inline">A_k</span>, normals <span class="math inline">\mathbf n_k</span>, and vertices <span class="math inline">\mathbf x_{k,i}</span>, a nodal quadrature is</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-hydrostatic-quadrature"><span class="math display">
@@ -1554,7 +1616,7 @@ d
 \mathbf x_{k,i};
 G_Z^h,\theta
 \right).
-\tag{29}</span></span></p>
+\tag{31}</span></span></p>
 <p>When a complete planar triangle is submerged, the untruncated pressure depth is affine and the vertex rule is exact. When the waterline cuts an element, the positive-part operation makes the integrand piecewise affine and introduces a localized geometric error. Mesh resolution near the waterline is therefore important even though the hydrostatic equation itself is elementary.</p>
 <p>Geometric preprocessing must establish consistent units, watertight connectivity, outward normals, nondegenerate elements, and sufficient resolution in regions of high curvature. A defect in the surface representation propagates into buoyancy, trim moments, wetted area, projected areas, and resistance.</p>
 </section>
@@ -1582,7 +1644,7 @@ C_f(\mathrm{Re})A_w
 +
 C_{dw}A_Z
 \right],
-\tag{30}</span></span></p>
+\tag{32}</span></span></p>
 <p>where <span class="math inline">V_X</span> is forward speed, <span class="math inline">A_X</span> is the wetted-surface projection normal to the longitudinal axis, <span class="math inline">A_Z</span> is the horizontal projection, <span class="math inline">A_w</span> is wetted area, and <span class="math inline">C_{dX}</span>, <span class="math inline">C_f</span>, and <span class="math inline">C_{dw}</span> are shape, friction, and mean wave-resistance coefficients.</p>
 <p>The Reynolds number is</p>
 <p><span class="math display">
@@ -1599,7 +1661,7 @@ C_f(\mathrm{Re})
 \log_{10}(\mathrm{Re})-2
 \right]^2}.
 </span></p>
-<p>The coefficients were obtained from standard formulae and selected stationary RANS calculations performed on the actual hull geometry.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a> Those calculations do not disappear from the reduced model: their assumptions and numerical errors are compressed into the calibrated coefficients.</p>
+<p>The coefficients were obtained from standard formulae and selected stationary RANS calculations performed on the actual hull geometry.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a> Those calculations do not disappear from the reduced model: their assumptions and numerical errors are compressed into the calibrated coefficients.</p>
 <p>A reproducible calibration may be written abstractly as</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-resistance-calibration"><span class="math display">
 \boldsymbol\beta_D^\star
@@ -1616,13 +1678,13 @@ V_\ell,\zeta_\ell,\theta_\ell;
 -
 R_{\mathrm{RANS},\ell}
 \right]^2,
-\tag{31}</span></span></p>
+\tag{33}</span></span></p>
 <p>where <span class="math inline">\zeta_\ell</span> is sinkage, <span class="math inline">\theta_\ell</span> is trim, <span class="math inline">w_\ell</span> is a weighting factor, and <span class="math inline">\boldsymbol\beta_D</span> contains the reduced-law parameters.</p>
-<p>Equation <a href="#eq-the-mathematics-behind-a-racing-shell-resistance-calibration" class="quarto-xref">Equation&nbsp;31</a> is a transparent formulation of the implied fitting task, not a claim that this exact objective was documented in the original implementation. The publication does not report enough detail about the RANS meshes, turbulence closure, convergence tolerances, or fitting algorithm to reproduce that part of the pipeline exactly.</p>
+<p>Equation <a href="#eq-the-mathematics-behind-a-racing-shell-resistance-calibration" class="quarto-xref">Equation&nbsp;33</a> is a transparent formulation of the implied fitting task, not a claim that this exact objective was documented in the original implementation. The publication does not report enough detail about the RANS meshes, turbulence closure, convergence tolerances, or fitting algorithm to reproduce that part of the pipeline exactly.</p>
 </section>
 <section id="boundary-elements-for-the-radiation-problem" class="level3">
 <h3 class="anchored" data-anchor-id="boundary-elements-for-the-radiation-problem">Boundary elements for the radiation problem</h3>
-<p>Only the potential on the boundaries is needed to construct the added-mass and damping matrices. The radiation problem was therefore solved with a boundary element method using the free-space Green function and curved quadrilateral elements with eight nodes.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p>Only the potential on the boundaries is needed to construct the added-mass and damping matrices. The radiation problem was therefore solved with a boundary element method using the free-space Green function and curved quadrilateral elements with eight nodes.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a></p>
 <p>For the three-dimensional Laplace operator,</p>
 <p><span class="math display">
 G(\mathbf P,\mathbf Q)
@@ -1648,7 +1710,7 @@ G(\mathbf P,\mathbf Q)
 \frac{\partial\phi_s}
 {\partial n_{\mathbf Q}}
 \,d\Gamma_{\mathbf Q}.
-\tag{32}</span></span></p>
+\tag{34}</span></span></p>
 <p>After interpolation and collocation,</p>
 <p><span class="math display">
 \mathbf H\boldsymbol\phi_s
@@ -1671,7 +1733,7 @@ G(\mathbf P,\mathbf Q)
 \boldsymbol\phi_s
 =
 \mathbf G_b\boldsymbol b_s.
-\tag{33}</span></span></p>
+\tag{35}</span></span></p>
 <p>At fixed geometry and frequency, the left-hand matrix is the same for surge, heave, and pitch; only the right-hand side changes. Its factorization can therefore be reused for all three modes.</p>
 <p>A conventional dense boundary element implementation requires approximately <span class="math inline">O(N_B^2)</span> storage and assembly for <span class="math inline">N_B</span> unknowns, while a direct dense factorization requires <span class="math inline">O(N_B^3)</span> arithmetic. These are generic complexity estimates rather than measured timings for the original code. They explain why radiation coefficients are calculated offline and reduced to <span class="math inline">3\times3</span> matrices before the repeated simulations begin.</p>
 </section>
@@ -1689,7 +1751,7 @@ G_X^h&amp;
 G_Z^h&amp;
 \theta
 \end{bmatrix}^{\mathsf T}.
-\tag{34}</span></span></p>
+\tag{36}</span></span></p>
 <p>Without radiation corrections, the first-order system is</p>
 <p><span class="math display">
 \mathbf A(t,\mathbf y)
@@ -1725,7 +1787,7 @@ G_Z^h&amp;
 \mathbf B(t,\mathbf y)
 -
 \widetilde{\mathbf S}_r\mathbf y.
-\tag{35}</span></span></p>
+\tag{37}</span></span></p>
 <p>Only the velocity block is modified because added mass and damping act on generalized accelerations and velocities, not directly on positions.</p>
 <p>At each function evaluation requested by the ODE solver, the program must:</p>
 <ul>
@@ -1734,9 +1796,9 @@ G_Z^h&amp;
 <li>determine immersion and integrate hydrostatic forces and moments;</li>
 <li>evaluate mean resistance;</li>
 <li>add radiation damping and added mass;</li>
-<li>solve the small linear system in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;35</a>.</li>
+<li>solve the small linear system in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;37</a>.</li>
 </ul>
-<p>The original program used an explicit adaptive Runge–Kutta method from the GNU Scientific Library.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> The matrix in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;35</a> should be solved rather than explicitly inverted, both for efficiency and numerical stability.</p>
+<p>The original program used an explicit adaptive Runge–Kutta method from the GNU Scientific Library.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a> The matrix in <a href="#eq-the-mathematics-behind-a-racing-shell-complete-state-system" class="quarto-xref">Equation&nbsp;37</a> should be solved rather than explicitly inverted, both for efficiency and numerical stability.</p>
 <p>Adaptive stepping is valuable because the forcing varies strongly across the drive and recovery phases. It does not eliminate the need for smooth input functions. Discontinuous or insufficiently differentiable force profiles can cause repeated step rejection or inaccurate integration near the catch and finish.</p>
 </section>
 <section id="verification-before-experimental-validation" class="level3">
@@ -1776,7 +1838,7 @@ M_h=0,
 \mathbf S_r
 \right\rVert_F
 },
-\tag{36}</span></span></p>
+\tag{38}</span></span></p>
 <p>where <span class="math inline">\lVert\cdot\rVert_F</span> is the Frobenius norm. These residuals should decrease under refinement.</p>
 <p>Passivity requires that the minimum eigenvalue of the symmetric damping part,</p>
 <p><span class="math display">
@@ -1788,7 +1850,7 @@ M_h=0,
 \right],
 </span></p>
 <p>not be materially negative. Large negative values would indicate an error in signs, normals, boundary treatment, or integration.</p>
-<p>The online radiated energy in <a href="#eq-the-mathematics-behind-a-racing-shell-real-radiated-energy" class="quarto-xref">Equation&nbsp;22</a> must remain nonnegative. The calculation should also be repeated with refined surface meshes, smaller ODE tolerances, frozen rower motion, zero oarlock force, and zero damping. These controlled limits test implementation consistency; they do not by themselves validate the physical model.</p>
+<p>The online radiated energy in <a href="#eq-the-mathematics-behind-a-racing-shell-real-radiated-energy" class="quarto-xref">Equation&nbsp;23</a> must remain nonnegative. The calculation should also be repeated with refined surface meshes, smaller ODE tolerances, frozen rower motion, zero oarlock force, and zero damping. These controlled limits test implementation consistency; they do not by themselves validate the physical model.</p>
 <p>The model’s speed follows directly from this architecture. If <span class="math inline">N_s</span> crew or design configurations are studied, a full approach has the approximate cost</p>
 <p><span class="math display">
 C_{\mathrm{full}}
@@ -1806,16 +1868,68 @@ C_{\mathrm{radiation}}
 +
 N_sC_{\mathrm{ODE}}.
 </span></p>
+<p>The simulator was organized around engineering questions rather than around one preferred numerical method.</p>
+<div id="tbl-the-mathematics-behind-a-racing-shell-practical-objectives" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-the-mathematics-behind-a-racing-shell-practical-objectives-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Engineering question</th>
+<th>Computed quantity</th>
+<th>Intended practical use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>How much useful energy was lost through secondary motion?</td>
+<td>Radiation-damping work, heave and pitch amplitudes, within-stroke surge variation</td>
+<td>Identify whether hull or rowing changes could reduce non-propulsive motion</td>
+</tr>
+<tr class="even">
+<td>How did crew mass and longitudinal position alter the boat?</td>
+<td>Static and dynamic sinkage, trim, wetted area, resistance, and mean speed</td>
+<td>Compare crew placement, loading, and trimming alternatives</td>
+</tr>
+<tr class="odd">
+<td>How did cadence, force history, and athlete motion affect performance?</td>
+<td>Mean speed, acceleration waveform, pitch, heave, and hydrodynamic loads</td>
+<td>Compare stroke patterns and crew configurations</td>
+</tr>
+<tr class="even">
+<td>When was additional hydrodynamic fidelity warranted?</td>
+<td>Comparison, where available, with higher-fidelity coupled calculations and assessment of reduced-model assumptions</td>
+<td>Select the least expensive model consistent with the engineering question</td>
+</tr>
+<tr class="odd">
+<td>Which data had to be supplied or measured?</td>
+<td>Hull geometry, anthropometry, segment trajectories, oarlock forces, and operating conditions</td>
+<td>Separate uncertain inputs from numerical and model-form errors</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-the-mathematics-behind-a-racing-shell-practical-objectives-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Practical questions addressed by the multilevel modelling framework.
+</figcaption>
+</figure>
+</div>
+<p>The central output was therefore not a single “best” velocity curve. It was a reusable mapping from design and rowing inputs to forces, motions, energy losses, and performance indicators. The reduced model provided that mapping at a cost suitable for repeated studies; the coupled CFD model provided a higher-fidelity modelling alternative when nonlinear free-surface and fluid–structure effects became important.</p>
 <p>When <span class="math inline">C_{\mathrm{ODE}}</span> is much smaller than the fluid calculations, the preprocessing cost is amortized across the study. This is what makes systematic comparisons of crew mass, placement, force, and cadence possible.</p>
 </section>
 </section>
 <section id="scientific-influence-validation-limits-and-open-problems" class="level2">
 <h2 class="anchored" data-anchor-id="scientific-influence-validation-limits-and-open-problems">Scientific influence, validation limits, and open problems</h2>
-<p>A direct continuation generalized the mechanics from symmetry-plane motion to all six rigid-body degrees of freedom and introduced a control law to represent the balancing actions of the crew.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> This extension was nontrivial because a narrow shell is unstable in roll and does not possess a useful passive restoring mechanism in yaw.</p>
-<p>Serveto, Barré, Kobus, and Mariot cited the paper while developing an independent multibody model in ADAMS and LifeMOD. Their representation used nineteen body segments and eighteen joints and reported agreement between calculated boat velocity and on-water measurements in the tested setting.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> This is evidence of methodological relevance from a different modelling tradition, not merely continuation by the original authors.</p>
-<p>The reduced dynamics were subsequently used with non-intrusive polynomial chaos methods to investigate sensitivity to rower force, mass, and cadence.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> This use is particularly revealing: the model’s low online cost enabled uncertainty and parameter studies that would have been difficult with a full unsteady flow solver.</p>
-<p>Karmanov and Chernousko cited the work while constructing a deliberately simpler rowing model with periodic oar motion and quadratic resistance.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> Wychowanski and collaborators likewise cited it in a one-dimensional analysis of single-sculling technique.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> These publications place the model at the detailed end of a spectrum ranging from analytically tractable longitudinal descriptions to coupled rigid-body and free-surface simulation.</p>
-<p>The article also appears in later rowing-physiology research on pacing strategy.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> That is weaker evidence of direct methodological influence, but it shows that the work entered an interdisciplinary literature beyond computational fluid dynamics.</p>
+<p>A direct continuation generalized the mechanics from symmetry-plane motion to all six rigid-body degrees of freedom and introduced a control law to represent the balancing actions of the crew.<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a> This extension was nontrivial because a narrow shell is unstable in roll and does not possess a useful passive restoring mechanism in yaw.</p>
+<p>Serveto, Barré, Kobus, and Mariot cited the paper while developing an independent multibody model in ADAMS and LifeMOD. Their representation used nineteen body segments and eighteen joints and reported agreement between calculated boat velocity and on-water measurements in the tested setting.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a> This is evidence of methodological relevance from a different modelling tradition, not merely continuation by the original authors.</p>
+<p>The reduced dynamics were subsequently used with non-intrusive polynomial chaos methods to investigate sensitivity to rower force, mass, and cadence.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a> This use is particularly revealing: the model’s low online cost enabled uncertainty and parameter studies that would have been difficult with a full unsteady flow solver.</p>
+<p>Karmanov and Chernousko cited the work while constructing a deliberately simpler rowing model with periodic oar motion and quadratic resistance.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a> Wychowanski and collaborators likewise cited it in a one-dimensional analysis of single-sculling technique.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a> These publications place the model at the detailed end of a spectrum ranging from analytically tractable longitudinal descriptions to coupled rigid-body and free-surface simulation.</p>
+<p>The article also appears in later rowing-physiology research on pacing strategy.<a href="#fn25" class="footnote-ref" id="fnref25" role="doc-noteref"><sup>25</sup></a> That is weaker evidence of direct methodological influence, but it shows that the work entered an interdisciplinary literature beyond computational fluid dynamics.</p>
 <div id="tbl-the-mathematics-behind-a-racing-shell-citation-roles" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <div aria-describedby="tbl-the-mathematics-behind-a-racing-shell-citation-roles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -1862,14 +1976,14 @@ N_sC_{\mathrm{ODE}}.
 </table>
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-the-mathematics-behind-a-racing-shell-citation-roles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table&nbsp;1: Selected forms of scholarly uptake of the rowing-boat model.
+Table&nbsp;2: Selected forms of scholarly uptake of the rowing-boat model.
 </figcaption>
 </figure>
 </div>
-<p><a href="#tbl-the-mathematics-behind-a-racing-shell-citation-roles" class="quarto-xref">Table&nbsp;1</a> demonstrates why citation context is more informative than citation quantity. It does not establish predictive accuracy. That requires experimental validation.</p>
+<p><a href="#tbl-the-mathematics-behind-a-racing-shell-citation-roles" class="quarto-xref">Table&nbsp;2</a> demonstrates why citation context is more informative than citation quantity. It does not establish predictive accuracy. That requires experimental validation.</p>
 <section id="what-the-original-numerical-evidence-supports" class="level3">
 <h3 class="anchored" data-anchor-id="what-the-original-numerical-evidence-supports">What the original numerical evidence supports</h3>
-<p>The article compared a simulated horizontal-velocity history with measurements from a single scull at 20 strokes per minute. The calculated signal reproduced the main qualitative oscillation, but discrepancies appeared near the beginning of each stroke. Crucial inputs—including athlete characteristics, oarlock force, and exact boat configuration—were not available and had to be reconstructed from plausible values.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<p>The article compared a simulated horizontal-velocity history with measurements from a single scull at 20 strokes per minute. The calculated signal reproduced the main qualitative oscillation, but discrepancies appeared near the beginning of each stroke. Crucial inputs—including athlete characteristics, oarlock force, and exact boat configuration—were not available and had to be reconstructed from plausible values.<a href="#fn26" class="footnote-ref" id="fnref26" role="doc-noteref"><sup>26</sup></a></p>
 <p>This supports qualitative agreement under uncertain inputs. It does not constitute a controlled quantitative validation.</p>
 <p>Given synchronized measured velocities <span class="math inline">V_k</span> and predictions <span class="math inline">\widehat V_k</span>, one useful normalized error is</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-validation-error"><span class="math display">
@@ -1888,7 +2002,7 @@ V_k-\overline V
 \right)^2
 }
 \right]^{1/2},
-\tag{37}</span></span></p>
+\tag{39}</span></span></p>
 <p>where <span class="math inline">\overline V</span> is the measured mean and the denominator is assumed nonzero.</p>
 <p>A separate mean-speed bias is</p>
 <p><span class="math display">
@@ -1919,7 +2033,7 @@ V(t)-\overline V
 dt.
 </span></p>
 <p>These metrics distinguish mean progression, oscillation amplitude, and stroke timing. A model can predict the correct average speed while producing the wrong within-stroke phase, or reproduce a visually plausible waveform while retaining a systematic speed bias.</p>
-<p>The original calculations estimated that secondary-motion dissipation could reach approximately ten per cent of total modelled dissipation in the investigated configurations.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a> If</p>
+<p>The original calculations estimated that secondary-motion dissipation could reach approximately ten per cent of total modelled dissipation in the investigated configurations.<a href="#fn27" class="footnote-ref" id="fnref27" role="doc-noteref"><sup>27</sup></a> If</p>
 <p><span class="math display">
 E_{\mathrm{tot}}
 =
@@ -1939,7 +2053,7 @@ E_{\mathrm{tot}}
 \lesssim0.10
 </span></p>
 <p>for those simulations. It is not a universal ten-per-cent law. The value depends on geometry, cadence, crew motion, and the frequency-dependent damping matrix.</p>
-<p>Two additional examples demonstrated engineering use rather than validation. Under equal peak oarlock force of <span class="math inline">1200\,\mathrm{N}</span> and equal cadence of <span class="math inline">39.5</span> strokes per minute, the simulated <span class="math inline">106\,\mathrm{kg}</span> rower produced greater sinkage, stronger heave, and lower speed than the <span class="math inline">80\,\mathrm{kg}</span> rower. In a quad-scull positioning study, moving the crew <span class="math inline">0.10\,\mathrm{m}</span> aft was predicted to produce advantages of approximately two and four metres relative to the other tested arrangements over a <span class="math inline">2000\,\mathrm{m}</span> race.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+<p>Two additional examples demonstrated engineering use rather than validation. Under equal peak oarlock force of <span class="math inline">1200\,\mathrm{N}</span> and equal cadence of <span class="math inline">39.5</span> strokes per minute, the simulated <span class="math inline">106\,\mathrm{kg}</span> rower produced greater sinkage, stronger heave, and lower speed than the <span class="math inline">80\,\mathrm{kg}</span> rower. In a quad-scull positioning study, moving the crew <span class="math inline">0.10\,\mathrm{m}</span> aft was predicted to produce advantages of approximately two and four metres relative to the other tested arrangements over a <span class="math inline">2000\,\mathrm{m}</span> race.<a href="#fn28" class="footnote-ref" id="fnref28" role="doc-noteref"><sup>28</sup></a></p>
 <p>These results are internally consistent with the model. Greater mass increases displacement and wetted area; longitudinal placement changes trim and hydrodynamic loading. They remain simulation findings until controlled measurements confirm the predicted magnitudes.</p>
 </section>
 <section id="verification-calibration-and-validation-are-different-tasks" class="level3">
@@ -1974,7 +2088,7 @@ E_{\mathrm{tot}}
 \mathbf e_{\mathrm{num}}
 +
 \mathbf e_{\mathrm{model}},
-\tag{38}</span></span></p>
+\tag{40}</span></span></p>
 <p>where the terms represent measurement error, uncertain inputs, numerical error, and model-form discrepancy.</p>
 <p>The measured-versus-computed velocity comparison could not separate these contributions because several important inputs were reconstructed. A mismatch near the catch might arise from the force profile, athlete kinematics, idealized blade model, mean resistance, radiation approximation, or measurement uncertainty.</p>
 <p>Numerical error should be assessed first. If <span class="math inline">Q_h</span>, <span class="math inline">Q_{h/r}</span>, and <span class="math inline">Q_{h/r^2}</span> are values of an output on three successively refined discretizations, an observed order is</p>
@@ -1993,7 +2107,7 @@ Q_{h/r}-Q_{h/r^2}
 }{
 \ln r
 }.
-\tag{39}</span></span></p>
+\tag{41}</span></span></p>
 <p>This test can be applied independently to hydrostatic forces, hydrodynamic coefficients, mean speed, pitch amplitude, and radiated energy. A smooth-looking trajectory is not evidence of convergence.</p>
 <p>Calibration estimates uncertain parameters from designated observations. Validation tests predictions against data that were not used for calibration. Extrapolation asks whether the result remains reliable for different boats, crews, cadences, or water conditions.</p>
 <p>A Bayesian calibration would make parameter uncertainty and identifiability explicit:</p>
@@ -2015,18 +2129,18 @@ p
 \left(
 \boldsymbol\vartheta
 \right).
-\tag{40}</span></span></p>
+\tag{42}</span></span></p>
 <p>A broad or strongly correlated posterior would indicate that the available measurements cannot uniquely determine the model parameters, even when one fitted trajectory appears convincing.</p>
-<p>On-water biomechanical studies are intrinsically difficult because environmental conditions and full-system measurements are harder to control than in ergometer experiments.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a> A decisive validation dataset would synchronize six-degree-of-freedom hull motion, oarlock forces and moments, blade angles and immersion, athlete segment kinematics, seat and foot-stretcher reactions, rigging, hull geometry, water depth, wind, and current.</p>
+<p>On-water biomechanical studies are intrinsically difficult because environmental conditions and full-system measurements are harder to control than in ergometer experiments.<a href="#fn29" class="footnote-ref" id="fnref29" role="doc-noteref"><sup>29</sup></a> A decisive validation dataset would synchronize six-degree-of-freedom hull motion, oarlock forces and moments, blade angles and immersion, athlete segment kinematics, seat and foot-stretcher reactions, rigging, hull geometry, water depth, wind, and current.</p>
 </section>
 <section id="the-limits-are-part-of-the-scientific-result" class="level3">
 <h3 class="anchored" data-anchor-id="the-limits-are-part-of-the-scientific-result">The limits are part of the scientific result</h3>
-<p>The original model is restricted to surge, heave, and pitch. This is defensible for balanced sculling when the main interest lies in the symmetry plane. It cannot predict roll instability, yaw control, asymmetric blade action, or sweep-rowing dynamics. The later six-degree-of-freedom extension demonstrates that the mechanical structure can be generalized, but additional states require a model of active crew control.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<p>The original model is restricted to surge, heave, and pitch. This is defensible for balanced sculling when the main interest lies in the symmetry plane. It cannot predict roll instability, yaw control, asymmetric blade action, or sweep-rowing dynamics. The later six-degree-of-freedom extension demonstrates that the mechanical structure can be generalized, but additional states require a model of active crew control.<a href="#fn30" class="footnote-ref" id="fnref30" role="doc-noteref"><sup>30</sup></a></p>
 <p>The radiation model assumes small-amplitude linear waves around a fixed mean wetted geometry. It omits nonlinear free-surface deformation, repeated wetting and drying in the radiation calculation, breaking waves, viscous secondary-flow losses, and nonlinear interaction between mean speed and oscillatory radiation.</p>
-<p>The fundamental-frequency approximation neglects the distinct hydrodynamic impedance experienced by higher stroke harmonics. A multi-frequency implementation or the memory formulation in <a href="#eq-the-mathematics-behind-a-racing-shell-radiation-memory" class="quarto-xref">Equation&nbsp;26</a> would be more appropriate when the force and motion histories contain substantial high-frequency content.</p>
+<p>The fundamental-frequency approximation neglects the distinct hydrodynamic impedance experienced by higher stroke harmonics. A multi-frequency implementation or the memory formulation in <a href="#eq-the-mathematics-behind-a-racing-shell-radiation-memory" class="quarto-xref">Equation&nbsp;27</a> would be more appropriate when the force and motion histories contain substantial high-frequency content.</p>
 <p>The oar is a rigid massless lever. Shaft deflection, blade slip, ventilation, vortex shedding, and three-dimensional blade trajectories are not resolved. Later blade-focused studies have shown that these effects can themselves constitute substantial fluid-mechanical problems.</p>
 <p>The athlete follows prescribed kinematics and force histories. The model predicts what the boat does in response to an imposed stroke; it does not predict how the athlete adapts technique to altered rigging, fatigue, instability, or hydrodynamic feedback. The human is represented principally as a moving mass and forcing subsystem, not as a closed-loop neuromuscular controller.</p>
-<p>Mean resistance is partly calibrated from stationary calculations and empirical formulae. Changing hull geometry or moving far outside the calibrated range of speed, sinkage, trim, and Reynolds number is extrapolation. A reduced model cannot acquire validity outside its training envelope merely because the ODE solver continues to return numbers.</p>
+<p>Mean resistance is partly calibrated from stationary calculations and empirical formulae. Changing hull geometry or moving far outside the calibrated range of speed, sinkage, trim, and Reynolds number is extrapolation. A reduced model cannot acquire validity outside its calibrated operating envelope merely because the ODE solver continues to return numbers.</p>
 </section>
 <section id="open-extensions" class="level3">
 <h3 class="anchored">Open extensions</h3>
@@ -2044,7 +2158,7 @@ p
 -\mathbf M_\infty\dot{\mathbf v}
 -
 \mathbf C_f\mathbf z_f.
-\tag{41}</span></span></p>
+\tag{43}</span></span></p>
 <p>The matrices would be fitted so that the resulting state-space impedance matches <span class="math inline">\mathbf Z_h(\omega)</span> over the relevant cadence and harmonic range. This retains an ODE formulation while representing hydrodynamic memory.</p>
 <p>A more complete blade closure would have the form</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-blade-operator"><span class="math display">
@@ -2058,7 +2172,7 @@ p
 \dot\alpha_b,
 \mathcal W
 \right),
-\tag{42}</span></span></p>
+\tag{44}</span></span></p>
 <p>where <span class="math inline">\mathbf U_{\mathrm{rel}}</span> is blade velocity relative to the local water, <span class="math inline">\alpha_b</span> is blade orientation, and <span class="math inline">\mathcal W</span> represents the disturbed wake. The central engineering challenge would be to preserve sufficient fidelity without making every design evaluation as expensive as a full unsteady CFD calculation.</p>
 <p>The reduced solver is also suitable for robust rather than purely deterministic design. Let <span class="math inline">\boldsymbol\chi</span> contain hull, rigging, crew-position, and stroke variables, while <span class="math inline">\boldsymbol\zeta</span> represents uncertain athlete and environmental inputs. A robust objective could be</p>
 <p><span id="eq-the-mathematics-behind-a-racing-shell-robust-objective"><span class="math display">
@@ -2077,7 +2191,7 @@ J(\boldsymbol\chi,\boldsymbol\zeta)
 \right]
 }
 \right\},
-\tag{43}</span></span></p>
+\tag{45}</span></span></p>
 <p>where <span class="math inline">\mathcal C</span> is the feasible design set and <span class="math inline">\gamma_R</span> penalizes sensitivity to uncertainty.</p>
 <p>A possible performance functional is</p>
 <p><span class="math display">
@@ -2098,8 +2212,9 @@ w_a
 \right\rVert^2dt,
 </span></p>
 <p>where <span class="math inline">T_{2000}</span> is predicted race time and the nonnegative weights balance speed, energy loss, pitch, and acceleration.</p>
-<p>The final assessment should therefore be measured. The work established a coherent and computationally efficient framework for studying the coupled dynamics of racing shells, athletes, oars, and free-surface radiation. It provided enough structure to support design comparisons, three-dimensional extensions, independent multibody studies, and uncertainty analysis.</p>
-<p>It did not establish a universally validated digital twin of rowing. Its scientific value lies elsewhere: in making the assumptions explicit, deriving their consequences, reducing the coupled problem to computable operators, providing internal mathematical checks, producing falsifiable predictions, and exposing where further experiments and higher-fidelity models are required. That is the substance of serious research.</p>
+<p>The final assessment should therefore be measured. The work established a coherent and computationally efficient framework for studying the coupled dynamics of racing shells, athletes, oars, and a deformable free surface. It provided enough structure to support design comparisons, alternative crew configurations, higher-dimensional extensions, independent multibody studies, sensitivity analysis, and progressively more complete fluid models.</p>
+<p>The contribution was not limited to the derivation of equations. It included defining the physical system and its boundaries; identifying which quantities had to be measured, prescribed, or computed; reconstructing differentiable athlete kinematics; translating real hull geometry into hydrostatic and hydrodynamic operators; designing a stand-alone simulation code; coupling structural dynamics to a moving-grid RANS–VOF solver; and constructing a hierarchy in which expensive CFD and rapid reduced simulations served different stages of the engineering process.</p>
+<p>The work did not establish a universally validated digital twin of rowing. It did something more fundamental for that stage of the research: it converted a loosely defined sporting problem into interacting mechanical, biomechanical, geometric, and fluid-dynamic subsystems with explicit interfaces and testable outputs. Its scientific value lay in the mathematics, but its modelling value lay in deciding what to model, at which fidelity, with which data, and for which practical decision.</p>
 
 
 <section class="see-also-inline-block" style="margin-top:2.75rem;">
@@ -2418,25 +2533,36 @@ w_a
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
-<li id="fn1"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3"><p>John Wiley &amp; Sons. (2026). <strong>A model for the dynamics of rowing boats: Article record and citing literature</strong>. <em>Wiley Online Library</em>. Publisher-displayed count observed on 1 August 2026. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn5"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn6"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn7"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn8"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn9"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn10"><p>Serveto, S., Barré, S., Kobus, J.-M., &amp; Mariot, J.-P. (2010). <strong>A three-dimensional model of the boat–oars–rower system using ADAMS and LifeMOD commercial software</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 75–88. <a href="https://doi.org/10.1243/17543371JSET42">DOI</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn11"><p>Mola, A., Ghommem, M., &amp; Hajj, M. R. (2011). <strong>Multi-physics modelling and sensitivity analysis of Olympic rowing boat dynamics</strong>. <em>Sports Engineering, 14</em>, 85–94. <a href="https://doi.org/10.1007/s12283-011-0075-2">DOI</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn12"><p>Karmanov, S., &amp; Chernousko, F. L. (2015). <strong>Simple modelling of the rowing process</strong>. <em>IFAC-PapersOnLine, 48</em>(1), 829–833. <a href="https://doi.org/10.1016/j.ifacol.2015.05.038">DOI</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn13"><p>Wychowanski, M., Sługocki, G., Orzechowski, G., Staniak, Z., &amp; Radomski, D. (2018). <strong>Results of single sculling technique analysis using 1D mathematical model</strong>. <em>IFAC-PapersOnLine, 51</em>(2), 879–883. <a href="https://doi.org/10.1016/j.ifacol.2018.04.025">DOI</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn14"><p>Boillet, A., Haas, B., Samozino, P., Morel, B., Bowen, M., Cohen, C., &amp; Messonnier, L. A. (2022). <strong>Is the most commonly used strategy for the first 1,500 m of a 2,000 m rowing ergometer race the most appropriate?</strong> <em>Frontiers in Physiology, 13</em>, 827875. <a href="https://doi.org/10.3389/fphys.2022.827875">DOI</a><a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn15"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn16"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1"><p>MOX Laboratory. (n.d.). <strong>Who We Are</strong>. <em>Department of Mathematics, Politecnico di Milano</em>. <a href="https://mox.polimi.it/">Official MOX page</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>MOX Laboratory. (n.d.). <strong>Alfio Quarteroni</strong>. <em>Department of Mathematics, Politecnico di Milano</em>. <a href="https://mox.polimi.it/people/alfio-quarteroni/">Official profile</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>World Rowing. (2014). <strong>Filippi boat ready for 2013 Parmigiani Spirit Award winner</strong>. <em>World Rowing</em>. <a href="https://www.worldrowing.com/2014/03/18/filippi-boat-ready-for-2013-parmigiani-spirit-award-winner/">Article</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Mola, A., Formaggia, L., &amp; Miglio, E. (2007). <strong>Simulation of the dynamics of an Olympic rowing boat</strong>. <em>Communications to SIMAI Congress, 2</em>. <a href="https://doi.org/10.1685/CSC06174">DOI</a> Formaggia, L., Miglio, E., Mola, A., &amp; Scotti, A. (2009). <strong>Numerical simulation of the dynamics of boats by a variational inequality approach</strong>. <em>Variational Analysis and Aerospace Engineering</em>. <a href="https://doi.org/10.1007/978-0-387-95857-6_12">DOI</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Filippi Lido S.r.l. (n.d.). <strong>Canottaggio 2.0</strong>. <em>Filippi Boats / Regione Toscana</em>. <a href="https://www.filippiboats.com/application/files/7715/3986/9735/PRESENTAZIONE_CANOTTAGGIO_2.0-logocorretto.pdf">Official project presentation</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., &amp; Pandini, S. (2004). <strong>Modello dinamico di una imbarcazione da canottaggio</strong>. <em>MOX Report MOXP3, Politecnico di Milano</em>. <a href="https://mox.polimi.it/reports-and-books/publication-results/?id=91">Official record</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., &amp; Pandini, S. (2004). <strong>Modello dinamico di una imbarcazione da canottaggio</strong>. <em>MOX Report MOXP3, Politecnico di Milano</em>. <a href="https://mox.polimi.it/reports-and-books/publication-results/?id=91">Official record</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., &amp; Pandini, S. (2004). <strong>Modello dinamico di una imbarcazione da canottaggio</strong>. <em>MOX Report MOXP3, Politecnico di Milano</em>. <a href="https://mox.polimi.it/reports-and-books/publication-results/?id=91">Official record</a><a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., &amp; Pandini, S. (2004). <strong>Modello dinamico di una imbarcazione da canottaggio</strong>. <em>MOX Report MOXP3, Politecnico di Milano</em>. <a href="https://mox.polimi.it/reports-and-books/publication-results/?id=91">Official record</a><a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., &amp; Pandini, S. (2004). <strong>Modello dinamico di una imbarcazione da canottaggio</strong>. <em>MOX Report MOXP3, Politecnico di Milano</em>. <a href="https://mox.polimi.it/reports-and-books/publication-results/?id=91">Official record</a><a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn17"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn18"><p>Mpimis, T., et al.&nbsp;(2024). <strong>On-water rowing biomechanical assessment: A systematic scoping review</strong>. <em>Sports Medicine - Open, 10</em>, 101. <a href="https://doi.org/10.1186/s40798-024-00760-2">DOI</a><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn19"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>Serveto, S., Barré, S., Kobus, J.-M., &amp; Mariot, J.-P. (2010). <strong>A three-dimensional model of the boat–oars–rower system using ADAMS and LifeMOD commercial software</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 75–88. <a href="https://doi.org/10.1243/17543371JSET42">DOI</a><a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>Mola, A., Ghommem, M., &amp; Hajj, M. R. (2011). <strong>Multi-physics modelling and sensitivity analysis of Olympic rowing boat dynamics</strong>. <em>Sports Engineering, 14</em>, 85–94. <a href="https://doi.org/10.1007/s12283-011-0075-2">DOI</a><a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>Karmanov, S., &amp; Chernousko, F. L. (2015). <strong>Simple modelling of the rowing process</strong>. <em>IFAC-PapersOnLine, 48</em>(1), 829–833. <a href="https://doi.org/10.1016/j.ifacol.2015.05.038">DOI</a><a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn24"><p>Wychowanski, M., Sługocki, G., Orzechowski, G., Staniak, Z., &amp; Radomski, D. (2018). <strong>Results of single sculling technique analysis using 1D mathematical model</strong>. <em>IFAC-PapersOnLine, 51</em>(2), 879–883. <a href="https://doi.org/10.1016/j.ifacol.2018.04.025">DOI</a><a href="#fnref24" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn25"><p>Boillet, A., Haas, B., Samozino, P., Morel, B., Bowen, M., Cohen, C., &amp; Messonnier, L. A. (2022). <strong>Is the most commonly used strategy for the first 1,500 m of a 2,000 m rowing ergometer race the most appropriate?</strong> <em>Frontiers in Physiology, 13</em>, 827875. <a href="https://doi.org/10.3389/fphys.2022.827875">DOI</a><a href="#fnref25" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn26"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref26" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn27"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref27" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn28"><p>Formaggia, L., Miglio, E., Mola, A., &amp; Montano, A. (2009). <strong>A model for the dynamics of rowing boats</strong>. <em>International Journal for Numerical Methods in Fluids, 61</em>(2), 119–143. <a href="https://doi.org/10.1002/fld.1940">DOI</a><a href="#fnref28" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn29"><p>Mpimis, T., et al.&nbsp;(2024). <strong>On-water rowing biomechanical assessment: A systematic scoping review</strong>. <em>Sports Medicine - Open, 10</em>, 101. <a href="https://doi.org/10.1186/s40798-024-00760-2">DOI</a><a href="#fnref29" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn30"><p>Formaggia, L., Mola, A., Parolini, N., &amp; Pischiutta, M. (2010). <strong>A three-dimensional model for the dynamics and hydrodynamics of rowing boats</strong>. <em>Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224</em>(1), 51–61. <a href="https://doi.org/10.1243/17543371JSET46">DOI</a><a href="#fnref30" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">CC BY-NC-ND 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{montano2016,
   author = {Montano, Antonio},
@@ -2459,22 +2585,46 @@ w_a
     added-mass and damping operators; and why geometric preprocessing,
     motion reconstruction, hydrodynamic calibration, and time
     integration are inseparable from the theoretical derivation. The
-    analysis also examines the scientific reception of the work through
-    verified examples of later publications that cited, extended,
-    compared, or simplified the model. Citation counts are treated as
-    evidence of scholarly uptake rather than proof of correctness. The
-    stronger evidence of research depth lies in the explicit
-    assumptions, conservation laws, scale separation, numerical
+    project was driven by practical engineering questions. We wanted to
+    quantify the performance penalty produced by stroke-induced
+    secondary motions, determine how crew mass, placement, cadence, and
+    force history affected sinkage and trim, and provide a computational
+    tool with which alternative hull and crew configurations could be
+    compared before committing to expensive physical trials. The task
+    was therefore not simply to solve a set of equations, but to decide
+    which physical mechanisms had to be represented at each stage of
+    design. To answer those questions, we developed a hierarchy of
+    models rather than a single solver. A stand-alone reduced simulator
+    combined rigid-body dynamics, measured or prescribed rower motion,
+    real hull geometry, empirical and CFD-calibrated resistance, and a
+    potential-flow approximation of wave radiation. In parallel, a
+    higher-fidelity route coupled the structural dynamics to a
+    finite-volume RANS model with turbulence closure, a Volume-of-Fluid
+    representation of the air–water interface, an ALE moving grid, and
+    staggered fluid–structure exchange. The reduced route enabled
+    repeated design studies; the coupled CFD route resolved the feedback
+    between hull motion, free-surface deformation, pressure loads, and
+    the subsequent motion of the
+    boat.{[}\^{}the-mathematics-behind-a-racing-shell-moxp3-report{]}
+    The analysis also examines the scientific reception of the work
+    through verified examples of later publications that cited,
+    extended, compared, or simplified the model. Citation counts are
+    treated as evidence of scholarly uptake rather than proof of
+    correctness. The stronger evidence of research depth lies in the
+    explicit assumptions, conservation laws, scale separation, numerical
     architecture, falsifiable outputs, and acknowledgement of unresolved
-    validation questions. Computational tractability is obtained by
-    restricting the original motion to the hull symmetry plane and
-    replacing fully unsteady viscous free-surface flow with a
-    combination of stationary resistance estimates and linear
-    potential-flow corrections. The resulting system is neither a
-    complete virtual experiment nor an empirical curve fit. It is a
-    reduced multiphysics model intended to retain the mechanisms most
-    relevant to preliminary hull design, crew arrangement, and
-    rowing-style analysis.}
+    validation questions. Computational tractability was obtained by
+    assigning different questions to different model fidelities. The
+    reduced model retained the mechanisms needed for rapid studies of
+    hull design, crew arrangement, trim, and rowing style, whereas the
+    coupled CFD formulation provided a more complete representation of
+    nonlinear free-surface and fluid–structure effects. The resulting
+    research was therefore neither a single empirical curve fit nor an
+    attempt to replace every design calculation with full CFD. Its
+    central modelling contribution was the construction of a physically
+    consistent hierarchy in which high-fidelity calculations, reduced
+    operators, experimental inputs, and engineering decisions could
+    inform one another.}
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-montano2016" class="csl-entry quarto-appendix-citeas" role="listitem">
 Montano, Antonio. 2016. <span>“The Mathematics Behind a Racing

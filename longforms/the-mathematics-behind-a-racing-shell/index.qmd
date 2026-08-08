@@ -1,19 +1,23 @@
 ---
 title: "The Mathematics Behind a Racing Shell"
 subtitle: "Why rowing-boat simulation is a difficult multiphysics engineering problem"
-description: "A mathematical commentary on the coupled dynamics of athletes, oars, racing shells, and free-surface flow."
+description: "A retrospective on the engineering and mathematical development of a multilevel model for racing-shell dynamics, from a stand-alone reduced simulator to coupled free-surface CFD."
 abstract: |
     A competition rowing boat is not merely a hull acted upon by a prescribed propulsive force. It is an intermittently forced multiphysics system in which the athletes constitute moving internal masses, the oars transmit forces through constrained mechanical linkages, and the hull interacts with a deformable free surface. The observable motion emerges from the coupling of rigid-body dynamics, human kinematics, hydrostatics, viscous resistance, wave generation, and radiation damping.
 
     This article reconstructs the mathematical architecture of a computational model developed for racing sculls. It explains how momentum balances for the hull, rowers, and oars reduce to a nonlinear system of ordinary differential equations; how a linearized radiation problem converts free-surface effects into added-mass and damping operators; and why geometric preprocessing, motion reconstruction, hydrodynamic calibration, and time integration are inseparable from the theoretical derivation.
 
+    The project was driven by practical engineering questions. We wanted to quantify the performance penalty produced by stroke-induced secondary motions, determine how crew mass, placement, cadence, and force history affected sinkage and trim, and provide a computational tool with which alternative hull and crew configurations could be compared before committing to expensive physical trials. The task was therefore not simply to solve a set of equations, but to decide which physical mechanisms had to be represented at each stage of design.
+
+    To answer those questions, we developed a hierarchy of models rather than a single solver. A stand-alone reduced simulator combined rigid-body dynamics, measured or prescribed rower motion, real hull geometry, empirical and CFD-calibrated resistance, and a potential-flow approximation of wave radiation. In parallel, a higher-fidelity route coupled the structural dynamics to a finite-volume RANS model with turbulence closure, a Volume-of-Fluid representation of the air–water interface, an ALE moving grid, and staggered fluid–structure exchange. The reduced route enabled repeated design studies; the coupled CFD route resolved the feedback between hull motion, free-surface deformation, pressure loads, and the subsequent motion of the boat.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
     The analysis also examines the scientific reception of the work through verified examples of later publications that cited, extended, compared, or simplified the model. Citation counts are treated as evidence of scholarly uptake rather than proof of correctness. The stronger evidence of research depth lies in the explicit assumptions, conservation laws, scale separation, numerical architecture, falsifiable outputs, and acknowledgement of unresolved validation questions.
 
-    Computational tractability is obtained by restricting the original motion to the hull symmetry plane and replacing fully unsteady viscous free-surface flow with a combination of stationary resistance estimates and linear potential-flow corrections. The resulting system is neither a complete virtual experiment nor an empirical curve fit. It is a reduced multiphysics model intended to retain the mechanisms most relevant to preliminary hull design, crew arrangement, and rowing-style analysis.
+    Computational tractability was obtained by assigning different questions to different model fidelities. The reduced model retained the mechanisms needed for rapid studies of hull design, crew arrangement, trim, and rowing style, whereas the coupled CFD formulation provided a more complete representation of nonlinear free-surface and fluid–structure effects. The resulting research was therefore neither a single empirical curve fit nor an attempt to replace every design calculation with full CFD. Its central modelling contribution was the construction of a physically consistent hierarchy in which high-fidelity calculations, reduced operators, experimental inputs, and engineering decisions could inform one another.
 date: "2016-04-07"
 date-modified: "2024-12-03"
-categories: [essay, mathematics, professional and research work, software development, "🇬🇧"]
-keywords: rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling
+categories: [essay, mathematics, professional and research work, software development, 🇬🇧]
+keywords: rowing dynamics, computational fluid dynamics, fluid-structure interaction, rigid-body mechanics, free-surface flow, added mass, radiation damping, reduced-order modelling, rowing, sculling, sweep rowing, rowing biomechanics, rowing technique, stroke cycle, rowing performance, sports engineering, athlete kinematics, oarlock forces, blade hydrodynamics, propulsive efficiency, stroke rate, drive phase, recovery phase, boat acceleration, hull resistance, wave resistance, rowing physiology, pacing strategy, race analysis, crew selection, rigging optimization, sports technology, performance modelling, fluid-structure coupling, RANS, volume of fluid, VOF, arbitrary Lagrangian-Eulerian, ALE, moving meshes, staggered coupling, engineering simulation, simulation software, Kimè, hull trim, crew positioning
 audiences: researcher
 difficulty: research
 image: "the-mathematics-behind-a-racing-shell.png"
@@ -21,11 +25,27 @@ image: "the-mathematics-behind-a-racing-shell.png"
 
 ## Why a racing shell is not a simple boat
 
+The work described here grew out of a particular research environment. It was carried out at **MOX — the Laboratory for Modeling and Scientific Computing of the Department of Mathematics at Politecnico di Milano**. MOX had been established in 2002 to promote mathematical modelling and scientific computing in science and engineering, explicitly combining academic research with collaboration on problems arising from external partners.[^the-mathematics-behind-a-racing-shell-mox-context] The rowing project was therefore closely aligned with the laboratory's original purpose: start from a real engineering problem, identify the mechanisms that matter, construct a mathematical model, and turn that model into computational tools that can inform design decisions.
+
+At the time this research programme began, MOX was led by its founder, **Alfio Quarteroni**, who was the Laboratory's first head from 2002 to 2013 and later served again from 2018 to 2022.[^the-mathematics-behind-a-racing-shell-quarteroni-mox] Quarteroni's scientific career has been strongly associated with numerical analysis, mathematical modelling, scientific computing, and computational fluid dynamics. That background is relevant to the character of the work presented here: the objective was not mathematics in isolation, nor CFD used simply to produce detailed flow visualizations, but mathematical and computational modelling directed toward an engineering problem.
+
+Just as importantly, the rowing programme was not developed inside the university without contact with the people designing and building racing shells. Its industrial counterpart was **Filippi Lido S.r.l.**, the Italian racing-boat manufacturer. Contemporary and later sources document a collaboration between Filippi and Politecnico di Milano/MOX beginning in 2003. World Rowing reports that the collaboration involved software for studying the movement of athletes in Olympic rowing boats, the dynamics of the boat in the water, and methods for capturing athlete motion; it also records that these studies contributed to Filippi's decisions concerning mould shape and the optimization of boats for different athletes.[^the-mathematics-behind-a-racing-shell-filippi-world-rowing]
+
+The relationship was therefore substantially more than access to a commercial hull. Publications produced during the research acknowledge Filippi's technical support and, in particular, the continuous suggestions and encouragement of engineer **Alessandro Placido**; related work explicitly records financial as well as technical support from Filippi.[^the-mathematics-behind-a-racing-shell-filippi-technical-support] A subsequent MOX study described the simulations as being performed *within the partnership* between the research group and Filippi Lido.[^the-mathematics-behind-a-racing-shell-filippi-partnership] Filippi's own later R&D documentation makes the connection still more explicit: it describes **KIME** as software developed at the MOX Laboratory within a research project conducted collaboratively by Politecnico di Milano and Filippi Lido.[^the-mathematics-behind-a-racing-shell-filippi-kime]
+
+This industrial input mattered scientifically. The questions to be answered were not invented merely because they produced interesting equations. They arose from the behaviour of real racing shells and from practical design choices: how athlete motion changed hull dynamics; how sinkage and trim affected resistance; how crew mass and longitudinal position influenced performance; how much energy was lost through motions that did not contribute to forward progression; and how numerical simulation could help distinguish promising configurations before manufacturing or testing them. The resulting research should therefore be read as an instance of **industry-guided mathematical modelling**: practical knowledge of boats and rowing helped define the questions, while mechanics, numerical analysis, CFD, experimental data, and software engineering were used to turn those questions into computable problems.
+
 A racing shell appears mechanically elementary: an elongated hull, one or more athletes, and a set of oars. That visual simplicity is deceptive. From the modeller’s perspective, the boat is a rigid-body–fluid system driven by forces that are neither steady nor entirely external. The athletes accelerate a substantial fraction of the system’s mass relative to the hull; the blades enter and leave the water; the wetted surface changes as the boat heaves and pitches; and each stroke generates free-surface waves that remove energy from the mechanical system.
 
 The research problem is therefore not simply to estimate drag at a prescribed speed. It is to determine the motion of the athlete–oar–hull assembly while the forces acting on that assembly depend on the motion being calculated.
 
-The model developed in *A model for the dynamics of rowing boats* represented the complete motion of a scull in its longitudinal symmetry plane. The three retained rigid-body degrees of freedom were horizontal translation, vertical translation, and pitch. Particular attention was given to the smaller oscillatory movements superimposed on the mean forward progression and to the energy radiated through the water by those movements.[^the-mathematics-behind-a-racing-shell-original-paper]
+That formulation arose from a concrete design problem. Conventional steady-resistance calculations could estimate the cost of moving a fixed hull at a prescribed velocity, but they could not determine the additional cost caused by the rowing stroke itself. During each stroke, the crew displaced a large internal mass, applied an intermittent force through the oars, changed the boat’s immersion and trim, and generated waves through surge, heave, and pitch. Those motions did not directly advance the boat, yet they consumed energy and changed the hydrodynamic resistance.
+
+The practical objective was to turn these effects into quantities that a designer or coach could compare: mean and within-stroke velocity, sinkage, pitch, hydrodynamic force and moment, energy radiated by secondary waves, and sensitivity to crew mass, longitudinal position, cadence, and oarlock-force history. Existing rowing models were largely restricted to horizontal acceleration and treated secondary-wave losses empirically or ignored them. We therefore set out to construct a model that retained horizontal motion while adding heave, pitch, real-hull hydrostatics, replaceable rower and force laws, and several possible levels of hydrodynamic fidelity.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
+This was also a software-development problem. The early stand-alone implementation, named **Kimè**, was designed so that rower trajectories, force histories, crew configurations, and hydrodynamic closures could be changed without rederiving the entire mechanical system. The same structural model could also be connected to a more expensive free-surface CFD solver when the assumptions of the reduced hydrodynamic model were considered insufficient.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
+The model developed in **A model for the dynamics of rowing boats** represented the complete motion of a scull in its longitudinal symmetry plane. The three retained rigid-body degrees of freedom were horizontal translation, vertical translation, and pitch. Particular attention was given to the smaller oscillatory movements superimposed on the mean forward progression and to the energy radiated through the water by those movements.[^the-mathematics-behind-a-racing-shell-original-paper]
 
 ![First page of *A model for the dynamics of rowing boats*, showing the title, authors, journal information, abstract, publication dates, and keywords.](article-1st-page.png){#fig-the-mathematics-behind-a-racing-shell-original-article-page fig-align="center" width="85%"}
 
@@ -93,7 +113,7 @@ The engineering difficulty is complementary. A derivation alone does not produce
 
 A fully resolved unsteady Reynolds-averaged Navier–Stokes computation could represent more flow physics, but its cost would make large design or crew studies impractical. The objective was therefore not simply maximum fidelity. It was a controlled reduction that remained physically interpretable and fast enough for preliminary design. The original study reports computations taking minutes rather than the several hours required by the more complete approaches considered by the authors.[^the-mathematics-behind-a-racing-shell-original-paper]
 
-The subsequent citation record shows that this formulation entered the scientific literature. On 1 August 2026, the publisher’s page displayed 38 citing works. The number is database- and date-dependent, so it should be understood as evidence of uptake, not a universal or immutable measure of impact.[^the-mathematics-behind-a-racing-shell-citation-record]
+The subsequent literature shows that this formulation entered the scientific discussion in several distinct ways. More informative than a point-in-time citation count is the form of reuse: later work extended the model to additional rigid-body degrees of freedom, compared it with independent multibody formulations, and used the reduced dynamics for sensitivity and uncertainty studies.
 
 The stronger basis for calling the work serious research is structural. It transformed a familiar sporting gesture into an auditable hierarchy of conservation laws, kinematic inputs, hydrodynamic approximations, numerical operators, and falsifiable outputs. The remainder of this article reconstructs that hierarchy.
 
@@ -666,7 +686,19 @@ $$ {#eq-the-mathematics-behind-a-racing-shell-hydrodynamic-impedance}
 
 is the hydrodynamic impedance. Its real part is dissipative; its imaginary part is reactive.
 
-For real time-domain velocities, the radiated energy over $[t_0,t_1]$ is
+The published model reports the energy dissipated by secondary motions over one stroke period as
+
+$$
+E_d
+=
+\frac{1}{2}
+\int_{t_0}^{t_0+T}
+\mathbf y^\mathsf T(t)
+\widetilde{\mathbf S}_r
+\mathbf y(t)\,dt.
+$$ {#eq-the-mathematics-behind-a-racing-shell-published-dissipated-energy}
+
+The factor $1/2$ is retained here because it is the convention used in the published calculation from which the reported dissipation values were obtained.[^the-mathematics-behind-a-racing-shell-original-paper] If instead $\mathbf f_{\mathrm{rad}}=-\mathbf S_r\mathbf v$ is interpreted directly as an instantaneous damping force acting on real velocities, its mechanical work over an interval is
 
 $$
 E_{\mathrm{rad}}
@@ -676,6 +708,8 @@ E_{\mathrm{rad}}
 \mathbf S_r
 \mathbf v(t)\,dt.
 $$ {#eq-the-mathematics-behind-a-racing-shell-real-radiated-energy}
+
+The two expressions should therefore not be interchanged when reproducing numerical values from the original publication: the first records the convention actually used there, while the second states the direct real-time work associated with the damping operator.
 
 For a single complex harmonic amplitude, the corresponding mean power is
 
@@ -766,9 +800,13 @@ The reduction from an unbounded free-surface problem to two $3\times3$ matrices 
 
 ## From mathematical model to engineering software
 
-A mathematical model becomes an engineering tool only when every symbolic quantity has been connected to geometry, measured or reconstructed data, numerical algorithms, and reproducible computational procedures.
+A mathematical model becomes an engineering tool only when every symbolic quantity has been connected to geometry, measured or reconstructed data, numerical algorithms, and a decision that the calculation is intended to support. In this project, the principal modelling decision was not to choose one universally “best” solver. It was to build a hierarchy in which computational cost increased only when the engineering question required additional physical fidelity.
 
-The software architecture uses an **offline–online decomposition**. Expensive geometry- and frequency-dependent fluid calculations are performed offline. The repeated online calculation advances only a small nonlinear dynamical system.
+We needed two capabilities that pulled in opposite directions. For preliminary studies, crew comparisons, and repeated parameter sweeps, the simulation had to run rapidly and accept changes in rower mass, position, cadence, force history, and hull configuration. For detailed hydrodynamic investigation, it had to resolve the moving free surface and the feedback between fluid pressure and boat motion. We therefore developed two complementary routes.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
+The first was the reduced route represented in @fig-the-mathematics-behind-a-racing-shell-computational-pipeline. Its stand-alone implementation combined the mechanical model with dynamically evaluated hydrostatics, reduced resistance laws, and potential-flow radiation operators. Expensive geometry- and frequency-dependent calculations were performed offline, while the repeated online calculation advanced only a small nonlinear dynamical system.
+
+The second was a higher-fidelity fluid–structure route in which the same boat dynamics exchanged motion and loads with a finite-volume free-surface CFD solver. This route was more expensive, but it relaxed several assumptions embedded in the reduced radiation model and made the interaction between pressure, free-surface deformation, hull attitude, and moving-grid kinematics explicit.
 
 ```{mermaid}
 %%| label: fig-the-mathematics-behind-a-racing-shell-computational-pipeline
@@ -841,6 +879,51 @@ flowchart TD
 ```
 
 @fig-the-mathematics-behind-a-racing-shell-computational-pipeline shows why the method is not a monolithic CFD simulation. Different mechanisms are assigned different computational fidelities and update rates.
+
+### The high-fidelity CFD route: closing the fluid–structure loop
+
+The reduced model was not the only fluid-dynamic formulation developed during the project. When a more complete description was required, the water and air were represented by Reynolds-averaged Navier–Stokes equations discretized with a finite-volume method. A $k$–$\varepsilon$ closure supplied the turbulence variables, while a Volume-of-Fluid field identified the evolving air–water interface. The grid motion was treated in an Arbitrary Lagrangian–Eulerian framework so that the computational domain could follow the hull’s heave and pitch.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
+Let
+
+$$
+\mathbf W
+=
+\begin{bmatrix}
+u & v & w & p & k & \varepsilon & c
+\end{bmatrix}^{\mathsf T}
+$$
+
+denote the fluid state, where $u$, $v$, and $w$ are the velocity components, $p$ is pressure, $k$ and $\varepsilon$ are turbulence variables, and $c$ is the Volume-of-Fluid fraction. Let $\mathbf y$ denote the boat state and let $\mathbf x(\mathbf y)$ describe the moving grid. The coupled problem can be summarized schematically as
+
+$$
+\frac{d}{dt}
+\left[
+\mathcal S(\mathbf x)\mathbf W
+\right]
++
+\mathcal F_c
+\left(
+\mathbf W,
+\mathbf x(\mathbf y),
+\dot{\mathbf x}(\mathbf y)
+\right)
+=
+\mathcal R(\mathbf W),
+\qquad
+\mathsf A(\mathbf y,t)\dot{\mathbf y}
+=
+\mathcal F_s
+\left(
+\mathbf f_{\mathrm{ext}}(\mathbf W)
+\right).
+$$ {#eq-the-mathematics-behind-a-racing-shell-two-way-cfd-coupling}
+
+Here $\mathcal S$ represents the finite-volume geometry, $\mathcal F_c$ the ALE transport operator, $\mathcal R$ the stress, turbulence, and source terms, and $\mathbf f_{\mathrm{ext}}(\mathbf W)$ the hydrodynamic loads extracted from the fluid solution. The first equation depends on the hull motion through the moving mesh; the second depends on the fluid through drag, vertical force, and pitch moment. Neither subsystem can therefore be solved once and regarded as an independent input to the other.
+
+We implemented this interaction through a staggered coupling strategy. The fluid solver received the current hull position, boundary conditions, body forces, and grid motion, and returned velocity and pressure fields. Post-processing converted the pressure and stress distributions into longitudinal force, vertical force, and pitch moment. The structural solver then computed the boat accelerations and updated its motion for the next fluid step. Heave and pitch were communicated through displacement and velocity of the moving grid, while longitudinal motion was introduced through the corresponding acceleration treatment.[^the-mathematics-behind-a-racing-shell-moxp3-report]
+
+This distinction is important when assessing the work as modelling rather than equation manipulation. The task was to define the interface between two independently complex numerical systems: which quantities each solver required, which quantities it returned, how their coordinate systems and signs were reconciled, how the grid followed the structure, and in which order loads and motions were exchanged. The CFD calculation was not performed merely to produce a visualization of the wake. Its practical purpose was to compute the pressure field and free-surface response that generated the boat loads, then feed those loads back into the dynamics that changed the next fluid configuration.
 
 ### Dynamic immersion and hydrostatic pressure
 
@@ -1210,6 +1293,20 @@ C_{\mathrm{radiation}}
 N_sC_{\mathrm{ODE}}.
 $$
 
+The simulator was organized around engineering questions rather than around one preferred numerical method.
+
+| Engineering question | Computed quantity | Intended practical use |
+|---|---|---|
+| How much useful energy was lost through secondary motion? | Radiation-damping work, heave and pitch amplitudes, within-stroke surge variation | Identify whether hull or rowing changes could reduce non-propulsive motion |
+| How did crew mass and longitudinal position alter the boat? | Static and dynamic sinkage, trim, wetted area, resistance, and mean speed | Compare crew placement, loading, and trimming alternatives |
+| How did cadence, force history, and athlete motion affect performance? | Mean speed, acceleration waveform, pitch, heave, and hydrodynamic loads | Compare stroke patterns and crew configurations |
+| When was additional hydrodynamic fidelity warranted? | Comparison, where available, with higher-fidelity coupled calculations and assessment of reduced-model assumptions | Select the least expensive model consistent with the engineering question |
+| Which data had to be supplied or measured? | Hull geometry, anthropometry, segment trajectories, oarlock forces, and operating conditions | Separate uncertain inputs from numerical and model-form errors |
+
+: Practical questions addressed by the multilevel modelling framework. {#tbl-the-mathematics-behind-a-racing-shell-practical-objectives}
+
+The central output was therefore not a single “best” velocity curve. It was a reusable mapping from design and rowing inputs to forces, motions, energy losses, and performance indicators. The reduced model provided that mapping at a cost suitable for repeated studies; the coupled CFD model provided a higher-fidelity modelling alternative when nonlinear free-surface and fluid–structure effects became important.
+
 When $C_{\mathrm{ODE}}$ is much smaller than the fluid calculations, the preprocessing cost is amortized across the study. This is what makes systematic comparisons of crew mass, placement, force, and cadence possible.
 
 ## Scientific influence, validation limits, and open problems
@@ -1431,7 +1528,7 @@ The oar is a rigid massless lever. Shaft deflection, blade slip, ventilation, vo
 
 The athlete follows prescribed kinematics and force histories. The model predicts what the boat does in response to an imposed stroke; it does not predict how the athlete adapts technique to altered rigging, fatigue, instability, or hydrodynamic feedback. The human is represented principally as a moving mass and forcing subsystem, not as a closed-loop neuromuscular controller.
 
-Mean resistance is partly calibrated from stationary calculations and empirical formulae. Changing hull geometry or moving far outside the calibrated range of speed, sinkage, trim, and Reynolds number is extrapolation. A reduced model cannot acquire validity outside its training envelope merely because the ODE solver continues to return numbers.
+Mean resistance is partly calibrated from stationary calculations and empirical formulae. Changing hull geometry or moving far outside the calibrated range of speed, sinkage, trim, and Reynolds number is extrapolation. A reduced model cannot acquire validity outside its calibrated operating envelope merely because the ODE solver continues to return numbers.
 
 ### Open extensions
 
@@ -1516,13 +1613,15 @@ $$
 
 where $T_{2000}$ is predicted race time and the nonnegative weights balance speed, energy loss, pitch, and acceleration.
 
-The final assessment should therefore be measured. The work established a coherent and computationally efficient framework for studying the coupled dynamics of racing shells, athletes, oars, and free-surface radiation. It provided enough structure to support design comparisons, three-dimensional extensions, independent multibody studies, and uncertainty analysis.
+The final assessment should therefore be measured. The work established a coherent and computationally efficient framework for studying the coupled dynamics of racing shells, athletes, oars, and a deformable free surface. It provided enough structure to support design comparisons, alternative crew configurations, higher-dimensional extensions, independent multibody studies, sensitivity analysis, and progressively more complete fluid models.
 
-It did not establish a universally validated digital twin of rowing. Its scientific value lies elsewhere: in making the assumptions explicit, deriving their consequences, reducing the coupled problem to computable operators, providing internal mathematical checks, producing falsifiable predictions, and exposing where further experiments and higher-fidelity models are required. That is the substance of serious research.
+The contribution was not limited to the derivation of equations. It included defining the physical system and its boundaries; identifying which quantities had to be measured, prescribed, or computed; reconstructing differentiable athlete kinematics; translating real hull geometry into hydrostatic and hydrodynamic operators; designing a stand-alone simulation code; coupling structural dynamics to a moving-grid RANS–VOF solver; and constructing a hierarchy in which expensive CFD and rapid reduced simulations served different stages of the engineering process.
+
+The work did not establish a universally validated digital twin of rowing. It did something more fundamental for that stage of the research: it converted a loosely defined sporting problem into interacting mechanical, biomechanical, geometric, and fluid-dynamic subsystems with explicit interfaces and testable outputs. Its scientific value lay in the mathematics, but its modelling value lay in deciding what to model, at which fidelity, with which data, and for which practical decision.
+
+[^the-mathematics-behind-a-racing-shell-moxp3-report]: Formaggia, L., Miglio, E., Del Grosso, L., Montano, A., & Pandini, S. (2004). **Modello dinamico di una imbarcazione da canottaggio**. _MOX Report MOXP3, Politecnico di Milano_. [Official record](https://mox.polimi.it/reports-and-books/publication-results/?id=91)
 
 [^the-mathematics-behind-a-racing-shell-original-paper]: Formaggia, L., Miglio, E., Mola, A., & Montano, A. (2009). **A model for the dynamics of rowing boats**. *International Journal for Numerical Methods in Fluids, 61*(2), 119–143. [DOI](https://doi.org/10.1002/fld.1940) 
-
-[^the-mathematics-behind-a-racing-shell-citation-record]: John Wiley & Sons. (2026). **A model for the dynamics of rowing boats: Article record and citing literature**. *Wiley Online Library*. Publisher-displayed count observed on 1 August 2026. [DOI](https://doi.org/10.1002/fld.1940)
 
 [^the-mathematics-behind-a-racing-shell-three-dimensional-extension]: Formaggia, L., Mola, A., Parolini, N., & Pischiutta, M. (2010). **A three-dimensional model for the dynamics and hydrodynamics of rowing boats**. *Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224*(1), 51–61. [DOI](https://doi.org/10.1243/17543371JSET46)
 
@@ -1537,3 +1636,15 @@ It did not establish a universally validated digital twin of rowing. Its scienti
 [^the-mathematics-behind-a-racing-shell-physiology-context]: Boillet, A., Haas, B., Samozino, P., Morel, B., Bowen, M., Cohen, C., & Messonnier, L. A. (2022). **Is the most commonly used strategy for the first 1,500 m of a 2,000 m rowing ergometer race the most appropriate?** *Frontiers in Physiology, 13*, 827875. [DOI](https://doi.org/10.3389/fphys.2022.827875) 
 
 [^the-mathematics-behind-a-racing-shell-on-water-review]: Mpimis, T., et al. (2024). **On-water rowing biomechanical assessment: A systematic scoping review**. *Sports Medicine - Open, 10*, 101. [DOI](https://doi.org/10.1186/s40798-024-00760-2) 
+
+[^the-mathematics-behind-a-racing-shell-mox-context]: MOX Laboratory. (n.d.). **Who We Are**. _Department of Mathematics, Politecnico di Milano_. [Official MOX page](https://mox.polimi.it/)
+
+[^the-mathematics-behind-a-racing-shell-quarteroni-mox]: MOX Laboratory. (n.d.). **Alfio Quarteroni**. _Department of Mathematics, Politecnico di Milano_. [Official profile](https://mox.polimi.it/people/alfio-quarteroni/)
+
+[^the-mathematics-behind-a-racing-shell-filippi-world-rowing]: World Rowing. (2014). **Filippi boat ready for 2013 Parmigiani Spirit Award winner**. _World Rowing_. [Article](https://www.worldrowing.com/2014/03/18/filippi-boat-ready-for-2013-parmigiani-spirit-award-winner/)
+
+[^the-mathematics-behind-a-racing-shell-filippi-technical-support]: Mola, A., Formaggia, L., & Miglio, E. (2007). **Simulation of the dynamics of an Olympic rowing boat**. _Communications to SIMAI Congress, 2_. [DOI](https://doi.org/10.1685/CSC06174) Formaggia, L., Miglio, E., Mola, A., & Scotti, A. (2009). **Numerical simulation of the dynamics of boats by a variational inequality approach**. _Variational Analysis and Aerospace Engineering_. [DOI](https://doi.org/10.1007/978-0-387-95857-6_12)
+
+[^the-mathematics-behind-a-racing-shell-filippi-partnership]: Formaggia, L., Mola, A., Parolini, N., & Pischiutta, M. (2010). **A three-dimensional model for the dynamics and hydrodynamics of rowing boats**. _Proceedings of the Institution of Mechanical Engineers, Part P: Journal of Sports Engineering and Technology, 224_(1), 51–61. [DOI](https://doi.org/10.1243/17543371JSET46)
+
+[^the-mathematics-behind-a-racing-shell-filippi-kime]: Filippi Lido S.r.l. (n.d.). **Canottaggio 2.0**. _Filippi Boats / Regione Toscana_. [Official project presentation](https://www.filippiboats.com/application/files/7715/3986/9735/PRESENTAZIONE_CANOTTAGGIO_2.0-logocorretto.pdf)

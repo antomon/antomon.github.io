@@ -1,0 +1,1521 @@
+---
+title: "Cyber Resilience Act: The New Product-Security Baseline"
+subtitle: "Scope, legal roles, secure design, conformity, reporting, and lifecycle assurance for European SMEs"
+description: "A technical and legal analysis of the EU Cyber Resilience Act, explaining product scope, economic-operator roles, essential cybersecurity requirements, conformity assessment, component dependencies, vulnerability reporting, transition, and practical assurance governance."
+abstract: |
+    Regulation (EU) 2024/2847—the Cyber Resilience Act—changes European cybersecurity law by applying mandatory, horizontal product-security requirements to connected hardware, software, and qualifying remote data-processing solutions placed on the Union market. Its central innovation is not a particular security control. It is the conversion of cybersecurity from a fragmented contractual or sectoral concern into an enforceable product-lifecycle obligation.
+
+    This article reconstructs the Regulation from first principles. It distinguishes products from services and integrated systems; assigns manufacturer, importer, distributor, integrator, and user roles; derives the risk-based security baseline in Annex I; and explains how product classification determines the permitted conformity-assessment route. It examines component due diligence, software bills of materials, free and open-source software, substantial modification, security updates, support periods, Article 14 reporting, market surveillance, administrative penalties, and interaction with product-liability law.
+
+    The analysis also develops a technical assurance model for procurement and lifecycle governance. That model treats the regulated object as a controlled product state linked to legal roles, requirements, evidence, dependencies, support capability, vulnerability processes, and change decisions. It distinguishes legal conformity from internal assurance and from actual resistance to attack.
+
+    The implementation environment remains incomplete as of 2 August 2026. Commission guidance is non-binding; harmonised standards and notified-body capacity are still developing; and ENISA's Single Reporting Platform is scheduled to become operational when Article 14 applies on 11 September 2026. These limitations do not suspend the CRA. They make explicit assumptions, evidence alignment, monitoring, and controlled reassessment essential to defensible compliance.
+date: "2026-08-03"
+date-modified: "2026-08-04"
+categories: [cybersecurity, regulation and compliance, 🇬🇧]
+image: "eu-cra.png"
+---
+
+## Why the CRA changes the EU cybersecurity architecture
+
+The Cyber Resilience Act (CRA) establishes a horizontal product-security regime for software and hardware made available on the European Union market. It regulates four connected subjects: market access, product-security properties, manufacturer vulnerability-handling processes, and public enforcement.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+The Regulation addresses a structural gap in the earlier cybersecurity architecture. NIS2 imposes governance, risk-management, supply-chain, and incident-reporting duties on covered entities.[^cyber-resilience-act-the-new-product-security-baseline-nis2-directive] DORA establishes operational-resilience and ICT-risk obligations for the financial sector.[^cyber-resilience-act-the-new-product-security-baseline-dora-regulation] Neither instrument is a general market-access law requiring every connected software or hardware product to satisfy a common security baseline before placement on the Union market.
+
+The CRA adopts the logic of Union product legislation. A manufacturer defines and assesses a product, demonstrates conformity, issues an EU declaration of conformity, and affixes CE marking. Importers and distributors act as supply-chain gatekeepers. Market-surveillance authorities can inspect evidence, require correction, restrict supply, withdraw products, or order recalls.
+
+Cybersecurity consequently becomes a condition of lawful market placement rather than merely:
+
+* a contractual service level;
+* a voluntary certification claim;
+* a feature offered in a premium product tier;
+* an internal development policy; or
+* a risk accepted entirely by the customer.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-regulatory-architecture
+%%| fig-cap: "The CRA adds a horizontal product-lifecycle layer to entity-level, sectoral, safety, and liability regimes."
+%%| fig-alt: "A green product with digital elements connects directly to the Cyber Resilience Act. Amber regulatory overlays represent NIS2 entity governance, DORA financial-sector resilience, sectoral product and safety legislation, the AI Act, and product-liability law. A blue manufacturer is responsible for product conformity, while users and operators remain subject to their own organisational obligations. Thick arrows indicate possible co-application rather than substitution."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    MFR([Manufacturer]):::entity
+    PRODUCT[Product with digital elements]:::product
+    USER([Customer or operator]):::entity
+
+    CRA[/Cyber Resilience Act<br/>product design, conformity<br/>support and reporting/]:::overlay
+    NIS2[/NIS2<br/>entity governance and<br/>risk management/]:::overlay
+    DORA[/DORA<br/>financial-sector<br/>operational resilience/]:::overlay
+    SECTOR[/Sectoral product and<br/>safety legislation/]:::overlay
+    AI[/AI Act<br/>high-risk AI requirements/]:::overlay
+    LIABILITY[/Product-liability law/]:::overlay
+
+    MFR --> PRODUCT
+    PRODUCT --> USER
+    CRA ==> PRODUCT
+    NIS2 ==> USER
+    DORA ==> USER
+    SECTOR ==> PRODUCT
+    AI ==> PRODUCT
+    LIABILITY ==> PRODUCT
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+```
+
+The layers in @fig-cyber-resilience-act-the-new-product-security-baseline-regulatory-architecture can apply simultaneously. A connected machine can be subject to both the CRA and the Machinery Regulation.[^cyber-resilience-act-the-new-product-security-baseline-machinery-regulation] A product incorporating a high-risk AI system can engage both the CRA and the AI Act, with specific coordination rules for cybersecurity requirements and conformity assessment.[^cyber-resilience-act-the-new-product-security-baseline-ai-act] A defective or inadequately updated product can also generate civil-liability questions independently of CRA market-surveillance enforcement.[^cyber-resilience-act-the-new-product-security-baseline-product-liability-directive]
+
+This architecture produces an important distinction:
+
+> The CRA regulates the cybersecurity of the product and the manufacturer processes that sustain it. Entity-level laws regulate how organisations govern and use technology.
+
+The distinction is not absolute. Product vulnerabilities can generate organisational incidents, and organisational security failures can compromise product build or update systems. The legal objects and compliance evidence nevertheless remain different.
+
+The CRA entered into force on 10 December 2024. Its conformity-assessment-body provisions have applied since 11 June 2026; Article 14 reporting applies from 11 September 2026; and the Regulation applies generally from 11 December 2027.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation] The staggered timetable means that reporting readiness must precede completion of the full product-conformity programme.
+
+## Scope: which products, software, components, and remote services are regulated
+
+The scope inquiry begins with three cumulative questions:
+
+1. Is there a software or hardware product, including a separately marketed component or qualifying remote data-processing solution?
+2. Does its intended purpose or reasonably foreseeable use include a direct or indirect logical or physical data connection to a device or network?
+3. Is it made available on the Union market in the course of commercial activity?
+
+A positive answer to all three establishes presumptive scope, subject to the Regulation's exclusions and sector-specific limitations.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-scope-gates
+%%| fig-cap: "CRA scope follows a sequence of product, connection, market, and exclusion tests."
+%%| fig-alt: "A decision tree begins with software, hardware, a separately marketed component, or remote data processing. It asks whether there is intended or foreseeable direct or indirect data connectivity, whether the item is supplied on the Union market during commercial activity, and whether an Article 2 exclusion applies. Products passing all gates enter CRA scope; failed gates lead outside the product regime or to a separate legal analysis."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    CANDIDATE[Software, hardware<br/>separately marketed component<br/>or remote processing]:::product
+    PRODUCT{Product with digital elements<br/>or part of one?}:::test
+    CONNECTION{Intended purpose or foreseeable use<br/>includes direct or indirect<br/>logical or physical connection?}:::test
+    MARKET{Made available on the Union market<br/>during commercial activity?}:::test
+    EXCLUSION{Article 2 exclusion or<br/>sector-specific limitation?}:::test
+
+    INSCOPE[CRA applies]:::product
+    SERVICE[Outside the CRA product definition<br/>assess other legislation]:::context
+    INTERNAL[No market supply on these facts<br/>reassess if distribution changes]:::context
+    EXCLUDED[CRA excluded or limited<br/>to the defined extent]:::context
+
+    CANDIDATE --> PRODUCT
+    PRODUCT -- Yes --> CONNECTION
+    PRODUCT -- No --> SERVICE
+    CONNECTION -- Yes --> MARKET
+    CONNECTION -- No --> SERVICE
+    MARKET -- Yes --> EXCLUSION
+    MARKET -- No --> INTERNAL
+    EXCLUSION -- No --> INSCOPE
+    EXCLUSION -- Yes --> EXCLUDED
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef context fill:#ffffff,stroke:#7a7a7a,stroke-width:1.5px,stroke-dasharray:5 5,color:#404040;
+```
+
+### Software and components are products
+
+Standalone software can be a product with digital elements. The delivery mechanism is not decisive: an application can be downloaded, supplied through a repository, embedded in hardware, or delivered through another electronic channel.
+
+Source code that is merely stored or developed internally is not necessarily a marketed product. The analysis changes when a controlled version is supplied for distribution or use in commercial activity. Public archives of historical software can remain available, but unsupported versions must be clearly identified as such where the CRA conditions are engaged.[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]
+
+Hardware and software components are independently regulated where they are placed on the market separately. A library, processor, firmware module, network interface, operating system, or secure element can therefore be both:
+
+* a product in its own right; and
+* a dependency inside a different downstream product.
+
+The component's own conformity does not establish the conformity of the downstream integration.
+
+### Connectivity is broader than Internet access
+
+A direct physical connection can use electrical, optical, mechanical, wired, or radio interfaces. A logical connection can use an API, file exchange, network socket, inter-process mechanism, or another software interface.
+
+An indirect connection exists where the product communicates through a larger system. A component need not possess an independent Internet interface to fall within scope. Firmware that exchanges data through a host device, for example, can be indirectly connected.
+
+### Remote processing enters the product boundary only under specific conditions
+
+A **remote data-processing solution** is software processing performed at a distance, designed or developed by or under the responsibility of the manufacturer, whose absence would prevent the local product from performing one of its functions.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+The definition excludes two common overstatements:
+
+* not every cloud service used by the manufacturer becomes part of the product; and
+* a manufacturer cannot exclude essential manufacturer-controlled backend functionality merely because it runs on third-party infrastructure.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-product-boundary
+%%| fig-cap: "The product boundary follows functional necessity and manufacturer responsibility, not the location of computation."
+%%| fig-alt: "A grey integrated system contains a green local product and an amber manufacturer-controlled remote-processing candidate. A decision asks whether the remote software is designed under manufacturer responsibility and whether its absence prevents a product function. If both conditions hold, it enters the regulated product boundary. A dashed white independent cloud or SaaS service remains contextual, while its integration risk still informs the product risk assessment."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    LOCAL[Local software or hardware]:::product
+    REMOTE[/Remote processing candidate/]:::overlay
+    RESPONSIBILITY{Designed by or under<br/>manufacturer responsibility?}:::test
+    NECESSARY{Would absence prevent<br/>a product function?}:::test
+    BOUNDARY[[Regulated product boundary<br/>local product plus qualifying<br/>remote processing]]:::system
+    EXTERNAL[Independent cloud or SaaS service]:::context
+    RISK[External dependency and<br/>integration risk assessment]:::product
+
+    LOCAL --> BOUNDARY
+    REMOTE --> RESPONSIBILITY
+    RESPONSIBILITY -- Yes --> NECESSARY
+    RESPONSIBILITY -- No --> EXTERNAL
+    NECESSARY -- Yes --> BOUNDARY
+    NECESSARY -- No --> EXTERNAL
+    EXTERNAL -. dependency .-> RISK
+    RISK -. informs .-> BOUNDARY
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef system fill:#f1f3f5,stroke:#5c6770,stroke-width:1.5px,color:#252a2e;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef context fill:#ffffff,stroke:#7a7a7a,stroke-width:1.5px,stroke-dasharray:5 5,color:#404040;
+```
+
+The 2026 Commission guidance applies this analysis to mobile applications, connected consumer products, industrial systems, and telecommunications architectures. It remains non-binding and requires case-specific application.[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]
+
+### Complex systems are not automatically one product
+
+A factory, building-management installation, telecommunications network, or enterprise platform can contain many regulated products without becoming a single CRA product merely through technical integration.
+
+The relevant questions are:
+
+* what functional whole is offered;
+* who controls its design;
+* under whose name it is marketed;
+* whether the complete system is supplied as a product;
+* which parts are independently placed on the market; and
+* whether later integration or modification creates a new product state.
+
+Procurement descriptions such as “solution,” “platform,” and “system” are not legal conclusions.
+
+### Exclusions must be applied narrowly
+
+Article 2 excludes, among other things, products governed by specified medical-device, in-vitro-diagnostic, automotive, aviation, and marine-equipment regimes; products developed or modified exclusively for national-security or defence purposes; products specifically designed to process classified information; and identical spare parts made to the same specifications.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+The Commission can also limit or exclude CRA application for products covered by other Union rules where those rules address the same risks at an equivalent or higher level. An exclusion should therefore be documented against the exact product and sectoral provision. The existence of another regulatory regime is not, by itself, a general exemption.
+
+## The legal roles: manufacturer, importer, distributor, integrator, and user
+
+The CRA assigns duties according to conduct, not job title. One company can occupy different roles for different products or transactions:
+
+- A **manufacturer** is the person that develops or manufactures a product, or has it developed or manufactured, and markets it under its own name or trademark. The definition captures control and market identity, not only physical fabrication.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+- An **authorised representative** performs tasks specified in a written mandate. Core manufacturer duties—such as product design, risk assessment, vulnerability handling, and preparation of essential technical evidence—cannot be transferred through that mandate.
+- An **importer** is established in the Union and places a third-country product on the Union market. A **distributor** makes a product available after placement without being the manufacturer or importer.
+- A **system integrator** is not a single statutory CRA role. The integrator can act as:
+    * a customer installing products for internal use;
+    * a distributor reselling unchanged products;
+    * an importer introducing third-country products;
+    * a manufacturer of a new integrated product;
+    * a repairer; or
+    * a person carrying out a substantial modification.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-role-assignment
+%%| fig-cap: "CRA roles are assigned per product and market activity rather than by generic commercial title."
+%%| fig-alt: "A blue organisation performs an activity involving a green product. Decisions distinguish development or marketing under its own name, first Union placement of a third-country product, resale of an unchanged product, internal use, and substantial modification followed by market supply. The paths assign manufacturer, importer, distributor, customer, or manufacturer-by-modification roles."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    ACTOR([Organisation]):::entity
+    PRODUCT[Defined product]:::product
+    ACTIVITY{What does the organisation do<br/>with this product?}:::test
+
+    OWN{Develop, control or market it<br/>under its own name?}:::test
+    THIRD{First placement of a<br/>third-country product?}:::test
+    RESELL{Supply an unchanged product<br/>after placement?}:::test
+    MODIFY{Substantially modify and<br/>make it available?}:::test
+
+    MFR([Manufacturer]):::entity
+    IMP([Importer]):::entity
+    DIST([Distributor]):::entity
+    USER([Customer or user]):::entity
+    MODMFR([Manufacturer for the<br/>modified product boundary]):::entity
+
+    ACTOR --> PRODUCT
+    PRODUCT --> ACTIVITY
+    ACTIVITY --> OWN
+    OWN -- Yes --> MFR
+    OWN -- No --> THIRD
+    THIRD -- Yes --> IMP
+    THIRD -- No --> RESELL
+    RESELL -- Yes --> DIST
+    RESELL -- No --> MODIFY
+    MODIFY -- Yes --> MODMFR
+    MODIFY -- No --> USER
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+```
+
+| Role                      | Core CRA function                                         | Principal verification or control                                                                                               |
+| ------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Manufacturer              | Establishes product conformity and lifecycle security     | Product boundary, risk assessment, Annex I controls, technical documentation, conformity procedure, support, updates, reporting |
+| Authorised representative | Performs specifically mandated, delegable tasks           | Mandate scope, document availability, authority cooperation                                                                     |
+| Importer                  | Controls first Union placement of a third-country product | Manufacturer assessment, CE marking, declaration, instructions, support information, document availability                      |
+| Distributor               | Controls later market supply                              | Required markings and documents, storage and transport conditions, response to suspected non-conformity                         |
+| Integrator                | Has no automatic role; role follows activity              | Whether integration creates, imports, rebrands, or substantially modifies a product                                             |
+| Customer or user          | Selects, configures, operates, and retires products       | Deployment suitability, update operability, support horizon, integration conditions, organisational risk controls               |
+
+: CRA role allocation by product and activity. {#tbl-cyber-resilience-act-the-new-product-security-baseline-role-allocation}
+
+Importers and distributors cannot rely solely on a supplier's contractual promise. They must perform the checks assigned to their positions and refrain from supply where they know or have reason to believe that the product is non-conforming.
+
+Role transformation is especially important. An importer or distributor becomes subject to manufacturer obligations where it markets the product under its own name or carries out a substantial modification. Another person can likewise become the manufacturer of the affected boundary where it substantially modifies a product and makes it available.
+
+For SMEs, the practical rule is simple:
+
+> Assign the role separately for every product, legal entity, and market transaction.
+
+A corporate group, contractual supply chain, or technical architecture does not create one collective CRA role.
+
+## The security baseline: risk assessment, secure design, defaults, and updates
+
+The CRA does not prescribe one identical control catalogue for every product. It establishes objective-oriented requirements whose implementation is informed by the product's cybersecurity risk assessment.
+
+Article 13 requires the manufacturer to assess risks and use the result throughout planning, design, development, production, delivery, and maintenance. The assessment must address intended purpose, reasonably foreseeable use, operating conditions, protected assets, expected use time, applicable Annex I requirements, and the manner in which they are implemented.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+A requirement can be treated as inapplicable only with a clear justification in the technical documentation. “Risk based” therefore does not mean optional. It means that the manufacturer must explain the relationship between the product context, identified risks, selected controls, verification evidence, and residual risk.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-security-lifecycle
+%%| fig-cap: "The CRA security baseline is a lifecycle feedback process rather than a one-time pre-market checklist."
+%%| fig-alt: "A blue manufacturer defines intended purpose, foreseeable use, assets, interfaces, operating environment, and expected lifetime. These inputs feed a green cybersecurity risk assessment, which selects applicable Annex I controls. Architecture, implementation, production, and release evidence lead to market placement. Monitoring, vulnerability handling, updates, incidents, and product changes feed back into the risk assessment. Non-conformity leads to corrective action, restriction, withdrawal, or recall."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    MFR([Manufacturer]):::entity
+    CONTEXT[Purpose, use, environment<br/>assets, interfaces and lifetime]:::product
+    RISK[Cybersecurity risk assessment]:::product
+    CONTROLS[Applicable Annex I controls]:::product
+    BUILD[Design, development<br/>production and verification]:::product
+    RELEASE[Controlled market release]:::product
+    MONITOR[Support, monitoring<br/>vulnerability handling and updates]:::product
+    CHANGE{New vulnerability, incident<br/>dependency or product change?}:::test
+    CORRECT{{Correct, restrict<br/>withdraw or recall}}:::enforcement
+
+    MFR --> CONTEXT
+    CONTEXT --> RISK
+    RISK --> CONTROLS
+    CONTROLS --> BUILD
+    BUILD --> RELEASE
+    RELEASE --> MONITOR
+    MONITOR --> CHANGE
+    CHANGE -- Reassessment required --> RISK
+    CHANGE -- Non-conformity unresolved --> CORRECT
+    CHANGE -- No material change --> MONITOR
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+### Annex I combines product properties and manufacturer processes
+
+Annex I, Part I concerns the security properties of the product. Its risk-dependent objectives include:
+
+* an appropriate level of cybersecurity;
+* release without known exploitable vulnerabilities where applicable;
+* secure-by-default configuration;
+* update capability, including automatic updates where applicable;
+* access control;
+* confidentiality and integrity;
+* data minimisation;
+* availability and resilience;
+* reduction of harmful effects on connected systems;
+* attack-surface limitation;
+* exploitation mitigation;
+* security-relevant recording and monitoring; and
+* secure removal or transfer of user data.
+
+Part II concerns vulnerability handling. It requires component and vulnerability records, an SBOM covering at least top-level software dependencies, remediation, regular testing and review, coordinated disclosure, secure update distribution, and prompt communication of security updates.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-annex-one-control-system
+%%| fig-cap: "Annex I connects risk-selected product properties with continuing vulnerability-handling processes."
+%%| fig-alt: "The risk assessment branches into Part I product properties and Part II manufacturer processes. Product properties include secure defaults, access control, data protection, resilience, limited attack surface, monitoring, and update capability. Manufacturer processes include an SBOM, vulnerability intake, testing, remediation, coordinated disclosure, secure distribution, and advisory information. Both branches converge in technical documentation and continuing support."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    RISK[Cybersecurity risk assessment]:::product
+    PARTI[Annex I Part I<br/>product-security properties]:::product
+    PARTII[Annex I Part II<br/>vulnerability-handling processes]:::product
+
+    DEFAULTS[Secure defaults<br/>access control and data protection]:::product
+    RESILIENCE[Availability, attack-surface reduction<br/>monitoring and exploitation mitigation]:::product
+    UPDATECAP[Secure update capability]:::product
+
+    INVENTORY[Components, vulnerabilities<br/>and software bill of materials]:::product
+    PROCESS[Testing, disclosure<br/>remediation and advisories]:::product
+    DISTRIBUTION[Secure update distribution]:::product
+
+    EVIDENCE[Technical documentation<br/>and support-period evidence]:::product
+
+    RISK --> PARTI
+    RISK --> PARTII
+    PARTI --> DEFAULTS
+    PARTI --> RESILIENCE
+    PARTI --> UPDATECAP
+    PARTII --> INVENTORY
+    PARTII --> PROCESS
+    PARTII --> DISTRIBUTION
+    DEFAULTS --> EVIDENCE
+    RESILIENCE --> EVIDENCE
+    UPDATECAP --> EVIDENCE
+    INVENTORY --> EVIDENCE
+    PROCESS --> EVIDENCE
+    DISTRIBUTION --> EVIDENCE
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+```
+
+### Secure by default concerns the delivered state
+
+The secure-by-default requirement is evaluated against the configuration supplied by the manufacturer. Depending on the product and risk, that can require:
+
+* unnecessary interfaces and services to be disabled;
+* access control and validation to be enabled;
+* shared or predictable credentials to be avoided;
+* debugging and maintenance functions to be restricted;
+* insecure legacy modes to require deliberate activation;
+* security logging to be appropriately configured; and
+* automatic security updating to be enabled where applicable.
+
+The Regulation can permit an explicitly agreed alternative for a tailor-made product supplied to a business user. Ordinary configuration options in a mass-market product do not create that exception.[^cyber-resilience-act-the-new-product-security-baseline-commission-faqs]
+
+### “Known exploitable” is a release decision, not a promise of perfection
+
+The CRA does not require proof that a non-trivial product contains no unknown defect. It requires the manufacturer to evaluate known vulnerabilities in their operational context and to avoid market placement with a known exploitable vulnerability where the requirement applies.
+
+The analysis should consider attacker access, preconditions, affected versions, exploit feasibility, available mitigations, severity, connected-system effects, and whether release itself supplies an urgent correction. The reasoning and evidence should be preserved.
+
+### Update capability is part of the architecture
+
+Security updates are not merely an optional support service. The product must be designed so that vulnerabilities can be addressed through updates. Where automatic installation is applicable, it should be enabled by default, operate within an appropriate timeframe, permit understandable opt-out and temporary postponement, and notify users.
+
+A credible update system can require:
+
+* authenticated packages;
+* integrity-protected metadata;
+* signing-key governance;
+* version and compatibility checks;
+* rollback protection;
+* staged deployment;
+* failure-safe installation;
+* recovery capability; and
+* monitoring of update success.
+
+Security updates must normally be made available without delay and free of charge. They should be separable from functionality updates where technically feasible. A user's refusal to install a properly supplied update does not cure a defective update mechanism or inadequate user information.
+
+### Support periods must follow expected use
+
+The support period must reflect the time the product is expected to be used, considering reasonable user expectations, intended purpose, comparable products, operating-environment availability, applicable law, and support for core third-party components.
+
+The period is ordinarily at least five years. A shorter period is permitted where expected use is genuinely shorter. Products expected to remain in use longer require a correspondingly longer analysis.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+The manufacturer must disclose the support end date, including at least month and year, at purchase. Each security update issued during support must remain available for at least ten years after issue or for the remainder of the support period, whichever is longer.
+
+A five-year label is therefore not a universal safe harbour. A five-year support commitment for a product embedded in twenty-year industrial equipment can expose a mismatch that the final-product manufacturer or integrator must resolve.
+
+## Classification and conformity assessment
+
+The CRA separates substantive security from procedural assurance. The cybersecurity risk assessment determines what security treatment the product needs. Classification determines which procedure the manufacturer may use to demonstrate conformity.
+
+A product outside Annexes III and IV is often described by the Commission as belonging to the **default category**. It can use module A internal control. Products whose core functionality matches Annex III are important class I or class II products. Products matching Annex IV are critical products.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+Commission Implementing Regulation (EU) 2025/2392 provides technical descriptions for those categories.[^cyber-resilience-act-the-new-product-security-baseline-implementing-regulation-2025-2392]
+
+### Core functionality controls classification
+
+Classification concerns the complete product's principal technical capabilities and intended purpose. Integrating a categorised component does not automatically transfer the component's classification to the complete product.
+
+A laptop containing a secure element is not automatically a critical product. A news application containing an embedded browser is not automatically class I. The integrated component can remain separately categorised, while its security and integration risks remain relevant to the complete-product assessment.[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-classification-route
+%%| fig-cap: "Core functionality determines the product category, and the category determines the minimum conformity-assessment route."
+%%| fig-alt: "A complete product enters a decision asking whether its principal capabilities match Annex III or Annex IV. Products outside those annexes can use module A. Important class I products can use module A only under the Article 32 conditions; otherwise they require modules B plus C or H. Important class II products require B plus C, H, or an applicable certification route. Critical products use mandatory certification where a delegated act requires it, otherwise the class II routes."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    PRODUCT[Complete product and<br/>its core functionality]:::product
+    CATEGORY{Which category applies?}:::test
+
+    DEFAULT[Default category]:::product
+    C1[Important class I]:::product
+    C2[Important class II]:::product
+    CRITICAL[Critical]:::product
+
+    FULL{Relevant harmonised standards<br/>common specifications or eligible<br/>certification fully applied?}:::test
+    MANDATORY{Mandatory European<br/>certification adopted?}:::test
+
+    A[Module A<br/>internal control]:::product
+    BC[Modules B + C<br/>type examination and<br/>production control]:::product
+    H[Module H<br/>full quality assurance]:::product
+    CERT[/Applicable European<br/>cybersecurity certification/]:::overlay
+
+    PRODUCT --> CATEGORY
+    CATEGORY -- Outside Annex III and IV --> DEFAULT
+    CATEGORY -- Annex III class I --> C1
+    CATEGORY -- Annex III class II --> C2
+    CATEGORY -- Annex IV --> CRITICAL
+
+    DEFAULT --> A
+    DEFAULT --> BC
+    DEFAULT --> H
+
+    C1 --> FULL
+    FULL -- Yes --> A
+    FULL -- No --> BC
+    FULL -- No --> H
+
+    C2 --> BC
+    C2 --> H
+    C2 --> CERT
+
+    CRITICAL --> MANDATORY
+    MANDATORY -- Yes --> CERT
+    MANDATORY -- No --> BC
+    MANDATORY -- No --> H
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+```
+
+| Classification     | Examples in the CRA                                                                                                                           | Minimum available route                                                            |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Default            | Most products outside Annexes III and IV                                                                                                      | Module A; manufacturer may voluntarily choose B+C or H                             |
+| Important class I  | Browsers, password managers, anti-malware, VPN products, operating systems, routers, selected security-functional chips and consumer products | Module A only under Article 32(2) conditions; otherwise B+C or H                   |
+| Important class II | Hypervisors, container runtimes, firewalls, intrusion systems, tamper-resistant processors and microcontrollers                               | B+C, H, or an available and applicable certification route                         |
+| Critical           | Hardware security devices, smart-meter gateways and secure cryptoprocessing devices, smartcards and secure elements                           | Mandatory certification where required by delegated act; otherwise class II routes |
+
+: CRA product classifications and conformity routes. {#tbl-cyber-resilience-act-the-new-product-security-baseline-classification-routes}
+
+### Module A remains a complete assessment
+
+Under module A, the manufacturer performs the assessment without mandatory notified-body participation. It must still:
+
+* implement Annex I requirements;
+* conduct adequate examinations and tests;
+* maintain technical documentation;
+* control production and software release;
+* ensure continuing conformity;
+* issue the declaration; and
+* affix CE marking.
+
+Self-assessment is not informal attestation.
+
+### Modules B+C and H introduce independent assurance
+
+Under module B, a notified body examines the product type, technical design, development, and vulnerability-handling processes. Module C leaves production conformity with the manufacturer.
+
+Module H instead assesses a full quality system covering design, development, production, testing, and vulnerability handling. It can suit manufacturers with multiple related products or frequent releases, but it is not an unlimited approval for future changes.
+
+### Standards create bounded presumptions
+
+A harmonised standard creates a legal presumption only after its reference is published in the Official Journal and only for the requirements it covers.
+
+A technically useful ISO, IEC, ETSI, CEN, or CENELEC document can support the evidence case without having that legal effect. A draft standard, an adopted but uncited European standard, or a supplier claim of alignment does not automatically create Article 27 presumption.
+
+For important class I products, partial application or absence of the relevant harmonised standards, common specifications, or eligible certification can make third-party assessment mandatory. Product-specific risks outside the specification must still be addressed.
+
+### CE marking is an output of the chain
+
+CE marking indicates that the manufacturer has completed the applicable conformity procedure and declares compliance with relevant Union harmonisation legislation. It does not mean that the product has no vulnerabilities or cannot be compromised.
+
+The declaration and supporting assessment apply to a defined product state. Changes to software, hardware, remote processing, configuration, or intended purpose can require updated evidence, certificate interaction, or a new conformity decision.
+
+## Components, open source, integration, and substantial modification
+
+A final-product manufacturer cannot divide responsibility by pointing to upstream dependencies. Article 13 requires due diligence when integrating third-party components, including non-commercial free and open-source software.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+The due-diligence depth should reflect the component's:
+
+* privilege;
+* exposure;
+* security function;
+* access to data and commands;
+* effect on availability or safety;
+* attack surface;
+* substitutability;
+* maintainer capacity; and
+* support horizon.
+
+A component declaration, CE marking, certificate, SBOM, test report, or supplier attestation can reduce uncertainty. It does not prove that the downstream configuration is secure.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-component-assurance
+%%| fig-cap: "Component evidence supports but does not replace complete-product risk assessment and integration verification."
+%%| fig-alt: "A third-party component passes through identity and provenance control, an SBOM or dependency record, due diligence, integration controls, and complete-product testing. An amber component certificate or declaration supports due diligence. An unsupported or opaque dependency enters as a dashed contextual risk. Insufficient evidence or mitigation leads to a red unresolved-risk outcome."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    COMPONENT[Third-party component]:::product
+    ID[Version, provenance<br/>configuration and build identity]:::product
+    RECORD[SBOM or dependency record]:::product
+    DUE[Risk-proportionate due diligence]:::product
+    CONTROL[Isolation, least privilege<br/>validation and secure configuration]:::product
+    TEST[Complete-product verification]:::product
+    PRODUCT[[Controlled final-product state]]:::system
+
+    EVIDENCE[/Declaration, certificate<br/>test or supplier evidence/]:::overlay
+    OPAQUE[Unsupported or opaque dependency]:::context
+    FAILURE{{Unresolved component risk}}:::enforcement
+
+    COMPONENT --> ID
+    ID --> RECORD
+    RECORD --> DUE
+    DUE --> CONTROL
+    CONTROL --> TEST
+    TEST --> PRODUCT
+    EVIDENCE ==> DUE
+    OPAQUE -. uncertainty .-> DUE
+    DUE -- insufficient --> FAILURE
+    TEST -- inadequate treatment --> FAILURE
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef system fill:#f1f3f5,stroke:#5c6770,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+    classDef context fill:#ffffff,stroke:#7a7a7a,stroke-width:1.5px,stroke-dasharray:5 5,color:#404040;
+```
+
+### An SBOM is an inventory, not a verdict
+
+The CRA requires an SBOM in a commonly used, machine-readable format covering at least top-level software dependencies.
+
+An SBOM can identify:
+
+* package or component names;
+* versions;
+* supplier relationships;
+* hashes or other identifiers; and
+* dependency relationships.
+
+It does not by itself establish:
+
+* artefact authenticity;
+* runtime reachability;
+* secure configuration;
+* vulnerability absence;
+* exploitability;
+* supportability; or
+* suitability for the downstream product.
+
+Hardware dependencies, build infrastructure, signing services, remote services, and dynamically resolved dependencies can require separate records.
+
+### Upstream vulnerabilities remain downstream responsibilities
+
+When a manufacturer identifies a vulnerability in an integrated component, it must report it to the component manufacturer or maintainer and address it in the complete product. Where appropriate, a downstream-developed fix should be shared upstream.
+
+Where no upstream fix exists, the final-product manufacturer may need to:
+
+* maintain a fork;
+* produce a patch;
+* isolate the component;
+* disable the affected function;
+* add compensating controls;
+* replace the dependency; or
+* redesign the product.
+
+A short upstream support period does not automatically shorten the final product's declared support obligation.
+
+### Open source creates several possible roles
+
+Open-source licensing does not determine CRA status. Responsibility and commercial activity do.
+
+A contributor does not become a manufacturer merely by contributing code to a project outside its responsibility. A non-commercial project can remain outside the ordinary manufacturer regime. A person that commercially places open-source software under its name can be its manufacturer.
+
+An **open-source software steward** is a legal person that provides sustained support, plays a main role in project viability, and supports software intended for commercial activities. Article 24 gives stewards a tailored regime centred on a documented cybersecurity policy, vulnerability handling, remediation, information sharing, and authority cooperation. A steward does not obtain authority to affix CE marking merely through stewardship.[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-foss-and-modification
+%%| fig-cap: "Open-source responsibility and substantial modification depend on control, commercial supply, and effects on the assessed product state."
+%%| fig-alt: "The left branch classifies an actor as contributor, non-commercial project, open-source software steward, or commercial manufacturer according to responsibility, sustained support, and market activity. The right branch begins with a post-market change and asks whether intended purpose changes or Annex I compliance is affected. A positive answer creates substantial modification and requires reassessment of the affected part or whole product."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    FOSS[Free and open-source software]:::product
+    CONTROL{Commercially placed under<br/>the actor's responsibility?}:::test
+    SUSTAIN{Sustained support and<br/>main viability role?}:::test
+
+    FMFR([FOSS manufacturer]):::entity
+    STEWARD([Open-source software steward]):::entity
+    PROJECT[Contributor or non-commercial project]:::context
+
+    CHANGE[Post-market product change]:::product
+    PURPOSE{Changes intended purpose?}:::test
+    COMPLIANCE{Affects Annex I Part I<br/>compliance?}:::test
+    SUB[Substantial modification]:::product
+    MAINTAIN[Maintenance, repair or<br/>non-substantial update]:::product
+    REASSESS{{Reassess affected boundary<br/>before market supply}}:::enforcement
+
+    FOSS --> CONTROL
+    CONTROL -- Yes --> FMFR
+    CONTROL -- No --> SUSTAIN
+    SUSTAIN -- Yes --> STEWARD
+    SUSTAIN -- No --> PROJECT
+
+    CHANGE --> PURPOSE
+    PURPOSE -- Yes --> SUB
+    PURPOSE -- No --> COMPLIANCE
+    COMPLIANCE -- Yes --> SUB
+    COMPLIANCE -- No --> MAINTAIN
+    SUB --> REASSESS
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+    classDef context fill:#ffffff,stroke:#7a7a7a,stroke-width:1.5px,stroke-dasharray:5 5,color:#404040;
+```
+
+### Integration and modification begin from different states
+
+Integration before first placement ordinarily creates a new complete product. Substantial modification concerns a product already placed on the market.
+
+A post-market change is substantial where it changes the assessed intended purpose or affects compliance with Annex I, Part I. Release labels such as “patch,” “minor,” or “major” are not decisive.
+
+A small authentication change can affect the complete product. A large visual-interface change can remain immaterial to cybersecurity. The analysis depends on architectural reach, privilege, interfaces, data flows, risk, and intended purpose.
+
+### Repairs and spare parts require security-relevant equivalence
+
+Identical spare parts made to the same specifications are excluded under Article 2(6). Compatibility alone is insufficient. A replacement that changes secure boot, cryptography, authentication, protocols, privileges, interfaces, or update behaviour may not be identical for CRA purposes.
+
+The host product also requires a separate modification analysis. A component can be independently regulated while its installation changes the conformity state of the larger product.
+
+## What customers, integrators, manufacturers, and importers must check
+
+Verification should begin with a common product record rather than a generic “CRA compliant” field.
+
+That record should identify:
+
+* product name, model, batch, package, or other identifier;
+* hardware, firmware, and software versions;
+* security-relevant configuration;
+* required remote processing;
+* intended purpose and represented operating environment;
+* manufacturer and importer;
+* conformity route and relevant certificate;
+* EU declaration of conformity;
+* support-period end date;
+* vulnerability contact;
+* update source;
+* integration restrictions; and
+* delivered artefact identity.
+
+Evidence must align with the same product state. A genuine declaration or certificate can be irrelevant where it covers another legal manufacturer, model, hardware revision, configuration, or software version.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-stakeholder-assurance
+%%| fig-cap: "Stakeholder verification connects product identity, legal role, conformity evidence, and lifecycle operability."
+%%| fig-alt: "A layered green assurance stack contains controlled product identity, legal roles, security and conformity evidence, and support and update capability. Blue customer, integrator, manufacturer, and importer nodes connect to different layers. Misalignment between the delivered product, declaration, certificate, instructions, or support record leads to a red rejection or remediation node."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    CUSTOMER([Customer]):::entity
+    INTEGRATOR([Integrator]):::entity
+    MFR([Manufacturer]):::entity
+    IMPORTER([Importer]):::entity
+
+    ID[Controlled product identity]:::product
+    ROLE[Legal entities and roles]:::product
+    EVIDENCE[Risk, conformity and<br/>technical evidence]:::product
+    LIFE[Support, update, vulnerability<br/>and decommissioning capability]:::product
+    DECISION[Release, import, integration<br/>or acceptance decision]:::product
+    FAILURE{{Reject, block or remediate<br/>misaligned assurance}}:::enforcement
+
+    CUSTOMER -. verifies suitability .-> ID
+    CUSTOMER -. verifies operability .-> LIFE
+    INTEGRATOR -. controls configuration<br/>and product boundary .-> ID
+    INTEGRATOR -. assesses change .-> EVIDENCE
+    MFR --> ID
+    MFR --> ROLE
+    MFR --> EVIDENCE
+    MFR --> LIFE
+    IMPORTER -. verifies before placement .-> ROLE
+    IMPORTER -. verifies .-> EVIDENCE
+
+    ID --> ROLE
+    ROLE --> EVIDENCE
+    EVIDENCE --> LIFE
+    LIFE --> DECISION
+    ID -- mismatch --> FAILURE
+    EVIDENCE -- mismatch --> FAILURE
+    LIFE -- unsupported --> FAILURE
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+| Control question                | Customer                                                                   | Integrator                                                                                                    | Manufacturer                                                                   | Importer                                                                 |
+| ------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| What product state is involved? | Match deployed assets to declaration, instructions, and inventory          | Record components, versions, configuration, interfaces, and remote dependencies                               | Define the assessed and released artefact                                      | Match imported units to declarations and certificates                    |
+| Which CRA role applies?         | Identify manufacturer, importer, supplier, and support owner               | Determine whether work constitutes installation, resale, import, new manufacture, rebranding, or modification | Establish responsibility and permissible delegation                            | Confirm its own first-placement role and the third-country manufacturer  |
+| What demonstrates conformity?   | Check declaration, CE marking, support date, and relevant certificate      | Preserve component evidence and determine whether the complete product needs assessment                       | Maintain risk, testing, technical, classification, and conformity evidence     | Verify that assessment occurred and documents are retrievable            |
+| Can the product be supported?   | Test updates, recovery, reporting contact, and end-of-support planning     | Allocate monitoring, testing, approval, deployment, and migration                                             | Operate vulnerability handling, update distribution, support, and reporting    | Maintain a viable manufacturer channel and cessation plan                |
+| What reopens the decision?      | New version, changed environment, end of support, or remote-service change | New component, interface, privilege, configuration, branding, or supply model                                 | Any change affecting risk, evidence, purpose, classification, or approved type | A supplied version or manufacturer state that no longer matches evidence |
+
+: Role-specific CRA verification questions. {#tbl-cyber-resilience-act-the-new-product-security-baseline-stakeholder-checks}
+
+### Customers should test operability
+
+A customer does not ordinarily repeat the manufacturer's conformity assessment. It should determine whether the product's representations and support model fit the deployment.
+
+Useful acceptance checks include:
+
+* secure commissioning;
+* administrative-access setup;
+* absence or treatment of shared credentials;
+* services enabled by default;
+* installation of an authenticated update;
+* recovery after interrupted updating;
+* reset and secure-data-removal functions;
+* logging and time handling;
+* remote-service failure behaviour; and
+* end-of-support migration.
+
+The CRA does not generally require public disclosure of complete technical documentation or the SBOM. A customer can request additional evidence contractually where its risk justifies it.[^cyber-resilience-act-the-new-product-security-baseline-commission-faqs]
+
+### Integrators should control product and role transformations
+
+The integrator should determine whether it is:
+
+* installing within intended purpose;
+* configuring within supported limits;
+* reselling;
+* importing;
+* creating a new marketed product;
+* supplying manufacturer-controlled remote processing;
+* rebranding; or
+* substantially modifying a product.
+
+The integration baseline should record enabled interfaces, accounts, trust stores, certificates, network rules, remote endpoints, software versions, update authorities, and responsibility for applying security updates.
+
+### Manufacturers need a release-readiness gate
+
+Before market placement, the manufacturer should confirm that:
+
+* the tested artefact is the distributed artefact;
+* the risk assessment covers the release state;
+* Annex I applicability is documented;
+* component due diligence and the SBOM are current;
+* known vulnerabilities have been assessed;
+* secure defaults and updates have been tested;
+* classification and conformity route are correct;
+* certificate conditions remain satisfied;
+* vulnerability and reporting functions are operational;
+* support dates are consistent;
+* Annex II information is complete; and
+* the declaration and CE marking identify the product.
+
+Technical documentation must exist before market placement and be updated where appropriate during the support period.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+### Importers must operate a pre-market gate
+
+Before placing a third-country product on the Union market, the importer must verify the manufacturer's conformity procedure, technical documentation, CE marking, declaration, product identification, instructions, contact information, and support-period disclosure.
+
+The importer should also ensure that required documentation can be produced to authorities. A supplier warranty clause is not a substitute for the statutory verification.
+
+## Vulnerability reporting, market surveillance, liability, and transition
+
+Vulnerability handling, mandatory reporting, and market surveillance are separate mechanisms.
+
+A vulnerability can require remediation without meeting the Article 14 reporting trigger. A reportable event can exist before a patch is available. Market-surveillance action can follow non-conformity, significant risk, formal defects, complaints, testing, or information received from cybersecurity authorities.
+
+### Article 14 has two reporting triggers
+
+The first trigger is an **actively exploited vulnerability**: reliable evidence indicates malicious exploitation without the system owner's permission.
+
+Technical exploitability alone is insufficient. Internal testing, responsible research, or a proof of concept does not by itself establish malicious exploitation.
+
+The second trigger is a **severe incident affecting product security**. The threshold is met where the incident affects or could affect protection of important data or functions, or leads or could lead to malicious code in the product or a user's network and information systems.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+### Reports are progressive
+
+For an actively exploited vulnerability:
+
+* early warning: within 24 hours of awareness;
+* vulnerability notification: within 72 hours;
+* final report: within 14 days after a corrective or mitigating measure becomes available.
+
+For a severe incident:
+
+* early warning: within 24 hours;
+* incident notification: within 72 hours;
+* final report: within one month after the 72-hour notification.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-reporting-timeline
+%%| fig-cap: "Article 14 uses staged reports so that authorities receive an early warning before the investigation is complete."
+%%| fig-alt: "Two parallel reporting paths begin when the manufacturer becomes aware. The actively exploited vulnerability path has a 24-hour warning, a 72-hour notification, and a final report within 14 days after remediation becomes available. The severe incident path has a 24-hour warning, a 72-hour notification, and a final report one month after the 72-hour submission. Both paths include user communication and can include an intermediate report requested by the CSIRT."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    AWARE[Manufacturer awareness]:::product
+    TYPE{Reporting trigger}:::test
+
+    ACTIVE[Actively exploited vulnerability]:::product
+    INCIDENT[Severe product-security incident]:::product
+
+    A24[Within 24 hours<br/>early warning]:::product
+    A72[Within 72 hours<br/>vulnerability notification]:::product
+    AFINAL[Within 14 days after<br/>measure becomes available<br/>final report]:::product
+
+    I24[Within 24 hours<br/>early warning]:::product
+    I72[Within 72 hours<br/>incident notification]:::product
+    IFINAL[Within one month after<br/>the 72-hour notification<br/>final report]:::product
+
+    USERS([Impacted users]):::entity
+    STATUS[/Intermediate status report<br/>where requested/]:::overlay
+
+    AWARE --> TYPE
+    TYPE -- Vulnerability --> ACTIVE
+    TYPE -- Incident --> INCIDENT
+    ACTIVE --> A24
+    A24 --> A72
+    A72 --> AFINAL
+    INCIDENT --> I24
+    I24 --> I72
+    I72 --> IFINAL
+    ACTIVE -. mitigation information .-> USERS
+    INCIDENT -. mitigation information .-> USERS
+    A72 ==> STATUS
+    I72 ==> STATUS
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+```
+
+Awareness should be governed as a time-stamped decision. The manufacturer should define who can establish awareness, who owns the reporting clocks, how product versions and affected Member States are identified, and how incomplete evidence is escalated.
+
+### The Single Reporting Platform routes reports
+
+Notifications are submitted through ENISA's Single Reporting Platform to the coordinating CSIRT associated with the manufacturer's main Union establishment. Relevant reports are then distributed to coordinating CSIRTs in Member States where the product was made available.
+
+Commission Delegated Regulation (EU) 2026/881 specifies the exceptional cybersecurity grounds under which dissemination can be delayed.[^cyber-resilience-act-the-new-product-security-baseline-delegated-regulation-2026-881]
+
+As of 2 August 2026, Commission and ENISA pages stated that the platform was undergoing testing and was scheduled to become operational by 11 September 2026.[^cyber-resilience-act-the-new-product-security-baseline-reporting-page][^cyber-resilience-act-the-new-product-security-baseline-enisa-srp-faq] Manufacturers should verify the production URL, registration, identity-management, submission formats, and fallback arrangements before Article 14 applies.
+
+### Users need actionable information
+
+Authority reporting does not replace user communication. Impacted users—and where appropriate all users—must receive information enabling mitigation.
+
+A useful notice identifies:
+
+* affected products and versions;
+* exploitation or incident conditions;
+* immediate containment;
+* available updates;
+* recovery precautions;
+* credential, key, or certificate actions;
+* temporary loss of function; and
+* the source of future advisories.
+
+### Market surveillance can reach substantive and formal failures
+
+Market-surveillance authorities can request internal documentation needed to assess product design, development, production, vulnerability handling, and conformity. Their analysis is not limited to the CE mark.
+
+Enforcement can address:
+
+* substantive Annex I or process non-compliance;
+* a nominally compliant product that nevertheless presents significant cybersecurity or public-interest risk; and
+* formal defects such as missing marking, declarations, identification, or technical documentation.
+
+Corrective measures can include bringing the product into conformity, restricting supply, withdrawal, or recall.
+
+| Infringement                                                                                                 | Maximum fixed fine |                              Undertaking-based maximum |
+| ------------------------------------------------------------------------------------------------------------ | -----------------: | -----------------------------------------------------: |
+| Annex I or Articles 13 and 14                                                                                |        €15 million | 2.5% of worldwide annual turnover, whichever is higher |
+| Specified economic-operator, conformity, documentation, and cooperation duties                               |        €10 million |   2% of worldwide annual turnover, whichever is higher |
+| Incorrect, incomplete, or misleading information supplied in response to authority or notified-body requests |         €5 million |   1% of worldwide annual turnover, whichever is higher |
+
+: CRA administrative-fine tiers. {#tbl-cyber-resilience-act-the-new-product-security-baseline-penalty-tiers}
+
+Microenterprises and small enterprises are protected from administrative fines for missing the 24-hour early-warning deadline, but not from the reporting duty or other infringements. Article 64 administrative fines do not apply to open-source software stewards.[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]
+
+### Reporting does not itself increase liability
+
+The mere act of mandatory or voluntary reporting does not subject the notifier to increased liability. That protection does not immunise the underlying defect, late remediation, failure to report, misleading information, or resulting damage.
+
+Directive (EU) 2024/2853 separately modernises product-liability law. It treats software as a product and makes cybersecurity, interconnection, post-market control, recalls, and necessary updates relevant to defectiveness analysis for products placed on the market or put into service after 9 December 2026.[^cyber-resilience-act-the-new-product-security-baseline-product-liability-directive]
+
+### Transition depends on market events
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-enforcement-transition
+%%| fig-cap: "The CRA transition separates reporting readiness from full product conformity and legacy-product modification."
+%%| fig-alt: "A left-to-right timeline shows entry into force on 10 December 2024, conformity-assessment-body provisions on 11 June 2026, Article 14 reporting on 11 September 2026, full CRA application on 11 December 2027, and the end of specified transitional certificate validity on 11 June 2028. A branch shows that pre-December-2027 products are generally subject to the full product requirements only after substantial modification, while Article 14 reporting applies to them from September 2026."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    D1[10 Dec 2024<br/>entry into force]:::product
+    D2[11 Jun 2026<br/>Chapter IV applies]:::product
+    D3[11 Sep 2026<br/>Article 14 applies]:::product
+    D4[11 Dec 2027<br/>full application]:::product
+    D5[11 Jun 2028<br/>specified transitional<br/>certificates expire]:::product
+
+    LEGACY[Product placed before<br/>11 Dec 2027]:::context
+    MOD{Substantially modified<br/>from full application?}:::test
+    FULL[Full product requirements<br/>apply to affected boundary]:::product
+    REPORT[Article 14 applies<br/>regardless of earlier placement]:::product
+
+    D1 --> D2
+    D2 --> D3
+    D3 --> D4
+    D4 --> D5
+
+    LEGACY --> MOD
+    MOD -- Yes --> FULL
+    MOD -- No --> REPORT
+    D3 --> REPORT
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef context fill:#ffffff,stroke:#7a7a7a,stroke-width:1.5px,stroke-dasharray:5 5,color:#404040;
+```
+
+Products placed on the market before 11 December 2027 are generally subject to the full product requirements only if substantially modified from that date. Article 14 reporting is the major exception: it applies to in-scope earlier products.
+
+A compliant transition programme therefore needs parallel tracks:
+
+* reporting readiness before September 2026; and
+* product-conformity readiness before December 2027.
+
+## A Technical assurance model for procurement and lifecycle governance
+
+The CRA can be implemented as a governed evidence system. The central object is the controlled product state—not the supplier, certificate, contract, or repository in isolation.
+
+Let the product state at time $t$ be:
+
+$$
+P_t =
+\left(
+H_t,
+S_t,
+K_t,
+D_t,
+I_t,
+U_t
+\right),
+$$ {#eq-cyber-resilience-act-the-new-product-security-baseline-product-state}
+
+where:
+
+* $H_t$ is the hardware configuration;
+* $S_t$ is the software and firmware configuration;
+* $K_t$ is the security-relevant operational configuration;
+* $D_t$ is the set of external dependencies and remote processing;
+* $I_t$ is the intended purpose and represented environment; and
+* $U_t$ is the support and update state.
+
+Two products with the same commercial name are different assurance objects where one of these elements changes in a security-relevant way.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-assurance-data-model
+%%| fig-cap: "A controlled product state links legal roles, obligations, evidence, dependencies, lifecycle capabilities, and decisions."
+%%| fig-alt: "A central green controlled product state contains hardware, software, configuration, dependencies, intended purpose, and support status. It connects to blue legal entities, green obligation and evidence records, a dependency graph, support and reporting capabilities, and controlled decisions. Amber change events update the state. Unresolved identity or evidence mismatches lead to a red blocked-assurance node."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    STATE[Controlled product state<br/>hardware, software, configuration<br/>dependencies, purpose and support]:::product
+    ACTORS([Manufacturer, importer<br/>integrator and customer]):::entity
+    ROLES[Role assignments]:::product
+    DUTIES[Applicable obligations]:::product
+    EVIDENCE[Risk, tests, SBOM<br/>declaration and certificates]:::product
+    LIFE[Support, updates, disclosure<br/>reporting and retirement]:::product
+    DECISION[Release, import, acceptance<br/>change and retirement decisions]:::product
+    EVENT[/Dependency, configuration<br/>threat, support or purpose change/]:::overlay
+    FAILURE{{Unsupported assurance claim}}:::enforcement
+
+    ACTORS --> ROLES
+    ROLES --> STATE
+    STATE --> DUTIES
+    DUTIES --> EVIDENCE
+    STATE --> LIFE
+    EVIDENCE --> DECISION
+    LIFE --> DECISION
+    EVENT ==> STATE
+    EVENT ==> EVIDENCE
+    STATE -- identity conflict --> FAILURE
+    EVIDENCE -- stale or mismatched --> FAILURE
+    LIFE -- unavailable capability --> FAILURE
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+### Assurance is conjunctive
+
+Define the internal assurance predicate:
+
+$$
+\mathcal{A}(P_t) =
+\mathcal{I}(P_t)
+\land
+\mathcal{R}(P_t)
+\land
+\mathcal{O}(P_t)
+\land
+\mathcal{E}(P_t)
+\land
+\mathcal{L}(P_t)
+\land
+\mathcal{C}(P_t),
+$$ {#eq-cyber-resilience-act-the-new-product-security-baseline-assurance-predicate}
+
+where:
+
+* $\mathcal{I}$ means identity and boundary are controlled;
+* $\mathcal{R}$ means legal roles are correct;
+* $\mathcal{O}$ means obligations are identified;
+* $\mathcal{E}$ means evidence supports the claims;
+* $\mathcal{L}$ means lifecycle capabilities operate; and
+* $\mathcal{C}$ means changes have been assessed.
+
+The conjunction prevents false compensation. More penetration testing does not cure an unidentified legal manufacturer. A detailed declaration does not cure an unusable update channel. A valid certificate does not apply to a different product version.
+
+This model is an internal governance abstraction, not a statutory formula.
+
+### Evidence must be typed and bounded
+
+An evidence record should identify:
+
+* its author or issuer;
+* the product state it covers;
+* covered claims or requirements;
+* version and configuration scope;
+* creation and approval dates;
+* validity or review interval;
+* provenance and integrity;
+* access restrictions;
+* limitations; and
+* superseding evidence.
+
+A declaration answers a different question from an SBOM. A certificate answers a different question from a penetration test. A support statement answers a different question from an update-recovery test.
+
+The organisation should reject evidence from a sufficient set where it is:
+
+* for the wrong version;
+* stale;
+* unauthenticated;
+* outside the relevant certificate scope;
+* based on incompatible assumptions; or
+* too narrow for the claim.
+
+### Procurement should use recurrent gates
+
+| Gate                            | Decision                                                                           | Minimum evidence                                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| G0 — Candidate intake           | Is the candidate sufficiently defined for evaluation?                              | Product description, manufacturer, connectivity, preliminary support                           |
+| G1 — Requirements               | Have security, support, integration, reporting, and evidence needs been specified? | Intended deployment and measurable requirements                                                |
+| G2 — Selection                  | Is the proposed product state acceptable in principle?                             | Declaration, classification, assessment route, support, update and vulnerability information   |
+| G3 — Contract and design freeze | Are responsibilities and changes controlled?                                       | Product baseline, support date, change notice, dependency and remote-service commitments       |
+| G4 — Delivery and acceptance    | Does the delivered product match and operate as represented?                       | Version verification, secure commissioning, update and recovery tests                          |
+| G5 — Operation and change       | Does continued use remain defensible?                                              | Advisories, support status, changes, incidents, updates and risk decisions                     |
+| G6 — Exit                       | Can the product be retired without residual risk?                                  | Data removal, credential revocation, dependency removal, evidence archive and replacement plan |
+
+: Procurement and lifecycle assurance gates. {#tbl-cyber-resilience-act-the-new-product-security-baseline-assurance-gates}
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-assurance-gates
+%%| fig-cap: "Procurement assurance recurs from candidate intake through secure retirement."
+%%| fig-alt: "Seven green gates progress from candidate intake, requirements, selection, contract and design freeze, delivery and acceptance, operation and change, to exit. Each gate can approve, conditionally approve, reject, or return the product for remediation. Amber change events during operation return the product to the relevant earlier gate."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    G0[G0<br/>Candidate]:::product
+    G1[G1<br/>Requirements]:::product
+    G2[G2<br/>Selection]:::product
+    G3[G3<br/>Contract and freeze]:::product
+    G4[G4<br/>Delivery and acceptance]:::product
+    G5[G5<br/>Operation and change]:::product
+    G6[G6<br/>Exit]:::product
+
+    DECISION{Gate satisfied?}:::test
+    REMEDIATE{{Reject, remediate<br/>or condition approval}}:::enforcement
+    EVENT[/Security-relevant change/]:::overlay
+
+    G0 --> G1
+    G1 --> G2
+    G2 --> G3
+    G3 --> G4
+    G4 --> G5
+    G5 --> G6
+    G2 --> DECISION
+    G3 --> DECISION
+    G4 --> DECISION
+    G5 --> DECISION
+    DECISION -- No --> REMEDIATE
+    REMEDIATE -. return .-> G1
+    EVENT ==> G5
+    G5 -- reopen affected gate --> G2
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+### Contracts should preserve the assurance state
+
+Contracts cannot transfer statutory duties away from the responsible economic operator. They can require cooperation and evidence needed to sustain compliance.
+
+Material provisions can address:
+
+* exact product and remote-service identity;
+* support end date;
+* update delivery;
+* vulnerability and incident notice;
+* dependency changes;
+* SBOM access where justified;
+* evidence access;
+* manufacturer cessation;
+* remediation and replacement;
+* signing and update continuity;
+* migration and exit assistance; and
+* preservation of regulatory records.
+
+### One control plane should connect the organisation
+
+Procurement, engineering, product security, legal, operations, and executive governance should use a shared product-state identifier. The organisation does not necessarily need a new software platform. It does need referential integrity between:
+
+* asset inventory;
+* supplier records;
+* product versions;
+* role assignments;
+* risk assessments;
+* SBOMs and component records;
+* declarations and certificates;
+* support dates;
+* vulnerability cases;
+* Article 14 reports;
+* change requests;
+* risk acceptances; and
+* retirement records.
+
+The operational test is reconstructability: under time pressure, can the organisation determine what is affected, where it is deployed, who is responsible, which evidence applies, which users must act, and whether continued use remains defensible?
+
+## Limits, open questions, and the compliance horizon
+
+The CRA reduces fragmentation but does not eliminate uncertainty.
+
+Five categories remain:
+
+* **legal uncertainty** about scope, roles, commercial activity, substantial modification, support, and awareness;
+* **technical uncertainty** about unknown vulnerabilities, emergent attack paths, and changing dependencies;
+* **evidential uncertainty** about provenance, version alignment, freshness, and coverage;
+* **institutional uncertainty** about standards, certification, notified bodies, reporting infrastructure, and enforcement; and
+* **operational uncertainty** about whether support, updates, reporting, and corrective capabilities will work when required.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-uncertainty-layers
+%%| fig-cap: "A defensible CRA decision makes legal, technical, evidential, institutional, and operational uncertainty explicit."
+%%| fig-alt: "A controlled product state is surrounded by five amber uncertainty nodes: legal, technical, evidential, institutional, and operational. They feed a decision asking whether assumptions, owners, limits, and reassessment triggers are documented. A positive result produces a conditioned assurance decision; an unsupported claim is blocked."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    STATE[Controlled product state]:::product
+    LEGAL[/Legal uncertainty/]:::overlay
+    TECH[/Technical uncertainty/]:::overlay
+    EVIDENCE[/Evidential uncertainty/]:::overlay
+    INSTITUTION[/Institutional uncertainty/]:::overlay
+    OPERATIONS[/Operational uncertainty/]:::overlay
+
+    TEST{Assumptions, limits, owners<br/>and review triggers explicit?}:::test
+    DECISION[Conditioned assurance decision]:::product
+    BLOCK{{Unsupported reliance}}:::enforcement
+
+    STATE --> LEGAL
+    STATE --> TECH
+    STATE --> EVIDENCE
+    STATE --> INSTITUTION
+    STATE --> OPERATIONS
+    LEGAL ==> TEST
+    TECH ==> TEST
+    EVIDENCE ==> TEST
+    INSTITUTION ==> TEST
+    OPERATIONS ==> TEST
+    TEST -- Yes --> DECISION
+    TEST -- No --> BLOCK
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef overlay fill:#fff0cf,stroke:#9a6500,stroke-width:1.5px,color:#4d3500;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+### Guidance is useful but non-binding
+
+On 27 July 2026, the Commission published the content of detailed CRA guidance covering scope, open source, substantial modification, support periods, classification, risk assessment, remote processing, reporting, and legislative interaction.[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]
+
+The accompanying C(2026) 5252 communication states that the annexed content would be formally adopted later when all language versions were available. The guidance also states that it is non-binding and that authoritative interpretation belongs to the Court of Justice.
+
+The FAQs are an even more explicitly provisional Commission-services document. They should be used as interpretive support, not treated as amendments to the Regulation.[^cyber-resilience-act-the-new-product-security-baseline-commission-faqs]
+
+### Standards remain in development
+
+The M/606 programme covers horizontal and product-specific CRA standards.[^cyber-resilience-act-the-new-product-security-baseline-standardisation-page] The Commission's 2026 rolling plan identified expected dates including:
+
+* 30 August 2026 for initial horizontal risk-based-development and vulnerability-handling deliverables;
+* 30 October 2026 for product-specific deliverables; and
+* 30 October 2027 for further product-agnostic Annex I work.[^cyber-resilience-act-the-new-product-security-baseline-standardisation-rolling-plan]
+
+Those dates were still in the future on 2 August 2026. Adoption by a European standardisation organisation is not the last legal step: Official Journal citation is required for Article 27 presumption of conformity.
+
+Manufacturers therefore cannot postpone engineering until all harmonised standards exist. They need risk-based controls and evidence using the Regulation, relevant technical standards, testing, and documented justification.
+
+### The conformity ecosystem is developing
+
+The Commission's conformity-assessment page, updated on 31 July 2026, described CRA notified bodies as appearing in NANDO once available and noted that certification-based routes require further legal specification.[^cyber-resilience-act-the-new-product-security-baseline-conformity-page]
+
+Manufacturers of class II and critical products should account for:
+
+* notified-body availability;
+* technical scope;
+* laboratory capacity;
+* lead times;
+* treatment of frequent software changes;
+* certificate revisions; and
+* interaction with other product regimes.
+
+### Platform readiness remains a dependency
+
+The Single Reporting Platform was not yet in production on 2 August 2026. Organisations could prepare product inventories, decision roles, EU Login accounts, templates, timestamps, and reporting data, but production operation still had to be verified.
+
+A 24-hour obligation cannot depend on reconstructing product identity, affected territories, or exploit evidence for the first time during an incident.
+
+### Conformity does not prove invulnerability
+
+Legal conformity, internal assurance, and actual security are distinct:
+
+* legal conformity addresses satisfaction of applicable legal duties;
+* internal assurance addresses the evidentiary basis for an organisational decision; and
+* actual security concerns resistance to real threats and configurations.
+
+A risk assessment can omit an attack path. A penetration test is bounded by time and method. An SBOM can omit dynamic behaviour. A certificate can become stale. Absence of reported exploitation can reflect weak detection.
+
+The CRA responds to this epistemic limit through lifecycle processes, not a promise of permanent security.
+
+### Dynamic dependencies cause assurance decay
+
+A product can change without a new local executable when:
+
+* a cloud backend changes;
+* a package resolves to a new artefact;
+* a certificate chain changes;
+* an identity provider modifies behaviour;
+* a component becomes unsupported;
+* an external API changes authentication;
+* a model or dataset changes; or
+* customer configuration exposes a new interface.
+
+Point-in-time evidence must therefore be coupled to monitoring and change assessment.
+
+### SMEs face fixed as well as proportional costs
+
+ENISA's 2026 SME survey received 194 responses from 31 countries or geographical groupings. Sixty-six percent reported prior awareness of the CRA, but practical readiness was weaker. Incident response and lifecycle management were the least mature surveyed domain; more than 70% requested technical-documentation and secure-development templates; and 142 respondents selected financial support as a need.[^cyber-resilience-act-the-new-product-security-baseline-enisa-sme-survey]
+
+The survey was voluntary and is not statistically representative of all EU SMEs. It nevertheless provides evidence that awareness does not automatically produce implementation capacity.
+
+A small manufacturer can still face fixed costs for:
+
+* secure build and signing systems;
+* independent conformity assessment;
+* vulnerability intake;
+* long-term support;
+* dependency monitoring;
+* reporting readiness; and
+* evidence preservation after staff turnover.
+
+### Open questions should be controlled dependencies
+
+| Domain          | Open question as of 2 August 2026                                                     | Control                                                                     |
+| --------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Guidance        | Has C(2026) 5252 been formally adopted, corrected, translated, or superseded?         | Preserve the relied-upon version and monitor the Commission publication     |
+| Standards       | Which M/606 deliverables have been adopted and cited?                                 | Maintain a standards register with scope and Official Journal status        |
+| Notified bodies | Which bodies are notified for the product category and module?                        | Verify current NANDO scope before contracting                               |
+| Certification   | Has a scheme been made applicable to the relevant CRA route?                          | Verify the enabling act, assurance level, certificate scope, and validity   |
+| Reporting       | Is the production platform operational and what fallback applies?                     | Test access, representatives, formats, timestamps, and contingency channels |
+| Scope           | Is a remote service, FOSS arrangement, or complex system inside the product boundary? | Preserve a case-specific architectural and statutory analysis               |
+| Modification    | Does a change alter intended purpose or affect Annex I compliance?                    | Perform documented impact and substantial-modification review               |
+| Support         | Does the period match expected use and dependency life?                               | Preserve evidence, migration strategy, and end-of-support controls          |
+| Awareness       | When did reliable evidence establish the Article 14 trigger?                          | Time-stamp evidence, uncertainty, decision, and escalation                  |
+| Overlap         | Which parallel product, entity, data, safety, or liability laws apply?                | Maintain a regime-specific obligation and reporting map                     |
+
+: Controlled CRA implementation questions. {#tbl-cyber-resilience-act-the-new-product-security-baseline-open-questions}
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-implementation-horizon
+%%| fig-cap: "The implementation horizon contains separate decision points for reporting, standards, full conformity, and transitional certificates."
+%%| fig-alt: "A left-to-right horizon begins on 2 August 2026 with guidance and readiness review, followed by expected horizontal standards on 30 August, Article 14 and platform operation on 11 September, expected product-specific standards on 30 October, engineering and assessment work during 2026 and 2027, further horizontal standards on 30 October 2027, full CRA application on 11 December 2027, and the end of specified transitional certificate validity on 11 June 2028."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[2 Aug 2026<br/>verify guidance and readiness]:::product
+    B[30 Aug 2026<br/>initial horizontal standards expected]:::product
+    C[11 Sep 2026<br/>Article 14 applies<br/>platform scheduled]:::product
+    D[30 Oct 2026<br/>product-specific standards expected]:::product
+    E[2026–2027<br/>engineering, documentation<br/>and assessment]:::product
+    F[30 Oct 2027<br/>additional horizontal<br/>standards expected]:::product
+    G[11 Dec 2027<br/>full application]:::product
+    H[11 Jun 2028<br/>specified transitional<br/>certificates end]:::product
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+```
+
+The dates in @fig-cyber-resilience-act-the-new-product-security-baseline-implementation-horizon should be treated as review triggers. Standards, guidance, notified-body listings, certification conditions, and platform procedures can change. Each external dependency should have an owner, monitoring source, latest acceptable decision date, and fallback.
+
+## Conclusion: from product features to lifecycle accountability
+
+The CRA changes the unit of cybersecurity governance. The regulated object is not merely a device, software release, supplier, certificate, or feature. It is a product state whose boundary, responsible actors, security basis, dependencies, support commitments, and post-market behaviour must remain traceable.
+
+The resulting compliance chain is shown in @fig-cyber-resilience-act-the-new-product-security-baseline-compliance-chain.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-compliance-chain
+%%| fig-cap: "The CRA compliance chain links controlled product identity to role allocation, risk-based engineering, conformity, market placement, post-market capability, and controlled change or retirement."
+%%| fig-alt: "A left-to-right chain of green product nodes shows controlled product identity, correct legal roles, risk-based security requirements, implemented and tested controls, classification-appropriate conformity, secure market placement, support remediation and reporting, and controlled modification or retirement. The arrows indicate that each stage depends on the validity of the previous one and that the chain expresses the lifecycle-accountability logic of the CRA."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    ID[Controlled product identity]:::product
+    ROLES[Correct legal roles]:::product
+    REQUIREMENTS[Risk-based security requirements]:::product
+    CONTROLS[Implemented and tested controls]:::product
+    CONFORMITY[Classification-appropriate conformity]:::product
+    PLACEMENT[Secure market placement]:::product
+    SUPPORT[Support, remediation<br/>and reporting]:::product
+    RETIRE[Controlled modification<br/>or retirement]:::product
+
+    ID --> ROLES
+    ROLES --> REQUIREMENTS
+    REQUIREMENTS --> CONTROLS
+    CONTROLS --> CONFORMITY
+    CONFORMITY --> PLACEMENT
+    PLACEMENT --> SUPPORT
+    SUPPORT --> RETIRE
+
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+```
+
+Each transition must remain valid. A strong test report for the wrong build is not useful evidence. A certificate does not justify unassessed changes. A component SBOM does not establish complete-product security. A support date does not demonstrate that the update organisation will remain functional.
+
+```{mermaid}
+%%| label: fig-cyber-resilience-act-the-new-product-security-baseline-lifecycle-accountability
+%%| fig-cap: "CRA compliance is a recurrent lifecycle-accountability loop rather than a permanent status attached to a product name."
+%%| fig-alt: "A circular flow connects controlled product identity, legal roles, risk assessment, secure design and components, conformity assessment, market placement, support and vulnerability handling, reporting and corrective action, and change assessment. A positive change decision creates a new controlled product state. Customers, integrators, manufacturers, importers, notified bodies, CSIRTs, and market-surveillance authorities interact with different stages. Unresolved identity, evidence, support, or conformity gaps lead to blocking, restriction, withdrawal, or retirement."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    STATE[Controlled product state]:::product
+    ROLES[Legal roles]:::product
+    RISK[Risk assessment]:::product
+    DESIGN[Secure design, components<br/>testing and updates]:::product
+    CONFORMITY[Conformity assessment]:::product
+    MARKET[Declaration, CE marking<br/>and market placement]:::product
+    SUPPORT[Support and<br/>vulnerability handling]:::product
+    RESPONSE[Reporting and<br/>corrective action]:::product
+    CHANGE{Security-relevant change?}:::test
+
+    MFR([Manufacturer]):::entity
+    IMP([Importer]):::entity
+    INT([Integrator]):::entity
+    USER([Customer]):::entity
+    AUTH([Notified body, CSIRT<br/>or market authority]):::entity
+
+    FAILURE{{Block, restrict, withdraw<br/>recall or retire}}:::enforcement
+
+    STATE --> ROLES
+    ROLES --> RISK
+    RISK --> DESIGN
+    DESIGN --> CONFORMITY
+    CONFORMITY --> MARKET
+    MARKET --> SUPPORT
+    SUPPORT --> RESPONSE
+    RESPONSE --> CHANGE
+    CHANGE -- Yes --> STATE
+    CHANGE -- No --> SUPPORT
+
+    MFR --> STATE
+    IMP -. pre-market verification .-> CONFORMITY
+    INT -. boundary and configuration .-> DESIGN
+    USER -. suitability and operability .-> SUPPORT
+    AUTH -. assessment or enforcement .-> RESPONSE
+
+    STATE -- identity unresolved --> FAILURE
+    CONFORMITY -- evidence insufficient --> FAILURE
+    SUPPORT -- capability unavailable --> FAILURE
+    RESPONSE -- correction ineffective --> FAILURE
+
+    classDef entity fill:#dbeaf7,stroke:#285f8f,stroke-width:1.5px,color:#102a43;
+    classDef product fill:#dff3e8,stroke:#287a57,stroke-width:2px,color:#153b2b;
+    classDef test fill:#ffffff,stroke:#4f5962,stroke-width:1.5px,color:#252a2e;
+    classDef enforcement fill:#f8dddd,stroke:#9b2f2f,stroke-width:2px,color:#501717;
+```
+
+For manufacturers, the central capability is a product-assurance system linking release identity, risk, controls, components, tests, conformity, support, updates, and reporting.
+
+For importers, it is a genuine market gate that verifies the foreign manufacturer's product and evidence before Union placement.
+
+For integrators, it is control of the boundary between installation, new-product manufacture, and substantial modification.
+
+For customers, it is evidence-based procurement and continued-use governance rather than blind reliance on visible markings.
+
+Legal conformity, internal assurance, and actual security remain different propositions. The CRA does not promise permanent invulnerability. It requires manufacturers and supply-chain actors to make cybersecurity risks, decisions, evidence, support, vulnerabilities, and changes governable over time.
+
+The durable compliance capability is therefore reconstructability: the ability to establish what the product is, who is responsible, why it was considered fit for market placement, how it is supported, what changed, who was affected, and what corrective decision followed.
+
+That is the CRA's fundamental transition—from cybersecurity represented as a collection of product features to cybersecurity governed as **lifecycle accountability**.
+
+[^cyber-resilience-act-the-new-product-security-baseline-cra-regulation]: European Parliament and Council of the European Union. (2024). **Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements and amending Regulations (EU) No 168/2013 and (EU) 2019/1020 and Directive (EU) 2020/1828 (Cyber Resilience Act)**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng) 
+
+[^cyber-resilience-act-the-new-product-security-baseline-nis2-directive]: European Parliament and Council of the European Union. (2022). **Directive (EU) 2022/2555 on measures for a high common level of cybersecurity across the Union**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/dir/2022/2555/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-dora-regulation]: European Parliament and Council of the European Union. (2022). **Regulation (EU) 2022/2554 on digital operational resilience for the financial sector**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg/2022/2554/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-machinery-regulation]: European Parliament and Council of the European Union. (2023). **Regulation (EU) 2023/1230 on machinery**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg/2023/1230/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-ai-act]: European Parliament and Council of the European Union. (2024). **Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-product-liability-directive]: European Parliament and Council of the European Union. (2024). **Directive (EU) 2024/2853 on liability for defective products**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/dir/2024/2853/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-commission-guidance]: European Commission. (2026). **Commission guidance on the application of Regulation (EU) 2024/2847 (Cyber Resilience Act), C(2026) 5252 final and Annex**. *European Commission*. [Official publication](https://digital-strategy.ec.europa.eu/en/library/commission-publishes-new-guidance-support-timely-cyber-resilience-act-implementation) 
+
+[^cyber-resilience-act-the-new-product-security-baseline-commission-faqs]: European Commission. (2026). **FAQs on the Cyber Resilience Act, version 1.3**. *European Commission*. [Official publication](https://digital-strategy.ec.europa.eu/en/library/cyber-resilience-act-implementation-frequently-asked-questions) 
+
+[^cyber-resilience-act-the-new-product-security-baseline-implementing-regulation-2025-2392]: European Commission. (2025). **Commission Implementing Regulation (EU) 2025/2392 on the technical description of categories of important and critical products with digital elements**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg_impl/2025/2392/oj/eng)
+
+[^cyber-resilience-act-the-new-product-security-baseline-delegated-regulation-2026-881]: European Commission. (2026). **Commission Delegated Regulation (EU) 2026/881 specifying the terms and conditions for applying cybersecurity-related grounds when delaying dissemination of notifications**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg_del/2026/881/oj/eng) 
+
+[^cyber-resilience-act-the-new-product-security-baseline-reporting-page]: European Commission. (2026). **Cyber Resilience Act—Reporting obligations**. *Shaping Europe’s Digital Future*. [Official implementation page](https://digital-strategy.ec.europa.eu/en/policies/cra-reporting) 
+
+[^cyber-resilience-act-the-new-product-security-baseline-enisa-srp-faq]: European Union Agency for Cybersecurity. (2026). **Single Reporting Platform: Frequently asked questions**. *ENISA*. [Official implementation page](https://www.enisa.europa.eu/topics/product-security-and-certification/single-reporting-platform-srp)
+
+[^cyber-resilience-act-the-new-product-security-baseline-standardisation-page]: European Commission. (2026). **Cyber Resilience Act—Standardisation**. *Shaping Europe’s Digital Future*. [Official implementation page](https://digital-strategy.ec.europa.eu/en/policies/cra-standardisation)
+
+[^cyber-resilience-act-the-new-product-security-baseline-standardisation-rolling-plan]: European Commission. (2026). **Rolling Plan for ICT Standardisation 2026: Cybersecurity and network and information security**. *Interoperable Europe Portal*. [Official rolling plan](https://interoperable-europe.ec.europa.eu/collection/rolling-plan-ict-standardisation/cybersecurity-network-and-information-security-rp-2026)
+
+[^cyber-resilience-act-the-new-product-security-baseline-conformity-page]: European Commission. (2026). **Cyber Resilience Act—Conformity assessment**. *Shaping Europe’s Digital Future*. [Official implementation page](https://digital-strategy.ec.europa.eu/en/policies/cra-conformity-assessment)
+
+[^cyber-resilience-act-the-new-product-security-baseline-enisa-sme-survey]: European Union Agency for Cybersecurity. (2026). **SME CRA Survey Report**. *ENISA*. [Official report](https://www.enisa.europa.eu/sites/default/files/2026-06/SME%20CRA%20survey%20report.pdf)
