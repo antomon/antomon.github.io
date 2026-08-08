@@ -9,9 +9,10 @@ abstract: |
   
   This article reconstructs the mathematics of the attack, distinguishes the formal reduction from heuristic concrete-security estimates and practical demonstrations, and places the result in the context of earlier automorphism-based cryptanalysis of HAWK. It also explains why the HAWK team concluded that straightforward countermeasures, such as increasing parameters or moving to higher-rank modules, would erase the performance advantages that justified the candidate’s inclusion in NIST’s process, and examines what the withdrawal does—and does not—imply for lattice cryptography, NIST’s post-quantum standardization program, and AI-assisted cryptanalytic research.
 date: 2026-08-08
+date-modified: 2026-08-09
 categories: [cybersecurity, cryptography, machine learning, quantum computing, 🇬🇧]
 audiences: analyst, researcher, subject-matter-expert, technical specialist
-difficulty: intermediate
+difficulty: advanced
 image: "hawk.mythos.png"
 ---
 
@@ -660,21 +661,182 @@ This representation is more informative than recording only a value such as *bes
 
 ## The actual lesson of the HAWK withdrawal
 
-The withdrawal of HAWK is ultimately less a story about one weakened parameter set than about **cryptanalytic representation**. Before the 2026 result, key recovery was evaluated through a high-dimensional structured lattice problem whose estimated cost supported HAWK’s security claims. Straznickas and Weis did not change the public key, the verification algorithm, or the implementation. They changed the mathematical object through which the same public information was analyzed.
+## The actual lesson: the race is not only against Q-Day
 
-The decisive step was the exploitation of the additional Galois involution $\tau$. Combined with HAWK’s public Hermitian Gram matrix, that symmetry makes it possible to construct a public cocycle lattice containing the secret-derived element $V_\tau$ as a shortest vector. The geometry of this auxiliary lattice then permits the key-recovery problem to be reduced to polynomially many exact-SVP instances of dimension at most $n/2+1$. The resulting attack is therefore stronger not because of a faster implementation of the previously known attack, but because it solves a different and substantially smaller geometric problem that is mathematically equivalent for the purpose of recovering an equivalent signing key.
+The withdrawal of HAWK is ultimately less a story about one weakened parameter set than about **cryptanalytic representation**. Before the 2026 result, key recovery was evaluated through a high-dimensional structured lattice problem whose estimated cost supported HAWK's security claims. Straznickas and Weis did not change the public key, the verification algorithm, or the implementation. They changed the mathematical object through which the same public information was analyzed.
 
-This illustrates a fundamental property of cryptographic security. The relevant hardness is not the difficulty of the problem representation chosen by the designer, but the difficulty of the easiest equivalent problem that can be derived by an adversary from the public information. Nominal dimension, published security reductions, and current attack estimates are consequently provisional: each remains valid only until a new algebraic transformation exposes a more favorable representation.
+The decisive step was the exploitation of the additional Galois involution $\tau$. Combined with HAWK's public Hermitian Gram matrix, that symmetry makes it possible to construct a public cocycle lattice containing the secret-derived element $V_\tau$ as a shortest vector. The geometry of this auxiliary lattice then permits the key-recovery problem to be reduced to polynomially many exact-SVP instances of dimension at most $n/2+1$. The resulting attack is therefore stronger not because the previously known attack was implemented faster, but because the same public key could be mapped to a different and substantially smaller geometric problem that is sufficient for recovering an equivalent signing key.[^withdrawal-of-hawk-sw-paper]
 
-For HAWK, the sequence was particularly clear. Its cyclotomic structure supplied the additional involution; the involution exposed a publicly constrained cocycle; the cocycle produced a lower-dimensional shortest-vector problem; and the resulting reduction substantially lowered the estimated cost of equivalent-key recovery. Restoring the original security margin through straightforward parameter increases or higher-rank constructions would, according to the HAWK team, have removed enough of the scheme’s performance advantage to make continued standardization unattractive.[^withdrawal-of-hawk-pqc-thread]
+This illustrates a fundamental property of cryptographic security. The relevant hardness is not the difficulty of the problem representation chosen by the designer, but the difficulty of the easiest equivalent problem that can be derived by an adversary from public information. Nominal dimension, published security reductions, and concrete attack estimates are therefore provisional: each remains valid only for as long as no better mathematical representation of the attack is known.
 
-The withdrawal therefore followed from the interaction of two results rather than from either one alone: the cryptanalysis moved the security frontier, and the cost of moving HAWK back behind that frontier would have undermined the properties for which NIST had advanced it. The candidate ceased to occupy a compelling point in the security–performance design space.
+For HAWK, the sequence was unusually clear. Its cyclotomic structure supplied the additional involution; the involution exposed a publicly constrained cocycle; the cocycle produced a lower-dimensional shortest-vector problem; and the resulting reduction substantially lowered the estimated cost of equivalent-key recovery. Straightforward remedies identified by the HAWK team, including doubling the parameters or moving to higher-rank modules, would in its judgment have removed enough of HAWK's performance advantage to make the candidate uncompetitive.[^withdrawal-of-hawk-pqc-thread]
 
-This also places the standards outcome in the correct perspective. NIST did not lose a deployed post-quantum standard. The evaluation process acquired new cryptanalytic information while HAWK was still a candidate, the designers incorporated that information into their security assessment, and the scheme was withdrawn before standardization. The episode is consequently evidence of uncertainty being resolved before deployment rather than of a deployed standard failing afterward.
+That explains the withdrawal. From a cybersecurity perspective, however, the more important lesson begins one level above HAWK itself.
 
-The role of AI-assisted research adds a second, more forward-looking implication. The significant change may not be that an AI system participated in one successful cryptanalytic result, but that mathematical attack surfaces can increasingly be searched with sustained machine-assisted effort. Literature synthesis, symbolic manipulation, experimental coding, alternative derivations, and repeated exploration of unpromising branches can all be conducted at a scale that was previously constrained by scarce expert time.
+### The post-quantum transition is now a race between several clocks
 
-Future cryptographic candidates will therefore have to withstand not only prolonged human scrutiny but a progressively denser search over alternative mathematical representations. For highly structured constructions in particular, the decisive attack may not come from solving the intended hard problem faster. It may come from discovering the transformation that reveals that the attacker never needed to solve that problem in its original form at all.
+The conventional description of the quantum threat imagines a single race: defenders must replace RSA and elliptic-curve cryptography before a cryptographically relevant quantum computer can execute Shor's algorithm at the required scale. That remains true, but it is incomplete.
+
+As I argued in [*When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security*](https://4m4.it/longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/), the relevant security horizon is not defined only by the arrival date of a quantum computer. Long-lived certificates, firmware signatures, software-update authorities, PKI roots, signed records, identities, and other trust artifacts may remain operational long after the cryptographic assumptions under which they were created have expired.
+
+More recent quantum resource estimates sharpen that problem rather than resolving it. In [*Quantum Cryptography at the Edge of Feasibility: Resource Estimates, Architectural Divergence, and Systemic Risk*](https://4m4.it/posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/), I examined how the feasibility of a cryptographically relevant quantum attack depends not on one physical-qubit threshold but on the convergence of circuit optimization, fault-tolerant error correction, hardware architecture, connectivity, and execution speed. The uncertainty is therefore architectural and quantitative, not a reason to assume that the threat can safely be deferred.
+
+At the same time, the defensive clock has become explicit. NIST now states that organizations should begin migration to its finalized post-quantum standards.[^withdrawal-of-hawk-nist-pqc-migration] The European roadmap calls for Member States to begin transitioning by the end of 2026 and for critical infrastructures to complete their transition as soon as possible and no later than the end of 2030.[^withdrawal-of-hawk-eu-pqc-roadmap] The UK NCSC places cryptographic discovery and migration planning by 2028, the highest-priority migrations by 2031, and completion by 2035.[^withdrawal-of-hawk-ncsc-pqc-timeline]
+
+The United States has compressed that planning horizon further for its federal ecosystem. Executive Order 14412 requires high-value assets and high-impact federal systems to transition to post-quantum key establishment by 31 December 2030 and to post-quantum digital signatures by 31 December 2031. It also connects the transition to cryptographic inventories, a future Cryptographic Bill of Materials, validation processes, critical-infrastructure planning, and federal procurement.[^withdrawal-of-hawk-us-pqc-order] I discussed the architectural significance of this shift in [*When Digital Trust Gets a Deadline*](https://4m4.it/posts/when-digital-trust-gets-a-deadline/index.html): once migration acquires explicit deadlines, cryptographic debt becomes a present procurement, architecture, lifecycle, and supply-chain constraint rather than a hypothetical future cybersecurity problem.
+
+HAWK reveals that there is now a **third clock** in addition to quantum progress and migration: the rate at which the defensive algorithms themselves are subjected to increasingly intensive cryptanalysis.
+
+```{mermaid}
+%%| label: fig-hawk-post-quantum-race
+%%| fig-cap: "The post-quantum security race is governed by multiple clocks. Quantum engineering advances the offensive capability frontier; classical and AI-assisted cryptanalysis continuously tests the defensive algorithms; organizations must migrate long-lived systems and trust infrastructures before either frontier invalidates the assumptions on which those systems depend."
+%%| fig-alt: "A diagram showing four concurrent processes in the post-quantum security race: advances in quantum capability, cryptanalysis of post-quantum algorithms, standards and migration, and the lifetime of deployed digital trust. Quantum and cryptanalytic progress increase pressure while standards, crypto-agility, and migration reduce exposure."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+
+    subgraph OFFENSE["Offensive capability"]
+        Q1["Quantum hardware"]
+        Q2["Error correction<br/>and architecture"]
+        Q3["Cryptographically relevant<br/>quantum capability"]
+        Q1 --> Q2 --> Q3
+    end
+
+    subgraph CRYPTANALYSIS["Cryptanalytic frontier"]
+        C1["Human cryptanalysis"]
+        C2["AI-assisted<br/>hypothesis search"]
+        C3["New reductions<br/>and attacks"]
+        C1 --> C3
+        C2 --> C3
+    end
+
+    subgraph DEFENSE["Defensive transition"]
+        D1["Standards and<br/>algorithm selection"]
+        D2["Cryptographic inventory<br/>and crypto-agility"]
+        D3["PQC migration<br/>and replacement"]
+        D1 --> D2 --> D3
+    end
+
+    subgraph TRUST["Existing digital trust"]
+        T1["Long-lived data"]
+        T2["Certificates and<br/>trust anchors"]
+        T3["Software, firmware,<br/>identity and evidence"]
+    end
+
+    Q3 -->|"threatens classical PKC"| TRUST
+    C3 -->|"changes security margins"| D1
+    TRUST -->|"creates migration urgency"| D2
+    D3 -->|"reduces exposure"| TRUST
+```
+
+## The actual lesson: the race is not only against Q-Day
+
+The withdrawal of HAWK is ultimately less a story about one weakened parameter set than about **cryptanalytic representation**. Before the 2026 result, key recovery was evaluated through a high-dimensional structured lattice problem whose estimated cost supported HAWK's security claims. Straznickas and Weis did not change the public key, the verification algorithm, or the implementation. They changed the mathematical object through which the same public information was analyzed.
+
+The decisive step was the exploitation of the additional Galois involution $\tau$. Combined with HAWK's public Hermitian Gram matrix, that symmetry makes it possible to construct a public cocycle lattice containing the secret-derived element $V_\tau$ as a shortest vector. The geometry of this auxiliary lattice then permits the key-recovery problem to be reduced to polynomially many exact-SVP instances of dimension at most $n/2+1$. The resulting attack is therefore stronger not because the previously known attack was implemented faster, but because the same public key could be mapped to a different and substantially smaller geometric problem that is sufficient for recovering an equivalent signing key.[^withdrawal-of-hawk-sw-paper]
+
+This illustrates a fundamental property of cryptographic security. The relevant hardness is not the difficulty of the problem representation chosen by the designer, but the difficulty of the easiest equivalent problem that can be derived by an adversary from public information. Nominal dimension, published security reductions, and concrete attack estimates are therefore provisional: each remains valid only for as long as no better mathematical representation of the attack is known.
+
+For HAWK, the sequence was unusually clear. Its cyclotomic structure supplied the additional involution; the involution exposed a publicly constrained cocycle; the cocycle produced a lower-dimensional shortest-vector problem; and the resulting reduction substantially lowered the estimated cost of equivalent-key recovery. Straightforward remedies identified by the HAWK team, including doubling the parameters or moving to higher-rank modules, would in its judgment have removed enough of HAWK's performance advantage to make the candidate uncompetitive.[^withdrawal-of-hawk-pqc-thread]
+
+That explains the withdrawal. From a cybersecurity perspective, however, the more important lesson begins one level above HAWK itself.
+
+## The post-quantum transition is now a race between several clocks
+
+The conventional description of the quantum threat imagines a single race: defenders must replace RSA and elliptic-curve cryptography before a cryptographically relevant quantum computer can execute Shor's algorithm at the required scale. That remains true, but it is incomplete.
+
+As I argued in [*When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security*](https://4m4.it/longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/), the relevant security horizon is not defined only by the arrival date of a quantum computer. Long-lived certificates, firmware signatures, software-update authorities, PKI roots, signed records, identities, and other trust artifacts may remain operational long after the cryptographic assumptions under which they were created have expired.
+
+More recent quantum resource estimates sharpen that problem rather than resolving it. In [*Quantum Cryptography at the Edge of Feasibility: Resource Estimates, Architectural Divergence, and Systemic Risk*](https://4m4.it/posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/), I examined how the feasibility of a cryptographically relevant quantum attack depends not on one physical-qubit threshold but on the convergence of circuit optimization, fault-tolerant error correction, hardware architecture, connectivity, and execution speed. The uncertainty is therefore architectural and quantitative, not a reason to assume that the threat can safely be deferred.
+
+At the same time, the defensive clock has become explicit. NIST now states that organizations should begin migration to its finalized post-quantum standards.[^withdrawal-of-hawk-nist-pqc-migration] The European roadmap calls for Member States to begin transitioning by the end of 2026 and for critical infrastructures to complete their transition as soon as possible and no later than the end of 2030.[^withdrawal-of-hawk-eu-pqc-roadmap] The UK NCSC places cryptographic discovery and migration planning by 2028, the highest-priority migrations by 2031, and completion by 2035.[^withdrawal-of-hawk-ncsc-pqc-timeline]
+
+The United States has compressed that planning horizon further for its federal ecosystem. Executive Order 14412 requires high-value assets and high-impact federal systems to transition to post-quantum key establishment by 31 December 2030 and to post-quantum digital signatures by 31 December 2031. It also connects the transition to cryptographic inventories, a future Cryptographic Bill of Materials, validation processes, critical-infrastructure planning, and federal procurement.[^withdrawal-of-hawk-us-pqc-order] I discussed the architectural significance of this shift in [*When Digital Trust Gets a Deadline*](https://4m4.it/posts/when-digital-trust-gets-a-deadline/index.html): once migration acquires explicit deadlines, cryptographic debt becomes a present procurement, architecture, lifecycle, and supply-chain constraint rather than a hypothetical future cybersecurity problem.
+
+HAWK reveals that there is now a **third clock** in addition to quantum progress and migration: the rate at which the defensive algorithms themselves are subjected to increasingly intensive cryptanalysis.
+
+```{mermaid}
+%%| label: fig-hawk-post-quantum-race
+%%| fig-cap: "The post-quantum security race is governed by multiple clocks. Quantum engineering advances the offensive capability frontier; classical and AI-assisted cryptanalysis continuously tests the defensive algorithms; organizations must migrate long-lived systems and trust infrastructures before either frontier invalidates the assumptions on which those systems depend."
+%%| fig-alt: "A diagram showing four concurrent processes in the post-quantum security race: advances in quantum capability, cryptanalysis of post-quantum algorithms, standards and migration, and the lifetime of deployed digital trust. Quantum and cryptanalytic progress increase pressure while standards, crypto-agility, and migration reduce exposure."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+
+    subgraph OFFENSE["Offensive capability"]
+        Q1["Quantum hardware"]
+        Q2["Error correction<br/>and architecture"]
+        Q3["Cryptographically relevant<br/>quantum capability"]
+        Q1 --> Q2 --> Q3
+    end
+
+    subgraph CRYPTANALYSIS["Cryptanalytic frontier"]
+        C1["Human cryptanalysis"]
+        C2["AI-assisted<br/>hypothesis search"]
+        C3["New reductions<br/>and attacks"]
+        C1 --> C3
+        C2 --> C3
+    end
+
+    subgraph DEFENSE["Defensive transition"]
+        D1["Standards and<br/>algorithm selection"]
+        D2["Cryptographic inventory<br/>and crypto-agility"]
+        D3["PQC migration<br/>and replacement"]
+        D1 --> D2 --> D3
+    end
+
+    subgraph TRUST["Existing digital trust"]
+        T1["Long-lived data"]
+        T2["Certificates and<br/>trust anchors"]
+        T3["Software, firmware,<br/>identity and evidence"]
+    end
+
+    Q3 -->|"threatens classical PKC"| TRUST
+    C3 -->|"changes security margins"| D1
+    TRUST -->|"creates migration urgency"| D2
+    D3 -->|"reduces exposure"| TRUST
+```
+
+The HAWK episode is important precisely because these clocks interact. The defensive side cannot simply select a post-quantum primitive once and regard the problem as solved. Algorithms must survive cryptanalysis while standards bodies evaluate them; implementations must mature while organizations redesign protocols and infrastructure; and deployed systems must remain replaceable if either quantum engineering or conventional cryptanalysis changes the acceptable security baseline.
+
+This should not be misread as evidence that NIST's finalized PQC standards have become suspect. HAWK was an additional-signature candidate, not a deployed NIST standard, and the new attack depends on structural properties specific to HAWK. The cybersecurity lesson is instead one of **cryptographic agility under uncertainty**. The post-quantum transition replaces one set of hardness assumptions with another; it does not eliminate the need to manage those assumptions over time.
+
+The race therefore has at least four interacting variables:
+
+* how quickly cryptographically relevant quantum computing becomes feasible;
+* how quickly classical and AI-assisted cryptanalysis improves against candidate and deployed post-quantum constructions;
+* how quickly standards, products, protocols, and organizations can migrate;
+* how long existing data, devices, identities, signatures, certificates, trust anchors, and operational systems must remain secure.
+
+Security depends on the relative movement of all four. HAWK provides a concrete example of the second variable moving abruptly. No quantum computer was involved. A better classical mathematical representation was enough to change the estimated security of a post-quantum candidate and remove it from the standards process. That is significant because it shows that the defensive frontier itself is dynamic while migration is already under way.
+
+For cybersecurity architecture, the implication is stronger than "deploy PQC." The target state must be **post-quantum and cryptographically replaceable**. Algorithms and parameters should not be permanently embedded in application logic; cryptographic dependencies must be inventoried; protocols and certificate infrastructures must support controlled transition; suppliers must expose cryptographic dependencies and lifecycle commitments; firmware and long-lived devices must have viable upgrade paths; and trust anchors must be replaceable without reconstructing the systems that depend on them.
+
+This is the common thread connecting HAWK with the broader quantum-security problem developed in my earlier analyses. [*When Digital Trust Expires*](https://4m4.it/longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/) examined what happens when the cryptographic basis of authenticity expires. [*Quantum Cryptography at the Edge of Feasibility*](https://4m4.it/posts/quantum-cryptography-edge-feasibility-resource-estimates-architectural-divergence-systemic-risk/) examined the changing engineering distance between Shor's algorithm and a realizable attack. [*When Digital Trust Gets a Deadline*](https://4m4.it/posts/when-digital-trust-gets-a-deadline/index.html) examined the transition from an uncertain threat horizon to explicit migration deadlines.
+
+HAWK adds another piece: **the replacement algorithms are themselves objects in an active adversarial research process**.
+
+The objective of the post-quantum transition is therefore not to discover a mathematically permanent algorithm and replace every existing primitive with it. No standards process can guarantee mathematical permanence. The objective is to move digital infrastructure onto assumptions that survive the best available analysis while simultaneously making the infrastructure capable of changing those assumptions again.
+
+That distinction changes the meaning of the current race. The defender does not win merely by migrating before Q-Day. The defender wins by reaching a state in which quantum progress, new cryptanalysis, or a future failure of an individual primitive can be absorbed as a managed lifecycle event rather than as a systemic failure of digital trust.
+
+HAWK itself demonstrates that this mechanism can work. A promising candidate entered public evaluation, a new attack changed its security–performance position, the designers validated the result, and the candidate was withdrawn before standardization. The system did not lose a deployed post-quantum algorithm; it gained information before deployment.
+
+The role of AI-assisted cryptanalysis makes that mechanism still more important. Future candidates may face a denser and faster search over their algebraic structure than previous generations of cryptography. The decisive attack may come from improved quantum hardware, from a better classical algorithm, from a newly recognized automorphism, or from an AI-assisted search that connects existing mathematics in a way that human researchers had not yet explored.
+
+The strategic conclusion is therefore broader than HAWK:
+
+> **Post-quantum cybersecurity is not a migration from vulnerable cryptography to permanent cryptography. It is a race to build digital trust whose cryptographic assumptions can be replaced faster than adversaries can invalidate them.**
+
+That is the actual security objective.
+
+[^withdrawal-of-hawk-nist-pqc-migration]: National Institute of Standards and Technology. (2026). **Post-Quantum Cryptography**. *NIST Computer Security Resource Center*. NIST states that, following publication of the first three final PQC standards, organizations should begin migrating their systems to quantum-resistant cryptography. [Official project page](https://csrc.nist.gov/projects/post-quantum-cryptography)
+
+[^withdrawal-of-hawk-eu-pqc-roadmap]: European Commission. (2025). **A Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography**. *Shaping Europe's Digital Future*. The roadmap calls for Member States to begin transitioning by the end of 2026 and for critical infrastructures to transition as soon as possible and no later than the end of 2030. [Official roadmap](https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography)
+
+[^withdrawal-of-hawk-ncsc-pqc-timeline]: UK National Cyber Security Centre. (2025). **Timelines for Migration to Post-Quantum Cryptography**. *NCSC*. The guidance sets milestones of 2028 for discovery and initial planning, 2031 for highest-priority migrations, and 2035 for completion. [Official guidance](https://www.ncsc.gov.uk/guidance/pqc-migration-timelines)
+
+[^withdrawal-of-hawk-us-pqc-order]: The White House. (2026). **Executive Order 14412 — Securing the Nation Against Advanced Cryptographic Attacks**. *The White House*, 22 June 2026. The order requires high-value assets and high-impact federal systems to use PQC for key establishment by 31 December 2030 and for digital signatures by 31 December 2031, and establishes related requirements for inventories, migration planning, a Cryptographic Bill of Materials, validation, critical-infrastructure support, and federal procurement. [Official text](https://www.whitehouse.gov/presidential-actions/2026/06/securing-the-nation-against-advanced-cryptographic-attacks/)
 
 [^withdrawal-of-hawk-nist-round3]: National Institute of Standards and Technology. (2026). **Round 3 Additional Signatures**. *Post-Quantum Cryptography: Additional Digital Signature Schemes, NIST Computer Security Resource Center*. The page records that the HAWK submission team withdrew the candidate from the additional digital-signature standardization process; updated 29 July 2026. [Official candidate-status page](https://csrc.nist.gov/projects/pqc-dig-sig/round-3-additional-signatures)
 
