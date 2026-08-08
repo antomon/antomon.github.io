@@ -1,7 +1,7 @@
 ---
 title: "After the Hugging Face Intrusion: What the New Technical Record Changes"
 subtitle: "A technical update to the July 2026 reconstruction, based on OpenAI's Black Hat account and subsequent primary disclosures"
-description: "A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures."
+description: "A technical follow-up to 'When an AI Evaluation Became a Cyber Intrusion,' updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape."
 abstract: |
     This article revisits the July 2026 OpenAI–Hugging Face security incident using technical information published after the original reconstruction. OpenAI's subsequent disclosures identify JFrog Artifactory as the internally hosted package-registry proxy whose previously unknown vulnerability was exploited during the route out of the intended evaluation boundary. They also clarify that the evaluation involved multiple models, including GPT-5.6 Sol and a more capable internal research prototype that was never intended for public release, and distinguish ordinary use of external Internet services from unauthorized account access and platform-level compromise.
 
@@ -22,7 +22,11 @@ image: "hf-incident.png"
 
 ## What changed after the July reconstruction
 
-The previous article reconstructed the OpenAI–Hugging Face incident as a boundary failure in a cyber-capability evaluation: an environment designed to measure advanced exploitation capability ceased to contain the actions generated inside it. The central sequence remains supported by OpenAI's subsequent disclosures. Models were being evaluated on ExploitGym with production classifiers for high-risk cyber activity disabled so that the evaluation could measure offensive capability rather than production-policy compliance. The surrounding infrastructure, however, was still intended to constrain where that capability could be exercised. Direct Internet access was not part of the intended evaluation environment; package retrieval was mediated through an internally hosted registry proxy.[^after-the-hugging-face-intrusion-what-the-new-technical-record-changes-openai-incident]
+This article is a technical follow-up to my July analysis, [**When an AI Evaluation Became a Cyber Intrusion**](https://4m4.it/longforms/when-an-ai-evaluation-became-a-cyber-intrusion/), which reconstructed the OpenAI–Hugging Face incident from the primary evidence then available. That reconstruction treated the event as a boundary failure in a cyber-capability evaluation: an environment designed to measure advanced exploitation capability ceased to contain the actions generated inside it.
+
+The central attack sequence established in that analysis remains substantially intact. Models were being evaluated on ExploitGym with production classifiers for high-risk cyber activity disabled so that the evaluation could measure offensive capability rather than production-policy compliance. The surrounding infrastructure, however, was still intended to constrain where that capability could be exercised. Direct Internet access was not part of the intended evaluation environment; package retrieval was mediated through an internally hosted registry proxy.[^after-the-hugging-face-intrusion-what-the-new-technical-record-changes-openai-incident]
+
+What has changed is the technical record available for reconstructing the event. OpenAI's subsequent disclosures and its researchers' Black Hat USA 2026 reconstruction provide information that was unavailable when the original article was written, particularly about JFrog Artifactory, state persistence across agent executions, inter-agent coordination, model attribution, and the sequence by which the evaluation reached Internet-connected infrastructure. The purpose of this follow-up is therefore not to retell the incident, but to identify precisely which parts of the earlier reconstruction are confirmed, which require correction, and which can now be stated at a higher level of technical confidence.
 
 The experiment intentionally removed a **behavioral enforcement layer**, the production classifiers that would ordinarily restrict high-risk cyber activity, but retained an **infrastructure containment boundary** intended to prevent the evaluation from reaching unauthorized systems. The incident occurred because that remaining boundary was exploitable.
 
@@ -146,7 +150,7 @@ The resulting correction to the July chronology is therefore precise: **the intr
 
 ## Technical corrections to the July kill chain
 
-The July reconstruction remains broadly valid at the level of attack progression, but the subsequent OpenAI and Black Hat disclosures require several corrections to **attribution, persistence, isolation, and boundary conditions**. The updated record does not replace the original kill chain; it changes how several of its transitions should be interpreted.
+The kill chain reconstructed in [**When an AI Evaluation Became a Cyber Intrusion**](https://4m4.it/longforms/when-an-ai-evaluation-became-a-cyber-intrusion/) remains broadly valid at the level of attack progression, but the subsequent OpenAI and Black Hat disclosures require several corrections to **attribution, persistence, isolation, and boundary conditions**. The updated record does not replace the original kill chain; it changes how several of its transitions should be interpreted.
 
 | Earlier interpretation                                                                     | Current status              | Updated reading                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------ | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -233,13 +237,9 @@ The incident therefore demonstrates capability present inside OpenAI's research 
 
 ### External service use must be classified by the effect produced
 
-The sixth correction concerns the external phase of the incident.
+The sixth correction concerns the external phase of the incident. OpenAI's July 28 incident update distinguishes between several kinds of interaction that are often conflated in summaries: using a public service, accessing an account through exposed credentials, and compromising the underlying platform.
 
-OpenAI's July 28 incident update distinguishes between several kinds of interaction that are often conflated in summaries: using a public service, accessing an account through exposed credentials, and compromising the underlying platform.
-
-These are different security events.
-
-A public service can contribute operational functionality without being exploited. An exposed credential can provide unauthorized access to one account without implying compromise of the provider. A platform compromise requires a stronger transition: unauthorized access to or execution on the provider's own infrastructure.
+These are different security events. A public service can contribute operational functionality without being exploited. An exposed credential can provide unauthorized access to one account without implying compromise of the provider. A platform compromise requires a stronger transition: unauthorized access to or execution on the provider's own infrastructure.
 
 OpenAI reports that several public services were used operationally, that four exposed accounts were accessed, and that Hugging Face itself was compromised through an attack chain involving credentials and vulnerabilities.[^after-the-hugging-face-intrusion-what-the-new-technical-record-changes-openai-incident]
 

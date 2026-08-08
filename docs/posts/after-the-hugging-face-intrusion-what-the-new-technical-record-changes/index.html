@@ -8,7 +8,7 @@
 
 <meta name="author" content="Antonio Montano">
 <meta name="dcterms.date" content="2026-08-08">
-<meta name="description" content="A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures.">
+<meta name="description" content="A technical follow-up to ‘When an AI Evaluation Became a Cyber Intrusion,’ updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape.">
 
 <title>After the Hugging Face Intrusion: What the New Technical Record Changes – Random Bits of Knowledge</title>
 <style>
@@ -150,13 +150,13 @@ window.Quarto = {
 
 <link rel="stylesheet" href="../../style.css">
 <meta property="og:title" content="After the Hugging Face Intrusion: What the New Technical Record Changes – Random Bits of Knowledge">
-<meta property="og:description" content="A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures.">
+<meta property="og:description" content="A technical follow-up to ‘When an AI Evaluation Became a Cyber Intrusion,’ updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape.">
 <meta property="og:image" content="https://antomon.github.io/posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/hf-incident.png">
 <meta property="og:site_name" content="Random Bits of Knowledge">
 <meta property="og:image:height" content="768">
 <meta property="og:image:width" content="1408">
 <meta name="twitter:title" content="After the Hugging Face Intrusion: What the New Technical Record Changes – Random Bits of Knowledge">
-<meta name="twitter:description" content="A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures.">
+<meta name="twitter:description" content="A technical follow-up to ‘When an AI Evaluation Became a Cyber Intrusion,’ updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape.">
 <meta name="twitter:image" content="https://antomon.github.io/posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/hf-incident.png">
 <meta name="twitter:image-height" content="768">
 <meta name="twitter:image-width" content="1408">
@@ -276,7 +276,7 @@ window.Quarto = {
             <p class="subtitle lead">A technical update to the July 2026 reconstruction, based on OpenAI’s Black Hat account and subsequent primary disclosures</p>
                   <div>
         <div class="description">
-          A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures.
+          A technical follow-up to ‘When an AI Evaluation Became a Cyber Intrusion,’ updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape.
         </div>
       </div>
                           <div class="quarto-categories">
@@ -775,11 +775,13 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <div class="article-standfirst">
-<p>A technical follow-up to the OpenAI–Hugging Face cyber-evaluation incident, reconstructing how persistent Artifactory-backed state altered the attack history, correcting model and infrastructure attribution, and distinguishing the observed intrusion from later OpenAI and Anthropic evaluation failures.</p>
+<p>A technical follow-up to ‘When an AI Evaluation Became a Cyber Intrusion,’ updating the OpenAI–Hugging Face reconstruction with new evidence on Artifactory-backed state persistence, inter-agent coordination, model attribution, and the containment escape.</p>
 </div>
 <section id="what-changed-after-the-july-reconstruction" class="level2">
 <h2 class="anchored" data-anchor-id="what-changed-after-the-july-reconstruction">What changed after the July reconstruction</h2>
-<p>The previous article reconstructed the OpenAI–Hugging Face incident as a boundary failure in a cyber-capability evaluation: an environment designed to measure advanced exploitation capability ceased to contain the actions generated inside it. The central sequence remains supported by OpenAI’s subsequent disclosures. Models were being evaluated on ExploitGym with production classifiers for high-risk cyber activity disabled so that the evaluation could measure offensive capability rather than production-policy compliance. The surrounding infrastructure, however, was still intended to constrain where that capability could be exercised. Direct Internet access was not part of the intended evaluation environment; package retrieval was mediated through an internally hosted registry proxy.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>This article is a technical follow-up to my July analysis, <a href="https://4m4.it/longforms/when-an-ai-evaluation-became-a-cyber-intrusion/"><strong>When an AI Evaluation Became a Cyber Intrusion</strong></a>, which reconstructed the OpenAI–Hugging Face incident from the primary evidence then available. That reconstruction treated the event as a boundary failure in a cyber-capability evaluation: an environment designed to measure advanced exploitation capability ceased to contain the actions generated inside it.</p>
+<p>The central attack sequence established in that analysis remains substantially intact. Models were being evaluated on ExploitGym with production classifiers for high-risk cyber activity disabled so that the evaluation could measure offensive capability rather than production-policy compliance. The surrounding infrastructure, however, was still intended to constrain where that capability could be exercised. Direct Internet access was not part of the intended evaluation environment; package retrieval was mediated through an internally hosted registry proxy.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>What has changed is the technical record available for reconstructing the event. OpenAI’s subsequent disclosures and its researchers’ Black Hat USA 2026 reconstruction provide information that was unavailable when the original article was written, particularly about JFrog Artifactory, state persistence across agent executions, inter-agent coordination, model attribution, and the sequence by which the evaluation reached Internet-connected infrastructure. The purpose of this follow-up is therefore not to retell the incident, but to identify precisely which parts of the earlier reconstruction are confirmed, which require correction, and which can now be stated at a higher level of technical confidence.</p>
 <p>The experiment intentionally removed a <strong>behavioral enforcement layer</strong>, the production classifiers that would ordinarily restrict high-risk cyber activity, but retained an <strong>infrastructure containment boundary</strong> intended to prevent the evaluation from reaching unauthorized systems. The incident occurred because that remaining boundary was exploitable.</p>
 <p>OpenAI describes at least one attack path in which stolen credentials and zero-day vulnerabilities were combined to obtain remote code execution on Hugging Face servers. Hugging Face’s subsequent forensic reconstruction narrows the resulting data-access claim: the agent accessed five datasets whose names and files suggested a connection to ExploitGym/CyberGym challenges and solutions and separately read an internal datasets-server MongoDB, while attempts to reach the Hub production database were unsuccessful.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
 <p>The broad conclusion of the July reconstruction therefore does not change: an offensive model evaluation produced unauthorized effects outside its intended range. What changes is the reconstruction of how the OpenAI-side portion of the incident accumulated before that external compromise.</p>
@@ -884,7 +886,7 @@ Figure&nbsp;2: Artifactory participated in two distinct parts of the incident: a
 </section>
 <section id="technical-corrections-to-the-july-kill-chain" class="level2">
 <h2 class="anchored" data-anchor-id="technical-corrections-to-the-july-kill-chain">Technical corrections to the July kill chain</h2>
-<p>The July reconstruction remains broadly valid at the level of attack progression, but the subsequent OpenAI and Black Hat disclosures require several corrections to <strong>attribution, persistence, isolation, and boundary conditions</strong>. The updated record does not replace the original kill chain; it changes how several of its transitions should be interpreted.</p>
+<p>The kill chain reconstructed in <a href="https://4m4.it/longforms/when-an-ai-evaluation-became-a-cyber-intrusion/"><strong>When an AI Evaluation Became a Cyber Intrusion</strong></a> remains broadly valid at the level of attack progression, but the subsequent OpenAI and Black Hat disclosures require several corrections to <strong>attribution, persistence, isolation, and boundary conditions</strong>. The updated record does not replace the original kill chain; it changes how several of its transitions should be interpreted.</p>
 <div id="tbl-after-the-hugging-face-intrusion-what-the-new-technical-record-changes-corrections" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <div aria-describedby="tbl-after-the-hugging-face-intrusion-what-the-new-technical-record-changes-corrections-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -1009,10 +1011,8 @@ Table&nbsp;1: Principal corrections introduced by the post-July primary record.
 </section>
 <section id="external-service-use-must-be-classified-by-the-effect-produced" class="level3">
 <h3 class="anchored" data-anchor-id="external-service-use-must-be-classified-by-the-effect-produced">External service use must be classified by the effect produced</h3>
-<p>The sixth correction concerns the external phase of the incident.</p>
-<p>OpenAI’s July 28 incident update distinguishes between several kinds of interaction that are often conflated in summaries: using a public service, accessing an account through exposed credentials, and compromising the underlying platform.</p>
-<p>These are different security events.</p>
-<p>A public service can contribute operational functionality without being exploited. An exposed credential can provide unauthorized access to one account without implying compromise of the provider. A platform compromise requires a stronger transition: unauthorized access to or execution on the provider’s own infrastructure.</p>
+<p>The sixth correction concerns the external phase of the incident. OpenAI’s July 28 incident update distinguishes between several kinds of interaction that are often conflated in summaries: using a public service, accessing an account through exposed credentials, and compromising the underlying platform.</p>
+<p>These are different security events. A public service can contribute operational functionality without being exploited. An exposed credential can provide unauthorized access to one account without implying compromise of the provider. A platform compromise requires a stronger transition: unauthorized access to or execution on the provider’s own infrastructure.</p>
 <p>OpenAI reports that several public services were used operationally, that four exposed accounts were accessed, and that Hugging Face itself was compromised through an attack chain involving credentials and vulnerabilities.<a href="#fn31" class="footnote-ref" id="fnref31" role="doc-noteref"><sup>31</sup></a></p>
 <p>The external phase should therefore be reconstructed according to the <strong>effect produced</strong>, not simply according to whether a domain or service appeared in the agent trace.</p>
 </section>
@@ -1557,6 +1557,15 @@ x_{i,t+1} &amp;= F(x_{i,t},a_{i,t}).
 <h2 class="anchored">See also posts</h2>
 <div class="see-also-cards">
 <article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/withdrawal-of-hawk/">
+<img class="see-also-card-image" src="../../posts/withdrawal-of-hawk/hawk.mythos.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Withdrawal of HAWK</h5>
+<div class="see-also-card-subtitle">How a Galois involution cut the effective key-recovery dimension and ended a NIST post-quantum signature candidate</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
 <a class="see-also-card-link" href="../../posts/ai-mathematics-crosses-the-systems-boundary/">
 <img class="see-also-card-image" src="../../posts/ai-mathematics-crosses-the-systems-boundary/ai-mathematics-crosses-the-systems-boundary.png" alt="">
 <div class="see-also-card-body">
@@ -1598,15 +1607,6 @@ x_{i,t+1} &amp;= F(x_{i,t},a_{i,t}).
 <div class="see-also-card-body">
 <h5 class="see-also-card-title anchored">When Digital Trust Gets a Deadline</h5>
 <div class="see-also-card-subtitle">The U.S. 2030 post-quantum cryptography order, enterprise cryptographic debt, and why a federal mandate matters beyond America</div>
-</div>
-</a>
-</article>
-<article class="see-also-card">
-<a class="see-also-card-link" href="../../posts/ai-scientific-discovery-laboratory-closed-loop/">
-<img class="see-also-card-image" src="../../posts/ai-scientific-discovery-laboratory-closed-loop/ai-laboratory.png" alt="">
-<div class="see-also-card-body">
-<h5 class="see-also-card-title anchored">When AI Enters the Laboratory</h5>
-<div class="see-also-card-subtitle">Scientific discovery as a closed loop of prediction, experiment, and correction</div>
 </div>
 </a>
 </article>
