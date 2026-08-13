@@ -269,7 +269,7 @@ registerElkWhenMermaidIsReady();
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">April 11, 2026</p>
+        <p class="date-modified">August 12, 2026</p>
       </div>
     </div>
       
@@ -278,27 +278,13 @@ registerElkWhenMermaidIsReady();
   <div>
     <div class="abstract">
       <div class="block-title">Abstract</div>
-      <p>This article reconstructs the December 2025 cyberattack on Poland’s energy sector as a reference event for the next phase of OT and distributed-energy cybersecurity. The incident targeted at least thirty wind and photovoltaic sites, a major combined heat and power plant, and a manufacturing company. Its strategic relevance does not lie in the fact that it caused a national blackout, because it did not. Its relevance lies in something more precise and more transferable: the attackers degraded the digital coordination layer of energy infrastructure, damaging or disabling devices that supported telemetry, supervisory control, remote access, local visibility, protection, and restoration at the grid edge.</p>
-      <p>The article begins from the facts established by CERT Polska. On 29 December 2025, during winter conditions and shortly before New Year’s Eve, destructive cyber activity affected renewable generation sites, a CHP plant supplying heat to a large population, and an unrelated manufacturing company. The campaign crossed the boundary between enterprise compromise and OT sabotage. In the renewable segment, electricity generation continued, but communication with distribution system operators was lost and remote control was no longer available. This distinction is central to the article’s thesis: energy cyber risk cannot be measured only by asking whether electricity immediately stops flowing. A plant can continue producing while becoming unobservable, uncontrollable, harder to restore, and less trustworthy from the perspective of grid operation.</p>
-      <p>The reconstruction of the renewable-site attack focuses on the grid connection point. Wind and photovoltaic assets delivered energy through substations where voltage was stepped up and where DSOs maintained supervision and control through RTUs, HMIs, protection relays, serial device servers, communication links, and remote-access infrastructure. These substations were usually unmanned and depended structurally on remote management. The attack therefore did not need to compromise every turbine or inverter. It was sufficient to compromise the devices that mediated supervision, command, communication, and restoration at the grid interface. The article describes this as an attack on the operational nervous system of distributed generation rather than on the generation process itself.</p>
-      <p>Initial access at the renewable sites was tied to FortiGate appliances used as VPN concentrators and firewalls. The VPN interfaces were exposed to the internet, authentication did not require multifactor authentication, and account or password reuse across sites appears to have been a relevant scaling condition. Although several facilities used VLAN segregation, the attacker obtained administrative control of the FortiGate devices, which likely made it possible to bypass or reconfigure segmentation, gain access to multiple subnets, and reach OT management interfaces. The factory reset of FortiGate devices on the day of the attack then hindered recovery and destroyed local evidence. The perimeter device thus became simultaneously an entry point, a policy override point, a credential concentration point, and an evidence destruction point.</p>
-      <p>Once inside the grid connection point networks, the attacker executed destructive actions against OT and communications devices. Hitachi RTU560 controllers were compromised through default web credentials and corrupted firmware uploads. The modified firmware caused reboot loops and rendered the RTUs unavailable. Mikronika RTUs were accessed through default root SSH credentials and damaged by destructive filesystem commands. Hitachi Relion protection relays were attacked through default FTP access, allowing deletion of critical files and preventing restart. Windows HMIs running Mikronika Syndis software were accessed through default local administrator credentials, RDP, administrative shares, SMB exposure, PowerShell, Impacket-based reconnaissance, and finally DynoWiper execution. Moxa NPort serial device servers were accessed through default web credentials, reset, reconfigured, assigned unreachable IP addresses, and made harder to restore. The common pattern was not exotic ICS malware, but reachable management surfaces, default credentials, weak firmware integrity, unnecessary services, insufficient hardening, and recovery friction.</p>
-      <p>The article then reconstructs the CHP plant attack, which had a different tempo. Whereas the renewable-site campaign emphasized distributed OT device sabotage, the CHP case showed deeper enterprise compromise. The attacker conducted months of reconnaissance, unauthorized access, credential theft, lateral movement, and privilege escalation. Activity included RDP access through a FortiGate-related path, movement to jump hosts and domain controllers, screenshot capture, process and network reconnaissance, LSASS theft attempts, use of Rubeus, dumping of Active Directory data from <code>ntds.dit</code>, and extensive access to SMB systems, some of which had names suggesting SCADA relevance. This part of the incident shows how traditional Windows-domain compromise becomes strategically different when the enterprise environment is connected to industrial operations.</p>
-      <p>In the destructive phase at the CHP plant, the attacker attempted to distribute a wiper through Group Policy Objects from a domain controller. More than one hundred machines had the executable launched, but runtime protection by an EDR solution blocked execution through a canary mechanism. A second modified attempt also failed. The attacker then attempted direct storage-layer sabotage by booting Tiny Core Linux through a KVM interface and using <code>dd</code> to overwrite attached disks with random data, while also attempting to modify RAID configuration. The article treats this as evidence of operational adaptability: when ordinary file destruction was blocked, the attacker shifted toward lower-level destruction of server storage.</p>
-      <p>The manufacturing-company case provides a third pattern. The target was opportunistic rather than directly connected to the energy campaign, but it shared the same destructive timing and several technical motifs. Initial access came through a Fortinet perimeter device whose configuration or vulnerability history had already been exposed. The attacker used built-in FortiGate scripting for persistence, credential exfiltration, and security modification, including exfiltration to an attacker-controlled Slack channel. Internal movement used SSL VPN and Impacket, followed by PowerShell-based wiper deployment through Group Policy. The attacker also accessed Microsoft 365 services and showed interest in files and emails related to OT modernization, SCADA systems, and technical work. This indicates that destructive operations and intelligence collection can coexist inside the same campaign.</p>
-      <p>The malware analysis distinguishes DynoWiper and LazyWiper. DynoWiper was observed in the renewable HMI and CHP contexts. It corrupted files using pseudorandom data, deleted files, and in some versions shut down the system. It had no persistence, no command-and-control logic, and no special OT functionality. Its impact came from where it was executed, not from sophisticated industrial protocol manipulation. LazyWiper, used against the manufacturing company, was a PowerShell-based wiper that overwrote file contents at intervals across many file types, including engineering and business-relevant formats. The article emphasizes that destructive malware does not need to be technically elegant when the attacker already has privileged access, domain distribution mechanisms, and weakly governed operational environments.</p>
-      <p>Attribution is handled with caution. CERT Polska associated the infrastructure used for access, exfiltration, tunneling, wiper deployment, and storage sabotage with activity clusters known as Static Tundra, Berserk Bear, Ghost Blizzard, and Dragonfly, while remaining more conservative about malware attribution. ESET’s analysis went further on DynoWiper, attributing it to Sandworm with medium confidence and connecting it to earlier destructive activity. Dragos interpreted the event through an OT lens and assessed that the operation represented a coordinated attack against distributed energy resources at scale, associated with ELECTRUM with moderate confidence. The article does not force these readings into a single oversimplified attribution claim. Instead, it uses them to show that different analytic layers — infrastructure, malware, OT behavior, strategic targeting, and historical TTPs — may support different confidence levels.</p>
-      <p>The additional Dragos interpretation is central to the article’s strategic reading. In electric systems, loss of communication does not normally imply immediate shutdown. A site may continue operating locally while becoming unavailable for remote monitoring and control. This is why the Polish attack was serious even though it did not destabilize the national power system. The attackers affected the communications and control assets that connected grid operators to distributed generation and CHP facilities. The attack therefore demonstrated that the distributed edge of the grid can be targeted as an operational layer in its own right.</p>
-      <p>The article’s first major lesson is that the threshold for serious energy-sector impact is lower than the blackout-centric intuition suggests. Operationally relevant disruption can occur through loss of telemetry, loss of remote control, damaged edge devices, compromised remote-access infrastructure, impaired restoration, and reduced confidence in field-device integrity. A plant does not need to stop producing to become a problem for operators, owners, regulators, and system coordinators. If the same effect occurs across many sites, the resulting stress can become strategic even when each individual asset seems small.</p>
-      <p>The second lesson concerns distributed generation. Wind, solar, CHP, BESS, and hybrid assets are often treated as fragmented and therefore less attractive than centralized power assets. The Polish case shows the opposite possibility. Distributed assets can become scalable targets precisely because they are numerous, remotely operated, geographically dispersed, operationally standardized, and often protected with uneven maturity. What is decentralized electrically may still be concentrated cybernetically if many sites share similar VPN technologies, access procedures, administrative shortcuts, default credentials, serial gateways, RTUs, HMIs, and weak recovery assumptions.</p>
-      <p>The third lesson is that the decisive weaknesses were architectural and operational, not mainly exotic. The attack paths depended on internet-exposed VPNs, missing MFA, reused credentials, overprivileged perimeter devices, default accounts, reachable management protocols, firmware update weaknesses, weak HMI hardening, insufficient logging, and recovery procedures that had not been designed for hostile destruction. This means that the incident cannot be dismissed as a one-off zero-day story. Similar outcomes are plausible wherever comparable architectural patterns exist.</p>
-      <p>The article then shifts from incident reconstruction to design implications. It argues that enterprise architecture and IEC 62443 should be used at design time, not appended after procurement and deployment. If segmentation, remote access, conduits, identity boundaries, management planes, evidence collection, backup, recovery, vendor access, and administrative domains are decided late, the owner pays for fragility twice: first through fast but ambiguous implementation, then through compensating controls, redesign, and incident-response friction. If those decisions are made at architecture stage, security becomes a property of system shape rather than a set of late exceptions.</p>
-      <p>An IEC 62443 reading of the Polish failure modes converts generic lessons into concrete design properties. Remote access should terminate in a controlled access zone, not directly into OT. VLANs alone are not a security architecture when administrative control of the perimeter can collapse the zone model. Remote access requires individual accounts, MFA, credential rotation, and site-specific authorization. Default credentials must be removed during commissioning. Web, SSH, FTP, RDP, SMB, and firmware update interfaces must be reachable only from controlled maintenance or engineering zones. Firmware update paths need authenticated, authorized, logged, and integrity-checked change control. Field-device configurations must be backed up, versioned, and restorable. Logs must be exported to protected collectors outside the local device. Fleet standardization must standardize secure patterns, not identical weaknesses.</p>
-      <p>The article also applies the lesson to the Italian and European context. In Italy, the same structural risks appear in renewable plants, BESS, hybrid systems, grid-interface devices, remote O&amp;M models, vendor-support channels, cloud platforms, telemetry paths, dispatch interfaces, and Terna-related communication architectures. A modern energy plant is no longer only an electrical installation with digital components. It is a distributed cyber-physical operating system whose physical assets are observed, controlled, patched, diagnosed, optimized, dispatched, and sometimes overridden through digital trust relationships. The real attack surface is the graph of access, authority, dependency, delegation, and recovery that connects the plant to owners, EPCs, integrators, vendors, operators, aggregators, telcos, cloud services, market systems, and grid operators.</p>
-      <p>The regulatory layer reinforces the same conclusion. NIS2, the Italian Perimetro di Sicurezza Nazionale Cibernetica, the Cyber Resilience Act, the Terna Grid Code, Terna Annexes A.13 and A.69, and CEI 0-16 all point toward tighter governance of connected digital infrastructure. The article does not claim that architecture automatically equals compliance. Compliance still requires evidence, procedures, roles, documentation, testing, and governance. Its narrower and stronger claim is that a plant designed with explicit zones, conduits, secure remote access, asset accountability, logging, controlled change, vendor governance, backup, and recovery starts much closer to the direction in which regulation is moving.</p>
-      <p>The article’s treatment of the Terna layer is particularly relevant. Current and revised Terna requirements already treat communications, telecontrol, data acquisition, VPN protection, logging, incident reporting, mutual authentication, asset inventory, third-party governance, traffic isolation, patching, malware protection, backup, and restore as security-relevant properties of the plant-to-grid interface. This means that cybersecurity is not only a corporate IT policy issue. It is becoming embedded in the technical conditions under which telemetry, control, defense functions, and grid-related communication can operate.</p>
-      <p>The conclusion is that the Polish attack should be read as a constructive warning, not only as an alarming incident report. It shows that coordinated cyber sabotage of distributed generation does not require spectacular novelty. It requires enough knowledge of how modern plants are actually operated, enough access to the edge devices that mediate trust and control, and enough operational discipline to turn repeated weaknesses into repeatable disruption. The strategic response is therefore not a vague demand for “more security”, but a precise design agenda: govern remote access, dispatch interfaces, telemetry paths, OT management surfaces, logging, backup, restoration, vendor access, and fleet standardization as essential parts of plant architecture.</p>
-      <p>The deepest conclusion is that the future cyber risk of energy systems will not be determined only by the amount of renewable or distributed capacity added to the grid. It will be determined by how that capacity is digitally organized. If distributed generation is operationally connected faster than it is architecturally governed, the attack surface scales faster than resilience. If it is designed from the beginning as critical infrastructure, then many of the Polish attack paths become harder, noisier, slower, more constrained, and more recoverable.</p>
+      <p>This article reconstructs the coordinated cyberattacks carried out against Poland’s energy sector on 29 December 2025 and examines what they reveal about the security of distributed energy and operational technology environments. The campaign affected more than thirty wind and photovoltaic facilities, a large combined heat and power plant, a second CHP plant supplying approximately 50,000 residents, and a manufacturing company. Although the attacks did not destabilize the Polish power system or cause sustained loss of heat or electricity to customers, they produced destructive effects across both IT and OT environments, including loss of telemetry and remote control, destruction of field devices, attempts to wipe enterprise systems, and direct interference with industrial controllers.</p>
+      <p>The article argues that the strategic significance of the incident cannot be understood through a blackout-centric model of cyber risk. At the renewable sites, electricity generation largely continued while attackers disabled the digital infrastructure used to observe, supervise, communicate with, and remotely control grid connection points. FortiGate appliances, RTUs, HMIs, protection relays, serial device servers, and other operational components became attack surfaces because of weak remote-access controls, missing multifactor authentication, reused or default credentials, exposed management interfaces, insufficient firmware protections, and fragile recovery procedures. The result was an attack on the operational coordination layer of distributed generation rather than on generation itself.</p>
+      <p>The January 2026 CERT Polska report also showed that the campaign extended beyond distributed renewable assets. At a large CHP plant, the attacker conducted prolonged reconnaissance, credential theft, privilege escalation, Active Directory compromise, and attempts to distribute destructive malware through Group Policy. When endpoint protection blocked the wiper, the attacker shifted toward lower-level storage sabotage using a remotely booted Linux environment and disk-overwrite commands. At a manufacturing company, similar techniques combined Fortinet compromise, persistence, credential exfiltration, cloud access, PowerShell-based wiping, and interest in engineering and OT-modernization material. DynoWiper and LazyWiper illustrate a broader point developed throughout the article: destructive malware does not need specialized industrial functionality when the attacker has already acquired privileged access to systems that mediate industrial operations.</p>
+      <p>CERT Polska’s August 2026 follow-up materially extends this reconstruction. Investigators established that a second CHP plant had been attacked through an unusual lateral-movement path originating at a compromised wind farm. The attacker reached a Teltonika cellular router connected to a DSO-managed private APN, used that APN to discover a WAGO PFC200 controller associated with the CHP plant, and then pivoted through the controller into the plant’s OT network. From there, the attacker conducted industrial reconnaissance and ultimately placed Siemens PLCs into STOP mode, interrupting the steam turbine and process-water treatment systems and temporarily halting cogeneration. The plant recovered quickly enough to avoid customer-facing disruption, but the incident demonstrated that a private telecommunications network intended to interconnect field assets can become an attack path between operational environments when endpoint isolation, administrative-interface controls, credential hygiene, and trust boundaries are inadequate.</p>
+      <p>This follow-up sharpens the article’s central thesis. The decisive security boundary in modern energy infrastructure is not simply the perimeter of an individual plant, nor even the interface between a plant and a grid operator. It is the wider graph of remote access, administrative authority, telecommunications, vendor connectivity, shared infrastructure, field devices, and recovery dependencies that connects distributed assets into an operational system. What is electrically decentralized may remain cybernetically coupled. Shared VPN technologies, private APNs, management practices, credentials, device families, and maintenance architectures can transform repeated local weaknesses into scalable attack paths.</p>
+      <p>The article therefore interprets the Polish campaign primarily as an architectural failure mode rather than as a story about unusually sophisticated malware. Its implications extend to renewable plants, BESS, CHP, hybrid systems, grid-interface devices, remote O&amp;M, vendor-support channels, and other digitally mediated energy assets. Using enterprise architecture and IEC 62443 as design lenses, it argues for explicit zoning and conduits, strong remote-access controls, individual identities and MFA, elimination of default credentials, isolation of management interfaces, authenticated firmware and configuration changes, centralized logging, protected backups, tested restoration procedures, and treatment of private communications networks as untrusted unless their security properties are explicitly verified and enforced.</p>
+      <p>The broader conclusion is that the cyber resilience of future energy systems will depend not only on how much distributed capacity is deployed, but on how that capacity is digitally organized. If connectivity, remote operations, and fleet standardization scale faster than architectural governance, the attack surface scales with them. If trust boundaries, communications paths, device administration, evidence collection, and recovery are designed as critical-infrastructure properties from the outset, the same operational efficiencies that make distributed energy manageable need not become the mechanisms that make coordinated sabotage scalable.</p>
     </div>
   </div>
 
@@ -360,6 +346,36 @@ registerElkWhenMermaidIsReady();
   <li><a href="#what-this-means-in-practice" id="toc-what-this-means-in-practice" class="nav-link" data-scroll-target="#what-this-means-in-practice">What this means in practice</a></li>
   </ul></li>
   <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
+  <li><a href="#update-august-2026-the-private-apn-attack-path-into-a-second-chp-plant" id="toc-update-august-2026-the-private-apn-attack-path-into-a-second-chp-plant" class="nav-link" data-scroll-target="#update-august-2026-the-private-apn-attack-path-into-a-second-chp-plant">Update, August 2026: the private APN attack path into a second CHP plant</a>
+  <ul class="collapse">
+  <li><a href="#from-a-compromised-wind-farm-into-the-private-apn" id="toc-from-a-compromised-wind-farm-into-the-private-apn" class="nav-link" data-scroll-target="#from-a-compromised-wind-farm-into-the-private-apn">From a compromised wind farm into the private APN</a></li>
+  <li><a href="#reconnaissance-became-direct-manipulation-of-the-physical-process" id="toc-reconnaissance-became-direct-manipulation-of-the-physical-process" class="nav-link" data-scroll-target="#reconnaissance-became-direct-manipulation-of-the-physical-process">Reconnaissance became direct manipulation of the physical process</a></li>
+  <li><a href="#the-cleanup-sequence-was-part-of-the-attack" id="toc-the-cleanup-sequence-was-part-of-the-attack" class="nav-link" data-scroll-target="#the-cleanup-sequence-was-part-of-the-attack">The cleanup sequence was part of the attack</a></li>
+  <li><a href="#what-the-update-changes-in-the-architectural-lesson" id="toc-what-the-update-changes-in-the-architectural-lesson" class="nav-link" data-scroll-target="#what-the-update-changes-in-the-architectural-lesson">What the update changes in the architectural lesson</a></li>
+  </ul></li>
+  <li><a href="#appendix-a-recent-european-cyberattacks-against-energy-infrastructure" id="toc-appendix-a-recent-european-cyberattacks-against-energy-infrastructure" class="nav-link" data-scroll-target="#appendix-a-recent-european-cyberattacks-against-energy-infrastructure">Appendix A — Recent European cyberattacks against energy infrastructure</a>
+  <ul class="collapse">
+  <li><a href="#denmark-coordinated-compromise-of-energy-companies-may-2023" id="toc-denmark-coordinated-compromise-of-energy-companies-may-2023" class="nav-link" data-scroll-target="#denmark-coordinated-compromise-of-energy-companies-may-2023">Denmark — coordinated compromise of energy companies, May 2023</a></li>
+  <li><a href="#slovenia-hse-ransomware-without-electricity-disruption-november-2023" id="toc-slovenia-hse-ransomware-without-electricity-disruption-november-2023" class="nav-link" data-scroll-target="#slovenia-hse-ransomware-without-electricity-disruption-november-2023">Slovenia — HSE ransomware without electricity disruption, November 2023</a></li>
+  <li><a href="#ukraine-frostygoop-and-district-heating-disruption-in-lviv-january-2024" id="toc-ukraine-frostygoop-and-district-heating-disruption-in-lviv-january-2024" class="nav-link" data-scroll-target="#ukraine-frostygoop-and-district-heating-disruption-in-lviv-january-2024">Ukraine — FrostyGoop and district-heating disruption in Lviv, January 2024</a></li>
+  <li><a href="#romania-electrica-ransomware-contained-to-it-december-2024" id="toc-romania-electrica-ransomware-contained-to-it-december-2024" class="nav-link" data-scroll-target="#romania-electrica-ransomware-contained-to-it-december-2024">Romania — Electrica ransomware contained to IT, December 2024</a></li>
+  <li><a href="#norway-direct-manipulation-of-the-lake-risevatnet-dam-april-2025" id="toc-norway-direct-manipulation-of-the-lake-risevatnet-dam-april-2025" class="nav-link" data-scroll-target="#norway-direct-manipulation-of-the-lake-risevatnet-dam-april-2025">Norway — direct manipulation of the Lake Risevatnet dam, April 2025</a></li>
+  <li><a href="#sweden-foiled-attack-on-a-heating-plant-spring-2025" id="toc-sweden-foiled-attack-on-a-heating-plant-spring-2025" class="nav-link" data-scroll-target="#sweden-foiled-attack-on-a-heating-plant-spring-2025">Sweden — foiled attack on a heating plant, spring 2025</a></li>
+  <li><a href="#romania-complexul-energetic-oltenia-ransomware-december-2025" id="toc-romania-complexul-energetic-oltenia-ransomware-december-2025" class="nav-link" data-scroll-target="#romania-complexul-energetic-oltenia-ransomware-december-2025">Romania — Complexul Energetic Oltenia ransomware, December 2025</a></li>
+  <li><a href="#slovenia-geoplin-likely-ransomware-january-2026" id="toc-slovenia-geoplin-likely-ransomware-january-2026" class="nav-link" data-scroll-target="#slovenia-geoplin-likely-ransomware-january-2026">Slovenia — Geoplin likely ransomware, January 2026</a></li>
+  <li><a href="#romania-conpet-business-it-compromise-february-2026" id="toc-romania-conpet-business-it-compromise-february-2026" class="nav-link" data-scroll-target="#romania-conpet-business-it-compromise-february-2026">Romania — CONPET business-IT compromise, February 2026</a></li>
+  <li><a href="#three-levels-of-operational-significance" id="toc-three-levels-of-operational-significance" class="nav-link" data-scroll-target="#three-levels-of-operational-significance">Three levels of operational significance</a></li>
+  <li><a href="#why-the-polish-campaign-remains-unusual" id="toc-why-the-polish-campaign-remains-unusual" class="nav-link" data-scroll-target="#why-the-polish-campaign-remains-unusual">Why the Polish campaign remains unusual</a></li>
+  <li><a href="#a-useful-exclusion-the-april-2025-iberian-blackout" id="toc-a-useful-exclusion-the-april-2025-iberian-blackout" class="nav-link" data-scroll-target="#a-useful-exclusion-the-april-2025-iberian-blackout">A useful exclusion: the April 2025 Iberian blackout</a></li>
+  </ul></li>
+  <li><a href="#appendix-b-how-the-european-union-is-responding" id="toc-appendix-b-how-the-european-union-is-responding" class="nav-link" data-scroll-target="#appendix-b-how-the-european-union-is-responding">Appendix B — How the European Union is responding</a>
+  <ul class="collapse">
+  <li><a href="#nis2-moving-cybersecurity-into-management-accountability" id="toc-nis2-moving-cybersecurity-into-management-accountability" class="nav-link" data-scroll-target="#nis2-moving-cybersecurity-into-management-accountability">NIS2: moving cybersecurity into management accountability</a></li>
+  <li><a href="#the-network-code-on-cybersecurity-translating-cybersecurity-into-electricity-system-rules" id="toc-the-network-code-on-cybersecurity-translating-cybersecurity-into-electricity-system-rules" class="nav-link" data-scroll-target="#the-network-code-on-cybersecurity-translating-cybersecurity-into-electricity-system-rules">The Network Code on Cybersecurity: translating cybersecurity into electricity-system rules</a></li>
+  <li><a href="#the-cyber-resilience-act-shifting-part-of-the-burden-back-to-the-product" id="toc-the-cyber-resilience-act-shifting-part-of-the-burden-back-to-the-product" class="nav-link" data-scroll-target="#the-cyber-resilience-act-shifting-part-of-the-burden-back-to-the-product">The Cyber Resilience Act: shifting part of the burden back to the product</a></li>
+  <li><a href="#csa2-from-product-security-to-strategic-supplier-risk" id="toc-csa2-from-product-security-to-strategic-supplier-risk" class="nav-link" data-scroll-target="#csa2-from-product-security-to-strategic-supplier-risk">CSA2: from product security to strategic supplier risk</a></li>
+  <li><a href="#what-the-four-layers-achieve-together" id="toc-what-the-four-layers-achieve-together" class="nav-link" data-scroll-target="#what-the-four-layers-achieve-together">What the four layers achieve together</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -1264,6 +1280,368 @@ Figure&nbsp;4: Systemic risk pattern in distributed energy resources, showing ho
 <p>For Italy, and more broadly for European operators living through the energy transition, the lesson is immediate. The expansion of distributed energy cannot be treated as only a capacity, market, and interconnection problem. It is also a problem of cyber architecture. If the digital operating model of distributed generation is designed as a convenience layer around electrical assets, then the attack surface scales faster than resilience. If instead it is designed from the beginning as critical infrastructure, then many of the attack paths visible in Poland become harder, noisier, slower, and more recoverable.</p>
 <p>That is the point at which the Polish case becomes constructive rather than merely alarming. It gives operators, engineers, regulators, and owners a very clear warning, but also a very clear design agenda. The objective is not abstract <em>more security</em>. The objective is to make sure that remote access, dispatch interfaces, telemetry paths, OT management surfaces, and restoration processes are governed as part of the plant’s essential architecture. Once that is done, compliance with tightening Italian and European requirements becomes less of a late-stage burden and more the formal expression of choices that were already technically correct.</p>
 <p>The deepest conclusion, then, is simple. The future risk to energy systems will not be determined only by how much renewable capacity is added, but by how that capacity is digitally organized. The Polish incident shows what happens when distributed generation is operationally connected faster than it is architecturally governed. The real strategic response is to reverse that sequence.</p>
+</section>
+<section id="update-august-2026-the-private-apn-attack-path-into-a-second-chp-plant" class="level2">
+<h2 class="anchored" data-anchor-id="update-august-2026-the-private-apn-attack-path-into-a-second-chp-plant">Update, August 2026: the private APN attack path into a second CHP plant</h2>
+<p>On 8 August 2026, CERT Polska published a follow-up to its January incident report. The new analysis materially expands the reconstruction of the 29 December 2025 campaign: a <strong>second, smaller combined heat and power plant</strong>, supplying heat to approximately 50,000 residents, was also attacked that morning. More importantly, the investigation reconstructed an attack path that had not been visible in the original report. The attacker appears to have moved from a compromised wind farm, through a cellular router, into a <strong>DSO-managed private APN</strong>, then through a PLC connected to that APN into the second CHP plant’s OT network. CERT Polska states that, to the best of its knowledge, this is the first observed real-world cyberattack in which a private APN was used in this way to gain access to an OT network.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<p>This changes the architectural reading of the December incident in an important way. The original report already showed how weaknesses at individual grid connection points could be scaled across many renewable facilities. The follow-up shows something more systemic: <strong>communications infrastructure intended to connect geographically distributed field assets can itself become a lateral-movement fabric between otherwise unrelated operational environments</strong>. The significant boundary was therefore not only between the Internet and each plant. It was also between each field endpoint and the private telecommunications network to which that endpoint had been granted access.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a></p>
+<section id="from-a-compromised-wind-farm-into-the-private-apn" class="level3">
+<h3 class="anchored" data-anchor-id="from-a-compromised-wind-farm-into-the-private-apn">From a compromised wind farm into the private APN</h3>
+<p>The starting point was one of the wind farms already covered by the initial investigation. As described earlier in this article, the attacker had obtained access to a FortiGate appliance functioning as VPN concentrator and firewall. Inside that wind farm network was a <strong>Teltonika RUTX50 cellular router</strong> used for communication through a private APN operated by the DSO. The DSO’s technical requirement that communication with the RTU use a serial protocol had been respected: the cellular router was connected to the RTU through an RS485 serial interface. At the same time, however, the router also had an Ethernet interface connected to a VLAN behind the compromised FortiGate.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+<p>That second interface was decisive. The Teltonika device exposed web administration and SSH services on its LAN side. Its original default password had been changed during commissioning, so this was not another simple default-credential case. CERT Polska could not determine how the attacker obtained the replacement password, nor could it establish whether a vulnerability in the router had been exploited. What investigators could establish was that the attacker logged into the router repeatedly over SSH during December and most likely used SSH tunnelling to obtain connectivity into the private APN.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a></p>
+<p>Beginning on 18 December, the attacker scanned that APN for services including VNC, HTTP, Siemens S7, and Modbus. One of the discovered endpoints was a <strong>WAGO PFC200 controller</strong> associated with the second CHP plant. Its web administration interface was reachable through the APN and was configured with the default credentials for its <code>admin</code> account. The attacker appears to have used the web interface to enable SSH on the controller’s WAN interface and then used another SSH tunnel to enter the CHP plant’s OT network. The WAGO controller had connectivity not only to the APN but also to SCADA systems and industrial network segments containing devices responsible for important plant processes.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-the-december-2025-cyberattack-on-polands-energy-sector-private-apn-attack-path" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-the-december-2025-cyberattack-on-polands-energy-sector-private-apn-attack-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-the-december-2025-cyberattack-on-polands-energy-sector-private-apn-attack-path">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Internet] --&gt; B[Wind farm&lt;br/&gt;FortiGate VPN + firewall]
+    B --&gt; C[Teltonika RUTX50&lt;br/&gt;cellular router]
+    C --&gt;|SSH tunnel| D[DSO-managed&lt;br/&gt;private APN]
+    D --&gt; E[APN reconnaissance&lt;br/&gt;HTTP, VNC, S7, Modbus]
+    E --&gt; F[WAGO PFC200&lt;br/&gt;at second CHP plant]
+    F --&gt; G[Default admin credentials&lt;br/&gt;SSH enabled on WAN]
+    G --&gt;|SSH tunnel| H[CHP plant&lt;br/&gt;OT network]
+    H --&gt; I[SCADA interface]
+    H --&gt; J[Siemens S7-300&lt;br/&gt;S7-1200&lt;br/&gt;S7-1500]
+    J --&gt; K[Controllers placed in STOP mode&lt;br/&gt;configuration protected]
+    K --&gt; L[Steam turbine stopped&lt;br/&gt;water treatment stopped]
+    L --&gt; M[Cogeneration process interrupted]
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-the-december-2025-cyberattack-on-polands-energy-sector-private-apn-attack-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Reconstructed attack path disclosed in CERT Polska’s August 2026 follow-up: compromise of a wind-farm perimeter led through a cellular router and a DSO-managed private APN to a WAGO controller at a second CHP plant, from which the attacker reached the plant’s OT network and process controllers.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The distinction from a direct compromise of the DSO network is important. The follow-up does <strong>not</strong> establish that the attacker penetrated the DSO’s SCADA or corporate infrastructure. Nor does it invalidate the earlier observation that serial DNP3 connectivity can reduce the possibility of directly pivoting from a GCP into DSO systems. Instead, it exposes an orthogonal path: the attacker exploited the <strong>field communications transport shared by multiple endpoints</strong>. In other words, the serial boundary protected one direction of trust, while an insufficiently isolated private APN created another.</p>
+<p>That is a much more general lesson than the particular device models involved. A private APN may provide separation from the public Internet, but <strong>private addressing and restricted carrier access do not by themselves create endpoint isolation</strong>. If devices attached to the APN can establish arbitrary connections to one another, then compromise of any one reachable endpoint can potentially change the security meaning of the entire network.</p>
+</section>
+<section id="reconnaissance-became-direct-manipulation-of-the-physical-process" class="level3">
+<h3 class="anchored" data-anchor-id="reconnaissance-became-direct-manipulation-of-the-physical-process">Reconnaissance became direct manipulation of the physical process</h3>
+<p>Once inside the CHP plant, the attacker did not immediately begin destruction. CERT Polska reconstructed reconnaissance between 18 and 25 December. Attempts were made to authenticate to the plant’s firewall and VPN gateway, but they were unsuccessful. The attacker then scanned internal subnets for industrial services including S7, Modbus, and CODESYS, as well as RDP, VNC, HTTP, HTTPS, and RTSP. In one subnet, scanning began with the address assigned to the SCADA system, which CERT Polska interprets as suggesting that the attacker may already have identified a high-value target. On 25 December, successful S7 connections were established to three Siemens PLCs; their exact purpose cannot be determined, although CERT Polska considers reconnaissance in preparation for the later disruptive actions the most likely explanation.<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a></p>
+<p>The destructive phase on 29 December went significantly further than the loss of telemetry documented at the renewable sites. Activity inside the CHP network began at approximately <strong>05:30 and continued until around 10:10</strong>. The attacker connected to the SCADA web interface and then to Siemens S7-300, S7-1200, and S7-1500 controllers. According to plant personnel, the PLCs were placed into <strong>STOP mode</strong> and protected with a password that prevented operators from changing their operating state or modifying the control logic. The resulting process effects were direct: the steam turbine and the water treatment system used to produce process water were shut down, interrupting the cogeneration process.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a></p>
+<p>The outage remained short because plant personnel responded quickly, restoring the affected controllers to factory settings and reloading available backups. Customers did not lose heat or electricity. But the timing contains an important incident-response detail: restoration began at approximately 07:30, while the attacker appears to have remained active in the network for several more hours. The emergency recovery procedure also deleted locally stored PLC logs, limiting subsequent forensic reconstruction. This is another example of a recurring tension in OT response: <strong>the fastest action for restoring the physical process is not always the action that best preserves evidence or assures that the adversary has actually been expelled</strong>.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a></p>
+<p>The attacker also modified <strong>seven Moxa serial device servers and three Moxa network switches</strong>. As in the renewable-site attacks, the devices were factory-reset, their passwords were changed, and their IP addresses were replaced with unreachable values such as <code>127.0.0.1</code>. CERT Polska assesses with high confidence that these actions were automated, based on the timing of the HTTP requests. Connections were additionally observed to two ABB ACS-series variable-frequency drives, although investigators could not establish whether configuration changes were made. Attempts to reach Schneider Electric ATV6xx drives failed because the attacker targeted the wrong TCP port.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a></p>
+<p>This is significant because the new evidence crosses a boundary that the renewable attacks largely did not. At the wind and solar sites, the principal observed effect was destruction of the <strong>coordination and telecontrol layer</strong> while electricity generation continued. At the second CHP plant, the attacker reached controllers involved in the production process and deliberately changed their operating state. The December campaign therefore contained both forms of OT sabotage: attacks against the digital nervous system around the process and <strong>direct manipulation of controllers capable of stopping the process itself</strong>.</p>
+</section>
+<section id="the-cleanup-sequence-was-part-of-the-attack" class="level3">
+<h3 class="anchored" data-anchor-id="the-cleanup-sequence-was-part-of-the-attack">The cleanup sequence was part of the attack</h3>
+<p>The follow-up also makes the adversary’s evidence-destruction behaviour clearer. After the disruptive actions, the attacker returned to the SCADA web interface, which CERT Polska assesses was most likely an attempt to inspect the effects. The WAGO PFC200 that had served as the gateway into the CHP network was then damaged by corruption of its partition table. A subsequent factory-reset attempt by the plant could not restore the device, and laboratory examination failed to recover useful logs.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a></p>
+<p>The attacker then moved backward through the same access chain. Approximately thirty minutes after the last observed activity at the CHP plant, the Teltonika router at the wind farm was factory-reset, its administrator password was changed, and its address was set to <code>127.0.0.1</code>. Finally, the wind farm’s FortiGate VPN and firewall was also restored to factory settings, causing the loss of its logs. The sequence strongly reinforces a point already visible in the first report: <strong>destruction was aimed not only at operational availability but also at restoration capability and forensic visibility</strong>.<a href="#fn25" class="footnote-ref" id="fnref25" role="doc-noteref"><sup>25</sup></a></p>
+<p>In this case, however, investigators recovered enough evidence from other sources to reconstruct the route. Mobile-network-operator logs, persistent data surviving on the Teltonika router, network logs inside the plant, device behaviour, and timing correlations collectively allowed CERT Polska to work backward from the physical disruption to the original wind-farm foothold. The case therefore provides a particularly concrete example of why logs required for serious OT investigation cannot reside only on the devices most likely to be reset, corrupted, replaced, or physically damaged.</p>
+</section>
+<section id="what-the-update-changes-in-the-architectural-lesson" class="level3">
+<h3 class="anchored" data-anchor-id="what-the-update-changes-in-the-architectural-lesson">What the update changes in the architectural lesson</h3>
+<p>The strongest new lesson is that <strong>a private APN must not be treated as a trusted extension of OT merely because it is private</strong>. CERT Polska found that the relevant APN configuration permitted arbitrary communication between attached devices. Its subsequent surveys indicated that this type of configuration was commonly encountered among Polish users of similar services, and the team states that comparable configurations are, to the best of its knowledge, also widely deployed internationally.<a href="#fn26" class="footnote-ref" id="fnref26" role="doc-noteref"><sup>26</sup></a></p>
+<p>CERT Polska therefore recommends client isolation between APN-connected endpoints where possible, explicit risk assessment where endpoint-to-endpoint communication is genuinely required, allowlist-based controls between the APN gateway and OT, monitoring of traffic against an expected communications profile, centralized logging, removal of unnecessary web, SSH, and Telnet administration services from APN-reachable interfaces, elimination of default credentials, and inclusion of private APNs in penetration tests, red-team exercises, and architecture reviews. Most importantly, where the organization does not control or cannot independently verify the security properties of the APN, CERT Polska recommends treating it as an <strong>external, untrusted network with a trust level equivalent to the Internet</strong>.<a href="#fn27" class="footnote-ref" id="fnref27" role="doc-noteref"><sup>27</sup></a></p>
+<p>That recommendation fits directly into the architecture-first interpretation developed earlier in this article. A network’s name or ownership model is not a security boundary. <strong>Trust must follow enforceable communication properties, not topology labels.</strong> A carrier-managed private APN, an MPLS service, a vendor VPN, a cloud private network, or another non-public transport may reduce some classes of exposure, but none should automatically confer authorization on the endpoints connected to it. The relevant questions remain the same: which identities and devices can communicate, through which interfaces, using which protocols, for which functions, under whose administration, with what logging, and with what controls if one endpoint is compromised.</p>
+<p>The follow-up therefore strengthens rather than overturns the central thesis of the original article. The December 2025 campaign was not simply a collection of poorly hardened devices. It was an attack on <strong>relationships between systems</strong>: first Internet-to-perimeter, then perimeter-to-management plane, then management plane-to-cellular router, then private APN-to-field controller, and finally field controller-to-process network. Each individual connection had an operational purpose. The attack became possible because those legitimate connections composed into a path of authority that no single device description made obvious.</p>
+<p>For distributed energy architecture, that is perhaps the most important addition to the case. The attack surface does not stop at the plant boundary, and it does not stop at the DSO-facing interface either. It includes the communications substrates through which geographically separated devices are made reachable. <strong>If a compromise at one renewable site can be converted into network reachability toward another industrial facility through shared telecommunications infrastructure, then inter-site isolation becomes a critical-infrastructure requirement, not merely a telecom configuration preference.</strong></p>
+</section>
+</section>
+<section id="appendix-a-recent-european-cyberattacks-against-energy-infrastructure" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-a-recent-european-cyberattacks-against-energy-infrastructure">Appendix A — Recent European cyberattacks against energy infrastructure</h2>
+<p>The Polish incident is easier to interpret when placed beside other recent European cases. The comparison below is deliberately <strong>selective rather than exhaustive</strong>. It covers publicly documented incidents from 2023 to August 2026 for which sufficiently reliable evidence exists to distinguish compromise of an energy company’s enterprise IT from compromise of OT, direct manipulation of an industrial process, or disruption of energy delivery.</p>
+<p>The table now uses a single chronological list, and each incident is treated in a corresponding subsection below. One case requires an explicit scope qualification: the April 2025 Norwegian dam attack involved water-management infrastructure associated with a fish-farming facility rather than an electricity-generation asset. It is retained as an adjacent OT comparator because it provides unusually clear evidence of remote cyber manipulation producing a physical effect, but it should not be misclassified as an attack on Norwegian hydropower infrastructure.<a href="#fn28" class="footnote-ref" id="fnref28" role="doc-noteref"><sup>28</sup></a></p>
+<div id="tbl-the-december-2025-cyberattack-on-polands-energy-sector-recent-european-energy-incidents" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-the-december-2025-cyberattack-on-polands-energy-sector-recent-european-energy-incidents-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 10%">
+<col style="width: 22%">
+<col style="width: 30%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Date</th>
+<th>Country and target</th>
+<th>Attack class</th>
+<th>Confirmed operational effect</th>
+<th>OT significance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>May 2023</td>
+<td>Denmark — 22 energy-sector companies</td>
+<td>Coordinated exploitation of vulnerable Zyxel perimeter devices</td>
+<td>Eleven organisations were compromised; several reportedly entered island-mode operation</td>
+<td>Attackers obtained access to ICS environments at some companies</td>
+</tr>
+<tr class="even">
+<td>November 2023</td>
+<td>Slovenia — Holding Slovenske elektrarne (HSE)</td>
+<td>Ransomware affecting enterprise systems</td>
+<td>Information systems were affected, but electricity generation and trading continued</td>
+<td>Key power-plant operation systems remained operational</td>
+</tr>
+<tr class="odd">
+<td>January 2024</td>
+<td>Ukraine — district-heating operator in Lviv</td>
+<td>Disruptive OT attack; FrostyGoop assessed as likely used</td>
+<td>Heating was lost for approximately two days</td>
+<td>Malicious Modbus commands directly affected ENCO controllers</td>
+</tr>
+<tr class="even">
+<td>9 December 2024</td>
+<td>Romania — Electrica Group</td>
+<td>Lynx ransomware</td>
+<td>Several IT services were affected; critical electricity systems were reported unaffected</td>
+<td>No publicly established compromise of electricity-control OT</td>
+</tr>
+<tr class="odd">
+<td>7 April 2025</td>
+<td>Norway — Lake Risevatnet dam, Bremanger</td>
+<td>Remote compromise of an OT control interface</td>
+<td>A discharge valve was opened for approximately four hours, increasing water flow; no injuries or damage occurred</td>
+<td>Direct manipulation of a physical process; adjacent water-infrastructure case rather than an energy-generation incident</td>
+</tr>
+<tr class="even">
+<td>Spring 2025, disclosed April 2026</td>
+<td>Sweden — heating plant in western Sweden</td>
+<td>Attempted destructive cyberattack attributed by the Swedish government to a pro-Russian actor</td>
+<td>The attempt was stopped by protection mechanisms and caused no serious consequences</td>
+<td>The stated objective was disruption of operational systems controlling heat production</td>
+</tr>
+<tr class="odd">
+<td>26 December 2025</td>
+<td>Romania — Complexul Energetic Oltenia</td>
+<td>Gentlemen ransomware</td>
+<td>ERP, document-management, email, website, and other business services became unavailable; company activity was partially affected</td>
+<td>The National Energy System was reported not to be endangered</td>
+</tr>
+<tr class="even">
+<td>29 January 2026</td>
+<td>Slovenia — Geoplin</td>
+<td>Likely ransomware</td>
+<td>Limited impact was reported in the gas supplier’s IT environment</td>
+<td>No publicly established OT compromise or gas-supply interruption</td>
+</tr>
+<tr class="odd">
+<td>3 February 2026</td>
+<td>Romania — CONPET</td>
+<td>Cyberattack against business IT; ransomware attribution reported separately</td>
+<td>Corporate IT was disrupted while oil and petroleum-product transport continued</td>
+<td>CONPET reported that SCADA and telecommunications systems were unaffected</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-the-december-2025-cyberattack-on-polands-energy-sector-recent-european-energy-incidents-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Selected publicly documented European energy-sector cyber incidents, together with the adjacent Norwegian OT case, May 2023–August 2026. The comparison distinguishes enterprise-IT compromise, access to industrial environments, attempted OT disruption, and confirmed manipulation of physical processes.
+</figcaption>
+</figure>
+</div>
+<section id="denmark-coordinated-compromise-of-energy-companies-may-2023" class="level3">
+<h3 class="anchored" data-anchor-id="denmark-coordinated-compromise-of-energy-companies-may-2023">Denmark — coordinated compromise of energy companies, May 2023</h3>
+<p>The May 2023 Danish campaign is the closest pre-Poland example of <strong>coordinated compromise across multiple energy operators</strong>. SektorCERT documented attacks against 22 companies managing parts of Danish energy infrastructure; eleven were successfully compromised. Vulnerabilities in Zyxel firewalls provided the initial route into the affected environments, and SektorCERT reported access to industrial control systems at some victims. Several organisations resorted to island-mode operation during the incident or its containment.<a href="#fn29" class="footnote-ref" id="fnref29" role="doc-noteref"><sup>29</sup></a></p>
+<p>The architectural parallel with Poland is stronger than the malware comparison. In both cases, an appliance intended to enforce the boundary between an external network and operational infrastructure became a mechanism through which that boundary could collapse. The Danish campaign therefore demonstrated before December 2025 that <strong>compromise of standardized edge infrastructure could be scaled across multiple energy operators</strong>. What the public Danish evidence did not show was the later Polish combination of destructive field-device actions, wipers, direct PLC manipulation, and lateral movement between geographically distinct operational environments.</p>
+</section>
+<section id="slovenia-hse-ransomware-without-electricity-disruption-november-2023" class="level3">
+<h3 class="anchored" data-anchor-id="slovenia-hse-ransomware-without-electricity-disruption-november-2023">Slovenia — HSE ransomware without electricity disruption, November 2023</h3>
+<p>Holding Slovenske elektrarne, Slovenia’s largest electricity producer, disclosed a cyberattack against its information systems in November 2023. HSE reported that key power-plant operation systems remained operational, electricity production and trading continued, and connectivity necessary for electricity operations was maintained. Slovenia’s Government Information Security Office stated that available information did not indicate a significant impact on the uninterrupted provision of essential electricity-generation and transmission services.<a href="#fn30" class="footnote-ref" id="fnref30" role="doc-noteref"><sup>30</sup></a> CERT-EU subsequently classified the incident as ransomware. ([hse.si][1])</p>
+<p>The case illustrates why <strong>victim sector and cyber-physical impact must be treated as separate variables</strong>. A serious enterprise compromise at an electricity producer does not imply that the adversary obtained authority over the generation process. HSE is therefore a useful contrast with Poland: in Slovenia, the available evidence indicates that the operational boundary held; in Poland, attackers repeatedly crossed such boundaries and reached RTUs, HMIs, protection equipment, communications devices, and PLCs.</p>
+</section>
+<section id="ukraine-frostygoop-and-district-heating-disruption-in-lviv-january-2024" class="level3">
+<h3 class="anchored" data-anchor-id="ukraine-frostygoop-and-district-heating-disruption-in-lviv-january-2024">Ukraine — FrostyGoop and district-heating disruption in Lviv, January 2024</h3>
+<p>The January 2024 incident affecting a district-energy company in Lviv is the strongest recent European comparator for <strong>direct malicious manipulation of an industrial process</strong>. Information shared by Ukraine’s Cyber Security Situation Center with Dragos indicated that adversaries sent Modbus commands to ENCO controllers, causing incorrect measurements and system malfunction. Approximately two days of heating service were lost. Dragos assessed with moderate confidence that the FrostyGoop ICS malware was involved.<a href="#fn31" class="footnote-ref" id="fnref31" role="doc-noteref"><sup>31</sup></a></p>
+<p>FrostyGoop is significant because its functionality was explicitly oriented toward interaction with an industrial protocol. Poland demonstrates the complementary lesson: <strong>purpose-built ICS malware is not necessary once an attacker already possesses sufficient operational access</strong>. At the second Polish CHP plant, legitimate Siemens S7 functionality was sufficient to place controllers into STOP mode. At renewable sites, ordinary management interfaces were sufficient to corrupt firmware, delete device files, reset equipment, and destroy HMI systems. Both incidents therefore converge on the same underlying principle: the decisive capability is the ability to issue consequential commands to an industrial function, not the sophistication of the executable carrying them.</p>
+</section>
+<section id="romania-electrica-ransomware-contained-to-it-december-2024" class="level3">
+<h3 class="anchored" data-anchor-id="romania-electrica-ransomware-contained-to-it-december-2024">Romania — Electrica ransomware contained to IT, December 2024</h3>
+<p>On 9 December 2024, Electrica Group disclosed a cyberattack affecting its information infrastructure while stating that critical systems had not been affected. Romania’s National Cyber Security Directorate subsequently identified the event as a <strong>Lynx ransomware attack</strong> and reported that, based on the information available to it, critical systems used for electricity distribution remained unaffected.<a href="#fn32" class="footnote-ref" id="fnref32" role="doc-noteref"><sup>32</sup></a><a href="#fn33" class="footnote-ref" id="fnref33" role="doc-noteref"><sup>33</sup></a> ([dnsc.ro][2])</p>
+<p>Electrica therefore belongs primarily to the enterprise-IT end of the spectrum. The incident remained relevant to infrastructure security because compromise of corporate systems can expose credentials, maintenance information, remote-access tooling, engineering documents, configuration data, and identities useful for a later OT intrusion. The public evidence, however, does not justify promoting the incident into a case of demonstrated manipulation of electricity-control systems.</p>
+</section>
+<section id="norway-direct-manipulation-of-the-lake-risevatnet-dam-april-2025" class="level3">
+<h3 class="anchored" data-anchor-id="norway-direct-manipulation-of-the-lake-risevatnet-dam-april-2025">Norway — direct manipulation of the Lake Risevatnet dam, April 2025</h3>
+<p>On 7 April 2025, attackers obtained remote control of a digital system operating a discharge valve at the Lake Risevatnet dam near Bremanger in western Norway. The valve remained fully open for approximately four hours, increasing water discharge by roughly 500 litres per second before the activity was detected and stopped. No injuries or physical damage resulted. Norwegian authorities later publicly attributed the operation to Russian or Russia-linked cyber actors.<a href="#fn34" class="footnote-ref" id="fnref34" role="doc-noteref"><sup>34</sup></a> ([Reuters][3])</p>
+<p>Technical reporting by Claroty described a web-accessible control interface protected by weak authentication as the relevant exposure.<a href="#fn35" class="footnote-ref" id="fnref35" role="doc-noteref"><sup>35</sup></a> The incident is notable because attackers did not merely enter an organisation’s network: they <strong>changed the state of a physical actuator and altered a real process</strong>. ([Claroty][4])</p>
+<p>Its inclusion here nevertheless requires precision. Contemporary reporting identifies the affected installation as a dam associated with fish farming, not as an electricity-generating hydropower plant. It is therefore an adjacent critical-infrastructure comparator rather than another energy-sector victim. ([The Guardian][5]) Its relevance to the Polish analysis lies in the mechanism: an internet-reachable management surface, weak authentication, and insufficient separation between remote administration and physical control were enough to convert ordinary remote connectivity into cyber-physical authority.</p>
+</section>
+<section id="sweden-foiled-attack-on-a-heating-plant-spring-2025" class="level3">
+<h3 class="anchored" data-anchor-id="sweden-foiled-attack-on-a-heating-plant-spring-2025">Sweden — foiled attack on a heating plant, spring 2025</h3>
+<p>In April 2026, Swedish Civil Defence Minister Carl-Oskar Bohlin publicly disclosed that a cyberattack had targeted a heating plant in western Sweden during the spring of 2025. According to the minister, the Swedish Security Service investigated the case and identified a pro-Russian actor with links to Russian intelligence and security services. The operation was intended to disrupt the facility’s functioning but was stopped by an existing protection mechanism, and no serious consequences resulted.<a href="#fn36" class="footnote-ref" id="fnref36" role="doc-noteref"><sup>36</sup></a> ([sverigesradio.se][6])</p>
+<p>The evidentiary limitation is as important as the incident itself. Public reporting does not provide enough technical information to reconstruct the access vector, the targeted controller architecture, or the exact actions attempted. It therefore cannot be compared technically with the Polish private-APN attack chain or FrostyGoop. What can be stated is narrower: Swedish authorities described an <strong>attempted operation against OT responsible for a physical heating function</strong>, and the attack failed because a protection mechanism prevented the intended consequence. ([AP News][7])</p>
+<p>This makes Sweden a useful example of a category that is easily lost in incident statistics: <strong>attempted cyber-physical disruption that does not become an outage</strong>. The absence of customer impact does not imply absence of operational intent, just as the continued generation of electricity at the Polish renewable sites did not make destruction of their telecontrol infrastructure operationally irrelevant.</p>
+</section>
+<section id="romania-complexul-energetic-oltenia-ransomware-december-2025" class="level3">
+<h3 class="anchored" data-anchor-id="romania-complexul-energetic-oltenia-ransomware-december-2025">Romania — Complexul Energetic Oltenia ransomware, December 2025</h3>
+<p>On 26 December 2025, only three days before the Polish campaign, Complexul Energetic Oltenia detected a ransomware attack identified as <strong>Gentlemen</strong> against its business IT infrastructure. Files and documents were encrypted, and several services became temporarily unavailable, including ERP, document management, email, and the company’s website. Company activity was partially affected, but the operator stated that the functioning of Romania’s National Energy System had not been endangered.<a href="#fn37" class="footnote-ref" id="fnref37" role="doc-noteref"><sup>37</sup></a> ([AGERPRES][8])</p>
+<p>Recovery began on newly prepared infrastructure using available backups while investigators examined the extent of the compromise and the possibility of data exfiltration. ([AGERPRES][8]) The case is therefore useful not because it reproduces the Polish attack, but because it demonstrates the difference between <strong>destructive enterprise impact and destructive OT impact</strong>. Both can impose substantial recovery costs, but only the latter establishes direct adversarial authority over the energy process.</p>
+</section>
+<section id="slovenia-geoplin-likely-ransomware-january-2026" class="level3">
+<h3 class="anchored" data-anchor-id="slovenia-geoplin-likely-ransomware-january-2026">Slovenia — Geoplin likely ransomware, January 2026</h3>
+<p>On 29 January 2026, Slovenian gas supplier Geoplin was targeted in what CERT-EU described as a likely ransomware attack. Public reporting indicated limited effects on its IT environment and alleged theft of employee, financial, and internal corporate data.<a href="#fn38" class="footnote-ref" id="fnref38" role="doc-noteref"><sup>38</sup></a> ([cert.europa.eu][9])</p>
+<p>The available evidence does <strong>not</strong> establish compromise of gas-control OT, manipulation of pipeline infrastructure, or interruption of gas supply. That limitation should remain explicit. Geoplin is consequently best classified as an energy-sector IT compromise with no publicly confirmed cyber-physical effect, rather than as evidence of an attack on the physical gas process.</p>
+</section>
+<section id="romania-conpet-business-it-compromise-february-2026" class="level3">
+<h3 class="anchored" data-anchor-id="romania-conpet-business-it-compromise-february-2026">Romania — CONPET business-IT compromise, February 2026</h3>
+<p>On 3 February 2026, Romanian national oil-transport operator CONPET experienced a cyberattack against its business IT environment. The company’s subsequent reporting stated that operational technologies were unaffected. Oil and petroleum-product transport continued, while SCADA and telecommunications systems remained operational.<a href="#fn39" class="footnote-ref" id="fnref39" role="doc-noteref"><sup>39</sup></a></p>
+<p>CONPET completes the pattern already visible at Electrica, HSE, Geoplin, and Complexul Energetic Oltenia. Energy operators are attractive targets for conventional cybercrime and ransomware, but <strong>compromise of an energy company should not automatically be described as compromise of energy infrastructure at the process-control level</strong>. The distinction is particularly important when comparing such incidents with the Polish CHP plant, where attackers demonstrably reached PLCs and changed their operating state.</p>
+</section>
+<section id="three-levels-of-operational-significance" class="level3">
+<h3 class="anchored" data-anchor-id="three-levels-of-operational-significance">Three levels of operational significance</h3>
+<p>Taken together, the cases support a useful three-level distinction.</p>
+<p>The first level comprises <strong>enterprise attacks against energy operators without publicly confirmed OT compromise</strong>. HSE, Electrica, Complexul Energetic Oltenia, Geoplin, and CONPET belong principally to this category. These incidents can still be severe: corporate identity systems, engineering documents, remote-access credentials, maintenance records, backups, and supplier information may all become strategically useful to an attacker. What the evidence does not establish is direct control of the physical energy process.</p>
+<p>The second level comprises <strong>access to or attempted disruption of operational systems without a sustained physical service failure</strong>. The Danish campaign crossed into ICS environments at some organisations, while the Swedish incident was explicitly described as an unsuccessful attempt to disrupt operational systems at a heating facility. The renewable component of the Polish campaign also occupies part of this middle ground: generation continued, but telemetry, remote control, protection, communications, and recovery infrastructure were deliberately damaged.</p>
+<p>The third level comprises <strong>confirmed manipulation of industrial functions that changes a physical process or interrupts an energy service</strong>. The Lviv heating attack belongs clearly in this category. So does the attack against the second Polish CHP plant, where controllers were placed into STOP mode and cogeneration was interrupted. The Norwegian dam incident demonstrates the same cyber-physical transition in an adjacent water-management domain: remote access became authority over an actuator, and a digital command produced measurable physical change.</p>
+<p>This taxonomy is more informative than simply counting “energy cyberattacks”. From an architectural perspective, the significant variable is <strong>how far through the cyber-physical stack the adversary progressed</strong>: from enterprise data, to identities and management systems, to OT networks, to control devices, to process authority, and finally to observable physical consequences.</p>
+</section>
+<section id="why-the-polish-campaign-remains-unusual" class="level3">
+<h3 class="anchored" data-anchor-id="why-the-polish-campaign-remains-unusual">Why the Polish campaign remains unusual</h3>
+<p>The broader European record shows that few of the individual ingredients observed in Poland were unprecedented. Vulnerable perimeter appliances had already enabled coordinated compromise across Danish energy organisations. Ransomware had repeatedly affected European electricity, gas, and oil companies. Ukraine had already demonstrated direct malicious use of an industrial protocol to interrupt heating. Norway had shown that weakly protected remote control could produce immediate physical manipulation, while Sweden disclosed an attempted attack explicitly intended to disrupt heating-plant OT.</p>
+<p>What distinguishes the Polish campaign is their <strong>composition within one coordinated operation</strong>. The attacker acted across dozens of distributed renewable sites, destroyed heterogeneous OT equipment, compromised enterprise and Active Directory environments, deployed wipers, attempted lower-level storage destruction, directly stopped PLCs at a CHP plant, and — as CERT Polska’s follow-up established — converted a compromised renewable site and a DSO-managed private APN into a lateral path toward another industrial facility.</p>
+<p>The comparison therefore reinforces rather than dilutes the central thesis of this article. Recent European experience does not support a model in which destructive capability depends primarily on increasingly exotic “cyber weapons”. The recurrent mechanisms are more ordinary: perimeter appliances, weak identities, remote administration, management interfaces, insufficient segmentation, industrial protocols, shared communications networks, and fragile recovery paths. The strategic effect depends on <strong>which legitimate relationships those compromised components allow an attacker to traverse</strong>.</p>
+</section>
+<section id="a-useful-exclusion-the-april-2025-iberian-blackout" class="level3">
+<h3 class="anchored" data-anchor-id="a-useful-exclusion-the-april-2025-iberian-blackout">A useful exclusion: the April 2025 Iberian blackout</h3>
+<p>One highly visible European energy event should remain outside the table. The electricity blackout affecting Spain and Portugal on <strong>28 April 2025</strong> generated immediate speculation about cyberattack, but the investigation presented by the Spanish government in June found <strong>no evidence that a cyber incident or cyberattack caused the crisis</strong>, whether at the system operator, control centres, or generation facilities.<a href="#fn40" class="footnote-ref" id="fnref40" role="doc-noteref"><sup>40</sup></a> ([La Moncloa][10])</p>
+<p>The investigation instead described a multifactorial electrical-system failure involving oscillations, insufficient dynamic voltage-control capability, voltage increases, and generation disconnections. ([La Moncloa][10]) Its exclusion illustrates the same evidentiary discipline used throughout this appendix: <strong>an operational failure, an attack claim, and a technically established cyberattack are different things</strong>. Unexplained physical disruption should be investigated for malicious causes when circumstances justify it, as CERT Polska did with the second CHP plant, but it should enter a cyberattack chronology only when evidence supports that classification.</p>
+</section>
+</section>
+<section id="appendix-b-how-the-european-union-is-responding" class="level2">
+<h2 class="anchored" data-anchor-id="appendix-b-how-the-european-union-is-responding">Appendix B — How the European Union is responding</h2>
+<p>The Polish campaign exposes four different security problems at once: <strong>how energy operators govern cyber risk; how electricity-sector actors secure interconnected operational systems; how manufacturers design and maintain the products deployed inside those systems; and how Europe manages strategic dependence on technology suppliers</strong>. The European Union is increasingly addressing these as separate but interacting regulatory layers.</p>
+<p>That distinction matters because no single instrument would have covered the entire Polish attack path. NIS2 regulates the cybersecurity governance of covered organisations. The Network Code on Cybersecurity adds rules specific to the interconnected electricity system. The Cyber Resilience Act changes the product-security baseline for hardware and software placed on the Union market. The proposed revision of the Cybersecurity Act, usually referred to as <strong>CSA2</strong>, would add a more explicitly strategic layer for ICT supply-chain risk and high-risk suppliers.<a href="#fn41" class="footnote-ref" id="fnref41" role="doc-noteref"><sup>41</sup></a></p>
+<div id="tbl-the-december-2025-cyberattack-on-polands-energy-sector-eu-response-layers" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-the-december-2025-cyberattack-on-polands-energy-sector-eu-response-layers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 27%">
+<col style="width: 36%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>EU instrument</th>
+<th>Primary object of regulation</th>
+<th>Relevance to the Polish failure modes</th>
+<th>Status in August 2026</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NIS2</td>
+<td>Covered essential and important entities</td>
+<td>Governance, risk management, supply-chain security, incident handling, business continuity, management accountability, supervision</td>
+<td>In force; national implementation remains uneven</td>
+</tr>
+<tr class="even">
+<td>Network Code on Cybersecurity</td>
+<td>Cybersecurity of cross-border electricity flows and identified high- and critical-impact entities</td>
+<td>Electricity-sector risk assessment, common controls, reporting, crisis management, supply-chain and substation-security measures</td>
+<td>In force; detailed methodologies and implementation work continue</td>
+</tr>
+<tr class="odd">
+<td>Cyber Resilience Act</td>
+<td>Products with digital elements placed on the EU market and their manufacturers</td>
+<td>Secure defaults, attack-surface reduction, vulnerability handling, updates, product support, security documentation and reporting</td>
+<td>In force; Article 14 reporting starts 11 September 2026; general application from 11 December 2027</td>
+</tr>
+<tr class="even">
+<td>Proposed Cybersecurity Act 2</td>
+<td>EU cybersecurity governance, certification and ICT supply-chain security</td>
+<td>Strategic supplier dependence, high-risk suppliers and potentially critical equipment used by energy operators</td>
+<td>Commission proposal; not yet enacted</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-the-december-2025-cyberattack-on-polands-energy-sector-eu-response-layers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: The EU response operates at distinct but complementary levels: organisational governance, electricity-sector operation, product security, and strategic ICT supply-chain risk.
+</figcaption>
+</figure>
+</div>
+<p>The importance of this architecture is that the four layers regulate <strong>different objects</strong>. A secure product does not guarantee a secure plant. A well-governed plant cannot compensate indefinitely for products that ship with avoidable vulnerabilities or weak lifecycle support. Sector-specific electricity rules cannot determine the security posture of every commercial product in the supply chain. And technical certification alone cannot answer geopolitical questions about structural dependence on suppliers subject to foreign control. The direction of EU policy is therefore toward overlapping controls rather than one universal cybersecurity regime.</p>
+<section id="nis2-moving-cybersecurity-into-management-accountability" class="level3">
+<h3 class="anchored" data-anchor-id="nis2-moving-cybersecurity-into-management-accountability">NIS2: moving cybersecurity into management accountability</h3>
+<p>NIS2 is the broad organisational layer. Directive (EU) 2022/2555 covers energy as a sector of high criticality and requires covered essential and important entities to implement proportionate cybersecurity risk-management measures. Those measures expressly include incident handling, business continuity and crisis management, supply-chain security, vulnerability handling, security in acquisition and development, assessment of control effectiveness, cyber hygiene, cryptography, access control, asset management, and multifactor or continuous authentication where appropriate.<a href="#fn42" class="footnote-ref" id="fnref42" role="doc-noteref"><sup>42</sup></a></p>
+<p>For the argument developed in this article, Article 20 is particularly important. NIS2 requires the <strong>management bodies</strong> of essential and important entities to approve cybersecurity risk-management measures and oversee their implementation. Member States must also ensure that management bodies can be held accountable for infringements of the relevant risk-management obligations under national law.<a href="#fn43" class="footnote-ref" id="fnref43" role="doc-noteref"><sup>43</sup></a> Cybersecurity is therefore no longer framed only as a matter delegated to an IT or OT security function. Decisions about remote access, supplier connectivity, shared credentials, recovery capability, network architecture, maintenance arrangements, and operational dependencies become governance questions for which senior management has an explicit regulatory role.</p>
+<p>The supply-chain provision maps especially closely to the Polish case. Article 21 requires entities to address security aspects of their relationships with <strong>direct suppliers and service providers</strong>.<a href="#fn44" class="footnote-ref" id="fnref44" role="doc-noteref"><sup>44</sup></a> That is relevant to architectures in which EPCs, telecontrol integrators, equipment manufacturers, O&amp;M contractors, telecommunications providers, and grid operators all participate in the operational trust graph. NIS2 does not prescribe one technical topology for those relationships, but it removes any defensible assumption that third-party connectivity sits outside the regulated risk-management perimeter.</p>
+<p>NIS2 also establishes a staged reporting regime for significant incidents: an early warning must ordinarily be submitted within 24 hours of awareness, followed by an incident notification within 72 hours and a final report normally within one month.<a href="#fn45" class="footnote-ref" id="fnref45" role="doc-noteref"><sup>45</sup></a> The second Polish CHP incident illustrates why this matters operationally. The event was initially interpreted as a contractor error during maintenance and was reported only for informational purposes; CERT Polska’s awareness of the simultaneous attacks led investigators to reconsider it as potentially malicious. A mature reporting regime therefore has to capture not only obvious ransomware events but operational anomalies whose cyber origin may initially be uncertain.</p>
+<p>The weakness is implementation uniformity. Member States were required to transpose NIS2 by <strong>17 October 2024</strong>, but the deadline did not produce simultaneous national implementation.<a href="#fn46" class="footnote-ref" id="fnref46" role="doc-noteref"><sup>46</sup></a> ECSO’s tracker currently records primary transposition legislation in 23 of 27 Member States and documents material differences in scope, registration, supervision, deadlines, and implementation details.<a href="#fn47" class="footnote-ref" id="fnref47" role="doc-noteref"><sup>47</sup></a> The Commission applies a stricter completion test: as recently as July 2026 it referred <strong>Ireland, Spain, France, and the Netherlands</strong> to the Court of Justice for failure to notify complete NIS2 transposition.<a href="#fn48" class="footnote-ref" id="fnref48" role="doc-noteref"><sup>48</sup></a></p>
+<p>This does not make NIS2 ineffective, but it means that an operator managing similar assets across several Member States can still encounter different national implementation conditions. The regulatory objective is a high <strong>common</strong> level of cybersecurity; the present implementation landscape has not yet completely achieved the common part.</p>
+</section>
+<section id="the-network-code-on-cybersecurity-translating-cybersecurity-into-electricity-system-rules" class="level3">
+<h3 class="anchored" data-anchor-id="the-network-code-on-cybersecurity-translating-cybersecurity-into-electricity-system-rules">The Network Code on Cybersecurity: translating cybersecurity into electricity-system rules</h3>
+<p>NIS2 is cross-sectoral. Electricity also has a dedicated instrument: <strong>Commission Delegated Regulation (EU) 2024/1366</strong>, the Network Code on sector-specific rules for cybersecurity aspects of cross-border electricity flows. The Regulation entered into force on 13 June 2024 and establishes a recurrent framework covering cybersecurity risk assessment, common minimum requirements, monitoring, reporting, crisis management, and other measures related to the security of the interconnected electricity system.<a href="#fn49" class="footnote-ref" id="fnref49" role="doc-noteref"><sup>49</sup></a></p>
+<p>The Network Code is important because it treats cybersecurity not merely as enterprise security inside electricity companies, but as a property of <strong>system interdependence</strong>. ENTSO-E describes its purpose as establishing a European standard for cybersecurity of cross-border electricity flows, including cyber-risk assessment, common requirements, certification-related provisions, monitoring, reporting and crisis management.<a href="#fn50" class="footnote-ref" id="fnref50" role="doc-noteref"><sup>50</sup></a></p>
+<p>That perspective closely matches the lesson of the CERT Polska follow-up. The most consequential boundary was not necessarily the corporate perimeter of one plant. It was the relationship among a compromised GCP, a cellular router, a DSO-managed private APN, another field endpoint, and the OT network of a separate CHP plant. The Network Code’s system-level approach is therefore directionally aligned with the problem demonstrated in Poland: <strong>security has to be assessed across dependencies and communications relationships, not only asset by asset</strong>.</p>
+<p>Implementation is also becoming progressively more concrete. ENTSO-E and the EU DSO Entity have been developing methodologies and supporting documents under the Regulation, including cybersecurity risk-assessment methodologies, a cyberattack classification scale, minimum and advanced controls, and procurement recommendations for substation gateways.<a href="#fn51" class="footnote-ref" id="fnref51" role="doc-noteref"><sup>51</sup></a> The latter is particularly relevant to an incident in which routers, gateways, VPN appliances, RTUs, serial servers, and other substation-edge components were central to both compromise and recovery.</p>
+<p>The scope should nevertheless not be overstated. The Network Code is concerned specifically with cybersecurity aspects of <strong>cross-border electricity flows</strong> and uses risk-based processes to identify high-impact and critical-impact entities and processes. It is not a general cybersecurity code automatically governing every wind turbine, photovoltaic inverter, PLC, BESS controller, or industrial network in Europe. Its significance lies in creating a sector-specific control layer where cyber risk can propagate into the interconnected electricity system.</p>
+</section>
+<section id="the-cyber-resilience-act-shifting-part-of-the-burden-back-to-the-product" class="level3">
+<h3 class="anchored" data-anchor-id="the-cyber-resilience-act-shifting-part-of-the-burden-back-to-the-product">The Cyber Resilience Act: shifting part of the burden back to the product</h3>
+<p>The Cyber Resilience Act addresses a different failure mode. Regulation (EU) 2024/2847 establishes horizontal cybersecurity requirements for <strong>products with digital elements</strong> made available on the Union market.<a href="#fn52" class="footnote-ref" id="fnref52" role="doc-noteref"><sup>52</sup></a> As discussed in my separate analysis of the CRA, its structural innovation is to move part of cybersecurity from procurement clauses and operator hardening into product law: an in-scope manufacturer must connect cybersecurity risk assessment, secure design, vulnerability handling, conformity assessment, technical documentation, support, and market surveillance to the product that it places on the market.<a href="#fn53" class="footnote-ref" id="fnref53" role="doc-noteref"><sup>53</sup></a></p>
+<p>This is directly relevant to several Polish attack mechanisms, but with an important qualification. It would be incorrect to claim, without product-by-product legal analysis, that every firewall, router, RTU, PLC, relay, HMI package, or serial device server appearing in the CERT Polska reports is necessarily subject to the CRA in exactly the same way. Scope depends on the statutory product definition, market placement, intended or reasonably foreseeable connectivity, applicable exclusions, product classification, and the relevant transition rules.<a href="#fn54" class="footnote-ref" id="fnref54" role="doc-noteref"><sup>54</sup></a></p>
+<p>The direction of the requirements is nevertheless clear. For in-scope products, Annex I establishes risk-based cybersecurity properties including secure-by-default configuration where applicable, protection against unauthorised access, attack-surface limitation, protection of availability, security-relevant monitoring, and the ability to address vulnerabilities through security updates. Manufacturers also have continuing vulnerability-handling obligations covering identification and documentation of vulnerabilities and components, testing, remediation, coordinated vulnerability disclosure, secure update distribution, and support-period management.<a href="#fn55" class="footnote-ref" id="fnref55" role="doc-noteref"><sup>55</sup></a></p>
+<p>Those requirements correspond strikingly with recurring weaknesses in the Polish case: default credentials, unnecessary management services, weak update integrity, exposed administrative interfaces, vulnerable firmware, long-lived industrial products, and devices whose compromise or destruction significantly complicated restoration. The CRA cannot prescribe the network architecture of a CHP plant, but it can change the security baseline of the products from which that architecture is assembled.</p>
+<p>The timing is equally important. The CRA entered into force on 10 December 2024, but its main product obligations apply generally from <strong>11 December 2027</strong>. Article 14 reporting obligations apply earlier, from <strong>11 September 2026</strong>, requiring manufacturers to report actively exploited vulnerabilities and severe security incidents affecting in-scope products according to the Regulation’s notification process.<a href="#fn56" class="footnote-ref" id="fnref56" role="doc-noteref"><sup>56</sup></a> The December 2025 Polish incident should therefore not be described as a failure of CRA enforcement: the Regulation’s general product-security regime was not yet applicable. Its relevance is prospective. It is part of the EU response intended to make comparable device-level weaknesses less acceptable in products entering the future European market.</p>
+<p>For industrial infrastructure, lifecycle duration is particularly consequential. The CRA links vulnerability handling to a manufacturer-defined support period based on expected use, subject to statutory minimum rules. That matters for equipment expected to remain installed for many years, because a plant’s operational lifetime can substantially exceed ordinary consumer or enterprise IT refresh cycles.<a href="#fn57" class="footnote-ref" id="fnref57" role="doc-noteref"><sup>57</sup></a> Product procurement will therefore increasingly need to treat cybersecurity support horizon, update architecture, dependency support, and recovery capability as engineering characteristics rather than after-sales conveniences.</p>
+</section>
+<section id="csa2-from-product-security-to-strategic-supplier-risk" class="level3">
+<h3 class="anchored" data-anchor-id="csa2-from-product-security-to-strategic-supplier-risk">CSA2: from product security to strategic supplier risk</h3>
+<p>The proposed revision of the Cybersecurity Act adds another dimension. On 20 January 2026, the Commission proposed a new Cybersecurity Act — commonly called <strong>CSA2</strong> — that would replace Regulation (EU) 2019/881, reinforce ENISA and the European cybersecurity certification framework, and establish a <strong>trusted ICT supply-chain security framework</strong>.<a href="#fn58" class="footnote-ref" id="fnref58" role="doc-noteref"><sup>58</sup></a></p>
+<p>The distinction from the CRA is fundamental. The CRA asks whether a product and its manufacturer satisfy cybersecurity obligations. CSA2’s proposed supply-chain mechanism also addresses <strong>non-technical and strategic risk associated with suppliers and third countries</strong>. Under the Commission proposal, coordinated Union-level assessments could identify key ICT assets, countries presenting structural cybersecurity concerns, and suppliers considered high risk. Implementing measures could then restrict specified NIS2 entities from using, installing, or integrating relevant ICT components from designated high-risk suppliers, with transition periods and mitigation measures forming part of the mechanism.<a href="#fn59" class="footnote-ref" id="fnref59" role="doc-noteref"><sup>59</sup></a></p>
+<p>Energy is not incidental to that debate. The Commission’s 2026 Strategic Roadmap for Digitalisation and AI in the Energy Sector explicitly points to the proposed Cybersecurity Act as a framework that could, where necessary, support restrictions on <strong>inverters from high-risk suppliers</strong>.<a href="#fn60" class="footnote-ref" id="fnref60" role="doc-noteref"><sup>60</sup></a> That is a significant shift in regulatory logic. Security assessment would no longer concern only whether an inverter, gateway, router, or software component meets technical requirements; it could also concern whether strategic dependence on its supplier creates an unacceptable systemic risk.</p>
+<p>The connection to Poland is not that CERT Polska attributed the compromised equipment to “high-risk suppliers” in the CSA2 sense. It did not. The relevance is architectural. Modern energy systems can standardize the same vendors, firmware families, management planes, remote services, cellular equipment, and administrative models across thousands of geographically distributed assets. That standardization improves efficiency, but it can also create <strong>concentration risk</strong>. A vulnerability, supplier compromise, remote-management dependency, or politically unacceptable external influence can then propagate through an installed fleet rather than remain local to one plant.</p>
+<p>The proposed framework remains exactly that — <strong>a proposal</strong>. It is proceeding through the ordinary EU legislative process and may change materially before adoption.<a href="#fn61" class="footnote-ref" id="fnref61" role="doc-noteref"><sup>61</sup></a> It should therefore not yet be treated as a binding power to exclude vendors from European energy infrastructure. The more defensible conclusion is that EU policy has moved from discussing supply-chain risk principally as an operator risk-management problem toward considering an EU-level mechanism capable of imposing coordinated restrictions on strategically risky ICT suppliers.</p>
+</section>
+<section id="what-the-four-layers-achieve-together" class="level3">
+<h3 class="anchored">What the four layers achieve together</h3>
+<p>The emerging EU framework can be understood as four complementary control surfaces:</p>
+<ol type="1">
+<li><p><strong>NIS2 acts on the operator.</strong> It asks whether the organisation governing the plant understands its cyber risks, controls suppliers, manages incidents, provides continuity and recovery, and makes management accountable.</p></li>
+<li><p><strong>The Network Code acts on the electricity-system relationship.</strong> It asks how cyber risk affects interconnected electricity operations, which processes and entities are high impact, which controls and reporting mechanisms are required, and how risk should be coordinated across TSOs, DSOs, authorities and other actors.</p></li>
+<li><p><strong>The CRA acts on the product.</strong> It asks whether connected hardware and software are designed, supplied, documented, updated and supported according to a legally enforceable cybersecurity baseline.</p></li>
+<li><p><strong>CSA2, if adopted substantially in the form proposed, would act on strategic supply dependence.</strong> It would create mechanisms through which technically functional ICT components could nevertheless become unacceptable for certain critical uses because of broader supply-chain and third-country risk.</p></li>
+</ol>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-the-december-2025-cyberattack-on-polands-energy-sector-eu-regulatory-response" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-the-december-2025-cyberattack-on-polands-energy-sector-eu-regulatory-response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-the-december-2025-cyberattack-on-polands-energy-sector-eu-regulatory-response">%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    N[NIS2&lt;br/&gt;operator governance&lt;br/&gt;risk + reporting + suppliers]
+    E[Network Code on Cybersecurity&lt;br/&gt;electricity-system risk&lt;br/&gt;coordination + controls]
+    C[Cyber Resilience Act&lt;br/&gt;product lifecycle&lt;br/&gt;secure design + updates]
+    S[Proposed CSA2&lt;br/&gt;strategic ICT supply chain&lt;br/&gt;high-risk suppliers]
+
+    A[Energy operational architecture&lt;br/&gt;remote access + communications&lt;br/&gt;OT devices + dependencies + recovery]
+
+    N --&gt; A
+    E --&gt; A
+    C --&gt; A
+    S -. proposed .-&gt; A
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-the-december-2025-cyberattack-on-polands-energy-sector-eu-regulatory-response-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: The emerging EU cybersecurity response addresses different objects of risk: operators through NIS2, electricity-system interdependencies through the Network Code on Cybersecurity, products through the Cyber Resilience Act, and strategic supplier dependence through the proposed Cybersecurity Act 2.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This layered response is directionally consistent with the architecture-first argument of this article. The Polish attack succeeded because individually legitimate relationships — remote VPN access, firewall administration, device-management interfaces, cellular connectivity, a private APN, field controllers, Windows domains, vendor access, and recovery mechanisms — composed into paths that an attacker could traverse. The EU response increasingly regulates <strong>the actors, products, relationships, and dependencies from which those paths are built</strong>.</p>
+<p>But regulation cannot remove the design problem. NIS2 can make management responsible for risk without deciding the correct VLAN, conduit, jump-host, or maintenance architecture for a particular plant. The Network Code can define common electricity-sector requirements without hardening every field device. The CRA can require a better product baseline without preventing an operator from deploying a secure product in an insecure topology. CSA2 may eventually reduce certain strategic supplier dependencies without eliminating vulnerabilities in trusted suppliers. And none of these instruments can substitute for tested restoration, offline configuration backups, protected logs, site-specific credentials, constrained management planes, inter-site isolation, or disciplined commissioning.</p>
+<p>The strongest reading of the EU response is therefore not that <strong>compliance will prevent the next Poland</strong>. It is that European law is progressively making the architectural shortcuts exposed by Poland harder to justify. Weak product defaults become a manufacturer problem. Uncontrolled supplier relationships become an operator-governance problem. Cross-border electricity dependencies become a sector-level risk problem. Concentration in strategically risky suppliers may become a Union-level supply-chain problem.</p>
+<p>That is an important change in the allocation of responsibility. The old model allowed insecurity to fall between contracts: the manufacturer supplied a configurable product, the integrator installed it, the operator accepted it, the telecom provider connected it, and each party could plausibly regard the remaining risk as someone else’s problem. The emerging European framework increasingly removes those gaps.</p>
+<p>The remaining task is technical rather than legislative: <strong>turn the overlapping legal obligations into one coherent architecture before the plant is commissioned</strong>. That means using product assurance, enterprise architecture, IEC 62443 zones and conduits, identity governance, supplier controls, communications isolation, evidence collection, and recovery engineering as parts of the same design process. The Polish campaign demonstrates what happens when operational connectivity is allowed to compose faster than security governance. The EU response is increasingly designed to make that condition legally, economically, and operationally more difficult to sustain.</p>
 
 
 <section class="see-also-inline-block" style="margin-top:2.75rem;">
@@ -1332,7 +1710,7 @@ Figure&nbsp;4: Systemic risk pattern in distributed energy resources, showing ho
     }
   </style>
 
-<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=cybersecurity">cybersecurity</a> longforms</h2>
+<h2 class="anchored" data-anchor-id="what-the-four-layers-achieve-together">See also <a href="https://4m4.it/index.html#category=cybersecurity">cybersecurity</a> longforms</h2>
 <div class="see-also-cards">
 <article class="see-also-card">
 <a class="see-also-card-link" href="../../longforms/cyber-resilience-act-the-new-product-security-baseline/">
@@ -1585,6 +1963,7 @@ Figure&nbsp;4: Systemic risk pattern in distributed energy resources, showing ho
 </div>
 </section>
 </section>
+</section>
 
 
 <a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
@@ -1604,6 +1983,53 @@ Figure&nbsp;4: Systemic risk pattern in distributed energy resources, showing ho
 <li id="fn12"><p><a href="https://download.terna.it/terna/Allegato_A.69_8ddd426e0f51f03.pdf">PDF</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn13"><p>The <strong>Cyber Resilience Act</strong>, Regulation (EU) 2024/2847, entered into force on 10 December 2024. The main obligations apply from 11 December 2027, while the reporting obligations under Article 14 apply earlier, from 11 September 2026. See the European Commission’s summary: <a href="https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act">Cyber Resilience Act</a>.<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn14"><p><a href="https://static.ceinorme.it/strumenti-online/doc/26009.pdf">PDF</a><a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn24"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref24" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn25"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref25" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn26"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref26" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn27"><p>CERT Polska. (2026, August 8). <strong>Follow-Up Analysis of the 29 December 2025 Energy Sector Incident</strong>. <em>NASK – National Research Institute</em>. <a href="https://cert.pl/uploads/docs/CERT_Polska_Energy_Sector_Incident_Follow_up_Report_2025.pdf">Report</a><a href="#fnref27" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn28"><p>Adomaitis, N. (2025, August 13). <strong>Norway Spy Chief Blames Russian Hackers for Dam Sabotage in April</strong>. <em>Reuters</em>. <a href="https://www.reuters.com/technology/norway-spy-chief-blames-russian-hackers-dam-sabotage-april-2025-08-13/">Report</a><a href="#fnref28" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn29"><p>SektorCERT. (2023). <strong>The Attack Against Danish Critical Infrastructure</strong>. <em>SektorCERT</em>. <a href="https://sektorcert.dk/wp-content/uploads/2023/11/SektorCERT-The-attack-against-Danish-critical-infrastructure-TLP-CLEAR.pdf">Report</a><a href="#fnref29" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn30"><p>Holding Slovenske elektrarne. (2023, November 30). <strong>HSE Successfully Resolves Situation Related to Hacking of HSE Information System</strong>. <em>HSE</em>. <a href="https://www.hse.si/en/hse-successfully-resolves-situation-related-to-hacking-of-hse-information-system/">Official statement</a><a href="#fnref30" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn31"><p>Dragos, Inc.&nbsp;(2024, July 23). <strong>How to Protect Against FrostyGoop: ICS Malware Targeting Operational Technology</strong>. <em>Dragos</em>. <a href="https://www.dragos.com/blog/protect-against-frostygoop-ics-malware-targeting-operational-technology">Technical analysis</a><a href="#fnref31" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn32"><p>Societatea Energetică Electrica S.A. (2024, December 9). <strong>Current Report – Cyber Attack in Progress – 9 December 2024</strong>. <em>Electrica</em>. <a href="https://www.electrica.ro/wp-content/uploads/2024/12/ELSA_EN_Current_report_CyberAtack_9Dec2024_LSE.pdf">Regulatory disclosure</a><a href="#fnref32" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn33"><p>National Cyber Security Directorate of Romania. (2024, December 11). <strong>LYNX Ransomware Indicators of Compromise (IOCs)</strong>. <em>DNSC</em>. <a href="https://dnsc.ro/vezi/document/dnsc-alert-lynx-ransomware-indicators-of-compromise-iocs">Official alert</a><a href="#fnref33" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn34"><p>Adomaitis, N. (2025, August 13). <strong>Norway Spy Chief Blames Russian Hackers for Dam Sabotage in April</strong>. <em>Reuters</em>. <a href="https://www.reuters.com/technology/norway-spy-chief-blames-russian-hackers-dam-sabotage-april-2025-08-13/">Report</a><a href="#fnref34" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn35"><p>Geyer, G. (2025, June 26). <strong>Cyberattack on Norwegian Dam Highlights Password Exposure Risks</strong>. <em>Claroty</em>. <a href="https://claroty.com/blog/cyberattack-on-norwegian-dam-highlights-password-exposure-risks">Technical analysis</a><a href="#fnref35" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn36"><p>Sveriges Radio. (2026, April 15). <strong>Civil Defence Minister: Sweden Foiled Pro-Russian Cyber Attack on Heating Plant</strong>. <em>Sveriges Radio</em>. <a href="https://www.sverigesradio.se/artikel/civil-defence-minister-sweden-foiled-pro-russian-cyber-attack-on-heating-plant">Report</a><a href="#fnref36" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn37"><p>AGERPRES. (2025, December 27). <strong>Oltenia Energy Complex’s Activity Partially Affected by Ransomware Cyber Attack</strong>. <em>AGERPRES</em>. <a href="https://agerpres.ro/english/2025/12/27/oltenia-energy-complex-s-activity-partially-affected-by-ransomware-cyber-attack--1515068">Report based on company statement</a><a href="#fnref37" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn38"><p>CERT-EU. (2026). <strong>Cyber Brief 26-02 – January 2026</strong>. <em>CERT-EU</em>. <a href="https://cert.europa.eu/publications/threat-intelligence/cb26-02/">Threat intelligence brief</a><a href="#fnref38" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn39"><p>CONPET S.A. (2026). <strong>Annual Report 2025</strong>. <em>CONPET S.A.; Bucharest Stock Exchange</em>. <a href="https://bvb.ro/infocont/infocont26/COTE_20260326011944_COTE-25-03-2026--Annual-Report-Fin-Statements-2025-BVB-ASF.pdf">Regulatory filing</a><a href="#fnref39" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn40"><p>Government of Spain. (2025, June 17). <strong>The Government of Spain Presents the Report on the Causes of the Blackout, Which Was Due to a “Multifactorial” Surge</strong>. <em>La Moncloa</em>. <a href="https://www.lamoncloa.gob.es/lang/en/gobierno/councilministers/paginas/2025/20250617-council-press-conference.aspx">Official report summary</a><a href="#fnref40" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn41"><p>European Commission. (2026). <strong>EU cybersecurity policies</strong>. <em>Shaping Europe’s digital future</em>. <a href="https://digital-strategy.ec.europa.eu/en/policies/cybersecurity-policies">Official policy overview</a><a href="#fnref41" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn42"><p>European Parliament and Council of the European Union. (2022). <strong>Directive (EU) 2022/2555 on measures for a high common level of cybersecurity across the Union</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/dir/2022/2555/oj">Official text</a><a href="#fnref42" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn43"><p>European Parliament and Council of the European Union. (2022). <strong>Directive (EU) 2022/2555 on measures for a high common level of cybersecurity across the Union</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/dir/2022/2555/oj">Official text</a><a href="#fnref43" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn44"><p>European Parliament and Council of the European Union. (2022). <strong>Directive (EU) 2022/2555, Article 21(2)(d): supply-chain security</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/dir/2022/2555/oj">Official text</a><a href="#fnref44" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn45"><p>European Commission. (2023). <strong>Directive on measures for a high common level of cybersecurity across the Union — NIS2 Directive FAQs</strong>. <em>Shaping Europe’s digital future</em>. <a href="https://digital-strategy.ec.europa.eu/en/faqs/directive-measures-high-common-level-cybersecurity-across-union-nis2-directive-faqs">Official guidance</a><a href="#fnref45" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn46"><p>European Commission. (2026). <strong>NIS2 Directive: securing network and information systems</strong>. <em>Shaping Europe’s digital future</em>. <a href="https://digital-strategy.ec.europa.eu/en/policies/nis2-directive">Official implementation page</a><a href="#fnref46" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn47"><p>European Cyber Security Organisation. (2026). <strong>NIS2 Directive Transposition Tracker</strong>. <em>ECSO</em>. <a href="https://ecs-org.eu/policy/nis2-directive-transposition-tracker/">Tracker</a><a href="#fnref47" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn48"><p>European Commission. (2026, July 8). <strong>Commission refers Ireland, Spain, France and the Netherlands to the Court of Justice for failing to transpose the rules on cybersecurity</strong>. <em>European Commission</em>. <a href="https://malta.representation.ec.europa.eu/news/july-infringements-package-key-decisions-2026-07-08_en">Infringement decision</a><a href="#fnref48" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn49"><p>European Commission. (2024). <strong>Commission Delegated Regulation (EU) 2024/1366 supplementing Regulation (EU) 2019/943 by establishing a network code on sector-specific rules for cybersecurity aspects of cross-border electricity flows</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/reg_del/2024/1366/oj">Official text</a><a href="#fnref49" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn50"><p>European Network of Transmission System Operators for Electricity. (2026). <strong>Network Code on Cybersecurity</strong>. <em>ENTSO-E</em>. <a href="https://www.entsoe.eu/network_codes/nccs/">Implementation portal</a><a href="#fnref50" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn51"><p>European Network of Transmission System Operators for Electricity. (2026). <strong>Network Code on Cybersecurity</strong>. <em>ENTSO-E</em>. <a href="https://www.entsoe.eu/network_codes/nccs/">Implementation portal</a><a href="#fnref51" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn52"><p>European Parliament and Council of the European Union. (2024). <strong>Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements (Cyber Resilience Act)</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng">Official text</a><a href="#fnref52" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn53"><p>4M4. (2026). <strong>Cyber Resilience Act: The New Product-Security Baseline</strong>. <em>Random Bits of Knowledge</em>. <a href="https://4m4.it/longforms/cyber-resilience-act-the-new-product-security-baseline/index.html">Article</a><a href="#fnref53" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn54"><p>European Parliament and Council of the European Union. (2024). <strong>Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements (Cyber Resilience Act)</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng">Official text</a><a href="#fnref54" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn55"><p>European Parliament and Council of the European Union. (2024). <strong>Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements (Cyber Resilience Act)</strong>. <em>Official Journal of the European Union</em>. <a href="https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng">Official text</a><a href="#fnref55" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn56"><p>European Commission. (2026). <strong>Cyber Resilience Act</strong>. <em>Shaping Europe’s digital future</em>. <a href="https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act">Official implementation page</a><a href="#fnref56" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn57"><p>4M4. (2026). <strong>Cyber Resilience Act: The New Product-Security Baseline</strong>. <em>Random Bits of Knowledge</em>. <a href="https://4m4.it/longforms/cyber-resilience-act-the-new-product-security-baseline/index.html">Article</a><a href="#fnref57" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn58"><p>European Commission. (2026). <strong>Proposal for a Regulation on ENISA, the European Cybersecurity Certification Framework and ICT supply-chain security, repealing Regulation (EU) 2019/881 (Cybersecurity Act 2), COM(2026) 11 final</strong>. <em>European Commission</em>. <a href="https://eur-lex.europa.eu/resource.html?format=PDF&amp;uri=cellar%3A03aee288-f75c-11f0-b9bc-01aa75ed71a1.0001.02%2FDOC_1">Legislative proposal</a><a href="#fnref58" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn59"><p>De Zan, T. (2026, February 11). <strong>Protecting the ICT Supply Chain: A Step-By-Step Guide to the New EU Security Framework</strong>. <em>Access Partnership</em>. <a href="https://accesspartnership.com/opinion/protecting-the-ict-supply-chain-a-step-by-step-guide-to-the-new-eu-security-framework/">Analysis</a><a href="#fnref59" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn60"><p>European Commission. (2026). <strong>Strategic Roadmap for Digitalisation and AI in the Energy Sector, COM(2026) 501 final</strong>. <em>European Commission</em>. <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=COM:2026:501:FIN">Official communication</a><a href="#fnref60" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn61"><p>European Commission. (2026). <strong>Proposal for a Regulation on ENISA, the European Cybersecurity Certification Framework and ICT supply-chain security, repealing Regulation (EU) 2019/881 (Cybersecurity Act 2), COM(2026) 11 final</strong>. <em>European Commission</em>. <a href="https://eur-lex.europa.eu/resource.html?format=PDF&amp;uri=cellar%3A03aee288-f75c-11f0-b9bc-01aa75ed71a1.0001.02%2FDOC_1">Legislative proposal</a><a href="#fnref61" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">CC BY-NC-ND 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{montano2026,
   author = {Montano, Antonio},
@@ -1612,256 +2038,97 @@ Figure&nbsp;4: Systemic risk pattern in distributed energy resources, showing ho
   date = {2026-03-25},
   url = {https://antomon.github.io/longforms/poland-energy-sector-cyberattack-2025/},
   langid = {en},
-  abstract = {This article reconstructs the December 2025 cyberattack on
-    Poland’s energy sector as a reference event for the next phase of OT
-    and distributed-energy cybersecurity. The incident targeted at least
-    thirty wind and photovoltaic sites, a major combined heat and power
-    plant, and a manufacturing company. Its strategic relevance does not
-    lie in the fact that it caused a national blackout, because it did
-    not. Its relevance lies in something more precise and more
-    transferable: the attackers degraded the digital coordination layer
-    of energy infrastructure, damaging or disabling devices that
-    supported telemetry, supervisory control, remote access, local
-    visibility, protection, and restoration at the grid edge. The
-    article begins from the facts established by CERT Polska. On 29
-    December 2025, during winter conditions and shortly before New
-    Year’s Eve, destructive cyber activity affected renewable generation
-    sites, a CHP plant supplying heat to a large population, and an
-    unrelated manufacturing company. The campaign crossed the boundary
-    between enterprise compromise and OT sabotage. In the renewable
-    segment, electricity generation continued, but communication with
-    distribution system operators was lost and remote control was no
-    longer available. This distinction is central to the article’s
-    thesis: energy cyber risk cannot be measured only by asking whether
-    electricity immediately stops flowing. A plant can continue
-    producing while becoming unobservable, uncontrollable, harder to
-    restore, and less trustworthy from the perspective of grid
-    operation. The reconstruction of the renewable-site attack focuses
-    on the grid connection point. Wind and photovoltaic assets delivered
-    energy through substations where voltage was stepped up and where
-    DSOs maintained supervision and control through RTUs, HMIs,
-    protection relays, serial device servers, communication links, and
-    remote-access infrastructure. These substations were usually
-    unmanned and depended structurally on remote management. The attack
-    therefore did not need to compromise every turbine or inverter. It
-    was sufficient to compromise the devices that mediated supervision,
-    command, communication, and restoration at the grid interface. The
-    article describes this as an attack on the operational nervous
-    system of distributed generation rather than on the generation
-    process itself. Initial access at the renewable sites was tied to
-    FortiGate appliances used as VPN concentrators and firewalls. The
-    VPN interfaces were exposed to the internet, authentication did not
-    require multifactor authentication, and account or password reuse
-    across sites appears to have been a relevant scaling condition.
-    Although several facilities used VLAN segregation, the attacker
-    obtained administrative control of the FortiGate devices, which
-    likely made it possible to bypass or reconfigure segmentation, gain
-    access to multiple subnets, and reach OT management interfaces. The
-    factory reset of FortiGate devices on the day of the attack then
-    hindered recovery and destroyed local evidence. The perimeter device
-    thus became simultaneously an entry point, a policy override point,
-    a credential concentration point, and an evidence destruction point.
-    Once inside the grid connection point networks, the attacker
-    executed destructive actions against OT and communications devices.
-    Hitachi RTU560 controllers were compromised through default web
-    credentials and corrupted firmware uploads. The modified firmware
-    caused reboot loops and rendered the RTUs unavailable. Mikronika
-    RTUs were accessed through default root SSH credentials and damaged
-    by destructive filesystem commands. Hitachi Relion protection relays
-    were attacked through default FTP access, allowing deletion of
-    critical files and preventing restart. Windows HMIs running
-    Mikronika Syndis software were accessed through default local
-    administrator credentials, RDP, administrative shares, SMB exposure,
-    PowerShell, Impacket-based reconnaissance, and finally DynoWiper
-    execution. Moxa NPort serial device servers were accessed through
-    default web credentials, reset, reconfigured, assigned unreachable
-    IP addresses, and made harder to restore. The common pattern was not
-    exotic ICS malware, but reachable management surfaces, default
-    credentials, weak firmware integrity, unnecessary services,
-    insufficient hardening, and recovery friction. The article then
-    reconstructs the CHP plant attack, which had a different tempo.
-    Whereas the renewable-site campaign emphasized distributed OT device
-    sabotage, the CHP case showed deeper enterprise compromise. The
-    attacker conducted months of reconnaissance, unauthorized access,
-    credential theft, lateral movement, and privilege escalation.
-    Activity included RDP access through a FortiGate-related path,
-    movement to jump hosts and domain controllers, screenshot capture,
-    process and network reconnaissance, LSASS theft attempts, use of
-    Rubeus, dumping of Active Directory data from `ntds.dit`, and
-    extensive access to SMB systems, some of which had names suggesting
-    SCADA relevance. This part of the incident shows how traditional
-    Windows-domain compromise becomes strategically different when the
-    enterprise environment is connected to industrial operations. In the
-    destructive phase at the CHP plant, the attacker attempted to
-    distribute a wiper through Group Policy Objects from a domain
-    controller. More than one hundred machines had the executable
-    launched, but runtime protection by an EDR solution blocked
-    execution through a canary mechanism. A second modified attempt also
-    failed. The attacker then attempted direct storage-layer sabotage by
-    booting Tiny Core Linux through a KVM interface and using `dd` to
-    overwrite attached disks with random data, while also attempting to
-    modify RAID configuration. The article treats this as evidence of
-    operational adaptability: when ordinary file destruction was
-    blocked, the attacker shifted toward lower-level destruction of
-    server storage. The manufacturing-company case provides a third
-    pattern. The target was opportunistic rather than directly connected
-    to the energy campaign, but it shared the same destructive timing
-    and several technical motifs. Initial access came through a Fortinet
-    perimeter device whose configuration or vulnerability history had
-    already been exposed. The attacker used built-in FortiGate scripting
-    for persistence, credential exfiltration, and security modification,
-    including exfiltration to an attacker-controlled Slack channel.
-    Internal movement used SSL VPN and Impacket, followed by
-    PowerShell-based wiper deployment through Group Policy. The attacker
-    also accessed Microsoft 365 services and showed interest in files
-    and emails related to OT modernization, SCADA systems, and technical
-    work. This indicates that destructive operations and intelligence
-    collection can coexist inside the same campaign. The malware
-    analysis distinguishes DynoWiper and LazyWiper. DynoWiper was
-    observed in the renewable HMI and CHP contexts. It corrupted files
-    using pseudorandom data, deleted files, and in some versions shut
-    down the system. It had no persistence, no command-and-control
-    logic, and no special OT functionality. Its impact came from where
-    it was executed, not from sophisticated industrial protocol
-    manipulation. LazyWiper, used against the manufacturing company, was
-    a PowerShell-based wiper that overwrote file contents at intervals
-    across many file types, including engineering and business-relevant
-    formats. The article emphasizes that destructive malware does not
-    need to be technically elegant when the attacker already has
-    privileged access, domain distribution mechanisms, and weakly
-    governed operational environments. Attribution is handled with
-    caution. CERT Polska associated the infrastructure used for access,
-    exfiltration, tunneling, wiper deployment, and storage sabotage with
-    activity clusters known as Static Tundra, Berserk Bear, Ghost
-    Blizzard, and Dragonfly, while remaining more conservative about
-    malware attribution. ESET’s analysis went further on DynoWiper,
-    attributing it to Sandworm with medium confidence and connecting it
-    to earlier destructive activity. Dragos interpreted the event
-    through an OT lens and assessed that the operation represented a
-    coordinated attack against distributed energy resources at scale,
-    associated with ELECTRUM with moderate confidence. The article does
-    not force these readings into a single oversimplified attribution
-    claim. Instead, it uses them to show that different analytic layers
-    — infrastructure, malware, OT behavior, strategic targeting, and
-    historical TTPs — may support different confidence levels. The
-    additional Dragos interpretation is central to the article’s
-    strategic reading. In electric systems, loss of communication does
-    not normally imply immediate shutdown. A site may continue operating
-    locally while becoming unavailable for remote monitoring and
-    control. This is why the Polish attack was serious even though it
-    did not destabilize the national power system. The attackers
-    affected the communications and control assets that connected grid
-    operators to distributed generation and CHP facilities. The attack
-    therefore demonstrated that the distributed edge of the grid can be
-    targeted as an operational layer in its own right. The article’s
-    first major lesson is that the threshold for serious energy-sector
-    impact is lower than the blackout-centric intuition suggests.
-    Operationally relevant disruption can occur through loss of
-    telemetry, loss of remote control, damaged edge devices, compromised
-    remote-access infrastructure, impaired restoration, and reduced
-    confidence in field-device integrity. A plant does not need to stop
-    producing to become a problem for operators, owners, regulators, and
-    system coordinators. If the same effect occurs across many sites,
-    the resulting stress can become strategic even when each individual
-    asset seems small. The second lesson concerns distributed
-    generation. Wind, solar, CHP, BESS, and hybrid assets are often
-    treated as fragmented and therefore less attractive than centralized
-    power assets. The Polish case shows the opposite possibility.
-    Distributed assets can become scalable targets precisely because
-    they are numerous, remotely operated, geographically dispersed,
-    operationally standardized, and often protected with uneven
-    maturity. What is decentralized electrically may still be
-    concentrated cybernetically if many sites share similar VPN
-    technologies, access procedures, administrative shortcuts, default
-    credentials, serial gateways, RTUs, HMIs, and weak recovery
-    assumptions. The third lesson is that the decisive weaknesses were
-    architectural and operational, not mainly exotic. The attack paths
-    depended on internet-exposed VPNs, missing MFA, reused credentials,
-    overprivileged perimeter devices, default accounts, reachable
-    management protocols, firmware update weaknesses, weak HMI
-    hardening, insufficient logging, and recovery procedures that had
-    not been designed for hostile destruction. This means that the
-    incident cannot be dismissed as a one-off zero-day story. Similar
-    outcomes are plausible wherever comparable architectural patterns
-    exist. The article then shifts from incident reconstruction to
-    design implications. It argues that enterprise architecture and IEC
-    62443 should be used at design time, not appended after procurement
-    and deployment. If segmentation, remote access, conduits, identity
-    boundaries, management planes, evidence collection, backup,
-    recovery, vendor access, and administrative domains are decided
-    late, the owner pays for fragility twice: first through fast but
-    ambiguous implementation, then through compensating controls,
-    redesign, and incident-response friction. If those decisions are
-    made at architecture stage, security becomes a property of system
-    shape rather than a set of late exceptions. An IEC 62443 reading of
-    the Polish failure modes converts generic lessons into concrete
-    design properties. Remote access should terminate in a controlled
-    access zone, not directly into OT. VLANs alone are not a security
-    architecture when administrative control of the perimeter can
-    collapse the zone model. Remote access requires individual accounts,
-    MFA, credential rotation, and site-specific authorization. Default
-    credentials must be removed during commissioning. Web, SSH, FTP,
-    RDP, SMB, and firmware update interfaces must be reachable only from
-    controlled maintenance or engineering zones. Firmware update paths
-    need authenticated, authorized, logged, and integrity-checked change
-    control. Field-device configurations must be backed up, versioned,
-    and restorable. Logs must be exported to protected collectors
-    outside the local device. Fleet standardization must standardize
-    secure patterns, not identical weaknesses. The article also applies
-    the lesson to the Italian and European context. In Italy, the same
-    structural risks appear in renewable plants, BESS, hybrid systems,
-    grid-interface devices, remote O\&amp;M models, vendor-support channels,
-    cloud platforms, telemetry paths, dispatch interfaces, and
-    Terna-related communication architectures. A modern energy plant is
-    no longer only an electrical installation with digital components.
-    It is a distributed cyber-physical operating system whose physical
-    assets are observed, controlled, patched, diagnosed, optimized,
-    dispatched, and sometimes overridden through digital trust
-    relationships. The real attack surface is the graph of access,
-    authority, dependency, delegation, and recovery that connects the
-    plant to owners, EPCs, integrators, vendors, operators, aggregators,
-    telcos, cloud services, market systems, and grid operators. The
-    regulatory layer reinforces the same conclusion. NIS2, the Italian
-    Perimetro di Sicurezza Nazionale Cibernetica, the Cyber Resilience
-    Act, the Terna Grid Code, Terna Annexes A.13 and A.69, and CEI 0-16
-    all point toward tighter governance of connected digital
-    infrastructure. The article does not claim that architecture
-    automatically equals compliance. Compliance still requires evidence,
-    procedures, roles, documentation, testing, and governance. Its
-    narrower and stronger claim is that a plant designed with explicit
-    zones, conduits, secure remote access, asset accountability,
-    logging, controlled change, vendor governance, backup, and recovery
-    starts much closer to the direction in which regulation is moving.
-    The article’s treatment of the Terna layer is particularly relevant.
-    Current and revised Terna requirements already treat communications,
-    telecontrol, data acquisition, VPN protection, logging, incident
-    reporting, mutual authentication, asset inventory, third-party
-    governance, traffic isolation, patching, malware protection, backup,
-    and restore as security-relevant properties of the plant-to-grid
-    interface. This means that cybersecurity is not only a corporate IT
-    policy issue. It is becoming embedded in the technical conditions
-    under which telemetry, control, defense functions, and grid-related
-    communication can operate. The conclusion is that the Polish attack
-    should be read as a constructive warning, not only as an alarming
-    incident report. It shows that coordinated cyber sabotage of
-    distributed generation does not require spectacular novelty. It
-    requires enough knowledge of how modern plants are actually
-    operated, enough access to the edge devices that mediate trust and
-    control, and enough operational discipline to turn repeated
-    weaknesses into repeatable disruption. The strategic response is
-    therefore not a vague demand for “more security”, but a precise
-    design agenda: govern remote access, dispatch interfaces, telemetry
-    paths, OT management surfaces, logging, backup, restoration, vendor
-    access, and fleet standardization as essential parts of plant
-    architecture. The deepest conclusion is that the future cyber risk
-    of energy systems will not be determined only by the amount of
-    renewable or distributed capacity added to the grid. It will be
-    determined by how that capacity is digitally organized. If
-    distributed generation is operationally connected faster than it is
-    architecturally governed, the attack surface scales faster than
-    resilience. If it is designed from the beginning as critical
-    infrastructure, then many of the Polish attack paths become harder,
-    noisier, slower, more constrained, and more recoverable.}
+  abstract = {This article reconstructs the coordinated cyberattacks
+    carried out against Poland’s energy sector on 29 December 2025 and
+    examines what they reveal about the security of distributed energy
+    and operational technology environments. The campaign affected more
+    than thirty wind and photovoltaic facilities, a large combined heat
+    and power plant, a second CHP plant supplying approximately 50,000
+    residents, and a manufacturing company. Although the attacks did not
+    destabilize the Polish power system or cause sustained loss of heat
+    or electricity to customers, they produced destructive effects
+    across both IT and OT environments, including loss of telemetry and
+    remote control, destruction of field devices, attempts to wipe
+    enterprise systems, and direct interference with industrial
+    controllers. The article argues that the strategic significance of
+    the incident cannot be understood through a blackout-centric model
+    of cyber risk. At the renewable sites, electricity generation
+    largely continued while attackers disabled the digital
+    infrastructure used to observe, supervise, communicate with, and
+    remotely control grid connection points. FortiGate appliances, RTUs,
+    HMIs, protection relays, serial device servers, and other
+    operational components became attack surfaces because of weak
+    remote-access controls, missing multifactor authentication, reused
+    or default credentials, exposed management interfaces, insufficient
+    firmware protections, and fragile recovery procedures. The result
+    was an attack on the operational coordination layer of distributed
+    generation rather than on generation itself. The January 2026 CERT
+    Polska report also showed that the campaign extended beyond
+    distributed renewable assets. At a large CHP plant, the attacker
+    conducted prolonged reconnaissance, credential theft, privilege
+    escalation, Active Directory compromise, and attempts to distribute
+    destructive malware through Group Policy. When endpoint protection
+    blocked the wiper, the attacker shifted toward lower-level storage
+    sabotage using a remotely booted Linux environment and
+    disk-overwrite commands. At a manufacturing company, similar
+    techniques combined Fortinet compromise, persistence, credential
+    exfiltration, cloud access, PowerShell-based wiping, and interest in
+    engineering and OT-modernization material. DynoWiper and LazyWiper
+    illustrate a broader point developed throughout the article:
+    destructive malware does not need specialized industrial
+    functionality when the attacker has already acquired privileged
+    access to systems that mediate industrial operations. CERT Polska’s
+    August 2026 follow-up materially extends this reconstruction.
+    Investigators established that a second CHP plant had been attacked
+    through an unusual lateral-movement path originating at a
+    compromised wind farm. The attacker reached a Teltonika cellular
+    router connected to a DSO-managed private APN, used that APN to
+    discover a WAGO PFC200 controller associated with the CHP plant, and
+    then pivoted through the controller into the plant’s OT network.
+    From there, the attacker conducted industrial reconnaissance and
+    ultimately placed Siemens PLCs into STOP mode, interrupting the
+    steam turbine and process-water treatment systems and temporarily
+    halting cogeneration. The plant recovered quickly enough to avoid
+    customer-facing disruption, but the incident demonstrated that a
+    private telecommunications network intended to interconnect field
+    assets can become an attack path between operational environments
+    when endpoint isolation, administrative-interface controls,
+    credential hygiene, and trust boundaries are inadequate. This
+    follow-up sharpens the article’s central thesis. The decisive
+    security boundary in modern energy infrastructure is not simply the
+    perimeter of an individual plant, nor even the interface between a
+    plant and a grid operator. It is the wider graph of remote access,
+    administrative authority, telecommunications, vendor connectivity,
+    shared infrastructure, field devices, and recovery dependencies that
+    connects distributed assets into an operational system. What is
+    electrically decentralized may remain cybernetically coupled. Shared
+    VPN technologies, private APNs, management practices, credentials,
+    device families, and maintenance architectures can transform
+    repeated local weaknesses into scalable attack paths. The article
+    therefore interprets the Polish campaign primarily as an
+    architectural failure mode rather than as a story about unusually
+    sophisticated malware. Its implications extend to renewable plants,
+    BESS, CHP, hybrid systems, grid-interface devices, remote O\&amp;M,
+    vendor-support channels, and other digitally mediated energy assets.
+    Using enterprise architecture and IEC 62443 as design lenses, it
+    argues for explicit zoning and conduits, strong remote-access
+    controls, individual identities and MFA, elimination of default
+    credentials, isolation of management interfaces, authenticated
+    firmware and configuration changes, centralized logging, protected
+    backups, tested restoration procedures, and treatment of private
+    communications networks as untrusted unless their security
+    properties are explicitly verified and enforced. The broader
+    conclusion is that the cyber resilience of future energy systems
+    will depend not only on how much distributed capacity is deployed,
+    but on how that capacity is digitally organized. If connectivity,
+    remote operations, and fleet standardization scale faster than
+    architectural governance, the attack surface scales with them. If
+    trust boundaries, communications paths, device administration,
+    evidence collection, and recovery are designed as
+    critical-infrastructure properties from the outset, the same
+    operational efficiencies that make distributed energy manageable
+    need not become the mechanisms that make coordinated sabotage
+    scalable.}
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-montano2026" class="csl-entry quarto-appendix-citeas" role="listitem">
 Montano, Antonio. 2026. <span>“The December 2025 Cyberattack on Poland’s
