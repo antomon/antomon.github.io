@@ -1,0 +1,1724 @@
+---
+title: "VEX Standards from First Principles"
+subtitle: "From software inventories to defensible vulnerability-exploitability decisions"
+description: "A technical tutorial on SBOMs and Vulnerability Exploitability eXchange, covering CISA semantics, CSAF, CycloneDX, SPDX, OpenVEX, Log4Shell, automation, interoperability, and practical use under the EU Cyber Resilience Act."
+abstract: |
+  Software Bills of Materials (SBOMs) and Vulnerability Exploitability eXchange (VEX) solve different stages of the same software-vulnerability problem. An SBOM provides structured evidence about software composition; it does not establish that every vulnerability associated with an included component affects the finished product. VEX communicates the result of that subsequent product-specific assessment: whether a defined product is affected, not affected, fixed, or still under investigation, together with the justification or action information needed to interpret that conclusion. This article develops that distinction from first principles and derives an end-to-end process linking product identity, SBOM evidence, vulnerability correlation, technical investigation, VEX publication, consumer trust, reassessment, and auditable vulnerability disposition.
+
+  The article compares the principal VEX implementation architectures rather than treating them as interchangeable JSON encodings. CSAF represents VEX within a structured security-advisory model; CycloneDX integrates vulnerability analysis into a Bill-of-Materials ecosystem; SPDX 3 represents VEX through typed security relationships in a graph-oriented model; and OpenVEX reduces the problem to lightweight, SBOM-agnostic product-vulnerability statements. Their core semantics overlap, but product identity, status vocabularies, justification models, remediation information, provenance, and lifecycle semantics do not always map one-to-one. A worked analysis of CVE-2021-44228 demonstrates why component presence, vulnerable-code presence, reachability, adversary control, and remediation must be distinguished before any VEX status is issued, and why syntactically valid VEX cannot substitute for evidence supporting the underlying assessment.
+
+  The Cyber Resilience Act (CRA) makes this distinction operationally significant in the European regulatory context. Regulation (EU) 2024/2847 directly incorporates SBOM creation into the manufacturer's vulnerability-handling obligations under the full CRA regime, while it does not prescribe VEX as a mandatory artefact or format. VEX can nevertheless support CRA operations by communicating whether an upstream vulnerability actually applies to a final product, by accelerating supplier and product-security workflows, and by contributing evidence to Article 14 reporting decisions. It does not by itself establish active exploitation, legal reportability, conformity, or the absence of remediation duties. The resulting implementation principle is that SBOM, VEX, exploitation or incident evidence, and regulatory decision records should remain distinct but traceably connected. Safe automation therefore requires precise product identity, evidence-backed assessments, authenticated and authorized issuers, explicit handling of semantic loss and conflicts, reversible suppression, and reassessment whenever the assumptions underlying a VEX statement change.
+date: "2022-12-03"
+date-modified: "2026-08-21"
+categories: [cybersecurity, regulation and compliance, software development, tutorial, 🇬🇧]
+difficulty: intermediate
+audiences: [practitioner, technical specialist, analyst, consultant]
+keywords: SBOM, VEX, Vulnerability Exploitability eXchange, CISA, CSAF, CycloneDX, SPDX, OpenVEX, CVE-2021-44228, Log4Shell, Cyber Resilience Act, CRA, vulnerability management, software supply chain
+image: "vex-standards.png"
+---
+
+## Why SBOMs need VEX
+
+A **vulnerability scanner** starts from a correlation problem. A product contains software components, vulnerability intelligence associates some of those components or versions with known vulnerabilities, and the scanner reports matches. The difficulty begins when a match is interpreted as though it were already a product-security conclusion.
+
+CISA's current **SBOM guidance** defines an SBOM as a _formal record of software components and their supply-chain relationships_. Its 2025 minimum-elements update expands the older U.S. baseline with fields and operational attributes intended to make SBOMs more useful for vulnerability management, including component hashes, license information, tool identity, generation context, coverage expectations, and explicit treatment of unknown dependencies.[^vex-standards-from-first-principles-cisa-sbom-minimum-elements] The earlier NTIA minimum-elements report established the widely used baseline of supplier, component name, version, identifiers, dependency relationships, SBOM author, and timestamp.[^vex-standards-from-first-principles-ntia-sbom-minimum-elements] ENISA has likewise treated SBOMs as a mechanism for software-component transparency and vulnerability-management support in European cybersecurity guidance.[^vex-standards-from-first-principles-enisa-sbom]
+
+The essential point is that an SBOM records **composition**. Let a product $P$ have an SBOM-represented component set
+
+$$
+S(P)={C_1,C_2,\ldots,C_n}.
+$$
+
+Let $M(V,C)$ be a vulnerability-intelligence relation that is true when vulnerability $V$ is associated with component $C$. A scanner finding is then approximately
+
+$$
+\exists C\in S(P):M(V,C).
+$$ {#eq-vex-standards-from-first-principles-candidate-finding}
+
+@eq-vex-standards-from-first-principles-candidate-finding does not logically entail
+
+$$
+\operatorname{Affected}(P,V).
+$$
+
+It establishes only a **candidate vulnerability finding**. The difference can arise for many reasons:
+
+* the vulnerable component may not actually be present in the shipped artifact even though it appeared earlier in the build process;
+* the component may be present but the vulnerable code may have been removed;
+* vulnerable code may be present but unreachable;
+* the vulnerable path may require attacker control that the product does not expose;
+* a product-integrated mitigation may prevent exploitation;
+* the component-to-vulnerability match itself may be incorrect;
+* the product may already incorporate a corrective release.
+
+CISA's **VEX** work addresses precisely this gap. VEX is designed to communicate whether a vulnerability actually affects a product and to distinguish product-specific states such as `AFFECTED`, `NOT AFFECTED`, `FIXED`, and `UNDER INVESTIGATION`.[^vex-standards-from-first-principles-cisa-vex-minimum]
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-sbom-vex-pipeline
+%%| fig-cap: "A semantically typed pipeline from software inventory to product-specific vulnerability communication."
+%%| fig-alt: "A Mermaid flowchart in which rectangles denote artefacts and rounded rectangles denote processes. The SBOM and vulnerability intelligence feed a vulnerability-correlation process through dashed evidentiary arrows. That process produces candidate vulnerabilities through a solid arrow. Candidate vulnerabilities then flow to a technical-assessment process, which produces a VEX record."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    B[SBOM]
+    I[Vulnerability<br/>intelligence]
+    C(Vulnerability<br/>correlation)
+    K[Candidate<br/>vulnerabilities]
+    A(Technical<br/>assessment)
+    X[VEX]
+
+    B -. evidence .-> C
+    I -. evidence .-> C
+    C --> K
+    K --> A
+    A --> X
+```
+
+@fig-vex-standards-from-first-principles-sbom-vex-pipeline shows that the SBOM is an artefact, not a process. Candidate vulnerabilities are intermediate findings, not final conclusions. Technical assessment is the decisive transformation that turns correlation into a product-specific judgment. VEX is the resulting communication artefact.
+
+The SBOM answers:
+
+> What software is represented in this product?
+
+Vulnerability intelligence asks:
+
+> Which known vulnerabilities are associated with those components?
+
+The technical assessment asks:
+
+> Does the vulnerability actually affect this product?
+
+VEX communicates:
+
+> What did the assessor conclude, for which product and vulnerability, and with what status or justification?
+
+This article's central thesis follows from that separation: **SBOM plus vulnerability matching is an identification process; VEX is a product-specific decision and communication process**. Confusing the two produces either excessive false positives or dangerous false negatives.
+
+## What an SBOM represents: components, identities, and dependency graphs
+
+An SBOM should not be treated as a flat list of package names. A useful model includes component records, dependency relationships, metadata about how the SBOM was generated, and identifiers precise enough to support downstream correlation.
+
+Represent an SBOM for product $P$, observed at time $t$ and generated in context $g$, as
+
+$$
+B(P,t,g)=(\mathcal{C}_P,\mathcal{R}_P,\mathcal{M}),
+$$ {#eq-vex-standards-from-first-principles-sbom-model}
+
+where:
+
+* $\mathcal{C}_P$ is the set of represented component records;
+* $\mathcal{R}_P$ is the set of dependency or composition relationships;
+* $\mathcal{M}$ is document and generation metadata.
+
+CISA's 2025 minimum-elements publication explicitly adds **Generation Context**, describing whether the SBOM was produced before, during, or after build, and expects enough coverage for recipients to understand whether dependency information is complete.[^vex-standards-from-first-principles-cisa-sbom-minimum-elements] That information changes what can safely be inferred from the SBOM.
+
+### Component identity is a security control
+
+A conceptual component identity can be written as
+
+$$
+I(C)=(e,n,v,q,h),
+$$ {#eq-vex-standards-from-first-principles-component-identity}
+
+where:
+
+* $e$ is the package ecosystem or identifier namespace;
+* $n$ is the package name;
+* $v$ is the version;
+* $q$ represents qualifiers or other identity attributes;
+* $h$ represents cryptographic hashes where appropriate.
+
+The Package URL specification, standardized as **ECMA-427** in 2025, provides a package-oriented identifier for ecosystems such as Maven, npm, PyPI, OCI, Debian, and others.[^vex-standards-from-first-principles-purl] CPE provides a different standardized naming system oriented toward product classes in security automation.[^vex-standards-from-first-principles-cpe]
+
+Neither identifier is universally sufficient. PURL may identify a package precisely while still omitting a locally patched binary. CPE may identify a vendor product family while being too coarse for a particular dependency artifact. Hashes can establish byte-level identity but are poor discovery keys across rebuilt or repackaged artifacts.
+
+The practical requirement is not to choose one identifier universally. It is to preserve enough identity information that a vulnerability assertion can be matched to the **same software object** on both producer and consumer sides.
+
+### Dependencies form a graph
+
+Let
+
+$$
+G_P=(\mathcal{C}_P,\mathcal{R}_P)
+$$ {#eq-vex-standards-from-first-principles-dependency-graph}
+
+be the dependency graph of product $P$. A direct dependency is connected by one dependency edge. A transitive dependency is reached through one or more intermediate nodes.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-dependency-graph
+%%| fig-cap: "An SBOM dependency graph distinguishes the product, direct dependencies, and transitive dependencies, while a separate vulnerability association identifies which dependency becomes a candidate for later assessment."
+%%| fig-alt: "A product artefact depends on Library A and Library B. Library A depends on Library C, making Library C a transitive dependency. A separate vulnerability-information record for Vulnerability V is associated with Library C through a dashed contextual arrow. The diagram distinguishes internal dependency structure from external vulnerability association."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    P[Product P]
+    A[Library A<br/>direct dependency]
+    B[Library B<br/>direct dependency]
+    C[Library C<br/>transitive dependency]
+    V[Vulnerability V]
+
+    P -->|depends on| A
+    P -->|depends on| B
+    A -->|depends on| C
+    V -. associated with .-> C
+```
+
+In @fig-vex-standards-from-first-principles-dependency-graph the product and libraries remain artefact nodes; the vulnerability remains an external information node; and the dashed edge indicates that the vulnerability association is evidentiary and contextual rather than a final product judgment. The graph matters because a vulnerability can originate several layers below the top-level product while the eventual VEX conclusion still concerns the final product.
+
+### Presence has several meanings
+
+An SBOM reflects the context in which it was generated, so the notion of component _presence_ must be interpreted carefully. An SBOM derived from source manifests may include dependencies that never reach the shipped product, while one captured at an intermediate build stage may differ from the final package. Conversely, a runtime inventory may miss modules that are downloaded dynamically, and a container SBOM may accurately describe the image itself while excluding plug-ins or other components mounted from the surrounding environment.
+
+Consequently,
+
+$$
+C\in\mathcal{C}_P
+$$
+
+must always be interpreted relative to the SBOM's generation context and coverage.
+
+A useful SBOM assurance model distinguishes:
+
+* **validity**: does the document conform to its format?
+* **correctness**: are represented facts accurate?
+* **completeness**: are relevant components missing?
+* **freshness**: does it still describe the artifact in question?
+* **identity precision**: can represented components be matched safely?
+
+**VEX cannot repair a poor SBOM**. If the inventory falsely says that a vulnerable component is absent, an automated `component_not_present` conclusion can become a correlated false negative.
+
+## From CVE match to VEX decision: the end-to-end process
+
+The correct VEX process begins when vulnerability correlation produces a candidate, not when a serializer is invoked. Let $\mathcal{V}$ be the vulnerability set known to the scanner. The candidate set for product $P$ is
+
+$$
+K(P)={(C,V)\in\mathcal{C}_P\times\mathcal{V}:M(V,C)=1}.
+$$ {#eq-vex-standards-from-first-principles-candidate-set}
+
+Each $(C,V)\in K(P)$ requires a scoped product assessment.
+
+### Scope the product before analysing exploitability
+
+The assessed object should normally be more precise than a marketing product name. Let
+
+$$
+P_{r,a}
+$$
+
+denote release $r$ and artifact or deployment variant $a$ of product $P$.
+
+This distinction prevents an assertion about `Product 5.2 / Linux x86_64 container digest X` from silently applying to `Product 5.2 / Windows installer` or to a rebuilt container carrying different dependencies.
+
+### Model the vulnerability preconditions
+
+Let $R_V$ denote the technical conditions required for the vulnerable behaviour of $V$. Evidence about the product can then be represented as
+
+$$
+E(P,V),
+$$
+
+including information such as:
+
+| Evidence class   | Example                                                                    |
+| ---------------- | -------------------------------------------------------------------------- |
+| Composition      | Artifact-bound SBOM, package inventory, archive inspection                 |
+| Identity         | PURL, CPE, hashes, supplier/version records                                |
+| Code             | Source inspection, binary inspection, patch provenance                     |
+| Reachability     | Static call graph, dynamic tracing, feature analysis                       |
+| Configuration    | Runtime settings, feature flags, environment variables                     |
+| Attacker control | Data-flow analysis, trust boundaries, exposed interfaces                   |
+| Mitigation       | Compiler/runtime controls, input restrictions, product-integrated defences |
+| Remediation      | Fixed dependency, backported patch, corrective build provenance            |
+
+: Evidence classes that can support a VEX assessment. {#tbl-vex-standards-from-first-principles-vex-evidence}
+
+A simplified assessment function is
+
+$$
+A(P,V,E,t)\rightarrow(s,j,i,a),
+$$ {#eq-vex-standards-from-first-principles-assessment-function}
+
+where:
+
+* $s$ is status;
+* $j$ is a structured justification where applicable;
+* $i$ is impact information;
+* $a$ is action information;
+* $t$ is the assessment time.
+
+The portable VEX statement is a projection of a richer internal case record, not the entire case file.
+
+### The lifecycle is iterative
+
+A defensible VEX workflow is iterative rather than purely linear. The initial path begins with a product artefact and its SBOM, continues through vulnerability correlation, and produces a candidate finding. That finding is then investigated using product-specific evidence before an assessment outcome is issued as a VEX assertion. Once published, however, the lifecycle does not end: downstream systems consume the VEX, and the assertion may later need revision when the product changes, new technical evidence appears, or vulnerability intelligence is updated.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-vex-lifecycle
+%%| fig-cap: "A defensible VEX lifecycle begins with artefact inventory and vulnerability correlation, continues through technical investigation and assessment, publishes a VEX assertion, and then re-enters reassessment when the product, evidence base, or vulnerability intelligence changes."
+%%| fig-alt: "A product artefact leads to an SBOM. The SBOM and vulnerability intelligence feed a vulnerability-correlation process through evidentiary inputs. Correlation produces a candidate finding. The candidate finding and an evidence package feed a technical-investigation process. That process leads to a decision node labelled assessment outcome, which produces a VEX assertion. The VEX assertion is consumed by vulnerability-management systems. Product changes, new evidence, and updated vulnerability intelligence feed a reassessment process, which loops back into technical investigation."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    P[Product artefact]
+    B[SBOM]
+    I[Vulnerability<br/>intelligence]
+    C(Vulnerability<br/>correlation)
+    K[Candidate<br/>finding]
+    E[Evidence<br/>package]
+    A(Technical<br/>investigation)
+    O{Assessment<br/>outcome}
+    X[VEX assertion]
+    U(Vulnerability-management<br/>consumption)
+    PC[Product<br/>change]
+    NE[New<br/>evidence]
+    UI[Updated vulnerability<br/>intelligence]
+    R(Reassessment)
+
+    P --> B
+    B -. evidence .-> C
+    I -. evidence .-> C
+    C --> K
+    K --> A
+    E -. evidence .-> A
+    A --> O
+    O -->|AFFECTED / NOT AFFECTED / FIXED / UNDER INVESTIGATION| X
+    X --> U
+    PC -. trigger .-> R
+    NE -. trigger .-> R
+    UI -. trigger .-> R
+    R --> A
+```
+
+CISA's guidance treats VEX as **time-dependent security information**: an assertion reflects the supplier's assessment of a particular product-vulnerability pair at a particular point in time and should be updated when the underlying knowledge changes.[^vex-standards-from-first-principles-cisa-vex-when-issue]
+
+A VEX statement should therefore be read as a time-scoped record binding together the product, vulnerability, current status, any applicable justification, impact or action information, and the time at which the assessment was valid. Time is not incidental metadata: it is part of the meaning of the assertion.
+
+The lifecycle is better represented as a progression of records and reassessment processes than as an algebraic expression:
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-vex-temporal-progression
+%%| fig-cap: "VEX assertions evolve as technical knowledge changes. An initial under-investigation assertion is reassessed when evidence improves, producing either an affected or not-affected assertion; an affected product can later progress to a fixed assertion after remediation."
+%%| fig-alt: "A rectangle labelled UNDER INVESTIGATION VEX assertion flows to a rounded technical reassessment process. New evidence, product changes, and updated vulnerability intelligence enter that process through dashed arrows. Reassessment leads to a diamond labelled current assessment outcome. One branch produces an AFFECTED VEX assertion and another produces a NOT AFFECTED VEX assertion. The affected assertion flows through a remediation process to a FIXED VEX assertion."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    U[UNDER INVESTIGATION<br/>VEX assertion]
+    R(Technical<br/>reassessment)
+    O{Current assessment<br/>outcome}
+    A[AFFECTED<br/>VEX assertion]
+    N[NOT AFFECTED<br/>VEX assertion]
+    M(Remediation)
+    F[FIXED<br/>VEX assertion]
+
+
+    E[New technical<br/>evidence]
+    P[Product or<br/>configuration change]
+    I[Updated vulnerability<br/>intelligence]
+
+
+    U --> R
+    E -. evidence .-> R
+    P -. trigger .-> R
+    I -. evidence .-> R
+
+
+    R --> O
+    O -->|Affected| A
+    O -->|Not affected| N
+    A --> M
+    M --> F
+```
+
+In @fig-vex-standards-from-first-principles-vex-temporal-progression, the VEX states are persistent assertions that can be published and consumed. Technical reassessment updates the organisation's knowledge of the product's security state, whereas remediation can change that state itself. The assessment outcome represents a decision, while new evidence, product changes, and revised vulnerability intelligence enter as evidentiary or triggering inputs.
+
+The two principal paths are therefore:
+
+1. Investigation → affected → remediation → fixed, when the technical assessment confirms product impact and a corrective change is subsequently incorporated; 
+
+2. Investigation → not affected, when sufficient evidence establishes that the vulnerability does not affect the assessed product.
+
+A later VEX assertion does not necessarily mean that the earlier one was incorrect. UNDER INVESTIGATION, for example, can have been an accurate representation of the available knowledge at the time it was issued. A subsequent AFFECTED, NOT AFFECTED, or FIXED statement records a change either in knowledge about the product or in the product itself. The operational requirement is therefore not to overwrite that history silently, but to preserve enough temporal and provenance information to determine which assertion applies to which product state and at what time.
+
+## CISA VEX semantics: status, justification, and evidence
+
+CISA's minimum requirements provide an implementation-neutral semantic core. The four principal statuses are:
+
+* `NOT AFFECTED`;
+* `AFFECTED`;
+* `FIXED`;
+* `UNDER INVESTIGATION`.[^vex-standards-from-first-principles-cisa-vex-minimum]
+
+Abstractly, a VEX assessment can be represented as
+
+$$
+(P,V)\mapsto(s,j,i,a).
+$$ {#eq-vex-standards-from-first-principles-cisa-vex-semantics}
+
+Here, $P$ denotes the **specific product or product version being assessed**, $V$ the **vulnerability**, $s$ the resulting **VEX status**, $j$ a structured **justification** where applicable, $i$ additional **impact information**, and $a$ **action or remediation information**.
+
+The mapping should therefore be read as: *for vulnerability $V$ and product $P$, the assessment produces status $s$, together with the justification, impact information, and action information needed to qualify that status*. Not every output field is meaningful in every state. A NOT AFFECTED statement must provide either a structured justification or, if no justification is provided, an impact statement explaining why the product is not affected. An AFFECTED statement must include an action statement describing the recommended remediation, mitigation, or other response.
+
+### The four states answer different questions
+
+| Status                | Meaning                                                                                          | Operational implication                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `NOT AFFECTED`        | The defined product does not require remediation for the vulnerability within the asserted scope | A justification or impact explanation is required                      |
+| `AFFECTED`            | The defined product is affected                                                                  | An action statement is required       |
+| `FIXED`               | The defined product version contains a correction for the vulnerability                          | Consumers should treat the status as product/version-specific          |
+| `UNDER INVESTIGATION` | Impact has not yet been determined                                                               | Uncertainty is explicit; the finding should not be interpreted as safe |
+
+: Implementation-neutral interpretation of the four CISA VEX statuses. {#tbl-vex-standards-from-first-principles-cisa-status-semantics}
+
+`UNDER INVESTIGATION` is epistemic. It says something about what is known, not about severity. `FIXED` is version-scoped. It does not mean the product is secure against every other vulnerability. `NOT AFFECTED` is stronger than:
+
+* no exploitation has been observed;
+* the CVE is low priority;
+* an external firewall reduces exposure;
+* the scanner did not detect the issue.
+
+### The five standardized `NOT AFFECTED` justifications
+
+CISA recommends five machine-readable justifications:[^vex-standards-from-first-principles-cisa-vex-justifications]
+
+* `component_not_present`;
+* `vulnerable_code_not_present`;
+* `vulnerable_code_not_in_execute_path`;
+* `vulnerable_code_cannot_be_controlled_by_adversary`;
+* `inline_mitigations_already_exist`.
+
+These can be interpreted against a simplified exploitability model. Let:
+
+* $C$ mean the vulnerable component is present;
+* $K$ mean the vulnerable code is present;
+* $R$ mean the vulnerable code is reachable;
+* $U$ mean the attacker controls the required input or state;
+* $\mu$ mean a built-in mitigation prevents exploitation.
+
+A simplified affected condition is
+
+$$
+C\land K\land R\land U\land\neg\mu.
+$$ {#eq-vex-standards-from-first-principles-exploitability-conditions}
+
+Each negative justification negates a different part of that chain.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-not-affected-decision
+%%| fig-cap: "The five CISA `NOT AFFECTED` justifications correspond to distinct decision points at which exploitability can fail."
+%%| fig-alt: "A top-down decision tree begins by asking whether the vulnerable component is present. If not, the outcome is a NOT AFFECTED assertion with justification component_not_present. If yes, the next decision asks whether the vulnerable code is present. If not, the outcome is NOT AFFECTED with justification vulnerable_code_not_present. If yes, the next decision asks whether the vulnerable code is in an execution path. If not, the outcome is NOT AFFECTED with justification vulnerable_code_not_in_execute_path. If yes, the next decision asks whether an adversary can control the required input or state. If not, the outcome is NOT AFFECTED with justification vulnerable_code_cannot_be_controlled_by_adversary. If yes, the next decision asks whether built-in mitigations prevent exploitation. If yes, the outcome is NOT AFFECTED with justification inline_mitigations_already_exist. If no, the outcome is a potentially affected candidate conclusion."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    C{Vulnerable component<br/>present?}
+    K{Vulnerable code<br/>present?}
+    R{Vulnerable code in<br/>execution path?}
+    A{Adversary controls<br/>required input or state?}
+    M{Built-in mitigation<br/>prevents exploitation?}
+
+    N1[NOT AFFECTED<br/>component_not_present]
+    N2[NOT AFFECTED<br/>vulnerable_code_not_present]
+    N3[NOT AFFECTED<br/>vulnerable_code_not_in_execute_path]
+    N4[NOT AFFECTED<br/>vulnerable_code_cannot_be_controlled_by_adversary]
+    N5[NOT AFFECTED<br/>inline_mitigations_already_exist]
+    Y[Potentially AFFECTED<br/>candidate conclusion]
+
+    C -->|No| N1
+    C -->|Yes| K
+    K -->|No| N2
+    K -->|Yes| R
+    R -->|No| N3
+    R -->|Yes| A
+    A -->|No| N4
+    A -->|Yes| M
+    M -->|Yes| N5
+    M -->|No| Y
+```
+
+This tree maps the semantics of the five justifications to distinct exploitability preconditions; it is not a complete evidentiary decision procedure. If a required predicate cannot yet be established as true or false, the assessment remains `vUNDER INVESTIGATION` rather than defaulting to either `AFFECTED` or `NOT AFFECTED`.
+
+The assessment model in @eq-vex-standards-from-first-principles-assessment-function keeps evidence and justification in different roles. Evidence $E(P,V)$ is an input to the assessment; the structured justification $j$ is one output of that assessment and is therefore a classification supported by evidence, not the evidence package itself.
+
+For example, a serializer or schema validator can establish that `vulnerable_code_not_in_execute_path` is an allowed justification value. It cannot establish the technical proposition encoded by that value: that the vulnerable code is in fact absent from every relevant execution path. Schema validity therefore establishes syntactic conformance only; the truth of the VEX claim remains dependent on the underlying evidence and assessment.
+
+This distinction remains valid for every concrete VEX implementation.
+
+## CSAF: VEX as a structured security advisory
+
+The **Common Security Advisory Framework** (CSAF) is an OASIS standard for structured machine-readable security advisories. CSAF 2.0 was approved as an OASIS Standard in 2022 and contains a dedicated VEX profile.[^vex-standards-from-first-principles-csaf-20] As of 21 August 2026, CSAF 2.1 remains at Committee Specification Draft 02; it should therefore not be described as a finalized replacement for the 2.0 OASIS Standard.[^vex-standards-from-first-principles-csaf-21]
+
+CSAF is broader than VEX. Its natural abstraction is
+
+$$
+X_{\mathrm{CSAF}}=(D,T,\mathcal{V}),
+$$ {#eq-vex-standards-from-first-principles-csaf-document-model}
+
+where:
+
+* $D$ is advisory/document metadata;
+* $T$ is a product tree;
+* $\mathcal{V}$ is a set of vulnerability objects.
+
+### Product identity lives in the product tree
+
+CSAF's product tree can represent vendors, product families, product names, versions, and relationships. Vulnerability objects do not generally repeat those complete identities; they reference document-local Product IDs.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-csaf-architecture
+%%| fig-cap: "CSAF VEX is an advisory-centred document model: the document contains metadata, a product tree, and vulnerability objects, while vulnerability-specific structures refer back to product identities defined in the tree."
+%%| fig-alt: "A CSAF VEX document contains document metadata, a product tree with Product IDs, and vulnerability objects. Each vulnerability object contains product status, flags or impact information, and remediations. Dashed reference arrows from the product tree show that these vulnerability-specific structures use Product IDs defined elsewhere in the document."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    X[CSAF VEX document]
+    D[Document metadata]
+    T[Product tree<br/>Product IDs]
+    V[Vulnerability object]
+    S[product_status<br/>Product ID references]
+    F[flags / impact]
+    R[remediations]
+
+    X --> D
+    X --> T
+    X --> V
+    V --> S
+    V --> F
+    V --> R
+    T -. references Product IDs .-> S
+    T -. references Product IDs .-> F
+    T -. references Product IDs .-> R
+```
+
+This is an advisory-centred architecture. The consumer first resolves the Product ID into the product tree and then determines whether that product matches the asset being evaluated.
+
+### CSAF has richer product-status semantics than the four CISA labels
+
+CSAF 2.0 includes a richer product-status vocabulary than the four CISA states:
+
+* `known_affected`: the product is known to be affected by the vulnerability.
+* `known_not_affected`: the product is known not to be affected.
+* `fixed`: the product contains a fix for the vulnerability.
+* `under_investigation`: the product's vulnerability status has not yet been determined.
+* `first_affected`: the first product version known to be affected.
+* `first_fixed`: the first product version known to contain a fix.
+* `last_affected`: the last product version known to be affected.
+* `recommended`: the product version recommended as the remediation target.[^vex-standards-from-first-principles-csaf-20]
+
+The approximate mapping is:
+
+| CISA concept          | CSAF 2.0 representation                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `AFFECTED`            | `known_affected`                                                                          |
+| `NOT AFFECTED`        | `known_not_affected`                                                                      |
+| `FIXED`               | `fixed`, with `first_fixed` or `recommended` providing additional release-train semantics |
+| `UNDER INVESTIGATION` | `under_investigation`                                                                     |
+
+: Core CISA-to-CSAF VEX status mapping. {#tbl-vex-standards-from-first-principles-csaf-cisa-status-mapping}
+
+The mapping is semantic, not textual. CSAF's vocabulary can represent more information about release history than the four-state CISA abstraction.
+
+### CSAF carries justification through VEX flags and supporting structures
+
+For a `known_not_affected` product, CSAF can associate VEX-relevant flags such as `component_not_present` with specific product IDs. Impact statements can further explain why the product is not affected.
+
+A simplified fragment is:
+
+```json
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0"
+  },
+  "product_tree": {
+    "full_product_names": [
+      {
+        "name": "Example Product 5.4",
+        "product_id": "CSAFPID-EXAMPLE-5.4"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-YYYY-NNNN",
+      "product_status": {
+        "known_not_affected": [
+          "CSAFPID-EXAMPLE-5.4"
+        ]
+      },
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "CSAFPID-EXAMPLE-5.4"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+CSAF is therefore attractive when VEX is part of a broader vendor advisory process. It can express product families, version progressions, remediations, advisory revisions, and vulnerability status in one structured document. Its cost is correspondingly higher: product trees and advisory semantics must be built and interpreted correctly.
+
+## CycloneDX: VEX in a Bill-of-Materials ecosystem
+
+CycloneDX takes a different route. Its primary object is the Bill of Materials rather than the security advisory.
+
+As of 21 August 2026, CycloneDX 1.7 remains the current **stable** BOM specification. CycloneDX 2.0 has been announced for later in 2026, but the project's specification pages still identify 1.7 as the stable version.[^vex-standards-from-first-principles-cyclonedx-17] CycloneDX 1.7 is standardized as ECMA-424, second edition.[^vex-standards-from-first-principles-ecma-424]
+
+A simplified model is
+
+$$
+X_{\mathrm{CDX}}=(B,\mathcal{V}),
+$$ {#eq-vex-standards-from-first-principles-cyclonedx-model}
+
+where $B$ is the broader BOM and $\mathcal{V}$ is the vulnerability collection.
+
+### `bom-ref` links vulnerability information to BOM objects
+
+Components and services have `bom-ref` identifiers that can be referenced elsewhere in the BOM. The vulnerability object's `affects` structure can point to those objects.[^vex-standards-from-first-principles-cyclonedx-schema]
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-cyclonedx-architecture
+%%| fig-cap: "CycloneDX VEX reuses identities already defined in the BOM, expresses vulnerability applicability through `affects` references to BOM objects, and carries assessment semantics in the vulnerability `analysis` object."
+%%| fig-alt: "A CycloneDX BOM contains components, services, dependencies, and a vulnerability collection. Components and services expose bom-ref identifiers. Each vulnerability can contain an affects structure and an analysis object. A dashed reference arrow from bom-ref identity to affects shows that vulnerability applicability points back to BOM objects rather than redefining their identities, while analysis remains part of the vulnerability record."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    B[CycloneDX BOM]
+    C[Components + services<br/>dependencies]
+    I[Object identity<br/>bom-ref]
+    V[Vulnerability collection]
+    F[affects<br/>target + version status]
+    A[analysis<br/>state + justification<br/>response + detail]
+
+    B --> C
+    B --> V
+    C --> I
+    V --> F
+    V --> A
+    I -. references bom-ref .-> F
+```
+
+This is particularly convenient when the organisation already has CycloneDX identities, dependency relationships, hashes, PURLs, pedigree, and other supply-chain metadata.
+
+### Version applicability and analysis state are different dimensions
+
+The `affects` structure expresses whether a particular version of the referenced BOM object falls within the vulnerability's applicability range:
+
+* `affected`: the version is considered affected by the vulnerability.
+* `unaffected`: the version is considered outside the affected range.
+* `unknown`: applicability to the version has not been determined.
+
+The `analysis.state` field represents a different dimension: the current outcome or stage of the product-specific vulnerability analysis. In CycloneDX 1.7 it includes:[^vex-standards-from-first-principles-cyclonedx-schema]
+
+* `resolved`: the vulnerability has been addressed and the analysis is considered complete.
+* `resolved_with_pedigree`: the vulnerability has been resolved and the corrective change is represented through component pedigree.
+* `exploitable`: analysis has determined that the vulnerability is exploitable in the assessed context.
+* `in_triage`: the vulnerability is still being investigated.
+* `false_positive`: the reported vulnerability association is considered incorrect.
+* `not_affected`: the vulnerability is valid, but the assessed product or component is not affected.
+
+An approximate crosswalk is:
+
+| CISA concept                              | CycloneDX 1.7            |
+| ----------------------------------------- | ------------------------ |
+| `AFFECTED`                                | `exploitable`            |
+| `NOT AFFECTED`                            | `not_affected`           |
+| `FIXED`                                   | `resolved`               |
+| `FIXED` with explicit corrective pedigree | `resolved_with_pedigree` |
+| `UNDER INVESTIGATION`                     | `in_triage`              |
+| No exact CISA core equivalent             | `false_positive`         |
+
+: CISA concepts and CycloneDX 1.7 impact-analysis states are related but not identical. {#tbl-vex-standards-from-first-principles-cyclonedx-state-mapping}
+
+`false_positive` deserves special attention. It can mean that the vulnerability association itself was erroneous:
+
+$$
+\neg M(V,C),
+$$
+
+which is different from a valid component-vulnerability association that turns out not to affect the final product.
+
+### CycloneDX justifications are not the CISA five
+
+CycloneDX 1.7 provides a broader justification vocabulary for explaining why an assessed vulnerability is considered `not_affected`:[^vex-standards-from-first-principles-cyclonedx-schema]
+
+* `code_not_present`: the vulnerable code is not present in the assessed component or product.
+* `code_not_reachable`: the vulnerable code is present but cannot be reached through the relevant execution paths.
+* `requires_configuration`: exploitation requires a configuration that is not present in the assessed environment.
+* `requires_dependency`: exploitation depends on another component or dependency that is absent.
+* `requires_environment`: exploitation requires environmental conditions that are not present.
+* `protected_by_compiler`: compiler-generated protections prevent the vulnerable behaviour from being exploitable.
+* `protected_at_runtime`: runtime protections prevent exploitation.
+* `protected_at_perimeter`: perimeter controls prevent the vulnerable functionality from being reached through the relevant attack path.
+* `protected_by_mitigating_control`: another mitigating control prevents exploitation in the assessed context.
+
+Some map closely to CISA concepts; others do not.
+
+| CycloneDX                         | Closest CISA concept                   | Caveat                                                                   |
+| --------------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| `code_not_present`                | `vulnerable_code_not_present`          | Strong correspondence                                                    |
+| `code_not_reachable`              | `vulnerable_code_not_in_execute_path`  | Strong if reachability evidence is equivalent                            |
+| `requires_configuration`          | Context-dependent                      | Not a universal CISA mapping                                             |
+| `protected_at_perimeter`          | No exact CISA equivalent               | Environmental protection is not necessarily an inline product mitigation |
+| `protected_by_mitigating_control` | Sometimes related to inline mitigation | CycloneDX is broader                                                     |
+
+: CycloneDX justification semantics do not form a one-to-one mapping to CISA VEX. {#tbl-vex-standards-from-first-principles-cyclonedx-justification-mapping}
+
+A converter must therefore satisfy more than lexical similarity. If $J_C$ is a CycloneDX justification and $J_T$ the target justification, a safe conversion requires every claim entailed by the target representation to remain supported by the source semantics. If the target would assert more than the source justifies, the mapping is unsafe because it strengthens the claim.
+
+### `component_not_present` exposes an interoperability gap
+
+CycloneDX 1.7 does not have an exact core justification equivalent to CISA's `component_not_present`. Mapping it to `code_not_present` can be wrong because
+
+$$
+\neg C
+$$
+
+and
+
+$$
+C\land\neg K
+$$
+
+are distinct propositions.
+
+A safe CycloneDX representation can preserve `analysis.state = not_affected` and put the component-absence reason into `analysis.detail` rather than manufacturing a different structured justification. This is an example of **correct but lossy serialization**.
+
+## SPDX 3: VEX in the Security Profile
+
+SPDX 3 represents VEX using typed graph relationships. As of 21 August 2026, SPDX 3.0.1 remains the stable 3.x baseline. SPDX 3.1-RC1, released in January 2026, is still described by the SPDX project as a pre-release intended for testing and validation.[^vex-standards-from-first-principles-spdx-31]
+
+Let
+
+$$
+G_{\mathrm{SPDX}}=(E,R)
+$$ {#eq-vex-standards-from-first-principles-spdx-graph}
+
+be an SPDX graph whose elements are $E$ and relationships are $R$. A VEX assertion is represented as a typed relationship from a `Vulnerability` element to one or more product elements.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-spdx-vex-graph
+%%| fig-cap: "SPDX 3 represents each VEX status as a first-class typed relationship from a Vulnerability element to one or more elements representing VEX products; the relationship can additionally reference the software artifact actually assessed through `assessedElement`."
+%%| fig-alt: "A Vulnerability element connects to elements representing VEX products through four specialized VEX relationship objects: affected, not affected, fixed, and under investigation. Their relationship types are affects, doesNotAffect, fixedIn, and underInvestigationFor. Each relationship can also contain an optional assessedElement reference to the SoftwareArtifact in which the vulnerability was assessed, preserving the distinction between the assessed dependency or component and the product receiving the VEX status."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    V[Vulnerability element]
+    A[VexAffectedVulnAssessmentRelationship<br/>affects]
+    N[VexNotAffectedVulnAssessmentRelationship<br/>doesNotAffect]
+    F[VexFixedVulnAssessmentRelationship<br/>fixedIn]
+    U[VexUnderInvestigationVulnAssessmentRelationship<br/>underInvestigationFor]
+    P[VEX product element(s)]
+    C[Assessed SoftwareArtifact]
+
+    V --> A --> P
+    V --> N --> P
+    V --> F --> P
+    V --> U --> P
+
+    A -. assessedElement .-> C
+    N -. assessedElement .-> C
+    F -. assessedElement .-> C
+    U -. assessedElement .-> C
+```
+
+The **SPDX Security Profile** defines concrete VEX assessment relationship classes whose relationship types correspond closely to the four CISA states.[^vex-standards-from-first-principles-spdx-301]
+
+| CISA concept          | SPDX 3.0.1                                                                  |
+| --------------------- | --------------------------------------------------------------------------- |
+| `AFFECTED`            | `VexAffectedVulnAssessmentRelationship` / `affects`                         |
+| `NOT AFFECTED`        | `VexNotAffectedVulnAssessmentRelationship` / `doesNotAffect`                |
+| `FIXED`               | `VexFixedVulnAssessmentRelationship` / `fixedIn`                            |
+| `UNDER INVESTIGATION` | `VexUnderInvestigationVulnAssessmentRelationship` / `underInvestigationFor` |
+
+: SPDX's core VEX relationship mapping. {#tbl-vex-standards-from-first-principles-spdx-vex-relationships}
+
+### Product and vulnerable component can remain distinct
+
+SPDX's `assessedElement` property is useful when vulnerability $V$ originates in dependency $C$ but the product-level VEX conclusion concerns $P$.
+
+Conceptually:
+
+$$
+V
+\overset{\text{VEX status}}{\longrightarrow}
+P,
+$$
+
+while
+
+$$
+\operatorname{assessedElement}=C.
+$$
+
+This allows multiple products containing the same vulnerable component to receive different assessments without duplicating the vulnerability or component identity.
+
+### SPDX preserves the five CISA justifications closely
+
+`VexJustificationType` closely mirrors the five CISA `NOT AFFECTED` justifications, using SPDX's camelCase naming convention:[^vex-standards-from-first-principles-spdx-301]
+
+* `componentNotPresent`: the vulnerable component is not present in the assessed product.
+* `vulnerableCodeNotPresent`: the component may be present, but the vulnerable code is absent.
+* `vulnerableCodeNotInExecutePath`: the vulnerable code is present but is not reachable through an execution path relevant to the product.
+* `vulnerableCodeCannotBeControlledByAdversary`: exploitation requires input or state that an adversary cannot control in the assessed product.
+* `inlineMitigationsAlreadyExist`: built-in mitigations already prevent exploitation of the vulnerability.
+
+The mapping is consequently much less lossy than the CycloneDX justification crosswalk. A not-affected relationship must provide appropriate explanation through structured justification or an impact statement, while affected relationships carry action information. SPDX also makes the relationship itself a first-class element with provenance, timestamps, notes, and VEX-version information.
+
+Because the VEX assessment relationship is itself a first-class SPDX element, it can carry its own identifier, status-specific information, provenance, timestamps, notes, and VEX-version metadata. Its lifecycle can therefore be managed independently of the surrounding SBOM graph.
+
+That is the core architectural advantage of SPDX VEX: **the assessment is a reusable graph object rather than merely a field nested inside a vulnerability record**.
+
+## OpenVEX: minimal and SBOM-agnostic assertions
+
+OpenVEX occupies the minimalist end of the spectrum. Its design starts with the VEX statement rather than with an advisory, a BOM, or a general knowledge graph. As of 21 August 2026, the OpenVEX repository still describes the specification as a draft, with v0.2.0 remaining the latest tagged specification release.[^vex-standards-from-first-principles-openvex-spec]
+
+An abstract statement can be written as
+
+$$
+S_{\mathrm{OV}}=(\mathcal{P},V,s,t,j,i,a),
+$$ {#eq-vex-standards-from-first-principles-openvex-statement}
+
+where $\mathcal{P}$ is one or more products.
+
+### OpenVEX tracks the CISA semantics directly
+
+OpenVEX defines four status values that closely follow the CISA VEX state model:
+
+* `not_affected`: the assessed product is not affected by the vulnerability.
+* `affected`: the assessed product is affected by the vulnerability.
+* `fixed`: the vulnerability has been corrected in the assessed product version.
+* `under_investigation`: the product's vulnerability status has not yet been determined.
+
+Its five standard `not_affected` justifications likewise mirror the CISA labels directly.[^vex-standards-from-first-principles-openvex-spec] This makes OpenVEX attractive when a team wants a small interchange layer around an existing internal assessment model.
+
+A simplified document is:
+
+```json
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.invalid/vex/42",
+  "author": "Example Product Security Team",
+  "timestamp": "2026-08-21T08:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-YYYY-NNNN"
+      },
+      "products": [
+        {
+          "@id": "pkg:generic/example-product@4.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "justification": "component_not_present",
+      "impact_statement": "The vulnerable component is absent from the release artifact."
+    }
+  ]
+}
+```
+
+### SBOM-agnostic does not mean identity-agnostic
+
+OpenVEX does not require the product to be a CycloneDX object, an SPDX element, or a CSAF Product ID. The product structure can instead carry software identifiers such as PURL or CPE and can identify subcomponents.[^vex-standards-from-first-principles-openvex-spec]
+
+The consumer must still establish that the identity of the local asset $Q$ matches the identity asserted for OpenVEX product $P$:
+
+$$
+I_{\mathrm{asset}}(Q)\equiv I_{\mathrm{OV}}(P).
+$$ {#eq-vex-standards-from-first-principles-openvex-asset-match}
+
+A weak marketing name does not become a safe identity simply because the VEX format is simple.
+
+### Time is part of the statement
+
+OpenVEX explicitly treats VEX statements as time-scoped knowledge. For the same product-vulnerability pair, the current assessment can move from `under_investigation` to `affected` and, after a corrective product change, to `fixed`.
+
+Consumers should therefore select the most recent statement that is **applicable to the same product and vulnerability scope and trusted under local policy**, not simply the statement contained in the newest file.
+
+OpenVEX's minimality is its principal strength and its principal boundary. It is well suited to separately distributed VEX feeds and attestations, but projection from richer formats can discard advisory, pedigree, release-history, or graph semantics.
+
+## Worked case: CVE-2021-44228 and the Log4Shell VEX pipeline
+
+CVE-2021-44228, commonly called Log4Shell, demonstrates why an SBOM match and a VEX conclusion are different propositions. Apache's security documentation identifies the affected component as `log4j-core`, not every artifact whose name contains `log4j`, and documents the affected and fixed version ranges for CVE-2021-44228.[^vex-standards-from-first-principles-apache-log4j] Spring's response likewise distinguished Spring Boot applications using the default logging configuration from applications explicitly switched to Log4j2.[^vex-standards-from-first-principles-spring-log4j] CISA included CVE-2021-44228 in the Known Exploited Vulnerabilities catalog, establishing that exploitation was not merely hypothetical.[^vex-standards-from-first-principles-cisa-kev-log4j]
+
+### Step 1: distinguish package identities
+
+For this CVE, neither the presence of `log4j-api` nor the presence of `log4j-to-slf4j` implies that the product is affected. The security-relevant condition is the presence of a vulnerable `log4j-core` release.
+
+A useful inventory can distinguish `pkg:maven/org.apache.logging.log4j/log4j-api@2.14.1` from `pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1`.
+
+A scanner that normalizes both to _Log4j_ has already lost information needed for a defensible VEX decision.
+
+### Product state A: vulnerable component absent
+
+Let $P_A$ be a Spring Boot application using the default starter logging configuration. Its release artifact contains `logback-classic`, `log4j-api`, and `log4j-to-slf4j`, but not `log4j-core`.
+
+Suppose this absence is established from an artifact-bound SBOM and confirmed by inspection of the released artifact. Because CVE-2021-44228 concerns vulnerable versions of `log4j-core`, the component-presence condition $C$ in @eq-vex-standards-from-first-principles-exploitability-conditions is false for this product state.
+
+The appropriate VEX assessment is therefore `NOT AFFECTED`, with the structured justification `component_not_present`.
+
+The scope of that assertion matters. It does not establish that Spring Boot as a technology is unaffected by Log4Shell. It establishes only that the specifically identified application artifact $P_A$ is not affected by CVE-2021-44228 because the vulnerable component is absent.
+
+### Product state B: vulnerable `log4j-core` in an exploitable path
+
+Let $P_B$ be an application configured to use Log4j2 and containing `pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1`. Assume product analysis also establishes that attacker-controlled input can reach the relevant vulnerable logging behaviour and that no built-in mitigation prevents exploitation.
+
+For this product state,
+
+$$
+C=1,\quad K=1,\quad R=1,\quad U=1,\quad \mu=0.
+$$
+
+The exploitability condition introduced in @eq-vex-standards-from-first-principles-exploitability-conditions is therefore satisfied:
+
+$$
+C\land K\land R\land U\land\neg\mu=1.
+$$
+
+The appropriate VEX assessment is `AFFECTED`. The resulting VEX statement must also include an action statement describing the recommended remediation or mitigation, such as upgrading to an appropriate corrected version of `log4j-core`.
+
+### Product state C: the CVE-specific fix is incorporated
+
+Let $P_C$ be the corrected product state using a Log4j release that Apache identifies as fixing CVE-2021-44228 for the relevant Java branch.[^vex-standards-from-first-principles-apache-log4j]
+
+The appropriate VEX assessment for this product state is therefore `FIXED`. The status is scoped to both the identified product state $P_C$ and CVE-2021-44228: it establishes that this vulnerability has been corrected in that product state, not that the Log4j dependency is free from every other vulnerability.
+
+That distinction became operationally important because Apache subsequently documented CVE-2021-45046 and other vulnerabilities that led to further upgrade recommendations.[^vex-standards-from-first-principles-apache-log4j]
+
+### Product state U: insufficient evidence
+
+If the organisation has begun investigating a coarse inventory match for _log4j_ but cannot yet determine whether `log4j-core` is present, the appropriate status is `UNDER INVESTIGATION`. This is particularly important during an emergency. Uncertainty must not be encoded as safety.
+
+### The evidence chain
+
+The four product states above can be organized around one evidentiary sequence. The analysis starts with component identity and version applicability, then moves to product-specific questions about runtime use and attacker control. Once an assessment is underway, insufficient evidence at any stage yields `UNDER INVESTIGATION`; `NOT AFFECTED` is justified only when evidence establishes that an exploitability precondition is false. Failure to establish exploitability is not itself evidence of non-exploitability.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-log4shell-evidence-chain
+%%| fig-cap: "For Log4Shell, component identity and version matching precede product-specific exploitability analysis; unresolved evidence remains UNDER INVESTIGATION rather than being converted into a not-affected conclusion."
+%%| fig-alt: "Runtime SBOM and artifact-inspection evidence support a decision about whether log4j-core is present. Proven absence produces NOT AFFECTED with component_not_present, while unresolved presence produces UNDER INVESTIGATION. If log4j-core is present, its version is checked against the affected range. A version outside that range is distinguished through release history between an unaffected version and a corrected FIXED version. A version in the affected range proceeds through analysis of active logging and attacker-controlled data. Established exploitability produces AFFECTED, evidence disproving an exploitability precondition can produce an evidence-backed NOT AFFECTED conclusion, and unresolved exploitability remains UNDER INVESTIGATION."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Runtime SBOM +<br/>artifact-inspection evidence]
+    B{log4j-core<br/>present?}
+    C{Version in<br/>affected range?}
+    H{Release history indicates<br/>corrected version?}
+    D(Analyse active logging<br/>implementation)
+    E(Trace attacker-controlled<br/>data to vulnerable behaviour)
+    Q{Exploitability conditions<br/>established?}
+
+    N1[NOT AFFECTED<br/>component_not_present]
+    N2[NOT AFFECTED<br/>version outside affected range]
+    F[FIXED<br/>corrected version for this CVE]
+    N3[NOT AFFECTED<br/>evidence-backed justification]
+    Y[AFFECTED<br/>product-specific conclusion]
+    U[UNDER INVESTIGATION<br/>evidence insufficient]
+
+    A -. evidence .-> B
+    B -->|No| N1
+    B -->|Yes| C
+    B -->|Unknown| U
+
+    C -->|No| H
+    C -->|Yes| D
+    C -->|Unknown| U
+
+    H -->|No| N2
+    H -->|Yes| F
+
+    D --> E
+    E --> Q
+    Q -->|Established| Y
+    Q -->|Disproved with evidence| N3
+    Q -->|Unresolved| U
+```
+
+### One assessment, four serializations
+
+For product state $P_A$, the underlying assessment is the same regardless of serialization: CVE-2021-44228 is `NOT AFFECTED`, with justification `component_not_present`. The conclusion is supported by artifact-bound inventory evidence establishing that `log4j-core` is absent from the assessed release artifact.
+
+CSAF can express:
+
+```json
+"product_status": {
+  "known_not_affected": ["CSAFPID-P-A"]
+},
+"flags": [
+  {
+    "label": "component_not_present",
+    "product_ids": ["CSAFPID-P-A"]
+  }
+]
+```
+
+SPDX can express:
+
+```json
+{
+  "type": "VexNotAffectedVulnAssessmentRelationship",
+  "relationshipType": "doesNotAffect",
+  "from": "urn:spdx.dev:vulnerability:CVE-2021-44228",
+  "to": ["urn:spdx.dev:product:P-A"],
+  "security_justificationType": "componentNotPresent"
+}
+```
+
+OpenVEX can express:
+
+```json
+{
+  "vulnerability": {
+    "name": "CVE-2021-44228"
+  },
+  "products": [
+    {
+      "@id": "pkg:generic/example-spring-service@1.0.0"
+    }
+  ],
+  "status": "not_affected",
+  "justification": "component_not_present"
+}
+```
+
+CycloneDX can express the product-level `not_affected` state but lacks an exact core `component_not_present` justification in 1.7; preserving the reason in `analysis.detail` is safer than mapping it to a different structured reason.
+
+| Format        | Product model               | Not-affected representation      | Component-absence reason                 |
+| ------------- | --------------------------- | -------------------------------- | ---------------------------------------- |
+| CSAF 2.0      | Product tree and Product ID | `known_not_affected`             | `component_not_present` flag             |
+| CycloneDX 1.7 | BOM object / `bom-ref`      | `analysis.state = not_affected`  | Preserve in `detail`; no exact core enum |
+| SPDX 3.0.1    | Graph element               | `doesNotAffect` VEX relationship | `componentNotPresent`                    |
+| OpenVEX 0.2.0 | Lightweight product object  | `status = not_affected`          | `component_not_present`                  |
+
+: The same Log4Shell assessment serialized through four VEX architectures. {#tbl-vex-standards-from-first-principles-log4shell-format-comparison}
+
+The formats differ. The technical conclusion should not.
+
+## Automating VEX in CI/CD and vulnerability operations
+
+The purpose of VEX automation is not to make findings disappear faster. It is to make approved, evidence-backed product-impact decisions reproducible and machine-actionable.
+
+A dangerous pipeline converts a scanner finding directly into an automatic `NOT AFFECTED` disposition and then suppresses the finding. A defensible pipeline instead binds the released artifact to an SBOM, derives candidate findings through vulnerability correlation, collects product-specific evidence, performs and approves the assessment, emits VEX from that approved record, and changes downstream disposition only after the consumer has verified the assertion.
+
+### Separate observation, assessment, and policy
+
+Observed technical facts belong in the evidence package $E(P,V)$. The assessment function defined in @eq-vex-standards-from-first-principles-assessment-function uses that evidence to produce the technical result $(s,j,i,a)$. A separate local-policy step then determines the operational disposition on the basis of that assessment and the consumer's own rules.
+
+The distinction can be illustrated with the Log4Shell example:
+
+* `Observation`: `log4j-core` 2.14.1 is present in the assessed product.
+* `Assessment`: CVE-2021-44228 is `AFFECTED` for that product state.
+* `Policy`: if the vulnerability is critical, the product is affected, and the release is Internet-facing, publication is blocked until the applicable release criteria are satisfied.
+
+These layers answer different questions. The observation records what is technically known; the assessment determines what the vulnerability means for the product; policy determines what the organisation does about that result.
+
+Risk acceptance belongs in the policy layer. It can alter the operational response to an `AFFECTED` assessment, but it must not rewrite the technical status as `NOT AFFECTED`.
+
+### Generate the SBOM from the artifact you release
+
+For a container image, bind the SBOM to an immutable digest. Current Trivy documentation supports generating CycloneDX SBOMs from container images and scanning CycloneDX or SPDX SBOMs as vulnerability-analysis inputs.[^vex-standards-from-first-principles-trivy-sbom]
+
+Conceptually:
+
+```bash
+IMAGE="registry.example.com/payments-api@sha256:<digest>"
+
+trivy image \
+  --format cyclonedx \
+  --output payments-api.cdx.json \
+  "${IMAGE}"
+```
+
+The desired invariant is:
+
+$$
+\operatorname{VEXProduct}(X)
+\equiv
+\operatorname{SBOMSubject}(B)
+\equiv
+\operatorname{ReleaseArtifact}(d).
+$$ {#eq-vex-standards-from-first-principles-artifact-identity-invariant}
+
+Mutable tags alone are too weak for high-assurance statement binding.
+
+### Start candidates in `UNDER INVESTIGATION`
+
+A candidate record can begin as:
+
+```yaml
+product:
+  digest: sha256:...
+component:
+  purl: ...
+vulnerability:
+  id: CVE-...
+assessment:
+  status: under_investigation
+  evidence: []
+```
+
+This distinguishes:
+
+> assessment has begun but is incomplete
+
+from:
+
+> nobody has investigated this finding.
+
+### Make evidence requirements justification-specific
+
+| Justification                                       | Example minimum evidence                                          |
+| --------------------------------------------------- | ----------------------------------------------------------------- |
+| `component_not_present`                             | Artifact-bound SBOM plus trusted inventory or artifact inspection |
+| `vulnerable_code_not_present`                       | Build, patch, source, or binary evidence                          |
+| `vulnerable_code_not_in_execute_path`               | Reachability analysis with documented coverage assumptions        |
+| `vulnerable_code_cannot_be_controlled_by_adversary` | Data-flow and trust-boundary evidence                             |
+| `inline_mitigations_already_exist`                  | Demonstrated built-in mitigation effectiveness                    |
+
+: Example internal evidence policy for not-affected conclusions. {#tbl-vex-standards-from-first-principles-automation-evidence-policy}
+
+An internal `NOT AFFECTED` gate should therefore require all three conditions simultaneously: the required evidence is complete, the assessed product and vulnerability scope are valid, and the required approval has been obtained. Failure of any one condition should normally return the case to investigation.
+
+### Keep the evidence ledger richer than VEX
+
+An internal assessment record might contain:
+
+```yaml
+assessment_id: ASSESSMENT-1842
+
+product:
+  digest: sha256:...
+
+vulnerability:
+  id: CVE-2021-44228
+
+result:
+  status: not_affected
+  justification: vulnerable_code_not_in_execute_path
+
+evidence:
+  - type: static-reachability
+    digest: sha256:...
+  - type: runtime-test
+    digest: sha256:...
+  - type: architecture-review
+    digest: sha256:...
+
+approval:
+  assessor: product-security@example.invalid
+  reviewer: security-architecture@example.invalid
+```
+
+The external VEX can contain the compact result. This asymmetry is intentional: the internal assessment record should preserve substantially more evidence, assumptions, provenance, and review context than the exported VEX statement.
+
+### Sign or attest across trust boundaries
+
+Sigstore's Cosign supports signed in-toto attestations and verification workflows.[^vex-standards-from-first-principles-sigstore] VEX can be distributed as an attestation predicate or through other authenticated channels.
+
+A valid signature can authenticate the origin and integrity of a VEX assertion when the signing identity is trusted and correctly bound to the issuer. It cannot establish that the underlying technical assessment is correct. Cryptographic authenticity and claim truth are therefore separate properties.
+
+### Consumption requires its own policy
+
+A useful consumer predicate is
+
+$$
+\begin{aligned}
+\operatorname{Accept}(X,Q,V)=&
+\operatorname{FormatValid}(X)\\
+&\land\operatorname{Authenticated}(X)\\
+&\land\operatorname{IssuerAuthorized}(X,Q)\\
+&\land\operatorname{ProductMatches}(X,Q)\\
+&\land\operatorname{VulnerabilityMatches}(X,V)\\
+&\land\operatorname{Fresh}(X)\\
+&\land\operatorname{MeaningAndScopePreserved}(X)\\
+&\land\operatorname{LocalPolicySatisfied}(X).
+\end{aligned}
+$$ {#eq-vex-standards-from-first-principles-vex-consumer-acceptance}
+
+Only then should VEX change a vulnerability's operational disposition. Current Trivy documentation demonstrates why tool-specific assurance matters: VEX can be discovered from local files, SBOM references, repositories, or OCI-associated attestations, but the exact trust and matching behaviour depends on the discovery path and tool version.[^vex-standards-from-first-principles-trivy-vex]
+
+### Suppression must remain reversible
+
+Let:
+
+* $F_{\mathrm{raw}}$ be all raw findings;
+* $F_{\mathrm{suppressed}}$ be findings modified by accepted VEX;
+* $F_{\mathrm{actionable}}$ be findings remaining actionable.
+
+Then:
+
+$$
+F_{\mathrm{actionable}}
+=
+F_{\mathrm{raw}}
+\setminus
+F_{\mathrm{suppressed}}.
+$$ {#eq-vex-standards-from-first-principles-reversible-suppression}
+
+But $F_{\mathrm{suppressed}}$ should not be deleted.
+
+Store:
+
+```yaml
+finding:
+  vulnerability: CVE-...
+suppression:
+  vex_statement: ...
+  issuer: ...
+  status: not_affected
+  justification: ...
+  accepted_at: ...
+  policy_version: ...
+```
+
+If the VEX assertion becomes untrusted, stale, or superseded, the finding can be reactivated.
+
+## Interoperability, trust, and failure modes
+
+VEX interoperability is not merely document conversion. A useful model separates four independent conditions:
+
+$$
+\operatorname{Interop}(X_s,X_t)
+\iff
+S_{\mathrm{syn}}
+\land
+I_{\mathrm{id}}
+\land
+S_{\mathrm{sem}}
+\land
+P_{\mathrm{pol}},
+$$ {#eq-vex-standards-from-first-principles-interoperability-layers}
+
+where:
+
+* $S_{\mathrm{syn}}$ is syntactic interoperability;
+* $I_{\mathrm{id}}$ is identity interoperability;
+* $S_{\mathrm{sem}}$ is semantic interoperability;
+* $P_{\mathrm{pol}}$ is policy interoperability.
+
+A parser can satisfy $S_{\mathrm{syn}}$ while failing the other three conditions.
+
+### Product identity failures can widen scope
+
+Suppose a source assertion concerns component $C_1$ inside product $P$:
+
+$$
+X:
+(P,C_1,V)
+\mapsto
+\texttt{NOT\ AFFECTED}.
+$$
+
+If conversion drops $C_1$, the target becomes:
+
+$$
+X':
+(P,V)
+\mapsto
+\texttt{NOT\ AFFECTED}.
+$$
+
+If $P$ also contains $C_2$ associated with the same vulnerability, $X'$ can suppress more than the producer intended. This is **scope widening**. Safe conversion must preserve:
+
+* product identity;
+* version or artifact scope;
+* subcomponent scope;
+* vulnerability identity;
+* status;
+* justification;
+* timing and supersession semantics where operationally relevant.
+
+### Semantic loss can strengthen a claim
+
+Consider CycloneDX `protected_at_perimeter` and CISA/OpenVEX `inline_mitigations_already_exist`. A perimeter control is not necessarily a product-integrated mitigation. Mapping one to the other can strengthen the claim rather than merely remove detail.
+
+A safe conversion must not make the target assertion semantically stronger than the source assertion. If equivalent or weaker semantics cannot be established, the converter should label the mapping as lossy or unsupported rather than invent a stronger target justification.
+
+### Trust has several independent layers
+
+The consumer predicate in @eq-vex-standards-from-first-principles-vex-consumer-acceptance can be decomposed operationally into six independent trust dimensions:
+
+* **authentication** of the issuer;
+* **authorization** of that issuer for the relevant product scope;
+* **identity applicability** for both product and vulnerability;
+* **freshness** of the assertion and its assumptions;
+* **semantic and scope preservation** across representation or conversion;
+* **local policy acceptance** by the consumer.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-vex-trust-stack
+%%| fig-cap: "A VEX assertion should pass independent format, authentication, authorization, identity, freshness, semantic, and local-policy gates before it can influence a finding disposition."
+%%| fig-alt: "A VEX assertion enters a sequence of decision diamonds: format valid, issuer authenticated, issuer authorized, product and vulnerability match, statement fresh, meaning and scope preserved, and local policy accepts. A Yes branch advances to the next gate. Any No branch leads to a do-not-apply outcome and continued vulnerability handling. Only a VEX assertion that passes every gate may influence the finding disposition."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    X[VEX assertion]
+    S{Format valid?}
+    A{Issuer<br/>authenticated?}
+    Z{Issuer<br/>authorized?}
+    I{Product + vulnerability<br/>match?}
+    F{Fresh?}
+    M{Meaning + scope<br/>preserved?}
+    P{Local policy<br/>accepts?}
+    D[Accepted VEX<br/>may influence finding disposition]
+    R[Do not apply VEX<br/>continue handling]
+
+    X --> S
+    S -->|Yes| A
+    A -->|Yes| Z
+    Z -->|Yes| I
+    I -->|Yes| F
+    F -->|Yes| M
+    M -->|Yes| P
+    P -->|Yes| D
+
+    S -->|No| R
+    A -->|No| R
+    Z -->|No| R
+    I -->|No| R
+    F -->|No| R
+    M -->|No| R
+    P -->|No| R
+```
+
+Authentication and authorization are different. A valid signature from an upstream library maintainer does not automatically make that maintainer authoritative about a downstream modified appliance.
+
+### Freshness is about assumptions
+
+Let $\Gamma_X$ be the set of assumptions on which assertion $X$ depends. A useful semantic definition is
+
+$$
+\operatorname{Fresh}(X,t)
+\iff
+\bigwedge_{\gamma\in\Gamma_X}\gamma(t),
+$$ {#eq-vex-standards-from-first-principles-vex-semantic-freshness}
+
+meaning that the assertion remains fresh only while every assumption required by the original assessment still holds at time $t$:
+
+* A two-year-old `component_not_present` statement can remain correct for an immutable artifact.
+* A one-day-old reachability statement can become stale immediately if a feature flag activates the vulnerable path.
+
+### Conflicting statements require scope analysis
+
+Suppose:
+
+$$
+X_{\mathrm{up}}:(P_{\mathrm{up}},V)\mapsto\texttt{AFFECTED},
+$$
+
+$$
+X_{\mathrm{dist}}:(P_{\mathrm{dist}},V)\mapsto\texttt{FIXED},
+$$
+
+$$
+X_{\mathrm{final}}:(P_{\mathrm{final}},V)\mapsto\texttt{NOT\ AFFECTED}.
+$$
+
+These are not necessarily contradictory. The distributor may have backported a patch, and the final product may omit the relevant package. Conflict exists only when statements refer to materially equivalent product scope:
+
+$$
+\begin{aligned}
+\operatorname{Conflict}(X_1,X_2)
+\iff{}&
+\operatorname{SameProductScope}(X_1,X_2)\\
+&\land\operatorname{SameVulnerability}(X_1,X_2)\\
+&\land\operatorname{IncompatibleStatus}(X_1,X_2).
+\end{aligned}
+$$ {#eq-vex-standards-from-first-principles-vex-conflict}
+
+_Latest wins_ is therefore an unsafe universal precedence rule.
+
+### Preserve uncertainty in the consumer
+
+A robust internal state space needs more than the four producer statuses:
+
+$$
+\mathcal{S}_{\mathrm{consumer}}=
+\{
+\texttt{affected},
+\texttt{not_affected},
+\texttt{fixed},
+\texttt{under_investigation},
+\texttt{unresolved_identity},
+\texttt{conflicting_assertions},
+\texttt{untrusted_assertion}
+\}.
+$$ {#eq-vex-standards-from-first-principles-consumer-state-space}
+
+The latter states describe why the consumer cannot safely accept a conclusion.
+
+### Failure-mode taxonomy
+
+| Failure                                             | Layer              | Consequence                                            |
+| --------------------------------------------------- | ------------------ | ------------------------------------------------------ |
+| Unsupported VEX syntax                              | Syntax             | Statement ignored                                      |
+| Wrong product match                                 | Identity           | Statement applied to wrong artifact                    |
+| Subcomponent scope discarded                        | Identity/semantics | Suppression widened                                    |
+| `false_positive` normalized to generic not-affected | Semantics          | Association error loses its meaning                    |
+| Stronger target justification invented              | Semantics          | Converted claim exceeds source evidence                |
+| Product changed after assessment                    | Freshness          | Previously valid assertion becomes stale               |
+| Unauthenticated VEX accepted                        | Authentication     | Unauthorized suppression possible                      |
+| Authenticated but unauthorized issuer accepted      | Authorization      | Wrong party controls downstream disposition            |
+| Conflict resolved by timestamp alone                | Policy             | Lower-authority assertion can override better evidence |
+| Incomplete SBOM treated as proof of absence         | Evidence           | Correlated false negative                              |
+| Suppressed finding deleted                          | Auditability       | Decision cannot be reconstructed                       |
+
+: Major VEX failure modes. {#tbl-vex-standards-from-first-principles-vex-failure-modes}
+
+The highest-risk failure occurs when a real vulnerability is paired with an incorrectly accepted `NOT AFFECTED` assertion and automation turns that incorrect assessment into a false negative.
+
+The final consumer rule is therefore simple: a VEX assertion may change or suppress a finding only after it satisfies the acceptance conditions in @eq-vex-standards-from-first-principles-vex-consumer-acceptance, and the original finding plus the acceptance decision must remain recoverable.
+
+## How the Cyber Resilience Act leverages SBOM and VEX in practice
+
+The Cyber Resilience Act provides a regulatory context in which the difference between SBOM and VEX becomes operationally important. Regulation (EU) 2024/2847 requires manufacturers subject to its full vulnerability-handling regime to identify and document vulnerabilities and components and to create an SBOM in a commonly used, machine-readable format covering at least the product's top-level software dependencies.[^vex-standards-from-first-principles-cra-regulation]
+
+The CRA does **not** prescribe VEX as a mandatory artefact and does not require one particular VEX serialization. The distinction is direct: the CRA requires an SBOM capability as part of the vulnerability-handling regime, whereas VEX is not itself a mandated CRA artefact. VEX can nevertheless support the manufacturer's vulnerability decisions by communicating a scoped technical assessment. This distinction is consistent with the broader CRA analysis that treats an SBOM as a required inventory rather than a security verdict.[^vex-standards-from-first-principles-montano-cra-baseline]
+
+### The SBOM sits inside the vulnerability-handling process
+
+The CRA's SBOM requirement is part of Annex I, Part II, on vulnerability handling. It belongs to a larger lifecycle that includes identifying and documenting vulnerabilities, addressing vulnerabilities in relation to product risk, performing testing and review, making security updates available, and providing information about fixed vulnerabilities.[^vex-standards-from-first-principles-cra-regulation]
+
+Operationally, the SBOM sits upstream of vulnerability identification and product-specific assessment. The assessment can then drive remediation and the preservation of documented evidence. VEX fits naturally at the communication boundary after the technical assessment, rather than replacing any of those lifecycle stages.
+
+### 11 September 2026 is not the general SBOM deadline
+
+The CRA's dates must be separated carefully. The Regulation applies generally from **11 December 2027**.
+
+Article 14 reporting obligations apply earlier, from **11 September 2026**.[^vex-standards-from-first-principles-cra-regulation] The European Commission's current implementation material confirms that from that date manufacturers must report actively exploited vulnerabilities and severe security incidents under the Article 14 regime, with progressive 24-hour, 72-hour, and final-report stages.[^vex-standards-from-first-principles-commission-cra-reporting]
+
+The two dates therefore have different meanings: **11 September 2026 is the start of the Article 14 reporting regime, not a universal CRA SBOM-compliance deadline**. The full Annex I regime applies later according to the Regulation's transition provisions.
+
+Nevertheless, SBOMs, scanners, VEX, telemetry, and case-management systems can already support the Article 14 decision process. This is the practical distinction developed in the companion analysis of CRA vulnerability scanning and reporting readiness.[^vex-standards-from-first-principles-montano-cra-reporting]
+
+### The SBOM answers the product-containment question
+
+Article 14's vulnerability route concerns an **actively exploited vulnerability contained in the product with digital elements** that the manufacturer becomes aware of.[^vex-standards-from-first-principles-cra-regulation]
+
+The first technical question is therefore whether vulnerability $V$ is actually contained in product $P$. The SBOM helps answer whether a component associated with $V$ is part of that product state.
+
+For Log4Shell, knowing that a product contains `log4j-api` is not equivalent to establishing that vulnerable `log4j-core` is present. The SBOM reduces the search space. It does not decide legal reportability.
+
+### VEX answers the product-impact question
+
+Once a component-vulnerability association exists, VEX can communicate the product-specific result already formalized in @eq-vex-standards-from-first-principles-cisa-vex-semantics: for the identified pair $(P,V)$, the assessment provides status together with any applicable justification, impact information, and action information.
+
+That can distinguish _component matched_ from _product affected_ or _product not affected because vulnerable component is absent_ or _assessment still under investigation_. This is valuable CRA evidence, but the CRA reporting decision remains a separate proposition.
+
+### `AFFECTED` does not automatically mean Article 14 reporting
+
+A simplified Article 14 vulnerability-route predicate can be written as
+
+$$
+R_V(P,V,t)
+=
+\operatorname{InScope}_{\mathrm{CRA}}(P)
+\land
+\operatorname{Contained}(P,V)
+\land
+\operatorname{AwareActiveExploitation}(P,V,t),
+$$ {#eq-vex-standards-from-first-principles-cra-article14-vulnerability-trigger}
+
+where the three predicates represent, respectively, CRA reporting scope, containment of vulnerability $V$ in product $P$, and the manufacturer's awareness at time $t$ of active malicious exploitation.
+
+A VEX `AFFECTED` statement can contribute evidence for $\operatorname{Contained}(P,V)$ and product impact. It does not, by itself, establish $\operatorname{AwareActiveExploitation}(P,V,t)$. That evidence may instead come from telemetry, customer reports, incident response, forensic artefacts, suppliers, authorities, or threat intelligence.
+
+### `NOT AFFECTED` can eliminate one vulnerability path, not every reporting path
+
+Suppose a trusted assessment establishes `NOT AFFECTED` with justification `component_not_present` for the relevant product-vulnerability pair. If the vulnerable component is genuinely absent from the relevant product artifact, then the upstream component vulnerability is not contained in that product state. That can resolve the vulnerability route quickly. But Article 14 also includes a severe-security-incident route. A VEX conclusion about CVE $V$ must not suppress investigation of an independent severe incident affecting the product.
+
+### `UNDER INVESTIGATION` is useful under the reporting clock
+
+A new signal may establish only a possible component match while the product state and exploitation evidence remain incomplete. Recording `UNDER INVESTIGATION` is technically accurate in that situation.
+
+Article 14's progressive reporting structure, however, means that technical uncertainty cannot be used to postpone reporting after the legal awareness threshold has actually been reached.[^vex-standards-from-first-principles-commission-cra-reporting]
+
+VEX describes technical knowledge. It does not stop statutory clocks.
+
+### The CRA evidence flow
+
+The CRA reporting workflow should preserve the distinction between technical evidence, product-specific assessment, optional VEX communication, and the legal reporting decision. An SBOM and build evidence help establish what is contained in the product; technical assessment determines the product-specific significance of a vulnerability; VEX may communicate that assessment in a structured form; and exploitation or incident evidence addresses the separate question of whether an Article 14 reporting trigger has been reached. None of these artefacts or analyses should be treated as a substitute for the others.
+
+```{mermaid}
+%%| label: fig-vex-standards-from-first-principles-cra-sbom-vex-decision
+%%| fig-cap: "SBOM evidence, product-specific technical assessment, optional VEX communication, exploitation or incident evidence, and the CRA reporting decision remain distinct stages of the workflow."
+%%| fig-alt: "A product-security signal enters a process that identifies the product and CRA scope, then a technical product-assessment process. SBOM and build evidence feed that assessment through a dashed evidentiary arrow. The assessment can produce a VEX assertion as an optional communication artifact. Product-impact evidence from the assessment and exploitation evidence feed the actively exploited vulnerability decision. Scope context also feeds both legal decision points. Incident evidence feeds a separate severe-security-incident decision. If either legal trigger is established, an awareness and reporting decision is recorded and the progressive Article 14 reporting workflow begins. If not established, vulnerability handling and reassessment continue and can return to technical assessment."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    S[Product-security signal]
+    P(Identify product<br/>and CRA scope)
+    B[SBOM + build evidence]
+    A(Technical product<br/>assessment)
+    V[VEX assertion<br/>optional communication artefact]
+    E[Telemetry + customer reports<br/>forensics + supplier evidence<br/>threat intelligence]
+    T{Actively exploited vulnerability<br/>contained in product?}
+    I{Severe security incident<br/>affecting product?}
+    D(Record awareness<br/>and reporting decision)
+    N(Progressive Article 14<br/>reporting workflow)
+    R(Vulnerability handling<br/>and reassessment)
+
+    S --> P
+    P --> A
+    B -. evidence .-> A
+
+    A --> V
+    A -. product-impact evidence .-> T
+    V -. optional communication of assessment .-> T
+    E -. exploitation evidence .-> T
+    E -. incident evidence .-> I
+    P -. scope context .-> T
+    P -. scope context .-> I
+
+    T -->|Yes| D
+    I -->|Yes| D
+    T -->|Not established| R
+    I -->|Not established| R
+    D --> N
+    R --> A
+```
+
+### Supplier vulnerability information remains product-specific
+
+The CRA requires manufacturers to manage vulnerabilities affecting integrated components and to cooperate, where relevant, with the manufacturers or maintainers of those components when vulnerabilities are identified.[^vex-standards-from-first-principles-cra-regulation]
+
+An upstream component assessment and a downstream product assessment can therefore reach different conclusions without contradiction. For the same vulnerability $V$:
+
+* `Library C / CVE-V`: `AFFECTED`: the component itself is affected by the vulnerability.
+* `Final Product P / CVE-V`: `NOT AFFECTED`, with justification `vulnerable_code_not_in_execute_path`: the vulnerable component is present, but the vulnerable code is not reachable in the integrated product.
+
+The two statements have different subjects and therefore make different claims. The upstream statement characterizes the vulnerability status of the component; the downstream statement characterizes the effect of that vulnerability on the specific integrated product.
+
+Supplier information can support the downstream analysis, but it does not replace it. The final-product manufacturer must still establish the product-specific conditions needed to determine whether the vulnerability affects the product.
+
+### SBOM, VEX, and Article 14 evidence answer different questions
+
+| Evidence object                  | Primary question                                                          | Does not by itself establish                  |
+| -------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------- |
+| SBOM                             | What software is in the product?                                          | Product exploitability or active exploitation |
+| VEX                              | What is the assessed status of vulnerability $V$ for product $P$?         | Statutory Article 14 trigger                  |
+| Exploitation / incident evidence | Is malicious exploitation or a severe security incident occurring?        | Software composition                          |
+| CRA case record                  | Has the legal reporting threshold been reached and what actions followed? | Complete conformity with all CRA requirements |
+
+: Distinct evidence roles in a CRA vulnerability workflow. {#tbl-vex-standards-from-first-principles-cra-evidence-roles}
+
+Operationally, those objects form a traceable evidence stack: the SBOM supports software-composition claims, VEX records product-specific vulnerability assessment, exploitation or incident evidence supports the statutory trigger analysis, and the CRA case record preserves the resulting decision and actions.
+
+This is also the practical value of the two companion CRA analyses: they frame SBOM, vulnerability scanning, VEX, telemetry, and case management as inputs to an evidence-based lifecycle rather than as automatic legal verdicts.[^vex-standards-from-first-principles-montano-cra-baseline][^vex-standards-from-first-principles-montano-cra-reporting]
+
+### Reportability and remediation remain separate
+
+A vulnerability can require urgent remediation without meeting the Article 14 active-exploitation reporting trigger. Absence of an Article 14 reporting trigger therefore does not imply absence of vulnerability-management action.
+
+The reverse distinction also matters: reporting a vulnerability does not replace remediation, user communication, technical documentation, or other CRA duties.
+
+The regulatory roles are therefore distinct: the SBOM helps the manufacturer determine where relevant software is present; VEX communicates the product-specific conclusion reached by the technical assessment; and CRA governance determines what reporting, remediation, documentation, and communication obligations follow from the complete evidence record.
+
+## Practitioner playbook and conclusions
+
+The central lesson is not that organisations need another vulnerability file format. They need a disciplined way to move from **software composition** to **product-specific security conclusions** without silently turning correlation into causation or automation into unaudited suppression.
+
+The complete operational chain is the lifecycle already shown in @fig-vex-standards-from-first-principles-vex-lifecycle: the released software artifact is inventoried, candidate vulnerabilities are correlated, product-specific evidence is assessed, VEX communicates the resulting conclusion, consumers apply their own acceptance policy, and changed assumptions trigger reassessment.
+
+Under the CRA, a separate governance layer consumes SBOM and VEX evidence together with exploitation or incident evidence and regulatory scope before a legal reporting or conformity decision is made.
+
+These relationships should remain separate. An SBOM is evidence about what software is present.An SBOM provides evidence about software composition. VEX communicates the result of a product-specific vulnerability assessment. CRA reporting and conformity decisions apply legal criteria to a broader evidence record.
+
+### Choose the VEX implementation from the surrounding architecture
+
+| Implementation    | Natural fit                        | Principal strength                                                         | Principal caution                                                 |
+| ----------------- | ---------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **CSAF 2.0**      | Vendor security advisories         | Rich product/version, remediation, and advisory lifecycle semantics        | Product-tree and advisory complexity                              |
+| **CycloneDX 1.7** | Existing CycloneDX BOM pipelines   | Reuse of BOM identities, dependencies, pedigree, and vulnerability objects | State and justification vocabularies are not isomorphic with CISA |
+| **SPDX 3.0.1**    | Graph-oriented supply-chain data   | First-class assessment relationships and provenance                        | Requires graph-aware processing                                   |
+| **OpenVEX 0.2.0** | Lightweight feeds and attestations | Small model and close CISA mapping                                         | Richer semantics can be lost; specification remains a draft       |
+
+: Final practitioner selection guide. {#tbl-vex-standards-from-first-principles-practitioner-selection}
+
+The implementation choice should therefore be made from the surrounding architecture: the publisher's role, the existing data model, the consumer ecosystem, the semantics that must survive interchange, and the intended distribution model all matter. There is no universally superior serializer.
+
+### Keep one canonical assessment outside the formats
+
+For multi-format environments, maintain a canonical internal assessment record
+
+$$
+A_c(P,V,t)=(s,j,i,a,E,\Gamma,\iota),
+$$ {#eq-vex-standards-from-first-principles-canonical-assessment}
+
+where $E$ is the supporting evidence, $\Gamma$ the assessment assumptions, and $\iota$ the issuer or approving authority. Serialize this richer record into CSAF, CycloneDX, SPDX, or OpenVEX rather than treating any one interchange format as the system of record.
+
+This avoids forcing the internal security model to adopt the limitations of the least expressive interchange format.
+
+### Build capability in the least dangerous order
+
+A defensible rollout is:
+
+1. establish precise product and artifact identity;
+2. generate artifact-relevant SBOMs;
+3. correlate components with vulnerability intelligence;
+4. when investigation begins, initialize the assessment as `UNDER INVESTIGATION`;
+5. define justification-specific evidence requirements;
+6. preserve evidence, assumptions, and approvals;
+7. generate VEX only from approved assessment data;
+8. validate the output against the intended format/version;
+9. authenticate assertions that cross trust boundaries;
+10. verify authorization, product identity, vulnerability identity, freshness, and local policy on consumption;
+11. run in observation mode before enabling automatic suppression;
+12. keep suppression reversible and auditable;
+13. reassess statements when products, configurations, vulnerability intelligence, or trust assumptions change.
+
+Automatic suppression should be the **last** capability introduced.
+
+### Treat `NOT AFFECTED` as privileged
+
+A `NOT AFFECTED` assertion is a privileged special case of the general consumer-acceptance rule:
+
+$$
+\operatorname{PermitNotAffected}(X,Q,V)
+=
+\operatorname{Accept}(X,Q,V)
+\land
+\operatorname{NotAffectedBasisValid}(X)
+\land
+\operatorname{EvidenceSatisfied}(X).
+$$ {#eq-vex-standards-from-first-principles-minimum-not-affected-safety}
+
+Here, $\operatorname{NotAffectedBasisValid}(X)$ means that the assertion contains either an applicable structured justification or the impact statement required when no structured justification is provided. The additional evidence requirement is an internal assurance policy: syntactic compliance with the VEX format does not by itself establish that the not-affected claim is true.
+
+If one of those conditions cannot be established, the safe outcome is continued vulnerability handling, not inferred safety.
+
+### Preserve the non-equivalences
+
+| Do not equate         | With                                         |
+| --------------------- | -------------------------------------------- |
+| Component present     | Product affected                             |
+| Scanner non-detection | Component proven absent                      |
+| `NOT AFFECTED`        | Risk accepted                                |
+| `NOT AFFECTED`        | Low severity                                 |
+| `AFFECTED`            | Automatic emergency patch under every policy |
+| `FIXED` for CVE $V_1$ | Secure against every vulnerability           |
+| `UNDER INVESTIGATION` | Probably safe                                |
+| Schema-valid VEX      | Correct technical assessment                 |
+| Signed VEX            | Correct underlying assessment                |
+| Authenticated issuer  | Authorized issuer for every product          |
+| Newer statement       | More authoritative statement                 |
+| Missing VEX           | `NOT AFFECTED`                               |
+| Successful conversion | Meaning preserved                            |
+| Suppressed finding    | Deleted finding                              |
+| VEX `AFFECTED`        | CRA Article 14 report automatically required |
+| No Article 14 trigger | No remediation required                      |
+
+: Distinctions that a mature VEX and CRA workflow must preserve. {#tbl-vex-standards-from-first-principles-practitioner-non-equivalences}
+
+### Use Log4Shell as an acceptance test
+
+A mature VEX pipeline should be able to distinguish the four product states developed in the worked example:
+
+| Product state | Evidence condition                                                                | Expected VEX result                         |
+| ------------- | --------------------------------------------------------------------------------- | ------------------------------------------- |
+| $P_A$         | `log4j-core` absent from the assessed artifact                                    | `NOT AFFECTED` with `component_not_present` |
+| $P_B$         | Vulnerable `log4j-core` present and the exploitability conditions are established | `AFFECTED`                                  |
+| $P_C$         | A corrective release for CVE-2021-44228 has been incorporated                     | `FIXED`                                     |
+| $P_U$         | Available evidence is still insufficient to determine product impact              | `UNDER INVESTIGATION`                       |
+
+: Log4Shell states as an acceptance test for the VEX pipeline. {#tbl-vex-standards-from-first-principles-log4shell-acceptance-test}
+
+These four cases provide a useful acceptance test for the underlying assessment model. A system that can represent only a binary distinction between “CVE found” and “CVE ignored” still collapses vulnerability correlation and product-specific assessment into the same decision. In that case, adding VEX as an output format has not materially improved the security model.
+
+### Measure decision quality, not suppression volume
+
+Useful programme measures include:
+
+* proportion of candidates with explicit assessed states;
+* percentage of `NOT AFFECTED` assertions linked to reviewable evidence;
+* percentage of statements bound to precise product identities;
+* time from vulnerability disclosure to `UNDER INVESTIGATION`;
+* time from completed investigation to updated VEX;
+* number of product-matching failures;
+* number of semantic-loss warnings during conversion;
+* stale assertions detected by reassessment;
+* suppressed findings reactivated after changed evidence or trust;
+* ability to reconstruct historical suppression decisions.
+
+For CRA operations, also measure how quickly the organisation can establish product scope, exploitation or incident evidence, awareness time, and reporting disposition without confusing those values with the VEX status.
+
+The target is decision quality—specifically correctness, traceability, and timeliness—not maximum suppression volume.
+
+### What VEX does, and does not do
+
+VEX should be understood as a communication mechanism for product-specific vulnerability assessments, not as proof that every upstream analytical step was correct. A valid VEX statement does not establish that the underlying SBOM is complete, that component-to-vulnerability matching was accurate, that reachability analysis was sound, or that an asserted mitigation cannot be bypassed. Authentication can establish who issued the statement, but it does not make the issuer's technical conclusion infallible.
+
+The same boundary applies in the CRA context. An `AFFECTED` VEX status does not by itself establish active exploitation for Article 14 purposes, just as possession of an SBOM does not by itself establish conformity with the CRA's broader vulnerability-handling requirements.
+
+What VEX can do is narrower but still operationally important: it can communicate a scoped, attributable, machine-readable, and revisable assessment of what a specific vulnerability means for a specific product state.
+
+### Final conclusion
+
+The enduring abstraction is a three-layer separation of concerns. The SBOM describes what software is present. VEX communicates what an assessed vulnerability means for the identified product. In the CRA context, regulatory governance determines what the manufacturer must do with the resulting evidence.
+
+The maturity test for the complete system is straightforward. For every vulnerability whose operational treatment was changed by VEX, the organisation should be able to answer:
+
+> Which exact product was assessed, which vulnerability was considered, which component or code path was relevant, what evidence supported the status, which assumptions bounded the conclusion, who authorized the assertion, which VEX representation communicated it, which consumer policy accepted it, whether any regulatory decision depended on it, and what event would cause the assessment to be reconsidered?
+
+If those questions cannot be answered, the primary problem is not the VEX standard that was selected. It is a missing reasoning chain.
+
+The final safety invariant is operational rather than syntactic: any automated decision that changes a finding because of VEX should remain traceable to a reviewable assessment, be bound to precise product and vulnerability identities, rely on trusted provenance, and remain reversible if the assertion later becomes stale, inapplicable, or untrusted.
+
+The CRA adds one further constraint: a regulatory decision must evaluate the applicable legal trigger independently of the VEX status. VEX may contribute evidence to that decision, but it must not substitute for it.
+
+Under those constraints, SBOM and VEX become complementary elements of a defensible product-security system: the SBOM makes software composition inspectable, VEX makes product-specific vulnerability knowledge exchangeable, and the CRA gives manufacturers a concrete regulatory reason to ensure that both feed an evidence-driven security lifecycle rather than a purely scanner-driven one.
+
+[^vex-standards-from-first-principles-cisa-sbom-minimum-elements]: Cybersecurity and Infrastructure Security Agency. (2025). **2025 Minimum Elements for a Software Bill of Materials (SBOM)**. *CISA*. [Official resource](https://www.cisa.gov/resources-tools/resources/2025-minimum-elements-software-bill-materials-sbom)
+
+[^vex-standards-from-first-principles-ntia-sbom-minimum-elements]: National Telecommunications and Information Administration. (2021). **The Minimum Elements for a Software Bill of Materials (SBOM)**. *U.S. Department of Commerce*. [Official report](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom)
+
+[^vex-standards-from-first-principles-enisa-sbom]: European Union Agency for Cybersecurity. (2022). **NFV Security in 5G: Challenges and Best Practices**. *ENISA*. [Official report](https://www.enisa.europa.eu/publications/nfv-security-in-5g-challenges-and-best-practices)
+
+[^vex-standards-from-first-principles-purl]: Ecma International. (2025). **ECMA-427: Package-URL (PURL) Specification, 1st Edition**. *Ecma International*. [Standard](https://ecma-international.org/publications-and-standards/standards/ecma-427/)
+
+[^vex-standards-from-first-principles-cpe]: Cheikes, B., Waltermire, D. A., & Scarfone, K. (2011). **Common Platform Enumeration: Naming Specification Version 2.3**. *NISTIR 7695*. [DOI](https://doi.org/10.6028/NIST.IR.7695)
+
+[^vex-standards-from-first-principles-cisa-vex-minimum]: Cybersecurity and Infrastructure Security Agency. (2023). **Minimum Requirements for Vulnerability Exploitability eXchange (VEX)**. *CISA*. [Official resource](https://www.cisa.gov/resources-tools/resources/minimum-requirements-vulnerability-exploitability-exchange-vex)
+
+[^vex-standards-from-first-principles-cisa-vex-justifications]: Cybersecurity and Infrastructure Security Agency. (2022). **Vulnerability Exploitability eXchange (VEX) — Status Justifications**. *CISA*. [Official resource](https://www.cisa.gov/resources-tools/resources/vulnerability-exploitability-exchange-vex-status-justification-document-june-2022)
+
+[^vex-standards-from-first-principles-cisa-vex-when-issue]: Cybersecurity and Infrastructure Security Agency. (2023). **When to Issue VEX Information**. *CISA*. [Official resource](https://www.cisa.gov/resources-tools/resources/when-issue-vex-information)
+
+[^vex-standards-from-first-principles-csaf-20]: Rock, L., Hagen, S., & Schmidt, T. (Eds.). (2022). **Common Security Advisory Framework Version 2.0**. *OASIS Standard*. [Standard](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
+
+[^vex-standards-from-first-principles-csaf-21]: Hagen, S., & Schmidt, T. (Eds.). (2026). **Common Security Advisory Framework Version 2.1, Committee Specification Draft 02**. *OASIS Open*. [Specification draft](https://docs.oasis-open.org/csaf/csaf/v2.1/csd02/csaf-v2.1-csd02.html)
+
+[^vex-standards-from-first-principles-cyclonedx-17]: OWASP Foundation. (2025). **CycloneDX Specification Overview, Version 1.7**. *CycloneDX*. [Specification](https://cyclonedx.org/specification/overview/)
+
+[^vex-standards-from-first-principles-ecma-424]: Ecma International. (2025). **ECMA-424: CycloneDX Bill of Materials Specification, 2nd Edition**. *Ecma International*. [Standard](https://ecma-international.org/publications-and-standards/standards/ecma-424/)
+
+[^vex-standards-from-first-principles-cyclonedx-schema]: OWASP Foundation. (2025). **CycloneDX 1.7 JSON Reference**. *CycloneDX*. [Specification](https://cyclonedx.org/docs/1.7/json/)
+
+[^vex-standards-from-first-principles-spdx-301]: SPDX Project. (2024). **SPDX Specification 3.0.1 — Security Profile**. *SPDX / Linux Foundation*. [Specification](https://spdx.github.io/spdx-spec/v3.0.1/model/Security/Security/)
+
+[^vex-standards-from-first-principles-spdx-31]: SPDX Project. (2026). **SPDX 3.1 Ontology and Schema Available for Review**. *SPDX / Linux Foundation*. [Official announcement](https://spdx.dev/spdx-3-1-ontology-and-schema-available-for-review/)
+
+[^vex-standards-from-first-principles-openvex-spec]: OpenVEX Project. (2023). **OpenVEX Specification v0.2.0**. *OpenVEX*. [Specification](https://github.com/openvex/spec/blob/main/OPENVEX-SPEC.md)
+
+[^vex-standards-from-first-principles-apache-log4j]: Apache Software Foundation. (n.d.). **Security Vulnerabilities: Apache Log4j**. *Apache Logging Services*. [Official security documentation](https://logging.apache.org/security.html)
+
+[^vex-standards-from-first-principles-spring-log4j]: Spring. (2021). **Log4J2 Vulnerability and Spring Boot**. *Spring Blog*. [Official engineering advisory](https://spring.io/blog/2021/12/10/log4j2-vulnerability-and-spring-boot/)
+
+[^vex-standards-from-first-principles-cisa-kev-log4j]: Cybersecurity and Infrastructure Security Agency. (2021). **CVE-2021-44228: Apache Log4j2 Remote Code Execution Vulnerability**. *Known Exploited Vulnerabilities Catalog*. [Official catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+
+[^vex-standards-from-first-principles-trivy-sbom]: Aqua Security. (2026). **SBOM and SBOM Target Scanning**. *Trivy Documentation*. [Technical documentation](https://trivy.dev/docs/latest/supply-chain/sbom/)
+
+[^vex-standards-from-first-principles-sigstore]: Sigstore Project. (n.d.). **In-Toto Attestations**. *Sigstore Documentation*. [Technical documentation](https://docs.sigstore.dev/cosign/verifying/attestation/)
+
+[^vex-standards-from-first-principles-trivy-vex]: Aqua Security. (2026). **VEX Overview**. *Trivy Documentation*. [Technical documentation](https://trivy.dev/docs/latest/supply-chain/vex/)
+
+[^vex-standards-from-first-principles-cra-regulation]: European Parliament and Council of the European Union. (2024). **Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements**. *Official Journal of the European Union*. [Official text](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng)
+
+[^vex-standards-from-first-principles-commission-cra-reporting]: European Commission. (2026). **Cyber Resilience Act — Reporting Obligations**. *Shaping Europe's Digital Future*. [Official implementation page](https://digital-strategy.ec.europa.eu/en/policies/cra-reporting)
+
+[^vex-standards-from-first-principles-montano-cra-baseline]: Montano, A. (2026). **Cyber Resilience Act: The New Product-Security Baseline**. *Random Bits of Knowledge*. [Article](https://4m4.it/longforms/cyber-resilience-act-the-new-product-security-baseline/)
+
+[^vex-standards-from-first-principles-montano-cra-reporting]: Montano, A. (2026). **Does the CRA Require Vulnerability Scanning from 11 September 2026? No, but It Does Require a Reporting Decision Process**. *Random Bits of Knowledge*. [Article](https://4m4.it/posts/cra-vulnerability-scanning-11-september-2026-reporting-decision-process/index.html)
