@@ -3,13 +3,13 @@ title: "VEX Standards from First Principles"
 subtitle: "From software inventories to defensible vulnerability-exploitability decisions"
 description: "A technical tutorial on SBOMs and Vulnerability Exploitability eXchange, covering CISA semantics, CSAF, CycloneDX, SPDX, OpenVEX, Log4Shell, automation, interoperability, and practical use under the EU Cyber Resilience Act."
 abstract: |
-  Software Bills of Materials (SBOMs) and Vulnerability Exploitability eXchange (VEX) solve different stages of the same software-vulnerability problem. An SBOM provides structured evidence about software composition; it does not establish that every vulnerability associated with an included component affects the finished product. VEX communicates the result of that subsequent product-specific assessment: whether a defined product is affected, not affected, fixed, or still under investigation, together with the justification or action information needed to interpret that conclusion. This article develops that distinction from first principles and derives an end-to-end process linking product identity, SBOM evidence, vulnerability correlation, technical investigation, VEX publication, consumer trust, reassessment, and auditable vulnerability disposition.
+  Software Bills of Materials (SBOMs) and Vulnerability Exploitability eXchange (VEX) address different stages of the software-vulnerability lifecycle. An SBOM establishes a structured representation of software composition; it does not determine whether every vulnerability associated with an included component affects the finished product. VEX addresses that second problem by communicating a scoped product-specific assessment: whether a vulnerability is affected, not affected, fixed, or under investigation, together with the justification, impact, or action information needed to interpret that conclusion. Starting from this separation, the article develops an end-to-end model that links product identity, SBOM evidence, vulnerability correlation, technical investigation, assessment, VEX publication, consumer acceptance, reassessment, and auditable vulnerability disposition.
 
-  The article compares the principal VEX implementation architectures rather than treating them as interchangeable JSON encodings. CSAF represents VEX within a structured security-advisory model; CycloneDX integrates vulnerability analysis into a Bill-of-Materials ecosystem; SPDX 3 represents VEX through typed security relationships in a graph-oriented model; and OpenVEX reduces the problem to lightweight, SBOM-agnostic product-vulnerability statements. Their core semantics overlap, but product identity, status vocabularies, justification models, remediation information, provenance, and lifecycle semantics do not always map one-to-one. A worked analysis of CVE-2021-44228 demonstrates why component presence, vulnerable-code presence, reachability, adversary control, and remediation must be distinguished before any VEX status is issued, and why syntactically valid VEX cannot substitute for evidence supporting the underlying assessment.
+  The article then compares the principal VEX implementation architectures as distinct semantic models rather than interchangeable serializations. CSAF embeds VEX in a structured security-advisory framework; CycloneDX integrates applicability and product-impact analysis into a Bill-of-Materials model; SPDX 3 represents VEX through first-class typed security relationships; and OpenVEX provides a lightweight, SBOM-agnostic statement format. Their concepts overlap, but product identity, status vocabularies, justification taxonomies, remediation semantics, provenance, version applicability, and lifecycle information do not map one-to-one. A worked analysis of CVE-2021-44228 shows why component presence, vulnerable-code presence, reachability, adversary control, mitigation, remediation, and uncertainty must remain distinct before a defensible VEX conclusion can be issued. The implementation discussion extends this analysis into CI/CD automation, trust boundaries, interoperability, semantic-loss handling, reversible suppression, and consumer-side acceptance policy. A dedicated CycloneDX 1.7 implementation appendix then moves from architecture to field-level practice, explaining how document identity, product identity, `affects`, version applicability, `analysis`, justifications, lifecycle metadata, provenance, completeness, signatures, producer profiles, and consumer validation interact in a defensible VEX workflow.
 
-  The Cyber Resilience Act (CRA) makes this distinction operationally significant in the European regulatory context. Regulation (EU) 2024/2847 directly incorporates SBOM creation into the manufacturer's vulnerability-handling obligations under the full CRA regime, while it does not prescribe VEX as a mandatory artefact or format. VEX can nevertheless support CRA operations by communicating whether an upstream vulnerability actually applies to a final product, by accelerating supplier and product-security workflows, and by contributing evidence to Article 14 reporting decisions. It does not by itself establish active exploitation, legal reportability, conformity, or the absence of remediation duties. The resulting implementation principle is that SBOM, VEX, exploitation or incident evidence, and regulatory decision records should remain distinct but traceably connected. Safe automation therefore requires precise product identity, evidence-backed assessments, authenticated and authorized issuers, explicit handling of semantic loss and conflicts, reversible suppression, and reassessment whenever the assumptions underlying a VEX statement change.
+  The Cyber Resilience Act (CRA) gives this distinction practical regulatory significance in the European context. Regulation (EU) 2024/2847 incorporates SBOM creation into manufacturers' vulnerability-handling obligations under the full CRA regime, while it does not mandate VEX or any particular VEX serialization. VEX can nevertheless support CRA operations by communicating product-specific vulnerability conclusions, improving supplier and product-security workflows, and contributing evidence to Article 14 reporting decisions. It cannot, by itself, establish active exploitation, legal reportability, conformity, or the absence of remediation obligations. The resulting implementation principle is that software-composition evidence, product-specific vulnerability assessment, VEX communication, exploitation or incident evidence, and regulatory decision records should remain distinct but traceably connected. Safe automation therefore depends on precise product identity, evidence-backed assessments, authenticated and authorized issuers, preservation of semantic scope, explicit conflict handling, reversible disposition changes, and reassessment whenever the assumptions underlying a VEX statement cease to hold.
 date: "2022-12-03"
-date-modified: "2026-08-21"
+date-modified: "2026-08-22"
 categories: [cybersecurity, regulation and compliance, software development, tutorial, 🇬🇧]
 difficulty: intermediate
 audiences: [practitioner, technical specialist, analyst, consultant]
@@ -444,7 +444,7 @@ This distinction remains valid for every concrete VEX implementation.
 
 ## CSAF: VEX as a structured security advisory
 
-The **Common Security Advisory Framework** (CSAF) is an OASIS standard for structured machine-readable security advisories. CSAF 2.0 was approved as an OASIS Standard in 2022 and contains a dedicated VEX profile.[^vex-standards-from-first-principles-csaf-20] As of 21 August 2026, CSAF 2.1 remains at Committee Specification Draft 02; it should therefore not be described as a finalized replacement for the 2.0 OASIS Standard.[^vex-standards-from-first-principles-csaf-21]
+The **Common Security Advisory Framework** (CSAF) is an OASIS standard for structured machine-readable security advisories. CSAF 2.0 was approved as an OASIS Standard in 2022 and contains a dedicated VEX profile.[^vex-standards-from-first-principles-csaf-20] As of 22 August 2026, CSAF 2.1 remains at Committee Specification Draft 02; it should therefore not be described as a finalized replacement for the 2.0 OASIS Standard.[^vex-standards-from-first-principles-csaf-22]
 
 CSAF is broader than VEX. Its natural abstraction is
 
@@ -563,7 +563,7 @@ CSAF is therefore attractive when VEX is part of a broader vendor advisory proce
 
 CycloneDX takes a different route. Its primary object is the Bill of Materials rather than the security advisory.
 
-As of 21 August 2026, CycloneDX 1.7 remains the current **stable** BOM specification. CycloneDX 2.0 has been announced for later in 2026, but the project's specification pages still identify 1.7 as the stable version.[^vex-standards-from-first-principles-cyclonedx-17] CycloneDX 1.7 is standardized as ECMA-424, second edition.[^vex-standards-from-first-principles-ecma-424]
+As of 22 August 2026, CycloneDX 1.7 remains the current **stable** BOM specification. CycloneDX 2.0 has been announced for later in 2026, but the project's specification pages still identify 1.7 as the stable version.[^vex-standards-from-first-principles-cyclonedx-17] CycloneDX 1.7 is standardized as ECMA-424, second edition.[^vex-standards-from-first-principles-ecma-424]
 
 A simplified model is
 
@@ -687,7 +687,7 @@ A safe CycloneDX representation can preserve `analysis.state = not_affected` and
 
 ## SPDX 3: VEX in the Security Profile
 
-SPDX 3 represents VEX using typed graph relationships. As of 21 August 2026, SPDX 3.0.1 remains the stable 3.x baseline. SPDX 3.1-RC1, released in January 2026, is still described by the SPDX project as a pre-release intended for testing and validation.[^vex-standards-from-first-principles-spdx-31]
+SPDX 3 represents VEX using typed graph relationships. As of 22 August 2026, SPDX 3.0.1 remains the stable 3.x baseline. SPDX 3.1-RC1, released in January 2026, is still described by the SPDX project as a pre-release intended for testing and validation.[^vex-standards-from-first-principles-spdx-31]
 
 Let
 
@@ -709,7 +709,7 @@ flowchart LR
     N[VexNotAffectedVulnAssessmentRelationship<br/>doesNotAffect]
     F[VexFixedVulnAssessmentRelationship<br/>fixedIn]
     U[VexUnderInvestigationVulnAssessmentRelationship<br/>underInvestigationFor]
-    P[VEX product element(s)]
+    P["VEX product element(s)"]
     C[Assessed SoftwareArtifact]
 
     V --> A --> P
@@ -772,7 +772,7 @@ That is the core architectural advantage of SPDX VEX: **the assessment is a reus
 
 ## OpenVEX: minimal and SBOM-agnostic assertions
 
-OpenVEX occupies the minimalist end of the spectrum. Its design starts with the VEX statement rather than with an advisory, a BOM, or a general knowledge graph. As of 21 August 2026, the OpenVEX repository still describes the specification as a draft, with v0.2.0 remaining the latest tagged specification release.[^vex-standards-from-first-principles-openvex-spec]
+OpenVEX occupies the minimalist end of the spectrum. Its design starts with the VEX statement rather than with an advisory, a BOM, or a general knowledge graph. As of 22 August 2026, the OpenVEX repository still describes the specification as a draft, with v0.2.0 remaining the latest tagged specification release.[^vex-standards-from-first-principles-openvex-spec]
 
 An abstract statement can be written as
 
@@ -1413,13 +1413,7 @@ That can distinguish _component matched_ from _product affected_ or _product not
 A simplified Article 14 vulnerability-route predicate can be written as
 
 $$
-R_V(P,V,t)
-=
-\operatorname{InScope}_{\mathrm{CRA}}(P)
-\land
-\operatorname{Contained}(P,V)
-\land
-\operatorname{AwareActiveExploitation}(P,V,t),
+R_V(P,V,t)=\operatorname{InScope}_{\mathrm{CRA}}(P)\land\operatorname{Contained}(P,V)\land\operatorname{AwareActiveExploitation}(P,V,t),
 $$ {#eq-vex-standards-from-first-principles-cra-article14-vulnerability-trigger}
 
 where the three predicates represent, respectively, CRA reporting scope, containment of vulnerability $V$ in product $P$, and the manufacturer's awareness at time $t$ of active malicious exploitation.
@@ -1626,7 +1620,7 @@ A mature VEX pipeline should be able to distinguish the four product states deve
 
 : Log4Shell states as an acceptance test for the VEX pipeline. {#tbl-vex-standards-from-first-principles-log4shell-acceptance-test}
 
-These four cases provide a useful acceptance test for the underlying assessment model. A system that can represent only a binary distinction between “CVE found” and “CVE ignored” still collapses vulnerability correlation and product-specific assessment into the same decision. In that case, adding VEX as an output format has not materially improved the security model.
+These four cases provide a useful acceptance test for the underlying assessment model. A system that can represent only a binary distinction between _CVE found_ and _CVE ignored_ still collapses vulnerability correlation and product-specific assessment into the same decision. In that case, adding VEX as an output format has not materially improved the security model.
 
 ### Measure decision quality, not suppression volume
 
@@ -1689,7 +1683,7 @@ Under those constraints, SBOM and VEX become complementary elements of a defensi
 
 [^vex-standards-from-first-principles-csaf-20]: Rock, L., Hagen, S., & Schmidt, T. (Eds.). (2022). **Common Security Advisory Framework Version 2.0**. *OASIS Standard*. [Standard](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html)
 
-[^vex-standards-from-first-principles-csaf-21]: Hagen, S., & Schmidt, T. (Eds.). (2026). **Common Security Advisory Framework Version 2.1, Committee Specification Draft 02**. *OASIS Open*. [Specification draft](https://docs.oasis-open.org/csaf/csaf/v2.1/csd02/csaf-v2.1-csd02.html)
+[^vex-standards-from-first-principles-csaf-22]: Hagen, S., & Schmidt, T. (Eds.). (2026). **Common Security Advisory Framework Version 2.1, Committee Specification Draft 02**. *OASIS Open*. [Specification draft](https://docs.oasis-open.org/csaf/csaf/v2.1/csd02/csaf-v2.1-csd02.html)
 
 [^vex-standards-from-first-principles-cyclonedx-17]: OWASP Foundation. (2025). **CycloneDX Specification Overview, Version 1.7**. *CycloneDX*. [Specification](https://cyclonedx.org/specification/overview/)
 
@@ -1722,3 +1716,1877 @@ Under those constraints, SBOM and VEX become complementary elements of a defensi
 [^vex-standards-from-first-principles-montano-cra-baseline]: Montano, A. (2026). **Cyber Resilience Act: The New Product-Security Baseline**. *Random Bits of Knowledge*. [Article](https://4m4.it/longforms/cyber-resilience-act-the-new-product-security-baseline/)
 
 [^vex-standards-from-first-principles-montano-cra-reporting]: Montano, A. (2026). **Does the CRA Require Vulnerability Scanning from 11 September 2026? No, but It Does Require a Reporting Decision Process**. *Random Bits of Knowledge*. [Article](https://4m4.it/posts/cra-vulnerability-scanning-11-september-2026-reporting-decision-process/index.html)
+
+## Appendix: CycloneDX 1.7 VEX implementation reference
+
+The main article compares VEX architectures at the semantic level. This appendix goes one level deeper for **CycloneDX 1.7** because its VEX semantics are distributed across the ordinary BOM object model rather than encapsulated in a separate top-level VEX document type. Correct implementation therefore depends on understanding how document identity, product identity, vulnerability metadata, `affects`, version applicability, `analysis`, provenance, completeness, and trust controls interact.
+
+This is an **implementation and review reference**, not a catalogue of every CycloneDX field. It focuses on fields that constitute, scope, qualify, transport, or materially support a VEX assertion, and it distinguishes three kinds of requirement throughout:
+
+- **Schema requirement**: enforced by the CycloneDX 1.7 serialization schema.
+- **Specification semantics**: meaning assigned to a field or enum by CycloneDX.
+- **Operational policy**: a stricter rule that a producer or consumer may impose for trustworthy VEX handling.
+
+CycloneDX 1.7 is the stable BOM specification used in this appendix.[^vex-standards-from-first-principles-appendix-cyclonedx-reference] Its VEX capability is expressed principally through `vulnerabilities[].affects` and `vulnerabilities[].analysis`, with supporting semantics elsewhere in the BOM.[^vex-standards-from-first-principles-appendix-cyclonedx-vex-use-case]
+
+### A map of the CycloneDX VEX surface
+
+The most useful way to read the model is by semantic layer rather than by JSON-property order.
+
+| Layer | Principal fields | Question answered |
+| --- | --- | --- |
+| Document identity and lifecycle | `specVersion`, `serialNumber`, root `version`, `metadata` | Which CycloneDX document and revision are being interpreted? |
+| Product identity | `metadata.component`, component/service `bom-ref`, `purl`, `cpe`, `hashes` | Which software object is the assessment about? |
+| Vulnerability identity and context | `id`, `source`, `references`, `ratings`, `cwes`, `description`, `detail`, `advisories` | Which vulnerability and upstream information are being represented? |
+| Applicability | `affects[].ref`, `affects[].versions[]` | Which component or service and which versions are covered? |
+| Product-specific assessment | `analysis.state`, `analysis.justification`, `analysis.response`, `analysis.detail` | What did the producer conclude, why, and what response is intended? |
+| Assessment lifecycle | `analysis.firstIssued`, `analysis.lastUpdated` | When was the assessment first issued and last updated? |
+| Evidence and provenance support | `proofOfConcept`, `tools`, `properties`, `signature` | What supporting context, provenance, or integrity information accompanies the assertion? |
+| Distribution and completeness | `externalReferences`, `compositions` | Is VEX maintained externally, and what completeness claims accompany the BOM? |
+
+: Semantic layers of the CycloneDX 1.7 VEX surface. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-map}
+
+The central implementation principle is that **these layers must not be collapsed**. A vulnerability identifier is not a product identifier; version applicability is not the same thing as product-impact analysis; a signature is not proof of technical correctness; and a schema-valid document can still encode a weak or misleading security conclusion.
+
+### Document envelope: identify the document before interpreting the assertion
+
+A minimal CycloneDX 1.7 JSON document can begin as follows:
+
+```json
+{
+  "$schema": "https://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1
+}
+```
+
+The root JSON schema requires `bomFormat` and `specVersion`; fields such as `serialNumber`, root `version`, `metadata`, and `vulnerabilities` are available but are not all mandatory merely for structural validity.[^vex-standards-from-first-principles-appendix-cyclonedx-schema]
+
+| Field | Schema / model role | VEX implementation significance |
+| --- | --- | --- |
+| `$schema` | JSON Schema locator | Useful to validation tooling. It does not identify the software product or the VEX assessment. |
+| `bomFormat` | Format discriminator | Identifies the document as CycloneDX. It carries serialization semantics, not vulnerability semantics. |
+| `specVersion` | CycloneDX specification version | Determines which field and enum semantics the consumer should apply. |
+| `serialNumber` | BOM-instance lineage identifier | Identifies the BOM lineage, not the software product itself. |
+| root `version` | BOM revision number | Identifies a revision of the BOM document; it must not be confused with product or component version. |
+| `metadata` | Document context | Can identify the BOM subject, timestamp, authors/manufacturer, and tools used to create the BOM. |
+| `vulnerabilities` | Vulnerability collection | Carries VDR/VEX-related vulnerability objects. |
+| `externalReferences` | Links to external resources | Can identify separately maintained VEX through `type = exploitability-statement`. |
+| `compositions` | Completeness assertions | Can express completeness of selected represented relationships or inventories. |
+| `signature` | Cryptographic envelope | Can provide integrity and origin evidence, but not technical truth. |
+
+: CycloneDX document-level fields most relevant to VEX. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-envelope}
+
+#### Root `version` is not product version
+
+A common implementation error is to confuse the BOM's root `version` with the version of the software being described. If the root contains `version = 4`, that means **revision 4 of the BOM lineage**. If `metadata.component.version = "4.0.0"`, that means **software product version 4.0.0**.
+
+The distinction can be stated compactly as:
+
+$$
+\operatorname{BOMVersion}(D)
+\neq
+\operatorname{ProductVersion}(P).
+$$ {#eq-vex-standards-from-first-principles-appendix-cyclonedx-version-separation}
+
+A consumer that joins VEX to assets using the root BOM revision rather than the component or product version is matching the wrong identity domain.
+
+### Product identity: `metadata.component`, `bom-ref`, and stable identifiers
+
+CycloneDX does not require every product-level VEX assertion to use `metadata.component` as its target. `affects[].ref` can point to an appropriate component or service elsewhere in the BOM. Nevertheless, `metadata.component` is a natural way to identify the subject when the BOM itself represents a product-level assessment, and it appears in CycloneDX's official VEX examples.[^vex-standards-from-first-principles-appendix-cyclonedx-vex-use-case]
+
+For VEX purposes, the following component fields are particularly important:
+
+| Field | Technical meaning for VEX |
+| --- | --- |
+| `bom-ref` | Referential identity used to join objects within a BOM or through BOM-Link. |
+| `type` | Distinguishes semantic kinds such as application, library, container, firmware, or other component classes. |
+| `manufacturer` / `supplier` | Organisational identity useful for disambiguation and provenance. |
+| `group` | Namespace or grouping identifier, particularly useful in package ecosystems. |
+| `name` | Human-readable name; usually too weak by itself for automated applicability decisions. |
+| `version` | Product or component version; important but not always sufficient where patches are backported or builds are repackaged. |
+| `purl` | Package URL; often a strong package-level identifier. |
+| `cpe` | CPE product identifier; useful where vulnerability intelligence is CPE-oriented. |
+| `hashes` | Byte-level integrity identifiers; strong for exact artifact binding. |
+| `pedigree` | Modification and ancestry information; especially relevant to `resolved_with_pedigree`. |
+
+: Component identity fields that materially affect VEX applicability. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-product-fields}
+
+#### `bom-ref` is referential identity, not necessarily global identity
+
+Consider a component defined as:
+
+```json
+{
+  "bom-ref": "billing-app",
+  "type": "application",
+  "name": "Billing App"
+}
+```
+
+A vulnerability object can later refer to that component through:
+
+```json
+{
+  "affects": [
+    {
+      "ref": "billing-app"
+    }
+  ]
+}
+```
+
+The second object refers back to the first. This establishes **referential resolution inside the CycloneDX model**; it does not establish that the string `billing-app` is globally unique or sufficient to match a consumer's deployed asset.
+
+A consumer receiving separately distributed VEX still needs enough stable identity information, such as PURL, CPE, version, hashes, BOM-Link context, or another governed identifier, to establish that the assertion applies to the local software object. This is the same identity principle developed in the main article: a VEX consumer must match the **same product state**, not merely a similar display name.
+
+### Vulnerability objects: identity, source, context, and evidence
+
+At the root of a CycloneDX document, vulnerability information is carried in the `vulnerabilities` array:
+
+```json
+{
+  "vulnerabilities": [
+    {
+      "...": "..."
+    }
+  ]
+}
+```
+
+CycloneDX is deliberately broader than VEX. A vulnerability object can carry identifiers, severity and risk ratings, source descriptions, advisories, reproduction material, timestamps, remediation guidance, product-specific analysis, applicability information, and extension properties.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+The practical consequence is that **upstream vulnerability facts and downstream product-specific assessment coexist in the same object**. Producers and consumers must preserve the boundary between them.
+
+#### Vulnerability `bom-ref` and vulnerability `id` are different
+
+A vulnerability object can contain both:
+
+```json
+{
+  "bom-ref": "vulnerability-cve-2021-44228",
+  "id": "CVE-2021-44228"
+}
+```
+
+The two fields serve different purposes:
+
+- vulnerability `bom-ref`: a CycloneDX referential identifier for this vulnerability object;
+- vulnerability `id`: the externally meaningful vulnerability identifier.
+
+Use `bom-ref` when another CycloneDX object must refer to the vulnerability object. Use `id` to state which vulnerability the object represents.
+
+#### Interpret `id` together with `source`
+
+CycloneDX does not restrict vulnerability identifiers to CVE. Other identifiers can appear, including GHSA or source-specific identifiers.[^vex-standards-from-first-principles-appendix-cyclonedx-reference] For high-assurance automation, the conceptual identity should therefore be treated as the pair `(id, source)` rather than as `id` interpreted in isolation.
+
+For example:
+
+```json
+{
+  "source": {
+    "name": "National Vulnerability Database",
+    "url": "https://example.invalid/vulnerability-record"
+  }
+}
+```
+
+identifies the source of the vulnerability information. It does **not** necessarily identify the organisation that performed the downstream product-impact assessment. A document can therefore coherently represent an NVD vulnerability record while the product-impact assessment is produced by an entirely different product-security team. The vulnerability source and the VEX assessor are separate roles.
+
+#### `references` and `advisories` should not be conflated
+
+`vulnerabilities[].references` is intended for references to equivalent vulnerability records or identifiers in other sources. A CVE record, for example, can point to a corresponding GHSA record. A published security advisory instead belongs under `advisories`, not under `references` merely because it has a URL.
+
+For automated correlation, the distinction is:
+
+- `references`: identity and correlation across vulnerability-information sources;
+- `advisories`: security publications relevant to the vulnerability.
+
+#### Vulnerability-context fields
+
+Several fields materially support vulnerability analysis without themselves constituting VEX conclusions:
+
+| Field | Role | What it does **not** establish |
+| --- | --- | --- |
+| `ratings` | Severity or risk ratings from one or more sources | Product exploitability |
+| `cwes` | Weakness taxonomy | Product applicability |
+| `description` | Source-supplied short vulnerability description | Product-specific impact |
+| vulnerability-level `detail` | Source-supplied in-depth vulnerability description | Product-specific VEX reasoning |
+| `recommendation` | Free-form remediation or mitigation guidance | Current analysis state |
+| `workaround` | Temporary bypass or operational change that reduces likelihood or impact | `not_affected` |
+| `proofOfConcept` | Reproduction steps, environment, and supporting material | Applicability to every product embedding the component |
+| `advisories` | Published advisory material | Product identity |
+| `created`, `published`, `updated`, `rejected` | Lifecycle of the vulnerability record | Lifecycle of the product-specific VEX assessment |
+| `credits` | Parties credited with vulnerability discovery | Authority to issue product-specific VEX |
+| `tools` | Tools used to identify, confirm, or score the vulnerability | Correctness of the assessment |
+
+: Vulnerability-context fields that support, but do not replace, product-specific VEX analysis. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-vulnerability-context}
+
+#### Severity is not exploitability
+
+A CVSS or other rating can support prioritisation, but it does not answer whether a vulnerability affects a specific product state. A critical upstream vulnerability can be `not_affected` for one product because its exploitability preconditions fail; conversely, a lower-severity vulnerability can still be `exploitable`. `ratings` should therefore influence prioritisation policy, not replace `analysis`.
+
+#### `description` and vulnerability-level `detail` are source-oriented
+
+A useful discipline is to keep `description` and vulnerability-level `detail` for **upstream vulnerability facts**, while `analysis.detail` carries the **downstream product-specific assessment**.
+
+For example, a statement such as _the upstream vulnerability permits X under conditions Y_ belongs in vulnerability-level description or detail. A statement such as _this product is not affected because the vulnerable path is unreachable_ belongs in `analysis.detail`.
+
+Mixing these roles makes it difficult for consumers to distinguish information inherited from vulnerability intelligence from reasoning produced by the product-security assessor.
+
+#### Recommendation and workaround are not status fields
+
+Recommendation, workaround, and analysis state are independent dimensions. The following combinations are coherent:
+
+- `analysis.state = exploitable` with `recommendation = upgrade`;
+- `analysis.state = not_affected` with a recommendation to upgrade later for another operational reason;
+- `analysis.state = exploitable` while a workaround is available.
+
+The presence of a recommendation or workaround therefore does not by itself alter the VEX status.
+
+#### Vulnerability timestamps and VEX timestamps are different
+
+CycloneDX vulnerability objects can contain `created`, `published`, `updated`, and `rejected`; these belong to the lifecycle of the vulnerability record. By contrast, `analysis.firstIssued` and `analysis.lastUpdated` belong to the product-specific impact analysis.
+
+A CVE can therefore be published at time $t_0$ and a product-specific assessment first issued later at time $t_1$. That is expected and should not be normalized into a single timestamp.
+
+#### `rejected` is not `false_positive`
+
+A rejected vulnerability record means the vulnerability-information process has rejected that record. `analysis.state = false_positive`, by contrast, means the vulnerability was falsely identified or associated with the referenced component or service in the assessed context.
+
+A valid CVE can therefore still be a false-positive match for one component. The two concepts belong to different semantic layers.
+
+### `affects`: scope the vulnerability to the referenced object
+
+The `affects` structure connects vulnerability information to components or services. For example:
+
+```json
+{
+  "affects": [
+    {
+      "ref": "billing-app",
+      "versions": [
+        {
+          "version": "4.2.0",
+          "status": "unaffected"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Each `affects` item requires `ref` in the CycloneDX 1.7 JSON model.[^vex-standards-from-first-principles-appendix-cyclonedx-schema] This is a critical structural requirement because `analysis` without resolvable applicability can leave the consumer unable to determine which component or service the analysis is about.
+
+#### `affects[].ref`
+
+`ref` identifies the target component or service through CycloneDX referential identity, normally by a `bom-ref` or an appropriate BOM-Link element reference.
+
+A safe consumer should:
+
+1. resolve `affects[].ref`;
+2. establish the referenced component or service identity;
+3. determine whether a version constraint applies;
+4. only then interpret `analysis` for that target scope.
+
+If the reference cannot be resolved, the consumer should not infer applicability merely from the presence of `analysis`.
+
+#### `affects[].versions`
+
+`versions` narrows applicability beneath the referenced component or service. Each version object selects either a single `version` or a `range` and can associate the selected scope with an applicability `status`. A producer should not treat `version` and `range` as independent selectors for the same item.
+
+A single version can be expressed as:
+
+```json
+{
+  "version": "4.2.0",
+  "status": "unaffected"
+}
+```
+
+The version value is intentionally flexible, so consumers must not assume semantic-version ordering unless the relevant ecosystem actually follows SemVer.
+
+CycloneDX 1.7 uses Package URL Version Range (`vers`) syntax for ranges.[^vex-standards-from-first-principles-appendix-vers] For example:
+
+```json
+{
+  "range": "vers:npm/1.2.3|>=2.0.0|<5.0.0",
+  "status": "affected"
+}
+```
+
+The ecosystem is part of the semantics. Version ordering rules differ across ecosystems, so consumers should use a `vers`-aware parser rather than generic string comparison or an assumed SemVer implementation.
+
+#### `affects[].versions[].status`
+
+The applicability enum consists of `affected`, `unaffected`, and `unknown`. CycloneDX defines the status as `affected` by default when the field is omitted.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+For an explicitly unaffected range, producers should write `"status": "unaffected"` rather than relying on omission. This field answers a **version-applicability** question and should not be conflated with the broader product-impact state in `analysis.state`.
+
+### `affects[].versions[].status` is not `analysis.state`
+
+These fields are related but distinct:
+
+- `affects[].versions[].status` asks whether vulnerability $V$ applies to a version or version range of the referenced object;
+- `analysis.state` asks for the current product/component impact-analysis conclusion in the assessed context.
+
+A producer should keep the two semantically coherent, but a consumer should not derive one mechanically from the other.
+
+::: {.callout-warning}
+#### Interoperability note: the official JSON and XML VEX examples currently diverge
+
+As checked on 22 August 2026, the CycloneDX **Vulnerability Exploitability** use-case page presents an otherwise corresponding JSON and XML example with different `analysis.state` values. The JSON example uses `analysis.state = not_affected`, while the XML example uses `analysis.state = exploitable`; both mark the illustrated version range as `unaffected`.
+
+The page's explanatory text describes the application as not affected. Implementations should therefore validate JSON/XML conversion against independently defined expected semantics rather than assuming that illustrative examples are mutually equivalent.[^vex-standards-from-first-principles-appendix-cyclonedx-vex-example-discrepancy]
+:::
+
+### `analysis`: the core product-impact assessment
+
+The `analysis` object is the centre of CycloneDX VEX semantics. A typical object can contain:
+
+```json
+{
+  "analysis": {
+    "state": "not_affected",
+    "justification": "code_not_reachable",
+    "response": [
+      "update"
+    ],
+    "detail": "The vulnerable function is not reachable from any supported application path.",
+    "firstIssued": "2026-08-20T09:00:00Z",
+    "lastUpdated": "2026-08-21T10:00:00Z"
+  }
+}
+```
+
+CycloneDX's general BOM model is permissive. Structural validation alone does not amount to a VEX quality policy, so an operational producer profile should normally impose stronger requirements where necessary.
+
+At minimum, a useful product-impact assertion normally needs:
+
+- a resolvable target through `affects`;
+- a vulnerability identity;
+- an `analysis.state`;
+- enough explanation and provenance to support the state.
+
+For `not_affected`, a producer should provide a semantically appropriate justification where available and meaningful `detail` explaining the actual product-specific basis.
+
+#### `analysis.state`
+
+CycloneDX 1.7 defines six analysis states:
+
+| State | Meaning in the CycloneDX model | Closest CISA concept | Important caveat |
+| --- | --- | --- | --- |
+| `resolved` | Vulnerability has been remediated in the assessed context | `FIXED` | Product/component scoped |
+| `resolved_with_pedigree` | Remediated, with corrective provenance represented through pedigree | `FIXED` with stronger provenance | Requires meaningful pedigree information |
+| `exploitable` | Directly or indirectly exploitable in the assessed context | `AFFECTED` | Does not mean actively exploited in the wild |
+| `in_triage` | Under investigation | `UNDER INVESTIGATION` | Investigation is active; uncertainty is not safety |
+| `false_positive` | Vulnerability incorrectly identified or associated with the target | No exact CISA core state | Matching-error semantics |
+| `not_affected` | Referenced component or service is not affected | `NOT AFFECTED` | Basis should be explained |
+
+: CycloneDX 1.7 analysis states and their VEX interpretation. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-analysis-states}
+
+##### `resolved`
+
+`resolved` means that the vulnerability has been remediated for the referenced component or service context. It is scoped to the represented object and product state; it does not mean that the vulnerability has disappeared globally.
+
+##### `resolved_with_pedigree`
+
+`resolved_with_pedigree` adds structured change provenance to the remediation conclusion. A producer should not use this state merely because it knows the name of a fixed upstream release. The value is meaningful when CycloneDX pedigree represents the corrective change, such as ancestry, patches, commits, or diffs associated with the assessed component.
+
+##### `exploitable`
+
+CycloneDX describes this state as directly or indirectly exploitable.[^vex-standards-from-first-principles-appendix-cyclonedx-reference] It is the closest CycloneDX analogue to CISA `AFFECTED`, but `exploitable` does not mean actively exploited in the wild.
+
+The former is a product-impact conclusion; the latter requires exploitation or incident evidence. This distinction is particularly important when CycloneDX VEX is used as evidence in a CRA Article 14 workflow.
+
+##### `in_triage`
+
+`in_triage` means that the vulnerability is being investigated. Use it when an assessment is underway but the available evidence is not yet sufficient to support a final product-impact conclusion. Do not encode unresolved uncertainty as `not_affected`.
+
+##### `false_positive`
+
+`false_positive` describes a matching or association error: the vulnerability is not specific to the referenced component or service and was incorrectly identified or associated.
+
+The distinction is:
+
+- `false_positive`: the association itself is wrong;
+- `not_affected`: the vulnerability is valid, but the assessed target is not impacted in the asserted context.
+
+##### `not_affected`
+
+`not_affected` states that the referenced component or service is not affected. The specification encourages the producer to provide justification and detailed explanation for non-exploitable cases.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+An unexplained `analysis.state = not_affected` may be structurally accepted, but it tells the consumer neither why the target is not affected nor what assumptions and evidence support the claim. A production profile should therefore treat unexplained `not_affected` conclusions as weak.
+
+### `analysis.justification`: nine different reasons, not one Boolean
+
+CycloneDX 1.7 defines nine justification values:
+
+- `code_not_present`;
+- `code_not_reachable`;
+- `requires_configuration`;
+- `requires_dependency`;
+- `requires_environment`;
+- `protected_by_compiler`;
+- `protected_at_runtime`;
+- `protected_at_perimeter`;
+- `protected_by_mitigating_control`.
+
+These values are broader than the five CISA `NOT AFFECTED` justifications and should not be mapped by lexical similarity alone.
+
+| Justification | Meaning | Operational implication | Interoperability caution |
+| --- | --- | --- | --- |
+| `code_not_present` | Vulnerable code has been removed or tree-shaken | Bind the claim to the actual built artifact | Not equivalent to CISA `component_not_present` |
+| `code_not_reachable` | Vulnerable code is not invoked at runtime | Reachability assumptions and coverage matter | Close to `vulnerable_code_not_in_execute_path` |
+| `requires_configuration` | Exploitation depends on a configuration state that is not present | Configuration becomes an assessment assumption | Reassess if configuration changes |
+| `requires_dependency` | Exploitation depends on another dependency that is absent | Absence concerns an exploit prerequisite | Not necessarily `component_not_present` |
+| `requires_environment` | Exploitation depends on an absent environmental condition | Deployment/runtime environment enters scope | Can age faster than artifact-bound conclusions |
+| `protected_by_compiler` | Compiler-produced protection prevents exploitation | Build configuration and binary properties are evidence | Bind to the actual build |
+| `protected_at_runtime` | Runtime protection prevents exploitation | Runtime control must remain present and effective | Reassess if runtime policy changes |
+| `protected_at_perimeter` | Perimeter protection prevents the relevant attack path | Conclusion may depend on external architecture | Not equivalent to an inline product mitigation |
+| `protected_by_mitigating_control` | A mitigating control protects against exploitation in the assessed context | Identify the actual control and its assumptions | Target formats may encode mitigation semantics differently |
+
+: CycloneDX 1.7 justification semantics and interoperability cautions. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-justifications}
+
+#### `code_not_present`
+
+`code_not_present` refers to vulnerable code, not necessarily to the whole component. A component identity can remain present while the vulnerable code has been removed, patched out, or tree-shaken. This is why mapping it to CISA `component_not_present` is unsafe.
+
+#### `code_not_reachable`
+
+`code_not_reachable` means vulnerable code exists but is not invoked through the relevant runtime paths. The statement is only as strong as the reachability analysis supporting it, so relevant coverage assumptions should be preserved in `analysis.detail` or in the internal assessment record.
+
+#### `requires_configuration`
+
+The conclusion depends on a configuration state that is absent. Examples include a feature that must be enabled, a parser mode that must be selected, a protocol option that must be configured, or a security-sensitive environment variable. Because configuration becomes part of the assessment's assumption set, a configuration change can invalidate the VEX assertion even when the software artifact itself does not change.
+
+#### `requires_dependency`
+
+The vulnerable component may be present while an additional dependency required for exploitation is absent. This is not the same claim as saying that the vulnerable component itself is absent.
+
+#### `requires_environment`
+
+Environmental prerequisites can include operating-system capabilities, runtime features, hardware properties, or deployment characteristics. Because the conclusion depends on environmental state rather than only on immutable artifact composition, it may require more frequent reassessment.
+
+#### `protected_by_compiler`
+
+A compiler-based protection should be tied to the actual built artifact. Supporting evidence can include compiler flags, generated guards, hardening transformations, binary inspection, and reproducible build provenance. The source tree alone is insufficient if the assertion depends on build-time protections.
+
+#### `protected_at_runtime`
+
+Runtime protection is stronger than saying exploitation has not been observed. A defensible assessment should state which runtime control prevents exploitation, whether that control is mandatory, and under which configurations the claim remains valid.
+
+#### `protected_at_perimeter`
+
+Perimeter protection can depend on a network boundary, gateway, filter, WAF, physical boundary, or another external control. This is one of the clearest places where CycloneDX can express semantics that do not map directly to CISA's `inline_mitigations_already_exist`. A converter must not strengthen an environmental or architectural protection into a claim about an intrinsic product mitigation.
+
+#### `protected_by_mitigating_control`
+
+This value indicates that a mitigating control protects against exploitation in the asserted context.[^vex-standards-from-first-principles-appendix-cyclonedx-vex-use-case] The important implementation question is not the label alone but the control that makes the conclusion true. `analysis.detail` should identify the relevant mechanism, scope, and assumptions.
+
+### `analysis.response`: what the responsible party intends to do
+
+`response` is an array and can contain more than one value. CycloneDX 1.7 defines `can_not_fix`, `will_not_fix`, `update`, `rollback`, and `workaround_available`. Responses are particularly useful when `analysis.state = exploitable`; the CycloneDX reference strongly encourages responses for exploitable vulnerabilities.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+| Response | Meaning | VEX interpretation |
+| --- | --- | --- |
+| `can_not_fix` | Responsible party cannot provide a fix | Operational disposition; does not make the vulnerability non-exploitable |
+| `will_not_fix` | Responsible party does not plan to fix | Policy/disposition decision |
+| `update` | Update to another revision or release | Natural response for upgrade remediation |
+| `rollback` | Revert to an earlier revision or release | Useful when a newer release introduced the vulnerable condition |
+| `workaround_available` | A workaround exists | Does not itself change exploitability state |
+
+: CycloneDX 1.7 vulnerability responses. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-responses}
+
+For example, `state = exploitable` together with `response = can_not_fix` is coherent: `can_not_fix` is a response to an affected condition, not a reason to rewrite that condition as `not_affected`.
+
+### `analysis.detail`: where product-specific reasoning becomes reviewable
+
+`analysis.detail` should explain the assessment rather than merely repeat its state. A useful detail normally includes the technical mechanism relevant to the conclusion, the exact product or deployment scope, important assumptions, a concise evidence summary, and relevant reassessment triggers.
+
+For example:
+
+```json
+{
+  "detail": "Static call-graph analysis of the released binary and integration testing show no supported execution path from external inputs to the vulnerable parser."
+}
+```
+
+is materially stronger than:
+
+```json
+{
+  "detail": "Not vulnerable."
+}
+```
+
+The second statement adds almost no information beyond `analysis.state`. The external VEX statement does not need to carry the complete internal evidence package, but `analysis.detail` should preserve enough reasoning for a consumer to understand the basis and scope of the claim.
+
+### `analysis.firstIssued` and `analysis.lastUpdated`
+
+`firstIssued` records when the impact analysis was first issued, while `lastUpdated` records the most recent update to that analysis. Operationally:
+
+- `firstIssued` should remain stable for the same assessment lineage;
+- `lastUpdated` should change when the assessment itself is revised;
+- neither timestamp can compensate for incorrect product identity or stale assumptions.
+
+Freshness is therefore semantic, not merely chronological. A recently updated statement can still be inapplicable to the local product, while an older statement can remain correct for an immutable artifact if its assumptions still hold.
+
+### `proofOfConcept`, `tools`, and supporting provenance
+
+CycloneDX can carry reproduction evidence through `proofOfConcept`, including reproduction steps, environment, and supporting material.[^vex-standards-from-first-principles-appendix-cyclonedx-vdr-use-case] For example:
+
+```json
+{
+  "proofOfConcept": {
+    "reproductionSteps": "...",
+    "environment": "...",
+    "supportingMaterial": [
+      {
+        "contentType": "text/plain",
+        "content": "..."
+      }
+    ]
+  }
+}
+```
+
+This is vulnerability evidence, not automatically product-specific VEX evidence. A PoC proving that vulnerability $V$ is exploitable in one environment does not establish that every product embedding the component is affected.
+
+Likewise, `tools` can identify scanners, reachability analyzers, static-analysis tools, or internal vulnerability services that participated in identifying, confirming, or scoring the vulnerability. Tool identity provides provenance; it does not prove that the assessment result is correct.
+
+### `properties`: extend metadata without redefining core semantics
+
+CycloneDX `properties` can carry extension metadata such as an internal assessment identifier:
+
+```json
+{
+  "name": "example:assessment-id",
+  "value": "ASSESSMENT-1842"
+}
+```
+
+Useful applications include internal assessment IDs, evidence-system references, workflow metadata, policy identifiers, and extension data. Properties should not be used to contradict or replace core semantics. For example, a document should not state `analysis.state = not_affected` while a private property such as `example:real-state` says `affected`. A consumer should not need a private property namespace to discover that the core VEX field means something different from what it says.
+
+### External VEX through `externalReferences`
+
+CycloneDX can keep the SBOM lifecycle and VEX lifecycle separate. An external reference can identify a VEX resource using:
+
+```json
+{
+  "type": "exploitability-statement",
+  "url": "https://example.invalid/vex/product-4.2.cdx.json"
+}
+```
+
+CycloneDX 1.7 defines `exploitability-statement` specifically for a VEX resource.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+| Field | Technical role |
+| --- | --- |
+| `type` | Describes the external resource; `exploitability-statement` identifies VEX |
+| `url` | URI or BOM-Link locating the external resource |
+| `comment` | Human-readable context |
+| `hashes` | Integrity values where available |
+| `properties` | Extension metadata |
+
+: External-reference fields relevant to separately maintained VEX. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-external-vex}
+
+This architecture is useful when software composition remains unchanged while vulnerability knowledge changes more frequently. Discovery still does not imply trust: the consumer must separately verify source authenticity, issuer authority, product applicability, freshness, and local acceptance policy.
+
+### `compositions`: completeness is not vulnerability status
+
+`compositions` communicates completeness of represented relationships or inventories. It does not state whether a particular vulnerability affects a product.
+
+Aggregate values include `complete`, `incomplete`, `incomplete_first_party_only`, `incomplete_third_party_only`, `unknown`, and `not_specified`, with additional specialised first-party/third-party proprietary/open-source forms in the model.[^vex-standards-from-first-principles-appendix-cyclonedx-reference]
+
+A composition marked `complete` can increase confidence that the producer is making an intentional completeness claim about the referenced relationship set. It does not prove that every vulnerability assessment is technically correct.
+
+::: {.callout-warning}
+#### Specification/use-case alignment note: vulnerability compositions
+
+As checked on 22 August 2026, the CycloneDX **Vulnerability Compositions** use-case example places the application's `bom-ref` in `compositions[].vulnerabilities` while the `vulnerabilities` array itself is empty. The 1.7 schema/reference describes the composition's vulnerability references in terms of vulnerability `bom-ref` identifiers.
+
+Those materials are not obviously aligned. Implementations should therefore drive validation from the normative schema/model and cover the intended composition semantics with interoperability tests rather than inferring production behaviour solely from the illustrative use-case page.[^vex-standards-from-first-principles-appendix-cyclonedx-compositions]
+:::
+
+### `signature`: authenticity is not correctness
+
+CycloneDX supports a BOM-level signature structure.[^vex-standards-from-first-principles-appendix-cyclonedx-reference] For VEX, cryptographic verification can support integrity, origin authentication, and binding to a signing identity depending on the signature and trust model. It does not establish that the product-security conclusion is technically true.
+
+A correctly signed `analysis.state = not_affected` can still be wrong because the evidence was incomplete, the issuer was not authoritative for the target product, the product identity was mismatched, or the assessment assumptions no longer hold. Cryptographic verification and evidence validation are therefore separate controls.
+
+### From permissive schema to a strict VEX producer profile
+
+The field commentary above describes what CycloneDX can represent. Production use requires a second question: **what should an organisation require before it accepts a CycloneDX document as operational VEX?**
+
+A VEX-specific producer profile can be deliberately stricter than the base CycloneDX schema. A defensible profile might require:
+
+```yaml
+bomFormat: CycloneDX
+specVersion: "1.7"
+serialNumber: required-by-local-policy
+version: required-by-local-policy
+
+metadata:
+  timestamp: required-by-local-policy
+  component:
+    bom-ref: required-for-product-level-profile
+    type: required-for-product-level-profile
+    name: required
+    version: strongly-recommended
+    stable-identifier: strongly-recommended
+    # e.g. purl, cpe, governed product ID, or exact artifact binding
+
+vulnerabilities:
+  - id: required
+    source: strongly-recommended
+    affects:
+      - ref: required
+        versions: recommended-when-version-scoped
+    analysis:
+      state: required
+      justification: required-by-policy-when-applicable
+      detail: required-for-not_affected
+      firstIssued: strongly-recommended
+      lastUpdated: strongly-recommended
+```
+
+This is **not** a replacement schema for CycloneDX. It is a local semantic-quality profile layered on top of CycloneDX conformance. Schema conformance asks whether the document is structurally valid; operational acceptance asks whether the assertion is sufficiently identified, scoped, supported, attributable, and current to influence vulnerability handling.
+
+### Recommended state-specific producer rules
+
+A practical producer profile can add state-specific rules:
+
+| `analysis.state` | Recommended producer rule |
+| --- | --- |
+| `in_triage` | Identify the target and vulnerability; state that assessment is active; do not imply safety |
+| `exploitable` | Provide response/action information and product-impact detail |
+| `not_affected` | Provide an appropriate justification where available, detailed reasoning, assumptions, and evidence linkage |
+| `false_positive` | Explain why the vulnerability/component association is incorrect |
+| `resolved` | Identify the corrective product state or remediation |
+| `resolved_with_pedigree` | Ensure pedigree actually carries the corrective provenance implied by the state |
+
+: Example state-specific producer policy layered on CycloneDX 1.7. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-producer-policy}
+
+### Annotated minimal `not_affected` example
+
+The following example uses ordinary CycloneDX 1.7 fields and deliberately makes product identity, applicability, analysis state, justification, and assessment lifecycle explicit.
+
+```json
+{
+  "$schema": "https://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:8c7ab3bb-6a70-4b89-8b11-a3c3926195ad",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-22T00:30:00+02:00",
+    "component": {
+      "bom-ref": "example-app-4.2.0",
+      "type": "application",
+      "name": "Example App",
+      "version": "4.2.0",
+      "purl": "pkg:generic/example-app@4.2.0"
+    }
+  },
+  "vulnerabilities": [
+    {
+      "bom-ref": "vulnerability-cve-yyyy-nnnn",
+      "id": "CVE-YYYY-NNNN",
+      "source": {
+        "name": "Example Vulnerability Authority"
+      },
+      "analysis": {
+        "state": "not_affected",
+        "justification": "code_not_reachable",
+        "detail": "Static call-graph analysis of the released artifact and integration testing show no supported execution path from an external product interface to the vulnerable function. The conclusion applies to Example App 4.2.0 as identified by the referenced product object and must be reassessed if routing, feature configuration, or the packaged dependency graph changes.",
+        "firstIssued": "2026-08-20T09:00:00Z",
+        "lastUpdated": "2026-08-21T11:00:00Z"
+      },
+      "affects": [
+        {
+          "ref": "example-app-4.2.0",
+          "versions": [
+            {
+              "version": "4.2.0",
+              "status": "unaffected"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Read semantically, the document says:
+
+- **Document semantics**: interpret the document as CycloneDX 1.7.
+- **Product subject**: `Example App` version `4.2.0`, referenced as `example-app-4.2.0`.
+- **Vulnerability**: `CVE-YYYY-NNNN`.
+- **Version applicability**: version `4.2.0` is marked `unaffected`.
+- **Analysis state**: `not_affected`.
+- **Structured reason**: `code_not_reachable`.
+- **Scope of reasoning**: no supported path from an external product interface reaches the vulnerable function under the stated artifact and configuration assumptions.
+- **Assessment lifecycle**: first issued on 20 August 2026 and updated on 21 August 2026.
+
+It does **not** claim that the vulnerable dependency is absent, that the CVE is low severity, that exploitation has never occurred anywhere, that every deployment configuration is unaffected, or that every future build of Example App will remain unaffected. Nor does it claim that the conclusion remains valid after relevant routing, feature, dependency, or configuration changes.
+
+That is the practical value of keeping identity, applicability, analysis state, justification, assumptions, and time separate.
+
+### Consumer-side interpretation checklist
+
+A CycloneDX VEX consumer can review a document in the following order:
+
+| Question | Field(s) that should answer it |
+| --- | --- |
+| Which CycloneDX semantics apply? | `specVersion` |
+| Which BOM lineage and revision is this? | `serialNumber`, root `version` |
+| Which product or component is being assessed? | `metadata.component` or referenced component/service identity |
+| How is that object referenced? | `bom-ref` / BOM-Link |
+| Which stable external identifiers are available? | `purl`, `cpe`, version, hashes, governed identifiers |
+| Which vulnerability is being discussed? | `vulnerabilities[].id`, `source`, `references` |
+| What upstream severity/risk information exists? | `ratings` |
+| What is the upstream vulnerability mechanism? | `description`, vulnerability-level `detail`, `cwes` |
+| Which product/component does the assertion concern? | `affects[].ref` |
+| Which versions are covered? | `affects[].versions[].version` / `range` |
+| What is their applicability? | `affects[].versions[].status` |
+| What is the product-impact conclusion? | `analysis.state` |
+| Why was that conclusion reached? | `analysis.justification`, `analysis.detail` |
+| What response is intended? | `analysis.response`, `recommendation`, `workaround` |
+| When was the assessment first issued? | `analysis.firstIssued` |
+| When was it last updated? | `analysis.lastUpdated` |
+| When was the vulnerability record itself published or changed? | `created`, `published`, `updated`, `rejected` |
+| Is reproduction evidence available? | `proofOfConcept` |
+| Which tools contributed? | `tools` |
+| Is a completeness claim present? | `compositions` |
+| Is VEX maintained externally? | `externalReferences[type=exploitability-statement]` |
+| Is integrity/authentication information present? | `signature` and surrounding trust mechanism |
+| Is the technical conclusion actually trustworthy? | **Not answerable from schema fields alone: evaluate evidence, issuer authority, applicability, freshness, and local policy** |
+
+: Field-by-field interpretation order for a CycloneDX 1.7 VEX consumer. {#tbl-vex-standards-from-first-principles-appendix-cyclonedx-checklist}
+
+### What schema validation can and cannot establish
+
+CycloneDX gives producers and consumers a rich machine-readable vocabulary for vulnerability context, applicability, product-impact analysis, response, provenance, and distribution. That does not make the represented security judgment true merely because the document validates.
+
+For a `not_affected` assertion to influence vulnerability disposition safely, a consumer should normally establish all of the following:
+
+1. **Schema conformance**: the document is valid for the expected CycloneDX version.
+2. **Semantic coherence**: `affects`, version applicability, `analysis.state`, justification, and detail do not contradict one another.
+3. **Product applicability**: the assertion matches the actual local product/component and relevant version or artifact state.
+4. **Vulnerability applicability**: the correct vulnerability identity is being interpreted.
+5. **Issuer authentication and authority**: the source is authenticated and authorised for the asserted product scope.
+6. **Freshness**: assumptions underlying the assessment still hold.
+7. **Evidence support**: the technical basis is sufficient for the asserted conclusion.
+8. **Local-policy acceptance**: the consumer's own policy permits the assertion to change vulnerability disposition.
+
+The final distinction is therefore not between _valid CycloneDX_ and _invalid CycloneDX._ It is between **serialization validity** and **defensible security use**.
+
+A CycloneDX document can be perfectly valid and still be unsafe to use for automated suppression. Conversely, a well-governed CycloneDX VEX pipeline can use the standard's identity, applicability, analysis, lifecycle, and provenance fields to carry a precise product-specific conclusion while keeping the richer evidence package and approval record in the producer's internal assessment system.
+
+That is the appropriate role of CycloneDX VEX in the architecture developed in this article: **a structured projection of a product-specific vulnerability assessment, not a substitute for the assessment itself**.
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-schema]: OWASP Foundation. (2025). **CycloneDX 1.7 JSON Schema**. *CycloneDX*. [Normative JSON schema](https://cyclonedx.org/schema/bom-1.7.schema.json).
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-reference]: OWASP Foundation. (2025). **CycloneDX 1.7 JSON Reference**. *CycloneDX*. [Specification reference](https://cyclonedx.org/docs/1.7/json/).
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-vex-use-case]: OWASP Foundation. (2026). **Vulnerability Exploitability**. *CycloneDX Security Use Cases*. [Official use case](https://cyclonedx.org/use-cases/vulnerability-exploitability/).
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-vdr-use-case]: OWASP Foundation. (2026). **Vulnerability Disclosure Report**. *CycloneDX Security Use Cases*. [Official use case](https://cyclonedx.org/use-cases/vulnerability-disclosure/).
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-vex-example-discrepancy]: OWASP Foundation. (2026). **Vulnerability Exploitability: JSON and XML examples**. *CycloneDX Security Use Cases*. As checked on 22 August 2026, the displayed JSON example uses `analysis.state = not_affected` while the corresponding XML example uses `analysis.state = exploitable`; both mark the illustrated version range `unaffected`. [Official use case](https://cyclonedx.org/use-cases/vulnerability-exploitability/).
+
+[^vex-standards-from-first-principles-appendix-cyclonedx-compositions]: OWASP Foundation. (2026). **Vulnerability Compositions**. *CycloneDX Inventory Management Use Cases*. [Official use case](https://cyclonedx.org/use-cases/compositions-vulnerabilities/).
+
+[^vex-standards-from-first-principles-appendix-vers]: Package URL Project. **Version Range Specification (`vers`)**. [Specification](https://github.com/package-url/vers-spec).
+
+## Appendix: CSAF 2.0 VEX implementation reference
+
+The main article treats VEX as a product-specific vulnerability assessment that must preserve product identity, vulnerability identity, scope, status, justification, action information, provenance, and lifecycle. CSAF 2.0 expresses those semantics inside a much broader security-advisory language. Unlike CycloneDX, where VEX information is embedded in a Bill-of-Materials model, CSAF defines a dedicated **VEX profile** that constrains how the general advisory vocabulary must be used.[^vex-standards-from-first-principles-appendix-csaf-standard]
+
+That architectural difference matters. A CSAF document can be valid against the general CSAF JSON Schema without satisfying the VEX profile, and a document can satisfy the VEX profile while still being unsafe for a particular consumer to trust or automate. This appendix therefore distinguishes three levels throughout:
+
+- **Schema validity**: the JSON instance conforms to the CSAF 2.0 schema.
+- **CSAF VEX profile conformance**: the document also satisfies the profile-specific rules and mandatory semantic tests defined by CSAF 2.0.
+- **Operational acceptance**: a consumer has established that the issuer, product identity, vulnerability identity, scope, freshness, and supporting assessment are trustworthy enough for the intended vulnerability-management action.
+
+The normative baseline used here is the OASIS Standard **Common Security Advisory Framework Version 2.0**, published on 18 November 2022, together with its normative JSON Schema.[^vex-standards-from-first-principles-appendix-csaf-standard][^vex-standards-from-first-principles-appendix-csaf-schema] OASIS Approved Errata 01, published on 26 January 2024, did not change the CSAF document or CSAF JSON schema; its substantive correction affected the separate aggregator schema.[^vex-standards-from-first-principles-appendix-csaf-errata]
+
+::: {.callout-note}
+#### CSAF 2.1 is not the normative baseline of this appendix
+
+As checked on 22 August 2026, CSAF 2.1 is at **Committee Specification Draft 02**, dated 25 February 2026. It is an active standards-track revision, but it has not replaced CSAF 2.0 as the OASIS Standard baseline used here.[^vex-standards-from-first-principles-appendix-csaf-21]
+
+This appendix therefore describes CSAF 2.0 semantics. Implementers evaluating CSAF 2.1 should perform an explicit migration review rather than assuming that every 2.0 field, validation rule, profile requirement, or interoperability assumption remains unchanged.
+:::
+
+### A map of the CSAF VEX surface
+
+The most useful way to read CSAF VEX is by semantic layer rather than by the physical order of properties in the JSON document.
+
+| Layer | Principal CSAF structures | Question answered |
+| --- | --- | --- |
+| Document identity and profile | `document.csaf_version`, `document.category`, `document.publisher`, `document.tracking` | What document is this, which profile does it claim, who issued it, and which revision is current? |
+| Product identity | `product_tree`, `full_product_names`, `branches`, `product_id`, `product_identification_helper` | Which products, versions, components, or product combinations are being referenced? |
+| Product grouping and composition | `product_groups`, `relationships` | Which products can share scoped statements, and which combinations represent meaningful product states? |
+| Vulnerability identity and description | `cve`, `ids`, `notes`, `cwe`, `references`, `scores` | Which vulnerability is under assessment and what upstream context accompanies it? |
+| Product-specific status | `product_status` | Which products are affected, not affected, fixed, recommended, or still under investigation? |
+| Not-affected basis | `flags`, `threats[category=impact]` | Why may a product be treated as known not affected? |
+| Action and remediation | `remediations` | What should be done for a product that is known affected, and which remediation applies to which products? |
+| Threat context | `threats` | What is known about exploitation, impact, or target population? |
+| Lifecycle | `document.tracking`, flag/threat/remediation dates | When was the document issued or revised, and when were product-specific assessments or actions recorded? |
+| Operational trust | transport, signatures, issuer authority, consumer policy | May this document safely alter local vulnerability disposition? |
+
+: Semantic layers of a CSAF 2.0 VEX document. {#tbl-vex-standards-from-first-principles-appendix-csaf-map}
+
+The central implementation principle is that **these layers are connected but not interchangeable**. A Product ID is not a globally meaningful asset identifier, a `known_not_affected` status is not complete without the required product-scoped impact statement, a remediation is not itself a vulnerability status, and a correctly structured advisory does not prove that the underlying security assessment is true.
+
+### The CSAF VEX profile: more than schema-valid JSON
+
+CSAF deliberately uses profiles because the general language supports several advisory use cases and therefore leaves many fields optional at schema level. The VEX profile adds a stricter contract for documents whose purpose is to communicate product-specific vulnerability impact.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+A CSAF 2.0 VEX document must satisfy the CSAF Base profile and, in addition, must provide the product and vulnerability structures required by the VEX profile. In practical terms, the profile requires:
+
+- `document.category = csaf_vex`;
+- a `product_tree` containing all products referenced later in the document;
+- a `vulnerabilities` collection;
+- for each vulnerability item, at least one of `cve` or `ids`;
+- vulnerability `notes`;
+- at least one of the four core VEX status lists: `fixed`, `known_affected`, `known_not_affected`, or `under_investigation`;
+- for every product in `known_not_affected`, a corresponding impact statement represented either by a machine-readable `flag` or by a `threat` with `category = impact`;
+- for every product in `known_affected`, a corresponding action statement represented through `remediations`.
+
+These are not merely editorial recommendations. CSAF defines mandatory tests that reject VEX documents lacking the required product status, vulnerability identity, impact statement, or action statement coverage.[^vex-standards-from-first-principles-appendix-csaf-vex-tests]
+
+This creates a useful implementation distinction:
+
+| Validation layer | Question | Example failure |
+| --- | --- | --- |
+| JSON Schema | Is the JSON structurally legal CSAF 2.0? | Wrong property type or missing schema-required child |
+| CSAF mandatory tests | Are cross-references and semantic invariants valid? | Product ID referenced but not defined; contradictory statuses |
+| VEX profile tests | Does the document satisfy VEX-specific completeness rules? | `known_not_affected` without impact statement |
+| Consumer policy | Is this assertion safe to use locally? | Valid document from an unauthorised issuer or for a mismatched product |
+
+: Four distinct validation layers for operational CSAF VEX. {#tbl-vex-standards-from-first-principles-appendix-csaf-validation-layers}
+
+This is one of the major differences from a format that acts primarily as a lightweight statement envelope. CSAF places substantial semantic obligations on the relationship among the document, product tree, vulnerability status, impact explanation, and remediation.
+
+### Document envelope and profile identity
+
+A CSAF VEX document is still a CSAF security-advisory document. Its top-level `document` object establishes the advisory's identity, publisher, profile, title, and revision lifecycle. A simplified envelope looks like this:
+
+```json
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "Example Product Security Team",
+      "namespace": "https://security.example.com"
+    },
+    "title": "Example Product VEX for CVE-2021-44228",
+    "tracking": {
+      "current_release_date": "2026-08-22T00:30:00Z",
+      "id": "EXAMPLE-VEX-2026-0001",
+      "initial_release_date": "2026-08-22T00:30:00Z",
+      "revision_history": [
+        {
+          "date": "2026-08-22T00:30:00Z",
+          "number": "1.0.0",
+          "summary": "Initial VEX publication."
+        }
+      ],
+      "status": "final",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+The example is deliberately incomplete as a VEX document because the profile also requires a product tree and vulnerability information. Its purpose here is only to show the document-level identity and lifecycle fields.
+
+| Field | Role | VEX implementation significance |
+| --- | --- | --- |
+| `document.category` | Profile discriminator | Must be `csaf_vex` for the CSAF VEX profile |
+| `document.csaf_version` | Language version | Selects the CSAF 2.0 semantics and validation rules |
+| `document.publisher.category` | Publisher role | Identifies the type of publishing party |
+| `document.publisher.name` | Publisher name | Human-readable identity of the issuing party |
+| `document.publisher.namespace` | Publisher namespace | Participates in globally distinguishing the advisory identity |
+| `document.title` | Canonical document title | Human-readable advisory identity |
+| `document.tracking.id` | Advisory identifier | Identifies the advisory within the publisher namespace |
+| `document.tracking.version` | Current document revision | Tracks advisory evolution; it is not a product version |
+| `document.tracking.initial_release_date` | Initial publication time | Establishes when this advisory lineage was first released |
+| `document.tracking.current_release_date` | Current revision publication time | Establishes when the current document revision was released |
+| `document.tracking.revision_history` | Revision ledger | Records the evolution of the advisory |
+| `document.tracking.status` | Document lifecycle status | Indicates `draft`, `interim`, or `final`; it is not a vulnerability state |
+
+: CSAF document-level fields most relevant to VEX. {#tbl-vex-standards-from-first-principles-appendix-csaf-envelope}
+
+#### Advisory version is not product version
+
+A recurring identity error is to confuse `document.tracking.version` with the software release being assessed. The document version describes the current revision of the CSAF advisory. Product versions belong in the product tree.
+
+Therefore:
+
+- `document.tracking.version = "2.0.0"` means version 2.0.0 of the **advisory**;
+- a product-tree node representing `Example App 4.2.0` describes version 4.2.0 of the **product**.
+
+A VEX consumer that joins product applicability using the advisory revision is matching the wrong identity domain.
+
+#### `draft`, `interim`, and `final` describe the document, not the vulnerability
+
+CSAF 2.0 defines `draft`, `interim`, and `final` as values of `document.tracking.status`.[^vex-standards-from-first-principles-appendix-csaf-tracking] These describe the expected lifecycle of the document itself.
+
+`interim` is especially relevant to VEX because it signals that rapid document updates are expected. It can therefore be useful while a producer is publishing evolving product-impact information. It must not, however, be confused with `product_status.under_investigation`: the former describes the advisory's publication lifecycle, while the latter describes uncertainty about a particular product's vulnerability status.
+
+Likewise, `final` does not mean that the document can never change. It indicates that the issuer does not currently expect rapid change; subsequent revisions remain possible.
+
+### Product identity: the `product_tree` is the foundation of CSAF VEX
+
+Every product referenced by the VEX statements must be resolvable through the product tree.[^vex-standards-from-first-principles-appendix-csaf-product-tree] This is not incidental metadata. `product_status`, `flags`, `remediations`, `scores`, and `threats` rely on Product IDs that point back into this identity model.
+
+A consumer should therefore conceptually resolve a statement in this order:
+
+1. locate the Product ID referenced by `product_status`, `flag`, `remediation`, or `threat`;
+2. resolve that Product ID to a full product definition in `product_tree`;
+3. inspect the product name, hierarchy, relationships, and identification helpers;
+4. determine whether that defined product state matches the local asset;
+5. only then apply the associated VEX status or action.
+
+CSAF enforces part of this process through a mandatory test: any Product ID referenced outside the full product definition must resolve to a matching Full Product Name in the product tree.[^vex-standards-from-first-principles-appendix-csaf-product-tests]
+
+#### Product ID is document-local referential identity
+
+CSAF defines `product_id` as a reference token that must uniquely identify a Full Product Name within the current document. The standard does not prescribe a globally meaningful format for the Product ID.[^vex-standards-from-first-principles-appendix-csaf-product-tree]
+
+For example:
+
+```json
+{
+  "product_tree": {
+    "full_product_names": [
+      {
+        "name": "Example App 4.2.0",
+        "product_id": "CSAFPID-0001"
+      }
+    ]
+  }
+}
+```
+
+and:
+
+```json
+{
+  "product_status": {
+    "known_not_affected": [
+      "CSAFPID-0001"
+    ]
+  }
+}
+```
+
+establish an internal reference from the VEX status to the product definition. They do **not** establish that `CSAFPID-0001` has any independent meaning outside the document.
+
+A consumer therefore needs stronger product identity than the Product ID token itself.
+
+#### `product_identification_helper`: bridge from document identity to real assets
+
+A Full Product Name can include `product_identification_helper`, which provides one or more ways to match the CSAF product to an external asset database or software inventory. CSAF 2.0 defines helpers including `cpe`, `hashes`, `model_numbers`, `purl`, `sbom_urls`, `serial_numbers`, `skus`, and `x_generic_uris`.[^vex-standards-from-first-principles-appendix-csaf-product-helper]
+
+| Helper | Best suited to | Main caution |
+| --- | --- | --- |
+| `cpe` | Platform/product identification in CPE-oriented inventories | CPE precision varies across ecosystems and vendors |
+| `purl` | Package-level identity | Package identity does not necessarily identify a complete final product |
+| `hashes` | Exact file/artifact identity | Strong binding but narrow applicability across rebuilds |
+| `model_numbers` | Hardware or appliance model identity | Often insufficient without software/firmware state |
+| `serial_numbers` | Specific device populations | Can create highly granular product scope |
+| `skus` | Commercial product variants | SKU changes can accompany software updates |
+| `sbom_urls` | Linking the product to its composition evidence | The referenced SBOM still requires its own identity and trust validation |
+| `x_generic_uris` | Vendor-specific or other governed identifiers | Consumers must understand the identifier namespace |
+
+: CSAF 2.0 product-identification helpers relevant to VEX applicability. {#tbl-vex-standards-from-first-principles-appendix-csaf-product-identification}
+
+The presence of a Product Identification Helper is not itself enough to prove local applicability. The consumer still needs a matching policy appropriate to the identifier type. A PURL match, an appliance SKU match, and a binary hash match establish different levels and kinds of identity.
+
+CSAF's optional tests also encourage every Full Product Name to provide a Product Identification Helper. For operational VEX consumption, that is a sensible minimum even where strict profile conformance would not make a particular helper mandatory.
+
+#### `branches`: model product hierarchies without losing the final product state
+
+`product_tree.branches` can model hierarchical identity such as vendor, product family, product name, and product version. This is useful when advisories cover large release matrices, but consumers should not assume that a parent branch automatically has the same vulnerability state as every child.
+
+The VEX status ultimately refers to Product IDs assigned to Full Product Name objects. The hierarchy helps explain and generate those products; the Product ID identifies the actual referential target.
+
+Where branches use `product_version_range`, CSAF's optional validation expects the range to use Package URL Version Range (`vers`) syntax.[^vex-standards-from-first-principles-appendix-csaf-product-tests] Consumers should therefore avoid inventing their own range semantics when a structured range is available.
+
+#### `relationships`: model product combinations as separate product states
+
+CSAF relationships are particularly important for VEX because exploitability can depend on combinations. A relationship connects two existing products and creates a new Full Product Name representing their combination. CSAF 2.0 relationship categories include `default_component_of`, `external_component_of`, `installed_on`, `installed_with`, and `optional_component_of`.[^vex-standards-from-first-principles-appendix-csaf-relationships]
+
+This makes it possible to distinguish, for example:
+
+- `Application A 4.2.0`;
+- `Operating System B`;
+- `Application A 4.2.0 installed on Operating System B`.
+
+If only the combination is affected, the safest representation is to assign the VEX status to the Product ID of the combined relationship object rather than to the standalone application or operating system.
+
+That directly supports the principle developed in the main article: **VEX applies to a defined product state, not merely to a component name**.
+
+#### Product Groups: useful compression with a coverage obligation
+
+`product_groups` allows several Product IDs to be treated as a named group. This is useful when the same impact statement, remediation, or threat information applies to many products.
+
+However, group-level statements do not weaken the VEX profile's product-level completeness requirements. If ten products are `known_not_affected`, every one of those ten Product IDs must be covered by an impact statement, either directly or through a Product Group that contains it. The same principle applies to action statements for `known_affected` products.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+A group therefore acts as a scope-compression mechanism, not as a way to avoid explicit semantic coverage.
+
+### Vulnerability identity: `cve`, `ids`, and `notes`
+
+Each VEX vulnerability item must provide at least one of `cve` or `ids`, and it must include `notes` under the VEX profile.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+For a CVE, use the dedicated `cve` field:
+
+```json
+{
+  "cve": "CVE-2021-44228"
+}
+```
+
+The more general `ids` array exists for other vulnerability-tracking systems. CSAF's optional tests specifically warn against putting a CVE identifier in `ids` when the dedicated `cve` field is available.[^vex-standards-from-first-principles-appendix-csaf-product-tests]
+
+This suggests a practical identity rule:
+
+- use `cve` for CVE identifiers;
+- use `ids` for other vulnerability namespaces;
+- preserve enough source-system context to prevent collisions or ambiguous interpretation.
+
+`notes` provides human-readable vulnerability information and is required by the VEX profile. It should not be used as a substitute for structured status, justification, or remediation fields. A note can explain the vulnerability or assessment context, but the machine-readable VEX semantics still belong in `product_status`, `flags`, `threats`, and `remediations`.
+
+### `product_status`: eight status lists with four semantic families
+
+CSAF 2.0 defines eight product-status lists:[^vex-standards-from-first-principles-appendix-csaf-product-status]
+
+| Status | Meaning | Semantic family |
+| --- | --- | --- |
+| `first_affected` | First version in a release train known to be affected | Affected boundary |
+| `known_affected` | Product version is known to be affected | Affected |
+| `last_affected` | Last version in a release train known to be affected | Affected boundary |
+| `first_fixed` | First version known to contain a fix | Fixed boundary |
+| `fixed` | Product version contains a fix | Fixed |
+| `known_not_affected` | Product version is known not to be affected | Not affected |
+| `recommended` | Vendor-recommended product version | Recommendation |
+| `under_investigation` | Impact is not yet known and investigation is ongoing | Under investigation |
+
+: CSAF 2.0 product-status semantics. {#tbl-vex-standards-from-first-principles-appendix-csaf-product-status}
+
+The VEX profile requires at least one of the four core lists `fixed`, `known_affected`, `known_not_affected`, or `under_investigation` for each vulnerability item. The release-boundary fields `first_affected`, `last_affected`, `first_fixed`, and the preference field `recommended` can add valuable release-train semantics, but they do not by themselves satisfy the VEX profile's status requirement.[^vex-standards-from-first-principles-appendix-csaf-vex-tests]
+
+This is an important difference from a four-state abstraction. CSAF can say not only that a product is affected or fixed, but also where the affected interval begins or ends and which fixed release the vendor recommends.
+
+#### Contradicting product statuses are a conformance error
+
+CSAF's mandatory tests group statuses into four mutually exclusive semantic families:
+
+- **Affected**: `first_affected`, `known_affected`, `last_affected`;
+- **Not affected**: `known_not_affected`;
+- **Fixed**: `first_fixed`, `fixed`;
+- **Under investigation**: `under_investigation`.
+
+A Product ID must not occur in contradictory families for the same vulnerability.[^vex-standards-from-first-principles-appendix-csaf-product-tests]
+
+Therefore this is invalid:
+
+```json
+{
+  "product_status": {
+    "known_affected": [
+      "CSAFPID-0001"
+    ],
+    "known_not_affected": [
+      "CSAFPID-0001"
+    ]
+  }
+}
+```
+
+`recommended` is intentionally different. A product can be recommended even if it belongs to another semantic family, because recommendation is a preference rather than a vulnerability-impact state. The standard explicitly allows this flexibility, including unusual cases where a producer may recommend an otherwise affected version because another version introduces a more severe problem.
+
+#### `known_affected`: affected is not the end of the statement
+
+`known_affected` indicates that the referenced product is known to be affected and that action is recommended. In a CSAF VEX document, every Product ID in `known_affected` must be covered by product-specific action information in `remediations`.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+The semantic unit is therefore not merely:
+
+`product -> known_affected`
+
+but:
+
+`product -> known_affected + applicable action statement`
+
+This mirrors the CISA VEX requirement that an affected assertion carry action information.
+
+#### `known_not_affected`: status requires a product-scoped impact statement
+
+`known_not_affected` means that the producer asserts that no remediation is required for the specified vulnerability in the referenced product state. CSAF does not permit that conclusion to stand unexplained in a VEX-profile document. Every `known_not_affected` Product ID must be covered by an impact statement.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+The impact statement can be represented in either of two ways:
+
+- a machine-readable VEX justification in `flags`;
+- a human-readable `threat` with `category = impact` whose details explain why the vulnerability cannot be exploited.
+
+This dual representation is one of the most important CSAF-specific design choices.
+
+#### `fixed`: remediation state, not vulnerability disappearance
+
+`fixed` says that the referenced product version contains a fix for the vulnerability. It does not mean that the CVE has ceased to exist or that all other versions are fixed.
+
+`first_fixed` can identify the first release carrying a fix, while `recommended` can separately identify the version the vendor prefers customers to adopt. Those fields can therefore encode a release progression such as:
+
+- `last_affected = 4.1.9`;
+- `first_fixed = 4.2.0`;
+- `fixed = 4.2.0`, `4.2.1`;
+- `recommended = 4.2.1`.
+
+The distinction is useful when a later fixed release is operationally preferable to the first technically corrected build.
+
+#### `under_investigation`: uncertainty with an active assessment
+
+`under_investigation` indicates that it is not yet known whether the product is affected and that investigation is ongoing. The result is expected in a later document revision.[^vex-standards-from-first-principles-appendix-csaf-product-status]
+
+This is not a neutral placeholder for every unresolved scanner result. It should be used when the producer has entered an assessment process and has not yet reached a final conclusion.
+
+The VEX profile does not impose the same mandatory impact/action statement rules on `under_investigation` that it imposes on `known_not_affected` and `known_affected`. CSAF's optional tests do, however, warn when an affected or under-investigation product lacks remediation information.[^vex-standards-from-first-principles-appendix-csaf-optional-tests] A strict producer profile can therefore choose to provide explicit interim guidance even while technical investigation continues.
+
+### `flags`: machine-readable reasons for `known_not_affected`
+
+`flags` contains product-specific machine-readable labels. Each flag must carry a `label` and must identify the products to which it applies through `product_ids`, `group_ids`, or both.[^vex-standards-from-first-principles-appendix-csaf-flags]
+
+For VEX, CSAF 2.0 defines the five CISA-style not-affected justification labels:
+
+| Flag label | Meaning |
+| --- | --- |
+| `component_not_present` | The vulnerable component is not present in the product |
+| `vulnerable_code_not_present` | The component can be present, but the vulnerable code is absent |
+| `vulnerable_code_cannot_be_controlled_by_adversary` | Vulnerable code exists, but an attacker cannot exercise the required control |
+| `vulnerable_code_not_in_execute_path` | Vulnerable code is not reachable through product execution paths |
+| `inline_mitigations_already_exist` | Built-in controls prevent exploitation |
+
+: CSAF 2.0 machine-readable VEX justification flags. {#tbl-vex-standards-from-first-principles-appendix-csaf-flags}
+
+A machine-readable not-affected assertion can therefore look like:
+
+```json
+{
+  "flags": [
+    {
+      "label": "component_not_present",
+      "product_ids": [
+        "CSAFPID-0001"
+      ]
+    }
+  ],
+  "product_status": {
+    "known_not_affected": [
+      "CSAFPID-0001"
+    ]
+  }
+}
+```
+
+The critical semantic property is **scope agreement**: the Product ID in `known_not_affected` must actually be covered by the flag.
+
+#### A flag without a product reference is invalid
+
+CSAF defines a mandatory test requiring every flag to identify at least one `product_id` or `group_id`.[^vex-standards-from-first-principles-appendix-csaf-flags] A bare justification such as `component_not_present` is insufficient because the consumer cannot know which product the assertion qualifies.
+
+This is a useful contrast with formats where the statement envelope supplies product scope outside the justification object. In CSAF, the justification itself carries explicit product or group references.
+
+#### Multiple VEX justification flags for the same product are prohibited
+
+CSAF also defines a mandatory test preventing the same Product ID from being covered by more than one flag carrying a VEX justification code for the same vulnerability, including indirect coverage through Product Groups.[^vex-standards-from-first-principles-appendix-csaf-flags]
+
+This rule prevents an implementation from simultaneously asserting, for example, that the component is absent and that the vulnerable code is present but unreachable for the same product/vulnerability pair. Those statements may arise from different investigation branches, but the published machine-readable justification should converge on one coherent reason.
+
+### `threats[category=impact]`: human-readable not-affected reasoning
+
+A `threat` item can describe information that changes as knowledge of the vulnerability evolves. CSAF defines three threat categories: `exploit_status`, `impact`, and `target_set`.[^vex-standards-from-first-principles-appendix-csaf-threats]
+
+For VEX, `category = impact` has a special role: it can provide the required human-readable explanation for a `known_not_affected` product.
+
+For example:
+
+```json
+{
+  "threats": [
+    {
+      "category": "impact",
+      "details": "The product embeds the dependency but does not include the vulnerable lookup implementation in the released artifact.",
+      "product_ids": [
+        "CSAFPID-0001"
+      ]
+    }
+  ]
+}
+```
+
+When used as the VEX impact statement, the `details` must explain why the vulnerability cannot be exploited for the scoped product.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+This gives CSAF two different but complementary ways to carry the not-affected basis:
+
+| Representation | Strength | Limitation |
+| --- | --- | --- |
+| `flags` | Machine-readable, standardized justification taxonomy | Limited to the five defined VEX justification labels |
+| `threats[category=impact]` | Rich human-readable product-specific explanation | Harder to automate consistently |
+
+: Two CSAF 2.0 representations for a VEX impact statement. {#tbl-vex-standards-from-first-principles-appendix-csaf-impact-options}
+
+A strong producer can use both: the flag supplies standardized semantics, while the impact threat supplies enough technical explanation for a reviewer to understand the reasoning.
+
+### `remediations`: the action statement for affected products
+
+`remediations` provides product-scoped instructions for handling the vulnerability. Each remediation requires `category` and `details`, and it must identify the applicable products through `product_ids`, `group_ids`, or both.[^vex-standards-from-first-principles-appendix-csaf-remediations]
+
+CSAF 2.0 defines five remediation categories:
+
+| Category | Meaning | Security interpretation |
+| --- | --- | --- |
+| `vendor_fix` | Official fix issued by the product author | Intended to resolve the vulnerability |
+| `mitigation` | Configuration or deployment change that reduces risk | Risk reduction; vulnerability can remain present |
+| `workaround` | Configuration/deployment approach that avoids exposure | Temporary or situational avoidance |
+| `none_available` | No fix or remediation is currently available | Affected condition can remain unresolved |
+| `no_fix_planned` | No fix is planned | Disposition decision, often for end-of-life products |
+
+: CSAF 2.0 remediation categories. {#tbl-vex-standards-from-first-principles-appendix-csaf-remediation-categories}
+
+The VEX profile explicitly permits `none_available` and `no_fix_planned` as action statements for `known_affected` products.[^vex-standards-from-first-principles-appendix-csaf-vex-profile] This is important because an action statement does not necessarily mean that a patch exists.
+
+For example:
+
+```json
+{
+  "product_status": {
+    "known_affected": [
+      "CSAFPID-0002"
+    ]
+  },
+  "remediations": [
+    {
+      "category": "vendor_fix",
+      "details": "Upgrade to Example App 4.2.1 or later.",
+      "product_ids": [
+        "CSAFPID-0002"
+      ],
+      "url": "https://security.example.com/advisories/CVE-2021-44228"
+    }
+  ]
+}
+```
+
+is complete at the VEX profile level because the known-affected product has an applicable action statement.
+
+By contrast, `known_affected` without a remediation covering the same Product ID fails the VEX action-statement requirement.
+
+#### `mitigation` is not `fixed`
+
+A mitigation can reduce exploitation likelihood or impact without removing the vulnerability from the product. Therefore:
+
+- `product_status.known_affected` can coexist with a `remediation.category = mitigation`;
+- the presence of a mitigation must not be translated automatically into `known_not_affected`;
+- a later document revision may move the product to `fixed` if an actual corrective release is issued.
+
+This separation between **status** and **response** is central to reliable interoperability.
+
+#### `none_available` and `no_fix_planned` are not not-affected states
+
+Both categories describe the action situation for a product that can remain affected. `none_available` means no remediation is currently available; `no_fix_planned` means the producer does not plan to provide one.
+
+Neither category justifies suppressing the vulnerability as `known_not_affected`.
+
+### Product Groups and cross-field coverage
+
+CSAF allows `threats` and `remediations` to refer to Product Groups even though `product_status` itself contains Product IDs. This is useful for compact documents, but it creates a coverage problem that implementers must solve explicitly.[^vex-standards-from-first-principles-appendix-csaf-vex-profile]
+
+Suppose the product tree defines:
+
+```json
+{
+  "product_groups": [
+    {
+      "group_id": "CSAFGID-0001",
+      "product_ids": [
+        "CSAFPID-0001",
+        "CSAFPID-0002"
+      ],
+      "summary": "Two products sharing the same VEX assessment"
+    }
+  ]
+}
+```
+
+A single impact threat can then cover both products:
+
+```json
+{
+  "threats": [
+    {
+      "category": "impact",
+      "details": "The vulnerable component is absent from both released products.",
+      "group_ids": [
+        "CSAFGID-0001"
+      ]
+    }
+  ]
+}
+```
+
+If `known_not_affected` also contains `CSAFPID-0003`, however, that third product remains uncovered unless another impact statement applies to it. The presence of one group-level statement does not satisfy the requirement for products outside the group.
+
+The same logic applies to remediations for `known_affected`.
+
+A safe consumer or validator should therefore expand group membership before evaluating VEX completeness:
+
+1. collect every Product ID in the relevant `product_status` list;
+2. collect direct `product_ids` from applicable flags, threats, or remediations;
+3. resolve every referenced `group_id` to its Product IDs;
+4. compute the complete covered set;
+5. verify that every status Product ID has the required impact or action statement.
+
+This is one of the places where CSAF VEX clearly behaves as a graph of cross-referenced objects rather than as a flat vulnerability record.
+
+### Release-train semantics: `first_affected`, `last_affected`, `first_fixed`, and `recommended`
+
+The four additional status lists are especially useful when a vulnerability spans a release train.
+
+Consider a simplified product family:
+
+| Version | CSAF status |
+| --- | --- |
+| 4.0.0 | `first_affected` |
+| 4.0.0–4.1.9 | `known_affected` |
+| 4.1.9 | `last_affected` |
+| 4.2.0 | `first_fixed`, `fixed` |
+| 4.2.1 | `fixed`, `recommended` |
+
+This representation captures more than a single affected/fixed Boolean. It tells the consumer where the affected interval begins and ends, where the first correction appeared, and which corrected release the vendor currently recommends.
+
+Consumers should nevertheless avoid inferring version ordering from display names alone. The product tree remains the authoritative representation of the individual product states, and any range semantics should be interpreted according to the product-tree model rather than by generic string comparison.
+
+### Vulnerability scores and VEX status are different dimensions
+
+CSAF can attach CVSS scores to specific Product IDs through `scores`. That allows product-specific scoring rather than treating the vulnerability's upstream score as universally applicable.[^vex-standards-from-first-principles-appendix-csaf-threats]
+
+A score should therefore answer a risk/severity question for the scoped product, while `product_status` answers the VEX impact-state question.
+
+These concepts should not be collapsed:
+
+- a product can be `known_not_affected` even when the upstream vulnerability has a critical score;
+- a fixed product need not retain the affected product's score;
+- an affected product can receive a product-specific CVSS vector that differs from an upstream database score because deployment context changes exploitability or impact metrics.
+
+CSAF's optional tests warn if affected products lack scores and if fixed products retain inappropriate CVSS scoring. Those tests are quality signals rather than the core VEX status model.
+
+### Threat information is not the same as VEX status
+
+`threats` can carry `exploit_status`, `impact`, or `target_set`. These fields can change as real-world knowledge evolves, but they answer different questions from `product_status`.
+
+For example:
+
+- `product_status.known_affected` means the product is affected;
+- `threats[category=exploit_status]` can describe whether exploit code is theoretical, public, weaponized, or actively used;
+- `threats[category=target_set]` can describe the population known to be targeted.
+
+An affected VEX state therefore does **not** imply active exploitation. Conversely, active exploitation evidence does not eliminate the need to establish which product state is actually affected.
+
+This distinction is particularly important if CSAF VEX information is later consumed in a CRA Article 14 workflow: `known_affected` is a product-impact conclusion, whereas active exploitation is a separate threat-evidence proposition.
+
+### Document lifecycle and VEX reassessment
+
+CSAF's document-tracking model is richer than a single VEX timestamp. The `tracking` object requires `current_release_date`, `id`, `initial_release_date`, `revision_history`, `status`, and `version`.[^vex-standards-from-first-principles-appendix-csaf-tracking]
+
+A useful operational interpretation is:
+
+| Field | Lifecycle question |
+| --- | --- |
+| `tracking.id` | Which advisory lineage is this? |
+| `tracking.initial_release_date` | When was this advisory first published? |
+| `tracking.current_release_date` | When was this revision published? |
+| `tracking.version` | Which revision is current? |
+| `tracking.revision_history` | What changed over the advisory's life? |
+| `tracking.status` | Does the issuer expect rapid further updates? |
+
+: CSAF document lifecycle fields relevant to VEX reassessment. {#tbl-vex-standards-from-first-principles-appendix-csaf-lifecycle}
+
+The current document version must agree with the latest revision-history entry according to CSAF's mandatory tests, and revision history must progress coherently.[^vex-standards-from-first-principles-appendix-csaf-product-tests]
+
+For VEX consumers, the more important point is that **document freshness is not equivalent to assessment validity**. A document published yesterday can already be inapplicable if the local product has changed, while an older VEX assertion can remain valid for an immutable product artifact if its assumptions and scope still hold.
+
+The VEX pipeline should therefore distinguish:
+
+- advisory revision freshness;
+- product-version or artifact applicability;
+- product-configuration assumptions;
+- vulnerability-intelligence changes;
+- new exploitation or incident evidence.
+
+Any of these can trigger reassessment.
+
+### A strict CSAF VEX producer profile
+
+The normative VEX profile already imposes substantial requirements, but organisations can layer a stricter operational policy on top of it. A defensible internal producer profile might require:
+
+```yaml
+document:
+  category: csaf_vex
+  csaf_version: "2.0"
+  publisher:
+    category: required
+    name: required
+    namespace: required-and-governed
+  tracking:
+    id: required-and-stable
+    status: required
+    version: required
+    initial_release_date: required
+    current_release_date: required
+    revision_history: required
+  title: required
+
+product_tree:
+  every-referenced-product-id: must-resolve
+  every-full-product-name:
+    product_identification_helper: required-by-local-policy
+  relationships:
+    use-when-product-combination-changes-applicability: required-by-local-policy
+
+vulnerabilities:
+  - identity:
+      cve-or-ids: required
+    notes: required
+    product_status:
+      at-least-one-core-vex-status: required
+
+    when-known_not_affected:
+      impact-statement: required
+      product-scope: must-cover-every-product
+      machine-readable-flag: preferred-when-applicable
+      human-readable-impact-detail: strongly-recommended
+      evidence-linkage: required-by-local-policy
+
+    when-known_affected:
+      remediation: required
+      product-scope: must-cover-every-product
+      action-detail: required
+      evidence-linkage: required-by-local-policy
+
+    when-under_investigation:
+      interim-guidance: recommended
+      reassessment-owner: required-by-local-policy
+      reassessment-trigger-or-target-date: required-by-local-policy
+```
+
+This is not CSAF schema syntax and must not be presented as an alternative standard. It is a **semantic quality profile** for an organisation that wants VEX to drive automated or semi-automated vulnerability disposition.
+
+The profile should also require machine validation against:
+
+1. the CSAF 2.0 JSON Schema;
+2. all CSAF mandatory tests;
+3. the VEX profile-specific tests;
+4. the organisation's own identity, issuer, freshness, and evidence policies.
+
+### Recommended state-specific producer rules
+
+A practical producer policy can make the four core VEX statuses operationally explicit:
+
+| Core VEX status | Recommended producer rule |
+| --- | --- |
+| `known_not_affected` | Provide product-specific impact coverage, use a VEX `flag` where one of the five standard justifications applies, add human-readable impact reasoning when useful, and link the internal evidence record |
+| `known_affected` | Provide product-specific remediation/action information and enough detail for the consumer to act |
+| `fixed` | Identify the corrected product version or product state; use `first_fixed` and `recommended` where they add release-train meaning |
+| `under_investigation` | State that assessment is active, avoid implying safety, publish interim guidance where useful, and update the advisory when the investigation resolves |
+
+: Example state-specific producer policy layered on CSAF 2.0. {#tbl-vex-standards-from-first-principles-appendix-csaf-producer-policy}
+
+### Worked Log4Shell model: four product states in one CSAF VEX document
+
+The following example applies the main article's four Log4Shell product states to CSAF 2.0:
+
+- **Product A**: the vulnerable component is not present, so the product is `known_not_affected`;
+- **Product B**: the vulnerable component and exploitable behavior are present, so the product is `known_affected`;
+- **Product C**: the product is a corrected release, so it is `fixed`;
+- **Product U**: investigation is active but incomplete, so it is `under_investigation`.
+
+The example is intentionally compact, but it preserves the essential CSAF VEX relationships among product identity, vulnerability identity, status, not-affected justification, and remediation.
+
+```json
+{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "Example Product Security Team",
+      "namespace": "https://security.example.com"
+    },
+    "title": "Example Product VEX for CVE-2021-44228",
+    "tracking": {
+      "current_release_date": "2026-08-22T00:30:00Z",
+      "id": "EXAMPLE-VEX-2026-0001",
+      "initial_release_date": "2026-08-22T00:30:00Z",
+      "revision_history": [
+        {
+          "date": "2026-08-22T00:30:00Z",
+          "number": "1.0.0",
+          "summary": "Initial VEX publication."
+        }
+      ],
+      "status": "final",
+      "version": "1.0.0"
+    }
+  },
+  "product_tree": {
+    "full_product_names": [
+      {
+        "name": "Example Product A 1.0.0",
+        "product_id": "CSAFPID-A",
+        "product_identification_helper": {
+          "purl": "pkg:generic/example/product-a@1.0.0"
+        }
+      },
+      {
+        "name": "Example Product B 1.0.0",
+        "product_id": "CSAFPID-B",
+        "product_identification_helper": {
+          "purl": "pkg:generic/example/product-b@1.0.0"
+        }
+      },
+      {
+        "name": "Example Product C 1.1.0",
+        "product_id": "CSAFPID-C",
+        "product_identification_helper": {
+          "purl": "pkg:generic/example/product-c@1.1.0"
+        }
+      },
+      {
+        "name": "Example Product U 1.0.0",
+        "product_id": "CSAFPID-U",
+        "product_identification_helper": {
+          "purl": "pkg:generic/example/product-u@1.0.0"
+        }
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2021-44228",
+      "notes": [
+        {
+          "category": "summary",
+          "text": "Product-specific VEX assessment for Apache Log4j CVE-2021-44228."
+        }
+      ],
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "CSAFPID-A"
+          ]
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "CSAFPID-C"
+        ],
+        "known_affected": [
+          "CSAFPID-B"
+        ],
+        "known_not_affected": [
+          "CSAFPID-A"
+        ],
+        "recommended": [
+          "CSAFPID-C"
+        ],
+        "under_investigation": [
+          "CSAFPID-U"
+        ]
+      },
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Upgrade Product B to the vendor's corrected release line represented by Product C or a later supported fixed release.",
+          "product_ids": [
+            "CSAFPID-B"
+          ],
+          "url": "https://security.example.com/advisories/CVE-2021-44228"
+        },
+        {
+          "category": "none_available",
+          "details": "Product U remains under investigation; no product-specific remediation recommendation is available until the assessment is complete.",
+          "product_ids": [
+            "CSAFPID-U"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "details": "Product A does not contain the vulnerable component and therefore cannot execute the vulnerable Log4j code path.",
+          "product_ids": [
+            "CSAFPID-A"
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Read semantically, the document communicates four different conclusions without collapsing them:
+
+| Product | Status | Additional CSAF semantics |
+| --- | --- | --- |
+| Product A | `known_not_affected` | `component_not_present` flag plus human-readable impact statement |
+| Product B | `known_affected` | `vendor_fix` remediation supplies the action statement |
+| Product C | `fixed`, `recommended` | Corrected product state and preferred upgrade target |
+| Product U | `under_investigation` | Investigation remains unresolved; interim `none_available` remediation makes the lack of current action explicit |
+
+: Semantic interpretation of the worked CSAF Log4Shell example. {#tbl-vex-standards-from-first-principles-appendix-csaf-log4shell}
+
+The Product A reasoning is intentionally stronger than merely observing that `log4j-api` or another Log4j-related artifact exists somewhere in a dependency graph. `component_not_present` should only be used if the actual vulnerable component relevant to CVE-2021-44228 is absent from the assessed product state.
+
+Product B demonstrates the opposite case: once the technical assessment establishes affected status, CSAF requires an action statement. The remediation provides that product-specific action without changing the status itself.
+
+Product C illustrates why `fixed` and `recommended` are separate fields. A version can contain a fix without necessarily being the producer's preferred upgrade target; using both fields allows the document to distinguish technical correction from release recommendation.
+
+Product U demonstrates temporal uncertainty. `under_investigation` communicates that assessment is active and unresolved. The document can be revised later so that Product U moves into one of the final semantic families without rewriting the historical meaning of the previous document version.
+
+### Group-scoped Log4Shell example
+
+Suppose three appliance versions all exclude `log4j-core` and therefore share the same not-affected justification. Instead of duplicating the impact statement three times, the producer can define a Product Group:
+
+```json
+{
+  "product_groups": [
+    {
+      "group_id": "CSAFGID-NO-LOG4J-CORE",
+      "product_ids": [
+        "CSAFPID-A1",
+        "CSAFPID-A2",
+        "CSAFPID-A3"
+      ],
+      "summary": "Released appliance versions that do not contain log4j-core"
+    }
+  ]
+}
+```
+
+and then scope the justification to the group:
+
+```json
+{
+  "flags": [
+    {
+      "label": "component_not_present",
+      "group_ids": [
+        "CSAFGID-NO-LOG4J-CORE"
+      ]
+    }
+  ],
+  "product_status": {
+    "known_not_affected": [
+      "CSAFPID-A1",
+      "CSAFPID-A2",
+      "CSAFPID-A3"
+    ]
+  }
+}
+```
+
+This is semantically compact because expansion of the Product Group covers every Product ID in `known_not_affected`.
+
+If a fourth Product ID were added to `known_not_affected` but not to the group and not to another applicable impact statement, the VEX profile's coverage requirement would fail. The validator must therefore reason over resolved group membership rather than comparing arrays textually.
+
+### Relationship-scoped example: exploitability depends on deployment combination
+
+Product relationships become valuable when vulnerability impact depends on an installed combination rather than a standalone package.
+
+Consider:
+
+- `CSAFPID-APP`: Example Application 4.2.0;
+- `CSAFPID-OS`: Example Operating System 12;
+- `CSAFPID-COMBINATION`: Example Application 4.2.0 installed on Example Operating System 12.
+
+A relationship can represent the combined product state:
+
+```json
+{
+  "relationships": [
+    {
+      "category": "installed_on",
+      "full_product_name": {
+        "name": "Example Application 4.2.0 installed on Example Operating System 12",
+        "product_id": "CSAFPID-COMBINATION",
+        "product_identification_helper": {
+          "x_generic_uris": [
+            {
+              "namespace": "https://security.example.com/product-state/",
+              "uri": "https://security.example.com/product-state/app-4.2.0-on-os-12"
+            }
+          ]
+        }
+      },
+      "product_reference": "CSAFPID-APP",
+      "relates_to_product_reference": "CSAFPID-OS"
+    }
+  ]
+}
+```
+
+If the vulnerability is exploitable only in that combination, the VEX status should refer to `CSAFPID-COMBINATION`. Marking the standalone application `known_affected` would overstate scope; marking the operating system `known_affected` would misidentify the subject.
+
+This is a concrete example of why product identity is part of the security conclusion rather than a clerical field.
+
+### Consumer-side acceptance sequence
+
+A CSAF consumer should not begin by searching for `known_not_affected`. It should first establish whether the document and its references are trustworthy and applicable.
+
+A robust interpretation sequence is:
+
+1. validate the document against the CSAF 2.0 JSON Schema;
+2. run the CSAF mandatory tests;
+3. confirm `document.category = csaf_vex` and validate the VEX profile requirements;
+4. authenticate the source and establish that the publisher is authorised for the claimed product scope;
+5. resolve every Product ID and Product Group reference;
+6. match the referenced product state to the local asset using appropriate identification helpers and relationships;
+7. identify the vulnerability through `cve` or `ids`;
+8. read the applicable `product_status`;
+9. if the status is `known_not_affected`, verify that the product is covered by a valid `flag` or impact `threat`;
+10. if the status is `known_affected`, verify that the product is covered by an applicable remediation/action statement;
+11. evaluate document and assessment freshness;
+12. apply local policy before changing vulnerability disposition.
+
+That sequence prevents a consumer from accepting a syntactically correct but semantically unrelated statement.
+
+### Consumer-side interpretation checklist
+
+| Question | CSAF structure or control |
+| --- | --- |
+| Is this a CSAF 2.0 document? | `document.csaf_version` plus JSON Schema validation |
+| Is it claiming the VEX profile? | `document.category = csaf_vex` |
+| Does it actually satisfy the VEX profile? | CSAF profile and mandatory-test validation |
+| Who published it? | `document.publisher` |
+| Which advisory lineage and revision is this? | `document.tracking.id`, `version`, dates, `revision_history` |
+| Which Product ID does the status concern? | `vulnerabilities[].product_status` |
+| Where is that Product ID defined? | `product_tree` |
+| Can the product be matched to a local asset? | Full Product Name, hierarchy, relationships, `product_identification_helper` |
+| Which vulnerability is being assessed? | `cve` or `ids` |
+| What explanatory context is provided? | vulnerability `notes`, references, CWE, scores |
+| What is the product's VEX state? | `product_status` |
+| If not affected, why? | `flags` and/or `threats[category=impact]` |
+| Does the impact statement cover this exact Product ID? | direct `product_ids` plus resolved `group_ids` |
+| If affected, what should the consumer do? | `remediations` |
+| Does the action statement cover this exact Product ID? | remediation `product_ids` plus resolved `group_ids` |
+| Is the product fixed or merely mitigated? | `product_status.fixed` versus remediation category |
+| Which fixed version is recommended? | `recommended`, optionally `first_fixed` |
+| Is investigation unresolved? | `under_investigation` |
+| What is known about exploitation or targets? | `threats[category=exploit_status]`, `target_set` |
+| Is the document current enough? | tracking dates/version plus semantic reassessment |
+| Is the issuer trusted and authoritative? | **Not established by profile conformance alone** |
+| Is the underlying security conclusion well supported? | **Requires assessment evidence beyond the CSAF serialization** |
+
+: Consumer-side interpretation checklist for CSAF 2.0 VEX. {#tbl-vex-standards-from-first-principles-appendix-csaf-consumer-checklist}
+
+### Common implementation failures
+
+The most consequential CSAF VEX failures are usually not malformed JSON. They are failures of identity, scope, or cross-field semantics.
+
+| Failure | Why it is dangerous |
+| --- | --- |
+| Treating Product ID as globally meaningful | Can apply VEX to the wrong local asset |
+| Referencing a Product ID that is not defined | Breaks referential integrity and CSAF mandatory tests |
+| Using weak product names without stable helpers | Makes automated matching ambiguous |
+| Ignoring relationship-defined product combinations | Can broaden or narrow vulnerability scope incorrectly |
+| Putting the same Product ID in affected and not-affected families | Creates an explicit contradictory status |
+| Publishing `known_not_affected` without impact coverage | Fails the VEX profile and removes the basis for suppression |
+| Using a flag that does not reference products/groups | Leaves the justification unscoped |
+| Applying multiple VEX justification flags to the same product | Creates conflicting machine-readable reasons |
+| Publishing `known_affected` without remediation coverage | Fails the VEX action-statement requirement |
+| Treating `mitigation` as `fixed` | Confuses risk reduction with remediation |
+| Treating `none_available` as `not_affected` | Confuses lack of response with lack of impact |
+| Treating `fixed` as globally fixed | Loses product/version scope |
+| Treating `recommended` as vulnerability status | Confuses vendor preference with impact state |
+| Treating `under_investigation` as safe | Converts uncertainty into suppression |
+| Treating `tracking.status = final` as immutable truth | Confuses document lifecycle with assessment validity |
+| Treating a valid CSAF signature or trusted transport as proof of correctness | Confuses authenticity with evidence quality |
+
+: High-value CSAF VEX implementation failure modes. {#tbl-vex-standards-from-first-principles-appendix-csaf-failures}
+
+### Schema validity, profile conformance, and technical truth
+
+CSAF 2.0 goes further than many interchange formats in defining mandatory semantic tests and profile-specific completeness rules. That is a major strength. It still cannot make the underlying product-security assessment true merely by encoding it correctly.
+
+A consumer considering whether a `known_not_affected` statement may suppress a finding should therefore establish all of the following:
+
+1. **Schema validity**: the JSON document conforms to CSAF 2.0.
+2. **Mandatory-test validity**: cross-references, statuses, identifiers, and other CSAF invariants pass the required tests.
+3. **VEX profile conformance**: the document satisfies the `csaf_vex` profile, including impact/action coverage.
+4. **Issuer authentication**: the source is authenticated.
+5. **Issuer authority**: the issuer is authorised to make the product-specific assertion.
+6. **Product applicability**: the referenced Product ID resolves to the actual local product state.
+7. **Vulnerability applicability**: the correct vulnerability identity is being interpreted.
+8. **Semantic coherence**: product status, flags, threats, remediation, release boundaries, and product relationships do not contradict one another.
+9. **Freshness**: the product state and assumptions underlying the assessment remain valid.
+10. **Evidence support**: the technical assessment is supported strongly enough for the intended disposition.
+11. **Local-policy acceptance**: the consumer's vulnerability-management policy permits the CSAF assertion to alter the finding.
+
+This hierarchy clarifies what CSAF can and cannot do. CSAF can make the **communication contract** much stronger by requiring explicit product references, status semantics, impact explanations, action statements, and lifecycle information. It cannot replace the build evidence, architecture analysis, reachability analysis, exploit testing, supplier evidence, or engineering judgment that made the assessment defensible in the first place.
+
+### The architectural lesson from CSAF
+
+CSAF demonstrates that VEX can be much more than a compact `(product, vulnerability, status)` record. In the CSAF model, the VEX conclusion is embedded in an advisory graph whose meaning depends on resolved product identity, product hierarchy and relationships, vulnerability identity, product-status membership, scoped impact statements, scoped remediation actions, and document lifecycle.
+
+That additional structure creates implementation cost, but it also creates opportunities for stronger automation. A conforming consumer can reject undefined product references, contradictory statuses, unscoped flags, uncovered not-affected products, and uncovered affected products before those defects reach vulnerability-disposition logic.
+
+The resulting design principle is therefore:
+
+> CSAF VEX should be consumed as a profile-constrained, cross-referenced advisory model, not as a collection of status arrays.
+
+When used correctly, the product tree answers **what exact product state is being discussed**; `product_status` answers **what the producer currently concludes**; `flags` or impact threats answer **why a not-affected conclusion is justified**; `remediations` answer **what an affected consumer should do**; and tracking metadata answers **which advisory revision carries those claims**.
+
+The richer evidence package should remain outside, or be linked from, the VEX serialization. That preserves the distinction developed throughout the article: **CSAF VEX is a structured and strongly constrained communication of a product-specific vulnerability assessment; it is not a substitute for the assessment itself.**
+
+[^vex-standards-from-first-principles-appendix-csaf-standard]: OASIS Open. (2022). **Common Security Advisory Framework Version 2.0**. OASIS Standard, 18 November 2022. [OASIS Standard](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-schema]: OASIS Open. (2022). **CSAF 2.0 JSON Schema**. Normative machine-readable artifact accompanying the OASIS Standard. [Normative JSON Schema](https://docs.oasis-open.org/csaf/csaf/v2.0/os/schemas/csaf_json_schema.json).
+
+[^vex-standards-from-first-principles-appendix-csaf-errata]: OASIS Open. (2024). **Common Security Advisory Framework Version 2.0 Errata 01**. OASIS Approved Errata, 26 January 2024. The errata changes the aggregator schema only; it does not change the CSAF document or CSAF JSON schema. [Approved Errata](https://docs.oasis-open.org/csaf/csaf/v2.0/errata01/os/csaf-v2.0-errata01-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-21]: OASIS Open. (2026). **Common Security Advisory Framework Version 2.1, Committee Specification Draft 02**. 25 February 2026. [CSAF 2.1 CSD02](https://docs.oasis-open.org/csaf/csaf/v2.1/csd02/csaf-v2.1-csd02.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-vex-profile]: OASIS Open. **CSAF 2.0, section 4.5: Profile 5: VEX**. Defines the `csaf_vex` profile, required product tree and vulnerability structures, the four core VEX status families, impact statements for `known_not_affected`, and action statements for `known_affected`. [CSAF 2.0 VEX profile](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-vex-tests]: OASIS Open. **CSAF 2.0, section 6.1.27: Profile Tests**. Defines mandatory tests including VEX product status, vulnerability identity, impact-statement coverage, and action-statement coverage. [CSAF 2.0 mandatory profile tests](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-tracking]: OASIS Open. **CSAF 2.0, section 3.2.1.12: Document Property - Tracking**. Defines advisory identity, dates, revision history, status, and version. [CSAF 2.0 tracking model](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-product-tree]: OASIS Open. **CSAF 2.0, product-tree and Full Product Name definitions**. Defines Product IDs as document-scoped reference tokens and the product tree as the container for referencable products. [CSAF 2.0 product model](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-product-helper]: OASIS Open. **CSAF 2.0, Full Product Name - Product Identification Helper**. Defines `cpe`, `hashes`, `model_numbers`, `purl`, `sbom_urls`, `serial_numbers`, `skus`, and `x_generic_uris`. [CSAF 2.0 product identification helpers](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-relationships]: OASIS Open. **CSAF 2.0, Product Tree - Relationships**. Defines product combinations and relationship categories including `installed_on`, `installed_with`, and component relationships. [CSAF 2.0 product relationships](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-product-status]: OASIS Open. **CSAF 2.0, section 3.2.3.9: Vulnerabilities Property - Product Status**. Defines the eight product-status lists and their semantics. [CSAF 2.0 product status](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-flags]: OASIS Open. **CSAF 2.0, section 3.2.3.5 and mandatory flag tests**. Defines product-scoped flags, the five VEX justification labels, and mandatory product-reference and uniqueness tests. [CSAF 2.0 flags](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-remediations]: OASIS Open. **CSAF 2.0, section 3.2.3.12: Remediations**. Defines `mitigation`, `no_fix_planned`, `none_available`, `vendor_fix`, and `workaround`, together with product/group scoping. [CSAF 2.0 remediations](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-threats]: OASIS Open. **CSAF 2.0, sections 3.2.3.13-3.2.3.14: Scores and Threats**. Defines product-scoped CVSS scores and the threat categories `exploit_status`, `impact`, and `target_set`. [CSAF 2.0 vulnerability context](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-product-tests]: OASIS Open. **CSAF 2.0 mandatory and optional tests**. Includes missing/duplicate Product ID tests, contradicting product status, PURL validation, revision-history consistency, missing Product Identification Helper warnings, and other semantic checks. [CSAF 2.0 validation tests](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
+
+[^vex-standards-from-first-principles-appendix-csaf-optional-tests]: OASIS Open. **CSAF 2.0, section 6.2: Optional Tests**. Includes the warning for missing remediation on affected and under-investigation Product IDs. [CSAF 2.0 optional tests](https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html).
