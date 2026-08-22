@@ -1,0 +1,892 @@
+---
+title: "After proof abundance: Palomar and the new infrastructure of mathematical trust"
+subtitle: "Formal verification, provenance, semantic fidelity, and institutional governance in machine-scale mathematics"
+description: "A technical and institutional analysis of Palomar as an emerging verification layer for AI-assisted formal mathematics, and of the new scarcities that appear when proofs become abundant."
+abstract: |
+    Machine-assisted mathematics is beginning to invert a familiar scarcity. The historically expensive object was the proof: finding one could require months or years of expert search, while checking, communicating, contextualizing, and publishing it were downstream activities whose volume was constrained by the difficulty of discovery. Systems that generate, formalize, and mechanically verify mathematical arguments can alter this balance because, once candidate proofs become abundant, scarcity does not disappear but moves toward verification, semantic fidelity, provenance, explanation, attention, expert judgment, governance, and resilient infrastructure.
+
+    This article studies Palomar, the registry of Lean-verified mathematics launched in August 2026, as an early institutional response to that inversion. Palomar binds mathematical claims to immutable source snapshots, separates statements from proof implementations through Comparator, checks permitted assumptions, replays exported environments through Lean and NanoDa, requires structured provenance, applies a versioned automated semantic and editorial review, preserves registered source states, and publishes durable result-level records. These mechanisms create an assurance layer stronger than an ordinary code repository but deliberately narrower than peer review, journal publication, or formal-library integration.
+
+    The central argument is that Palomar matters less as a new badge of correctness than as evidence that mathematical publication is decomposing into distinct infrastructural layers. Mechanical validity, semantic fidelity, provenance, exposition, scholarly evaluation, preservation, and formal-library integration are different epistemic functions and should not be collapsed into one status. The article therefore examines what Palomar actually verifies, why the Challenge/Solution boundary matters, how Comparator treats a Lean project as an adversarial execution environment, why an independently implemented second checker reduces only some classes of risk, how an LLM is inserted at the semantic boundary, why provenance and policy commits become part of the public evidentiary object, and where Palomar explicitly refuses to claim novelty, significance, understanding, or peer acceptance.
+
+    The analysis then places Palomar in a broader institutional context. The arXiv analogy reveals a verification layer between repositories and journals; the Leiden Declaration exposes the remaining gap between proof as artifact and mathematics as practice; proof digestion becomes a distinct bottleneck once verified artifacts arrive faster than they can be conceptually assimilated; publication begins to decompose into linked formal, explanatory, archival, and evaluative artifacts; governance shifts from individual editorial decisions toward versioned policy; cross-prover interoperability requires common assurance semantics rather than a universal logic; and the mathematical supply chain becomes relevant because formal verification still depends on operating systems, caches, repositories, runners, archives, and organizations.
+
+    The broader conclusion is conditional rather than predictive. If proof production and low-level verification continue to scale faster than human and institutional judgment, mathematics will not become scarcity-free, because scarcity will migrate toward the trusted transitions by which a formally verified artifact becomes understood, attributed, contextualized, evaluated, reused, and incorporated into mathematical knowledge.
+date: "2026-08-23"
+date-modified: "2026-08-23"
+categories: [generative ai, machine learning, essay, regulation and compliance]
+difficulty: advanced
+audiences: [researcher, technical specialist, subject-matter-expert, practitioner, policymaker]
+keywords: "Palomar, Lean, formal verification, AI mathematics, proof abundance, mathematical trust, provenance, Comparator, NanoDa, proof digestion, scholarly infrastructure, mathematical governance"
+image: "after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust.png"
+draft: true
+---
+
+## When proof abundance requires institutions
+
+The central difficulty of machine-assisted mathematics is changing shape because, for most of mathematical history, proof production was itself the principal scarcity: a difficult theorem could absorb years of expert attention because finding a valid argument was the bottleneck, while verification, exposition, attribution, and publication, although indispensable, remained downstream activities whose volume was ultimately constrained by the difficulty of discovery. Under that regime it was natural for mathematical institutions to organize themselves around scarce proofs, since journals selected among a comparatively limited number of manuscripts, experts could devote substantial time to checking individual arguments, and much of the relevant provenance and context travelled informally with the people who produced the work.
+
+That ordering is no longer technologically guaranteed. Contemporary systems can search large formal spaces, write Lean code, retrieve and combine library results, generate computational certificates, repair failed proof attempts, and run many branches of mathematical exploration in parallel, so the number of candidate artifacts can grow much faster than the number of human researchers capable of inspecting them individually. Palomar was launched on 18 August 2026 explicitly against this background: Terence Tao described a recent proliferation of AI-generated proofs and the resulting difficulty, particularly for mathematicians who are not Lean specialists, of establishing whether a repository really proves the theorem advertised by its informal description; the Palomar founding statement makes the institutional counterpart of the same argument, maintaining that rapidly growing machine-assisted output requires community-accepted minimum standards together with automatic tools capable of enforcing those standards wherever enforcement can genuinely be mechanized.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-launch][^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-statement]
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-scarcity-migration
+%%| fig-cap: 'Scarcity migrates downstream as mathematical production and assurance capabilities expand.'
+%%| fig-alt: 'Proof scarcity passes through expanded machine generation into proof abundance. The resulting volume increases demand for verification infrastructure, after which attention, understanding, and judgment become the dominant downstream bottlenecks. A legend identifies artifacts or states, checks or transformations, institutions or persistent services, external infrastructure, direct flows, and contextual dependencies.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Proof scarcity]:::artifact --> B([Machine generation expands]):::process
+    B --> C[Proof abundance]:::artifact
+    C --> D([Verification must scale]):::process
+    D --> E[Verification scarcity]:::artifact
+    E --> F([Assurance infrastructure expands]):::process
+    F --> G[Attention, understanding,<br/>and judgment scarcity]:::artifact
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+**Proof abundance** denotes a regime in which producing candidate proof artifacts becomes substantially cheaper; **verification scarcity** appears when trustworthy checking cannot keep pace with the resulting volume; **judgment scarcity** emerges further downstream when mathematically valid artifacts accumulate faster than specialists and institutions can interpret, contextualize, explain, prioritize, and integrate them. These are different bottlenecks because a theorem-proving system can alleviate search scarcity without solving verification, while a proof assistant can make local derivations extraordinarily reliable without establishing semantic fidelity, novelty, explanatory value, or disciplinary significance.
+
+Palomar occupies the transition between abundant formal artifacts and public mathematical trust. It is a searchable registry of Lean formalizations whose proofs have passed a defined verification protocol; a registered record points to an immutable source snapshot and exposes the checked formal statement, dependencies, verification evidence, provenance information, and findings of an automated review conducted under a versioned policy.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] This makes Palomar more than a list of repositories because the registry does not merely say that some code exists: it binds a public identity to one exact artifact and to a specific assurance event.
+
+It is nevertheless intentionally less than a mathematical journal, and that boundary is fundamental to the argument developed here. Palomar is best understood as an early institutional response to proof abundance: a minimum trust layer between increasingly abundant formal mathematical artifacts and the scarcer processes through which those artifacts become reliable, intelligible, attributable, searchable, reusable, and eventually accepted mathematical knowledge. The important concept is therefore the *layer* rather than the badge, because formal verification can establish that an exact proof object derives an exact proposition under exact assumptions, whereas questions about whether the proposition expresses the intended mathematics, whether the proof is new, whether the result matters, whether its exposition is comprehensible, or whether a research community should devote scarce attention to it depend on different evidentiary mechanisms.
+
+The institutional challenge is consequently not to replace mathematical judgment with a universal automated certificate but to separate claims whose evidentiary bases differ, so that each layer can be inspected without acquiring authority from neighboring layers merely by association. Under that interpretation, Palomar is interesting even if its particular software changes rapidly, because it provides a concrete answer to a broader question that proof abundance makes difficult to avoid:
+
+> What infrastructure does mathematics require when producing formally valid artifacts becomes easier than deciding which of them should be trusted, understood, remembered, and incorporated into the discipline?
+
+## From repository to registry
+
+A source repository and a mathematical registry solve different problems because the repository is principally a mutable development environment, whereas the registry is an evidentiary institution whose claims must remain attached to a fixed historical state. A repository contains source files, dependency configuration, branches, issues, build scripts, documentation, generated artifacts, and whatever other material its maintainers need; its name can remain stable while almost everything inside it changes. A registry record instead says that one particular state of one project was inspected under one particular protocol and that the resulting evidence should remain interpretable later.
+
+For a Palomar entry, the relevant identity is therefore not merely the repository name but the combination of repository, exact full commit, selected project path, persistent registry identifier, and explicit version. The commit is not ancillary metadata because it fixes the source bytes to which the verification event refers, while the version allows later corrections, dependency updates, or substantial source revisions to receive a new public record without silently altering the meaning of the earlier one.
+
+Palomar's version semantics follow this logic. An explicit version URL remains historically resolvable, whereas an unversioned identifier can resolve to the latest active version; if a source correction or relevant dependency change occurs, the replacement must be verified and reviewed again and then appears as a new version rather than as an invisible mutation of the object previously inspected.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-protocol] The result is analogous to reproducible software releases but has a stronger epistemic consequence, because a theorem-level assurance claim becomes attached to a source state whose identity no longer drifts with subsequent development.
+
+| Property           | Repository                                | Registry record                                    |
+| ------------------ | ----------------------------------------- | -------------------------------------------------- |
+| Primary purpose    | Development                               | Public evidentiary record                          |
+| Normal mutability  | High                                      | Historically fixed by version                      |
+| Unit of identity   | Project                                   | Result version at exact source state               |
+| Correctness claim  | Whatever project authors assert           | Bounded Palomar assurance                          |
+| Preservation       | Depends on host and project               | Registered source receives additional preservation |
+| Citation semantics | Often branch-, tag-, or release-dependent | Stable result identifier plus explicit version     |
+
+: Repositories and registry records assign different semantics to the same underlying source material. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-repository-registry}
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-registry-versioning
+%%| fig-cap: 'A persistent Palomar identity can accumulate separately verified versions while preserving each registered source state.'
+%%| fig-alt: 'A mutable source repository produces commit c1 and later commit c2. Each commit passes through verification and registration, producing version 1 and version 2 under the same persistent Palomar identity. Both versions remain in the historical record. A legend identifies artifacts or states, checks or transformations, institutions, external infrastructure, and arrow meanings.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    R[Mutable source repository]:::artifact --> C1[Commit c1]:::artifact
+    R --> C2[Commit c2]:::artifact
+    C1 --> P1([Verification and registration]):::process
+    C2 --> P2([Verification and registration]):::process
+    P1 --> V1[(Palomar ID<br/>version 1)]:::institution
+    P2 --> V2[(Same Palomar ID<br/>version 2)]:::institution
+    V1 --> H[Historical record]:::artifact
+    V2 --> H
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+Palomar also creates preservation forks for registered source states. These copies are backups rather than alternate canonical development repositories: the original project remains under its owner's control, while the registry preserves the exact state on which its assurance depends.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] This distinction is easy to miss because a Git fork looks superficially like another repository, yet its institutional role is different; the development repository is an evolving workspace, while the preservation copy exists so that the historical evidence does not disappear merely because an author deletes, renames, or abandons the original project.
+
+Immutability and availability therefore remain distinct even though they reinforce one another in a sound archival design. A Git commit can continue to define an exact object even if the platform serving it disappears, whereas availability concerns whether future researchers can still retrieve that object and the evidence surrounding it. Preservation infrastructure is necessary because content identity, public accessibility, and institutional continuity are separate engineering problems, and machine-scale mathematics makes those separations more consequential than they were when the principal public artifact was a static paper whose interpretation depended less heavily on a reproducible computational environment.
+
+## What Palomar actually verifies
+
+The phrase *Palomar-verified theorem* is useful only when its scope is unpacked, because Palomar combines several evidence-producing mechanisms that operate at different epistemic levels. Before an artifact becomes registerable, the current workflow requires a mechanical proof check, a non-mechanical automated review concerned with semantic alignment and Palomar's minimum research-interest standard, and structured disclosure through `formalization.yaml`; after those gates have been satisfied, the submitter still decides whether the immutable artifact should be registered.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about]
+
+The mechanical layer establishes the strongest formal claim. Comparator verifies that the designated Solution declarations address the statements fixed by the Challenge, checks the transitive assumptions used by the relevant proof, and supports replay of exported proof information through the trusted checking paths; NanoDa adds an independently implemented final checker, reducing dependence on one kernel implementation. These operations do not establish a general claim that the theorem is correct in every sense in which mathematicians use that word; they establish a bounded derivability and statement-integrity claim relative to the pinned formal environment and documented verifier assumptions.
+
+The semantic and editorial layers are differently typed because they address questions for which there is no comparable deterministic kernel. The automated reviewer asks whether the formal statement appears to correspond to the accompanying informal mathematical description, whether important definitions have been manipulated or made vacuous, whether the required provenance has been adequately disclosed, and whether the result plausibly clears a minimum threshold for inclusion in a serious research registry. These are interpretive judgments produced by a language model under a versioned policy, and they can fail in both directions.
+
+| Layer                     | Palomar mechanism                               | Epistemic character                             |
+| ------------------------- | ----------------------------------------------- | ----------------------------------------------- |
+| Artifact identity         | Repository, commit, project path, version       | Deterministic identity                          |
+| Formal-target integrity   | Challenge/Solution comparison                   | Deterministic under verifier assumptions        |
+| Proof validity            | Kernel replay and permitted-assumption analysis | Deterministic under the trusted substrate       |
+| Checker diversity         | Lean plus NanoDa                                | Deterministic with shared upstream dependencies |
+| Semantic fidelity         | Language-model review                           | Probabilistic and interpretive                  |
+| Provenance and disclosure | `formalization.yaml` plus review                | Structured, partly self-reported                |
+| Research-interest floor   | Language-model review                           | Probabilistic and policy-relative               |
+| Registration              | Submitter choice plus registry workflow         | Institutional act                               |
+
+: Palomar's assurance is a vector of bounded claims rather than one undifferentiated certification. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-assurance-gates}
+
+The workflow also deliberately separates a review outcome from public registration. The submitter receives the review and can withdraw, revise the source and resubmit a new immutable commit, or proceed with registration if the applicable conditions have been satisfied. This matters because Palomar's model review is framed as a **problem-detection filter** rather than as an editorial authority that approves or endorses mathematics: the public meaning is that no blocking problem was identified under the current policy, not that the registry has measured the work's quality or accepted its broader scholarly claims.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about]
+
+The same calibration explains why Palomar does not expose internal numerical review scores as though they were measurements of mathematical merit. Its About page documents that repeated runs of the same artifact can assign different values on a review axis while producing the same high-level outcome, which is exactly what one should expect from a stochastic reviewer whose internal scores serve as control variables rather than stable observables.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] A mature interpretation should therefore resist the urge to summarize all these layers with one word such as *certified*, because mechanical proof validity, semantic review, provenance disclosure, and registration arise from different processes, have different failure modes, and support different public claims.
+
+## The Challenge/Solution boundary
+
+Palomar's most consequential architectural decision is the separation between what a submission claims and how the submission proves it, because a system that controls both the specification and the evidence can satisfy a formal checker while quietly changing the task. The Challenge fixes the statement of record in a deliberately constrained environment, whereas the Solution provides the potentially large proof implementation; Comparator then examines their relationship before the proof is credited as evidence for the registered statement.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-comparator]
+
+Let (T_C) denote the proposition obtained from the protected Challenge environment, let (T_S) denote the corresponding proposition obtained from the Solution environment, let (\Gamma_S) denote the checked Solution-side formal environment, and let (\pi) denote the candidate proof. A genuine formal invariant of the protocol is that the statement comparison must succeed and that the proof must type-check against the matched Solution proposition:
+
+$$
+\operatorname{Match}(T_C,T_S)=1
+\qquad\land\qquad
+\Gamma_S\vdash \pi:T_S.
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-statement-proof-invariant}
+
+The first conjunct prevents the proof implementation from silently changing the target, while the second establishes the ordinary formal derivability claim relative to the checked environment; neither condition by itself is sufficient for the registered assurance.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-challenge-solution-boundary
+%%| fig-cap: 'The protected Challenge and candidate-controlled Solution converge only through the verification pipeline.'
+%%| fig-alt: 'The Challenge fixes the protected statement of record while the Solution supplies proof implementation code. Both enter Comparator, which checks statement and dependency correspondence, permitted assumptions, Lean kernel replay, and NanoDa replay before producing a mechanical report. Policy and the execution substrate influence the checks without becoming submitted artifacts. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    C[Challenge<br/>statement of record]:::artifact --> X([Comparator]):::process
+    S[Solution<br/>proof implementation]:::artifact --> X
+
+    X --> M([Statement and<br/>dependency match]):::process
+    X --> A([Permitted<br/>assumptions]):::process
+    X --> K1([Lean kernel<br/>replay]):::process
+    X --> K2([NanoDa<br/>replay]):::process
+
+    M --> R[Mechanical report]:::artifact
+    A --> R
+    K1 --> R
+    K2 --> R
+
+    P[[Verification policy]]:::external -.-> X
+    O[[Sandbox and execution substrate]]:::external -.-> X
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+Without this boundary, a candidate solver controls both the theorem and the proof. A system asked to prove a difficult statement might strengthen a hypothesis until the result becomes easy, weaken the conclusion, substitute a nearby definition, restrict the domain, or prove a proposition that looks superficially similar to the advertised theorem; the resulting Lean project could type-check perfectly while answering the wrong question because the kernel would faithfully verify the proposition supplied to it rather than recover the informal intention that existed before formalization.
+
+Palomar narrows this risk by treating the Challenge as the protected interface to the mathematical claim. The current submission contract also limits the size of the Challenge and constrains its transitive imports to approved closures, reducing the amount of source that must be inspected in order to understand what the statement means.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] The purpose is not aesthetic minimalism: a small, dependency-controlled specification is easier to audit semantically, easier to compare mechanically with the Solution-side declaration, and harder for candidate-controlled infrastructure to manipulate indirectly.
+
+The separation also explains why merely checking that the Solution compiles would be insufficient. A conventional Lean build establishes that declarations in the resulting environment type-check relative to the imported formal environment, but it does not by itself establish that the designated theorem is the same theorem independently fixed by an external specification. Comparator therefore has to compare the relevant declarations and dependency closures in the two environments rather than merely observe that both projects build successfully.
+
+Definition holes reveal the remaining limitation. Comparator can enforce that a supplied definition has the advertised formal type, appropriate name, and permitted assumptions, yet it cannot establish that the chosen definition captures an informal mathematical intention not encoded in the type. Its documentation explicitly discusses cases in which a placeholder can be filled in a formally valid but semantically vacuous way and therefore requires additional oversight for such constructions.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-comparator] Formal-target integrity can sharply reduce semantic risk, but the formal system cannot infer mathematical meaning that was never specified.
+
+## Comparator and the adversarial proof environment
+
+A Lean project is executable input rather than inert theorem text, which means that a high-assurance verifier has to treat the project as potentially adversarial even when the submitter is acting in good faith. Lake configuration, build scripts, external dependencies, macros, elaborator extensions, generated files, custom commands, precompiled `.olean` artifacts, and code executed during elaboration all enlarge the attack surface beyond the final proof term, so an end-to-end verifier must protect both the logical target and the machinery used to inspect it.
+
+Comparator's design reflects this concern. Its documentation warns explicitly about the trust implications of precompiled `.olean` files, builds and exports the Challenge and Solution in controlled contexts, compares the declarations needed to interpret the relevant theorem statement, traverses the transitive assumptions of the proof, and uses `lean4export` to move the formal environment into a representation suitable for later checking.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-comparator] The goal is not simply to obtain a successful Lean invocation but to reduce the opportunity for candidate-controlled project structure to influence the very evidence by which the candidate will be judged.
+
+Palomar then adds an outer production environment around Comparator. Its security documentation describes deletion or reset of mutable build state, restricted filesystem and network access, fail-closed sandbox probes, pinned verifier components, protected report generation, and separation between candidate execution and downstream review.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-security] These measures matter because Comparator documents a trust model and a set of assumptions, whereas Palomar is responsible for constructing a deployed environment that tries to satisfy those assumptions consistently.
+
+This distinction between Comparator and Palomar should be preserved whenever the architecture is summarized. Comparator supplies the proof-oriented comparison and checking machinery; Palomar supplies additional confinement, policy, provenance, workflow, and publication semantics. Attributing the outer sandbox directly to Comparator would overstate what the library itself guarantees, whereas ignoring the outer deployment layer would understate the protections actually used by the registry.
+
+The threat model is consequently one of non-interference: candidate-controlled source and build execution should not be able to modify the protected specification, verifier binaries, policy, or final report in a way that causes a hostile project to manufacture evidence of its own validity. Expressing this as prose is more informative than turning it into a decorative logical inequality because the substantive engineering question concerns filesystem privileges, process isolation, network availability, trusted paths, and the provenance of the tools that execute the check.
+
+The strongest defensible mechanical claim is therefore always relative to the formal environment, verifier revision, configuration, and policy that produced the result. There is no implementation-free status called *verified* floating above these conditions; high-assurance systems become more trustworthy not because they eliminate assumptions altogether but because they reduce the number of assumptions, make their identities explicit, expose their boundaries, and preserve enough evidence for other parties to reproduce or challenge them later.
+
+## Two kernels and the shrinking trusted computing base
+
+Palomar currently checks exported proof information through Lean's own kernel and NanoDa, an independently implemented external checker for Lean 4.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-nanoda] This implementation diversity is valuable because a soundness defect specific to one final checker does not have to be reproduced in a separately engineered implementation, so the verification claim depends less heavily on the correctness of one checker code base.
+
+If (X) denotes the exported formal environment presented to both final checking paths, the relevant acceptance condition is genuinely conjunctive:
+
+$$
+K_{\mathrm{Lean}}(X)=1
+\qquad\land\qquad
+K_{\mathrm{NanoDa}}(X)=1.
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-dual-kernel-acceptance}
+
+The value of this condition lies in implementation diversity, not in an assumption of statistical independence. The two paths share the submitted source, exported environment, dependencies, runner, operating system, cache inputs, and other pieces of the verification pipeline, which means that their failures cannot sensibly be treated as independent events whose probabilities can simply be multiplied; repeating a verification with a second implementation reduces one class of common risk, but it does not eliminate errors introduced before the paths diverge.
+
+The same limitation becomes visible when considering a compromised or semantically wrong environment. Both Lean and NanoDa can correctly accept a proof relative to the same imported declarations even when those declarations do not correspond to the source state the registry thinks it consumed, and both can correctly accept a proof of a formal proposition that fails to represent the intended theorem. Checker diversity therefore strengthens local proof validation while leaving supply-chain and semantic failures largely orthogonal.
+
+Lean's own reference manual motivates the broader principle by emphasizing validation at a suitably small trusted boundary.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-lean-validation] The deeper lesson is not that two kernels constitute a magic threshold but that a verification institution should continually identify which assumptions remain implicit and ask which of them can be converted into explicit, reproducible, and independently implemented evidence. The trusted computing base shrinks not because trust disappears but because more of the pipeline becomes inspectable and because defects in one implementation have fewer opportunities to masquerade as properties of mathematics itself.
+
+## The semantic gap: when correctness stops being mechanical
+
+Mechanical verification answers a precise question: does the submitted proof establish the fixed formal proposition under the recorded formal assumptions? Mathematical interpretation adds another question that the kernel cannot decide, namely whether the fixed proposition adequately represents the theorem that the human account says is being proved.
+
+A formalization can therefore be perfectly valid while being semantically inadequate. The hypotheses can be accidentally strengthened until the theorem becomes much easier; the conclusion can be weakened; a universal quantifier can become existential or be placed under the wrong scope; an intended mathematical object can be represented by a degenerate or overly restrictive definition; a hidden side condition can enter through an imported concept; or two formal definitions that appear textually reasonable can differ exactly on boundary cases that matter to the informal theorem. None of these cases requires a failure in Lean's proof kernel because the kernel checks the proposition it has been given rather than the mathematical intention that motivated the formalization.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-semantic-gap
+%%| fig-cap: 'Formal derivation and semantic fidelity occupy different parts of the assurance problem.'
+%%| fig-alt: 'An informal mathematical claim is interpreted into a formal statement. A formal proof object is checked against that statement by a kernel, producing a verified formal artifact. Semantic review examines the relationship between the informal claim and the formal statement. A legend identifies artifacts, checks, institutions, external infrastructure, and arrow meanings.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    I[Informal mathematical claim]:::artifact --> T[Formal statement]:::artifact
+    T --> P[Formal proof object]:::artifact
+    P --> K([Kernel checking]):::process
+    K --> V[Verified formal artifact]:::artifact
+
+    I --> S([Semantic review]):::process
+    S --> T
+    POL[[Review policy and definitions]]:::external -.-> S
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The Challenge/Solution boundary makes this problem smaller without making it mechanical. Because the Challenge is compact and its dependency closure is constrained, a reviewer can focus attention on the formal statement and the definitions that determine its meaning rather than auditing every detail of a huge proof development; this is a major reduction in verification complexity even though the remaining question still belongs to mathematical interpretation.
+
+Palomar explicitly acknowledges this limitation. Its About page describes the language-model report as assistance in checking whether the formal and informal statements correspond, while declining to claim that this process constitutes a guarantee; it likewise does not verify an informal proof simply because a Lean proof of the advertised statement exists.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] Formalization should therefore not be described as eliminating the semantic gap, since what it does is relocate much of the trust problem from inference checking to a smaller and more sharply defined problem of specification fidelity.
+
+This is arguably the most important conceptual boundary in the Palomar architecture because it prevents formal verification from being inflated into a broader theory of mathematical truth. A kernel can be extremely reliable about derivability within a formal system, yet mathematical research also depends on modeling, representation, interpretation, and the relationship between formal objects and the concepts that motivate them; a registry designed for machine-scale mathematics has to respect both facts simultaneously.
+
+## The strange recursion: an LLM at the semantic boundary
+
+Palomar places a probabilistic model precisely where deterministic proof checking reaches its limit, producing an architecture in which potentially AI-generated mathematics passes through formal verification before another AI system evaluates semantic alignment, provenance, and a minimum editorial threshold. This is superficially recursive but not epistemically circular, because the components are assigned different tasks: kernels validate formal derivation, whereas the language model investigates relations among formal statements, informal descriptions, definitions, literature claims, and declared production history.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-review-boundary
+%%| fig-cap: 'Deterministic verification and probabilistic semantic review occupy separate stages in the Palomar workflow.'
+%%| fig-alt: 'A submitted formal artifact passes through deterministic mechanical verification and produces a mechanical report. The artifact, report, structured provenance, versioned policy, and model configuration then feed automated semantic and editorial review. The review outcome returns to the submitter, whose registration decision can create a persistent Palomar record. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Submitted formal artifact]:::artifact --> M([Deterministic<br/>mechanical verification]):::process
+    M --> R[Mechanical report]:::artifact
+    R --> S([Automated semantic<br/>and editorial review]):::process
+    A --> S
+    P[Structured provenance]:::artifact --> S
+    POL[[Versioned policy and prompts]]:::external -.-> S
+    MOD[[Model configuration and tool access]]:::external -.-> S
+    S --> O[Review outcome]:::artifact
+    O --> D([Submitter decision]):::process
+    D --> REG[(Palomar registry)]:::institution
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The Palomar review policy decomposes this work into structured passes instead of asking one model for an undifferentiated judgment. Published instructions separately address classification and metadata, statement alignment, definition fidelity, literature and notability questions, optional proof-account issues, and final synthesis, allowing a reviewer or later auditor to see which part of the semantic problem a particular finding belongs to.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-rubric] This decomposition is important because a model that is useful for detecting suspicious definition changes need not be equally reliable at estimating research significance, and the institutional claim should not conceal such distinctions.
+
+The statement-alignment pass examines definitions, hypotheses, quantifiers, coercions, degenerate cases, scope, and the relationship between the formal theorem and the accompanying informal description. The definition-fidelity pass examines reachable definitions for manufactured, vacuous, or misleading concepts that could make a difficult-looking statement formally trivial. The literature and research-interest pass asks a deliberately limited question: whether the result could plausibly warrant a research paper or serious note and whether there is a credible research area and audience for it, rather than asking the model to establish novelty or rank importance.
+
+The stochastic character of this review is material. If (X) denotes the submitted artifact and associated evidence, (C_P) the exact policy commit, (C_R) the reviewer implementation revision, (M) the model configuration, (Q) the rendered prompts and available tools, and (\Xi) the run-dependent stochastic state, then the review outcome (Y) should be regarded as drawn from a conditional distribution rather than as an invariant property of the artifact:
+
+$$
+Y\sim
+\Pr!\left(
+,\cdot\mid
+X,C_P,C_R,M,Q,\Xi
+\right).
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-review-outcome-model}
+
+Palomar's About page documents variation in internal numerical scores across repeated runs of the same artifact, which is why the public institutional claim is coarser than the raw model output: a record can state that no blocking problem was identified without pretending that an unstable score is a measurement of mathematical quality.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] False positives and false negatives remain possible, and the same artifact can be sampled differently under the same nominal policy.
+
+Prompt dependence and model dependence are equally important. If the model changes, if its tool access changes, if a literature-search pass gains or loses research access, or if the prompt describing a blocking semantic discrepancy is revised, then the evidentiary meaning of the review can change even when the formal proof does not. This is why review policy has to be versioned and why the public claim should remain calibrated to the mechanism that actually generated it.
+
+The current implementation treats the invocation as an auditable event rather than preserving only a final prose summary. PalomarReviewer records the source and policy commits, model identity, rendered prompts, final model messages, normalized pass outputs, review object, and associated digests; as of the implementation state inspected for the source article, production used `codex:gpt-5.6-sol`, while the model's substantive judgment was not followed by a conventional human editorial sign-off.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-reviewer]
+
+The absence of an ordinary case-by-case human appeal is therefore a genuine design choice. A submitter who believes the model's judgment is wrong is expected to modify or clarify the artifact and resubmit a new immutable commit rather than obtain a conventional editor's reversal of the same review event; repeated attempts can encounter stochastic variation, which is another reason the model should be interpreted as a filter and attention-allocation mechanism rather than as an epistemic court.
+
+This architecture is rational precisely because it uses deterministic checking where correctness can be reduced to formal derivation and a probabilistic system where the task becomes linguistic, contextual, semantic, and partially judgmental. The resulting institution is not free of judgment; it relocates some judgment into model prompts and policy while leaving expert mathematical interpretation, peer review, and long-term disciplinary acceptance downstream.
+
+## Provenance becomes part of the artifact
+
+When proof production becomes cheaper, the question *where did this come from?* becomes more important rather than less because technical reproducibility alone cannot reveal whether a proof was independently discovered, translated from a paper, adapted from an existing formalization, produced by an AI agent, assembled through library search, or extensively rewritten by human maintainers. The Mathlib Initiative's `formalization.yaml` standard is designed precisely for this missing layer, treating provenance, intent, production process, fidelity, and related work as structured self-reporting rather than attempting to infer them from code whose technical dependencies already live elsewhere.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-formalization-yaml]
+
+Technical provenance includes facts that can often be reconstructed mechanically, such as the repository, commit, toolchain, dependencies, build configuration, and verification reports. Mathematical-production provenance instead records information that code alone does not reveal: who performed the formalization, which mathematical sources were used, whether the theorem is original or source-based, which earlier formalizations exist, how human and AI roles were divided, which automation methods contributed to the artifact, what review has occurred, and where the formalization intentionally diverges from its source mathematics.
+
+Palomar requires a registry-specific profile of this metadata and includes it in the automated review, so the history of how the formal artifact came into existence becomes part of the public evidentiary object rather than an informal story that can disappear after publication.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about] The registry profile requires enough detail to distinguish substantive formal developments from thin wrappers, to identify responsible maintainers, to classify the mathematics, and to describe the relationship between formal claims, mathematical sources, related work, automation, review state, and known limitations.
+
+Tao's registered Sendov formalization provides a concrete example. Its pinned `formalization.yaml` identifies the mathematical sources and related formalizations, describes the production workflow, records substantial AI-agent authorship of Lean code under human direction and review, notes the use of Python-generated Bernstein certificates subsequently checked by Lean, and states limitations including the absence of an independent external Lean review and the fact that the artifact itself does not claim novelty.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-sendov-provenance] None of these facts can be reconstructed merely by seeing that the proof kernel accepted the project.
+
+Structured provenance must not be confused with independently proved historical truth because a declaration remains a declaration and can be incomplete, inaccurate, or strategically framed. Its value lies in making claims explicit enough that later readers can compare them with other evidence, which is especially important for priority, independence, capability evaluation, and accountability.
+
+Priority depends on whether a formal proof precedes or follows the mathematical source it formalizes; independence depends on whether two proofs arose through genuinely separate evidentiary paths or whether one is a translation of the other; AI capability claims depend on what prior proofs, formalizations, tools, or human interventions entered the production process; and accountability depends on which people or institutions take responsibility for releasing the artifact and describing its provenance accurately.
+
+The significance becomes greater as the production process grows heterogeneous. A future theorem may have an informal discoverer, an AI search system, a different formalizer, a human maintainer, an automated certificate generator, a semantic reviewer, and later an independent expositor, so the classical paper-level author list may no longer capture the roles needed to interpret the result's epistemic history. Provenance becomes part of the artifact's public identity because downstream users need to know not merely that a proof exists but how the object entered the scholarly record.
+
+## Policy as versioned executable infrastructure
+
+Once provenance and semantic review enter the assurance record, the rules under which those objects are judged become part of the epistemic chain. `PalomarPolicy` contains the submission contract, protocol, rubric, reviewer prompts, schemas, classification requirements, and related rules consumed by the workflow, and the project consequently describes that repository as a versioned editorial contract rather than as optional documentation beside the verifier.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-policy]
+
+In the implementation state inspected for the source article, the head of `PalomarPolicy/main` was commit `2d7c43b9c2d1dcc4e642c732091e4fea2569b81c`, dated 20 August 2026.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-policy-head] The exact revision matters because two reviews of the same mathematical artifact under materially different policy commits are different institutional events even when the theorem and proof have not changed: thresholds can move, schemas can become stricter, a research-interest floor can be redefined, a prompt can instruct the reviewer to inspect a new class of semantic mismatch, and required provenance fields can be added or removed.
+
+Palomar's implementation also separates policy from other components of the system. Submission machinery performs mechanical checks, the policy repository specifies rules and prompts, the reviewer executes those rules, the database maintains canonical registry state, and the public website presents a read-only projection. This separation is institutionally important because changing a reviewer implementation should not silently alter the rule it is supposed to apply, while changing a policy should leave an inspectable historical record instead of being smuggled into the verifier as an undocumented behavioral difference.
+
+The review object records the policy commit applied to the decision, which preserves **temporal policy integrity**: a historical review remains interpretable under the exact standards in force when it occurred rather than being silently reclassified whenever the current policy evolves. A later community can conclude that an old standard was inadequate, but the historical meaning of the earlier decision should remain stable enough to reconstruct what the institution claimed at the time.
+
+Version control is unusually useful for this purpose because the commit supplies content identity, a diff exposes what changed, schemas can fail closed when required fields are missing, and prompts can be inspected as part of the same policy surface. Yet *policy as code* is still too narrow a description because some policy is executable code, some is JSON, some is schema structure, some is threshold logic, and some consists of natural-language instructions whose wording changes the behavior of a probabilistic reviewer.
+
+**Policy as versioned executable infrastructure** is therefore more accurate: normative choices are encoded in artifacts that software can apply consistently at scale. This improves reproducibility and auditability, yet reproducible enforcement cannot establish the objective correctness of the underlying rule, because the decision to set a particular threshold, define a particular disclosure requirement, or treat one semantic discrepancy as blocking remains a normative institutional judgment before it becomes a deterministic or model-mediated procedure.
+
+A fully reconstructible probabilistic review also requires more than a policy commit. The artifact, mechanical evidence, reviewer implementation, model identity, rendered prompts, tool availability, outputs, timestamps, and other event-specific context contribute to what actually happened, so bit-for-bit reproduction of the language model's behavior may be impossible even when reconstruction of the decision event is excellent. The relevant archival objective is therefore often reconstructibility of the institutional event rather than a promise that a stochastic model will regenerate identical tokens in the future.
+
+## What Palomar deliberately does not certify
+
+A trustworthy assurance institution is partly defined by what it refuses to claim, and Palomar's current public documentation is unusually explicit about those boundaries. Registration does not certify the correctness of an informal proof, code quality, novelty, mathematical importance, peer-reviewed status, journal readiness, or suitability for inclusion in Mathlib or another formal library; the registry's semantic review assists with selected questions, but it does not transform them into mechanically settled properties.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about]
+
+| Epistemic layer                                | Palomar's role                                                   |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| Exact artifact identity                        | Strongly addressed                                               |
+| Mechanical proof validity                      | Strongly addressed within documented trust assumptions           |
+| Statement/proof integrity                      | Strongly addressed                                               |
+| Structured provenance                          | Required and audited for completeness, but partly self-reported  |
+| Formal/informal fidelity                       | Assisted by automated review, not guaranteed                     |
+| Novelty                                        | Not certified                                                    |
+| Significance                                   | Not certified; only a minimum research-interest floor is applied |
+| Human understanding                            | Not certified                                                    |
+| Peer acceptance and disciplinary incorporation | Not certified                                                    |
+
+: A Palomar registration should be interpreted as a bundle of bounded assurances rather than as comprehensive mathematical certification. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-certification-layers}
+
+These exclusions prevent **epistemic laundering**, in which a narrow technical assurance acquires broader social meanings merely because several statuses are presented together. A mechanically verified theorem is not thereby novel, important, elegantly explained, peer reviewed, or understood, and a language-model literature pass cannot close an open-world claim about whether no equivalent result has ever appeared anywhere in mathematics.
+
+Novelty is particularly resistant to mechanical certification because it is a statement about a vast and incomplete historical corpus rather than merely about the submitted formal environment. Even an excellent search system can provide evidence that close prior work has or has not been found, yet absence from a bounded search cannot establish universal absence from all published papers, preprints, books, private communications, obscure proceedings, or unpublished knowledge.
+
+The minimum research-interest floor is similarly distinct from significance. Palomar asks whether a result plausibly belongs in a serious research registry and has a credible research audience, not whether it is important relative to other mathematics or likely to reshape a field. Its founders instead anticipate a possible division of labor in which reliable baseline formal assurance could allow journals and referees to spend more scarce expert attention on novelty, exposition, conceptual depth, and significance.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-statement]
+
+Repository, registry, journal, and formal library should therefore remain institutionally distinct even when one result appears in all four. The repository supports development, the registry supplies bounded assurance and durable identity, the journal performs broader scholarly evaluation, and the formal library decides what should become maintained reusable infrastructure. Treating these statuses as interchangeable would destroy exactly the epistemic distinctions that machine-scale mathematics increasingly needs.
+
+## The arXiv analogy and the verification layer
+
+Tao's launch post offers the arXiv analogy as a *zeroth approximation*, which is useful because arXiv solved a major scholarly-infrastructure problem without attempting to become peer review itself.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-launch] arXiv provides rapid dissemination, durable identity, discovery, versioning, and preservation for scholarly manuscripts, while its official documentation makes clear that submissions are moderated for platform suitability rather than peer reviewed and that inclusion does not imply approval of a paper's methods or conclusions.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-about][^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-moderation]
+
+Versioning reinforces the analogy because arXiv treats the public record as historical rather than silently mutable: once versions have been made public, replacements and withdrawals add to the record instead of erasing earlier states.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-versions] Palomar likewise combines durable identity, explicit versions, searchable records, and coexistence with later publication, although the epistemic function of its gate is different.
+
+| Infrastructure | Primary public object        | Baseline gate                                              | What remains downstream                                 |
+| -------------- | ---------------------------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| arXiv          | Research manuscript          | Moderation and platform suitability                        | Peer review, significance, acceptance                   |
+| Palomar        | Formal mathematical artifact | Mechanical assurance, provenance, bounded automated review | Human understanding, novelty, significance, peer review |
+
+: arXiv and Palomar separate different infrastructural tasks from higher-order scholarly evaluation. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-palomar}
+
+arXiv primarily answers whether a manuscript is part of its durable research-sharing record under the platform's moderation rules, whereas Palomar asks whether an exact formal artifact has passed a specified mechanical verification protocol, supplied required provenance, and survived a bounded semantic and editorial review. The analogy therefore concerns institutional separation rather than identical admission semantics.
+
+The result is better described as a **verification layer** than as a simple Lean-specific replica of arXiv. Such a layer creates a durable, inspectable, protocol-scoped record of what was formally checked and under which conditions while leaving journals free to exercise different forms of scholarly authority. Palomar's founders explicitly anticipate that this lower-layer evidence might eventually help journals reserve specialist attention for conceptual novelty and elegance, although such integration should be treated as a proposed institutional use rather than an already established publication norm.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-statement]
+
+The broader historical analogy is therefore not that Palomar copies arXiv but that both systems standardize a recurrent infrastructural task that previously travelled informally through scholarly networks. arXiv reduced the friction of public dissemination and versioned scholarly identity without eliminating journals; a verification registry could analogously reduce the repeated cost of establishing that an exact formal artifact satisfies a transparent minimum assurance protocol without replacing mathematical peer review.
+
+This is also why registration can become a reusable assurance primitive. A future journal might decide not to rerun every low-level verification step if a trustworthy registry record already supplies reproducible evidence, allowing human referees to concentrate more effort on ideas, relation to the literature, conceptual architecture, novelty, explanatory quality, and significance. That possibility is institutionally important precisely because it separates repeatable technical assurance from judgments that remain expensive and contextual.
+
+## Palomar and the Leiden problem
+
+The Leiden Declaration on Artificial Intelligence and Mathematics provides a useful normative counterpoint because it treats mathematical proof as valuable not only for certainty but also for understanding, while emphasizing attribution, responsibility, transparency, independent verification, expert evaluation, and research autonomy.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-leiden] The Declaration is neither anti-AI nor anti-formalization; rather, it asks how mathematical communities can benefit from automation without losing the disciplinary functions through which formal results become intelligible and responsibly situated knowledge.
+
+The resulting **Leiden problem** concerns how mathematics can absorb machine-produced results at scale without reducing mathematical practice to the accumulation of verified artifacts. Palomar answers part of this problem by operationalizing several norms that might otherwise remain aspirational, including structured disclosure of automated-tool use, exact artifact identity, independent checking, inspectable policy, provenance, and an explicit semantic-review stage between mechanical derivation and public registration.
+
+The Declaration calls for disclosure of automated-tool use, while Palomar turns production disclosure into structured metadata; the Declaration emphasizes independent verification, while Palomar creates reproducible mechanical evidence and checker diversity; the Declaration warns that formalization contains a translation problem between computer-encoded concepts and human presentations, while Palomar isolates that problem as an explicit semantic-review stage; and the Declaration anticipates pressure on reviewing capacity when automated production accelerates, while Palomar attempts to automate a bounded baseline filter so that not every aspect of a submission requires scarce human evaluation.
+
+The same comparison reveals what Palomar does not solve. It is strongest on mechanical correctness and procedural transparency, while its provenance requirements improve the informational basis for attribution and responsibility; its automated semantic review assists at the boundary between formal and informal meaning but does not establish conceptual understanding, and its research-interest filter does not replace communal judgment about significance or research direction.
+
+Procedural transparency and conceptual transparency are therefore different. Palomar can make it unusually clear which source state, policy revision, checker, provenance declaration, and model event contributed to a registration, yet a mathematician may still have no satisfying account of why the theorem is true in the conceptual sense used to build theory. The first kind of transparency can be engineered through records and reproducibility, whereas the second often requires substantial mathematical reorganization.
+
+The relationship between Palomar and Leiden should also be interpreted analytically rather than genealogically. Palomar need not have been designed as an implementation of the Declaration for its architecture to instantiate some of the same governance concerns, and claiming a direct lineage without evidence would confuse conceptual compatibility with historical causation. What matters is that the registry provides a concrete case in which correctness, attribution, transparency, responsibility, and human judgment have to be distributed across distinct technical and institutional mechanisms.
+
+The resulting question is larger than Palomar: if mathematics can accumulate enormous numbers of machine-verified statements while human communities deeply understand only a small fraction of them, what does it mean for a theorem to become part of mathematics rather than merely part of a database? Mechanical validity is one threshold, registration another, peer-reviewed publication another, expert understanding another, use by later mathematicians another, and incorporation into theory, teaching, and mathematical culture still others.
+
+## Verification abundance and the scarcity of proof digestion
+
+A formally valid proof can still be a poor mathematical explanation, and Tao's account of the Sendov conjecture provides a concrete example because substantial work remained after an AI-generated Lean development had already been formally verified. The subsequent effort reorganized the argument, related it to earlier mathematics, simplified its architecture, identified the roles of computational certificates, and exposed structural consequences that were difficult to see in the raw formal artifact, a downstream process Tao described as a **digestion** of the proof.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-sendov-digestion]
+
+**Proof digestion** is therefore broader than summarization. A useful digest must identify the proof's major architecture, separate genuine mathematical mechanisms from representational scaffolding, locate those mechanisms in the literature, determine which formulations are reusable, identify where computation or formal machinery substitutes for conceptual argument, and expose generalizations or new questions that become visible only after the derivation has been reorganized.
+
+| Digestion task         | Main question                              | Typical output                              |
+| ---------------------- | ------------------------------------------ | ------------------------------------------- |
+| Structural compression | What are the major stages?                 | Proof skeleton                              |
+| Mechanism extraction   | Why does the proof work?                   | Invariant, reduction, obstruction, identity |
+| Contextualization      | Which ingredients are inherited or new?    | Literature map                              |
+| Canonicalization       | What representation is reusable?           | Stable definitions and lemmas               |
+| Consequence extraction | What else follows?                         | Corollaries and generalizations             |
+| Exposition             | How should another mathematician learn it? | Paper, lecture, annotated formalization     |
+
+: Proof digestion turns a verified derivation into structures that can participate in further mathematical reasoning. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-digestion-tasks}
+
+The scarcity can be represented as a reflected fluid queue rather than as a rhetorical equation. Let (B(t)) denote the backlog of verified results awaiting substantive digestion, let (\lambda_V(t)) denote the time-dependent arrival rate of verified artifacts selected for digestion, and let (\mu_D(t)) denote the community's effective digestion capacity while a backlog exists. A minimal model is
+
+$$
+\frac{dB(t)}{dt}
+================
+
+## \lambda_V(t)
+
+\mu_D(t)\mathbf{1}_{{B(t)>0}},
+\qquad
+B(t)\geq 0.
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-digestion-queue}
+
+This is a schematic queue rather than an empirical model because proof-digestion tasks vary enormously in difficulty and importance, yet it captures the relevant stability condition: if material deserving digestion arrives faster than the mathematical community can assimilate it for a sustained period, verified-but-undigested mathematics accumulates. Conversely, triage changes the effective arrival process by deciding which results merit deep attention; it does not create understanding automatically.
+
+This makes selection unavoidable under genuine abundance because not every theorem deserves or can receive a full human exposition. Some results may warrant attention because they settle famous problems, others because they expose a mechanism likely to generalize, others because they reorganize a large formal corpus, while many valid lemmas may be most valuable as machine-readable infrastructure rather than as standalone objects of human study.
+
+There are also two scales of digestion. **Local digestion** reorganizes one proof into an explanation that exposes its mechanism, while **global digestion** compresses families of results into theories, classifications, abstractions, and reusable methods. Tao's Mathematics Distillation Challenge makes the second problem unusually explicit by asking whether a very large body of formally resolved equational-theory information can be compressed into a compact human-readable artifact that improves downstream reasoning.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-distillation]
+
+Research on formal-proof informalization addresses one component of local digestion. Hattori, Matsuzaki, and Fujiwara generate natural-language proofs by informalizing formal proof steps and recursively summarizing them according to proof structure, including experiments on Lean library proofs.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-hattori] Such systems can improve readability and bridge formal syntax with ordinary mathematical prose, yet faithful translation still need not identify the central idea, recognize that a classical theorem subsumes a long derivation, determine what is genuinely new, or discover a more fruitful generalization.
+
+Translation changes representation, whereas digestion changes the organization of mathematical knowledge. This asymmetry matters because Palomar can lower part of the verification cost while making the remaining understanding bottleneck more visible: formal assurance may become cheaper without conceptual assimilation becoming correspondingly cheap.
+
+## The new publication stack
+
+The traditional mathematical paper bundled several functions into one object because the statement, proof, exposition, attribution, priority claim, bibliographic identity, peer review, and durable dissemination typically travelled together. Formal and machine-assisted mathematics allow those functions to separate, so one result can have a mutable research workspace, a fixed formal source commit, a Palomar record, a proof digest, a conventional preprint, a journal article, and a later formal-library representation without any of these artifacts being interchangeable.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-publication-stack
+%%| fig-cap: 'A mathematical result can accumulate several distinct public artifacts and institutional attestations.'
+%%| fig-alt: 'A research state produces a fixed formal source. The source can undergo verification and registration to create a registry record, can support digestion and exposition, and can be integrated into a formal library. Registry evidence and exposition can feed expert scholarly evaluation that may produce journal publication. A legend identifies artifacts, processes, institutions, external infrastructure, and arrow meanings.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    W[Research state<br/>search, agents, experiments]:::artifact --> S[Fixed formal source<br/>repository and commit]:::artifact
+    S --> P([Verification and registration]):::process
+    P --> R[(Registry)]:::institution
+    S --> E[Digestion and exposition<br/>preprint or explanatory article]:::artifact
+    S --> L([Library integration]):::process
+    L --> FL[(Formal library)]:::institution
+    R -.-> J([Expert scholarly evaluation]):::process
+    E --> J
+    J --> PUB[(Journal publication)]:::institution
+    R -.-> E
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The publication stack should be read as a graph rather than a compulsory chronology because a human exposition can precede formalization, a journal can publish mathematics that has never been formally verified, a formal library can contain a theorem before someone constructs a registry record around it, and later formalizations can be independent of the original published proof. The point is the decomposition of functions that were once commonly bundled rather than the imposition of a universal workflow.
+
+Each layer answers a different question. The source repository identifies what formal code exists; the registry identifies which exact formal artifact survived which verification protocol; the exposition explains how humans should understand the result; the journal evaluates the scholarly contribution; and the formal library decides what should become maintained reusable infrastructure. A result can legitimately possess one status without possessing the others.
+
+This decomposition changes citation practice because a single journal DOI may no longer identify every artifact on which a later claim depends. A computational reuse claim may need the exact formal declaration and source revision, a verification claim may need a specific Palomar version, a conceptual argument may be best cited through a human-readable exposition, and a historical priority claim may depend on an earlier preprint or source document. The appropriate principle is therefore to cite the layer whose particular claim is being relied upon instead of allowing one convenient identifier to stand in for the entire publication stack.
+
+Authorship decomposes in parallel. Discovery, informal proof construction, formalization, machine orchestration, proof digestion, exposition, verification-infrastructure maintenance, and formal-library refactoring are different contribution roles; a single undifferentiated author list can therefore conceal the lineage that matters for priority, responsibility, and reproducibility. Structured provenance makes these distinctions explicit enough that later institutions can preserve them even when the public result exists in several technically and socially distinct forms.
+
+This is one way in which AI can alter institutional architecture rather than merely automate an existing workflow. Once source, proof, provenance, verification evidence, digest, peer-reviewed exposition, and reusable library object can exist separately, the traditional paper ceases to be the only natural unit of mathematical publication. Palomar does not create this entire stack, but it demonstrates that one previously implicit layer can become a first-class public object, after which the other layers become easier to recognize as distinct epistemic institutions too.
+
+## Who governs the verification layer?
+
+A deterministic checker cannot answer the constitutional question of who may change the rules under which future artifacts are checked, which means governance becomes part of the assurance architecture as soon as a registry's status matters to downstream users. Palomar's published governance document distinguishes Technical Maintainers, Moderators, and a Scientific Advisory Board, assigning different authority classes to each rather than allowing one generic administrative role to subsume every institutional function.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-governance]
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-governance
+%%| fig-cap: 'Palomar separates operational maintenance, exceptional moderation, and scientific advice while policy changes feed the automated assurance process.'
+%%| fig-alt: 'Technical Maintainers control code, deployment, and services and implement policy changes. Moderators authorize exceptional moderation actions that Technical Maintainers execute through a validated workflow. The Scientific Advisory Board advises on standards and direction. Versioned policy and verifier state influence the automated assurance workflow and registry. Repository and deployment platforms are external dependencies. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    TM[(Technical Maintainers)]:::institution --> PC([Policy and software changes]):::process
+    PC --> V[Versioned policy and verifier state]:::artifact
+    V --> R([Automated assurance workflow]):::process
+    R --> REG[(Registry)]:::institution
+
+    MOD[(Moderators)]:::institution --> MA([Exceptional moderation<br/>authorization]):::process
+    MA -.-> TM
+    TM --> ME([Validated moderation<br/>execution]):::process
+    ME --> REG
+
+    SAB[(Scientific Advisory Board)]:::institution -.-> PC
+
+    GIT[[Repository and deployment platform]]:::external -.-> TM
+    GIT -.-> V
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+Technical Maintainers currently possess the broadest operational authority because they maintain Palomar repositories, can change deployed behavior, administer services and credentials, and execute approved moderation actions. Moderators hold narrower authority to authorize exceptional retraction or restoration of an exact registered version, while the Scientific Advisory Board advises on scientific direction, standards, and policy without thereby receiving repository permissions or becoming a standing panel that approves individual submissions.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-governance]
+
+This constitutes functional role separation but not personnel independence, since the initial memberships overlap substantially and the published governance model does not imply that every distinct role must always be exercised by a different natural person. Such overlap can be understandable in a young infrastructure whose technical knowledge is concentrated among a small group of founders, yet it matters when assessing the strength of institutional checks because separation of authority classes should not be described as organizational independence that the present design does not guarantee.
+
+The moderation design also separates authorization from execution. A Moderator may authorize an exceptional action concerning one exact registered version, while a Technical Maintainer performs the corresponding validated database operation; the public record is not treated as though the historical object had never existed because the system preserves the applicable canonical record or tombstone according to its current procedures.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-governance] This matters because durable scholarly identity and public visibility are distinct institutional properties.
+
+Automation relocates rather than removes human discretion. Ordinary submissions avoid conventional case-by-case editorial sign-off, yet humans still decide which dependencies are admissible, which semantic questions the model should inspect, which provenance disclosures are mandatory, which research-interest threshold is used, which model and tools are selected, what constitutes an infrastructure failure, and which proof-assistant ecosystems receive support. Once those decisions are encoded in policy, automation can apply them consistently to many artifacts, which means that a good rule scales efficiently and a bad rule can scale just as efficiently.
+
+Open policy source similarly does not imply distributed decision authority. Palomar's prompts, schemas, policy, and code are inspectable, but the governance document represented in this article does not define a general electoral system, mandatory community ratification, fixed public-comment period, or representation rule for ordinary policy changes.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-governance] Transparency, participation, and binding authority are therefore separate properties even when all relevant source is public.
+
+The adequacy of this model depends partly on Palomar's future importance. For a small optional service, lightweight maintainer governance may be proportionate; if journals, libraries, funders, or automated research systems were eventually to treat registration as a de facto prerequisite, the same internal policy choices would acquire wider distributive consequences. Decisions about supported proof assistants, admissible dependencies, model-mediated semantic thresholds, and required provenance could then shape which mathematical practices receive easier access to the trust layer.
+
+Forkability provides one partial counterweight because public policy and software can in principle be copied, modified, and implemented elsewhere. Yet technical forkability is not the same as institutional substitutability: a new registry would not automatically inherit Palomar's accumulated records, integrations, reputation, operational expertise, citation network, or community attention. If the verification layer becomes important, legitimacy will therefore depend not only on open source but also on representation, process, portability, and the practical existence of credible alternatives.
+
+## Beyond Lean: toward a protocol for verifiable mathematical artifacts
+
+Palomar's current implementation is deeply Lean-specific because it relies on Lake projects, Challenge and Solution modules, `lean4export`, Comparator, Mathlib, Lean's kernel, and NanoDa, yet the assurance problem it addresses is not inherently specific to Lean. Palomar's own documentation anticipates this distinction by stating that support for another proof assistant would require an appropriate verification pipeline, a statement/solution separation mechanism, human-inspectable rendering, dependency support, security and performance review, a meaningful candidate corpus, and maintainers with ecosystem-specific expertise rather than merely a parser for another source language.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about]
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-cross-prover-assurance
+%%| fig-cap: 'Proof-assistant-specific adapters can preserve common assurance semantics without imposing one common foundational logic.'
+%%| fig-alt: 'Lean, Rocq, and Isabelle artifacts pass through ecosystem-specific adapters. Each adapter protects the statement, invokes native validation, reports dependencies and trust assumptions, and renders an inspectable result before producing a normalized assurance record consumed by a verification registry. Each adapter depends on its own prover-specific external infrastructure. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    L[Lean artifact]:::artifact --> LA([Lean adapter]):::process
+    R[Rocq artifact]:::artifact --> RA([Rocq adapter]):::process
+    I[Isabelle artifact]:::artifact --> IA([Isabelle adapter]):::process
+
+    LA --> C[Normalized assurance record]:::artifact
+    RA --> C
+    IA --> C
+
+    C --> REG[(Verification registry)]:::institution
+
+    LP[[Lean kernel, Comparator,<br/>export and dependencies]]:::external -.-> LA
+    RP[[Rocq kernel and<br/>project environment]]:::external -.-> RA
+    IP[[Isabelle inference kernel,<br/>sessions and proof infrastructure]]:::external -.-> IA
+
+    subgraph LEG[Legend]
+        LG1[Artifact or state]:::artifact -->|direct flow| LG2([Check or transformation]):::process
+        LG3[(Institution or persistent service)]:::institution
+        LG4[[External or shared infrastructure]]:::external -.->|dependency or influence| LG2
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The first portable invariant is **specification integrity**: candidate evidence must not be able to redefine or weaken the proposition it claims to establish. Lean implements this through the Challenge/Solution architecture, but another prover can use a different mechanism so long as the protected statement and candidate proof remain independently identifiable and the verifier can establish that the latter addresses the former without candidate-controlled substitution.
+
+A second invariant is high-assurance native validation, whose implementation differs materially among proof assistants. Rocq follows a small-kernel design in which elaboration and tactic machinery produce proof terms in the Calculus of Inductive Constructions and the kernel validates their typing.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-rocq] Isabelle instead uses an LCF-style architecture centered on an abstract theorem type produced through trusted inference operations, while its infrastructure can also record proof terms and replay primitive inferences under appropriate configurations.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-isabelle]
+
+These differences show why a portable registry should normalize assurance semantics rather than foundational semantics. Each proof-assistant adapter needs to freeze artifact and environment identity, identify and protect the statement of record, invoke the ecosystem's appropriate trusted checking path, expose dependencies and non-derived trust assumptions, render a human-inspectable statement, and emit normalized evidence; it does not need to transform every theorem into one universal proof object whose mathematical meaning is assumed to be independent of the originating system.
+
+Assumption accounting also has to generalize beyond Lean's notion of permitted axioms. Different proof systems expose trusted extensions, oracles, axioms, theorem objects, modules, and background theories in different ways, so a portable protocol should require each ecosystem to disclose the non-derived trust dependencies relevant to the registered result rather than forcing every prover into a field whose semantics were designed around Lean.
+
+Checker diversity should likewise become an assurance profile instead of a binary requirement that every prover must possess a NanoDa analogue. Some systems may have an independently implemented external checker; others may rely on a single small native kernel plus replay mechanisms that share more implementation; still others may support independently reconstructed proof objects only for selected fragments. The registry's task is to make those differences legible rather than erase them behind identical wording.
+
+Three levels of interoperability should consequently remain distinct. **Registry interoperability** means heterogeneous proof assistants can produce comparable assurance records; **logical interoperability** means theories or statements can be translated with explicit semantic guarantees; **proof interoperability** means proof evidence itself can be transported and replayed across systems. A multi-prover registry primarily needs the first, whereas the second and third are stronger research problems and should not be smuggled into the meaning of cross-prover support.
+
+Cross-prover duplication also does not automatically establish independent discovery. Two formalizations can use different kernels while sharing the same source proof, machine translator, AI agent, mistaken informal definition, or library abstraction, so provenance remains essential even when the technical architectures differ. Diversity in foundations strengthens some forms of corroboration only when the intellectual lineage is sufficiently independent to make that diversity evidentially meaningful.
+
+Rendering is another portable requirement because the semantic-fidelity layer cannot operate on opaque internal representations alone. A prover adapter should expose a stable human-inspectable statement, the relevant dependencies, and a route back to the prover-native source, while preserving the native formal object as the authoritative identity. Human-readable rendering is therefore an interface to the theorem, not a replacement for the formal theorem itself.
+
+The long-term institutional object suggested by Palomar is consequently not merely a larger Lean registry but a protocol for independently verifiable mathematical artifacts. Such a protocol could in principle be implemented by several registries, journals, proof-assistant communities, or archival institutions, allowing assurance semantics to remain portable without requiring one organization to become a monopoly over formal mathematical trust.
+
+## Infrastructure dependencies and the mathematical supply chain
+
+Formal verification reduces trust only by relocating, narrowing, and documenting it, because an end-to-end registry event still depends on a substantial operational substrate outside the theorem kernel. Palomar's security documentation explicitly includes the GitHub-hosted Linux runner, Linux and its isolation mechanisms, systemd, Git, the Lean toolchain and kernel, Comparator, `lean4export`, Landrun, Palomar's verifier and reporter, NanoDa, allowlisted-repository governance, license tooling, and the compiled contents served by Mathlib's cache infrastructure among the components relevant to its trust model.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-security]
+
+| Dependency class     | Example                                              | Principal failure consequence                   |
+| -------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| Logical              | Lean kernel, NanoDa                                  | Invalid derivation accepted                     |
+| Semantic environment | Imported formal definitions                          | Result interpreted under unintended mathematics |
+| Execution            | Linux, Landlock, systemd, runner                     | Sandbox escape or verifier tampering            |
+| Acquisition          | Git, dependency and cache services                   | Wrong bytes enter the build                     |
+| Attribution          | Submission and record binding                        | Correct evidence attached to the wrong context  |
+| Persistence          | Repositories, preservation copies, registry database | Historical evidence lost or altered             |
+| Capacity             | Runner time, memory, disk                            | Verification becomes inconclusive               |
+| Governance           | Maintainers and trusted publishers                   | Systemic policy or substrate degradation        |
+
+: End-to-end mathematical assurance depends on several forms of infrastructure whose failure modes have different epistemic consequences. {#tbl-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-supply-chain}
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-supply-chain
+%%| fig-cap: 'A registered mathematical artifact depends on a chain of formal, operational, archival, and institutional infrastructure.'
+%%| fig-alt: 'A mathematical source becomes a formal repository, which depends on libraries and build inputs, then passes through proof-assistant checking, export and comparison, sandboxed runner execution, verification reporting, registry storage, and public records. Git hosting, compiled caches, operating systems, policies, and preservation services enter as external dependencies at different stages. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    MS[Mathematical source]:::artifact --> FR[Formal repository<br/>and fixed commit]:::artifact
+    FR --> BI[Build inputs and<br/>formal dependencies]:::artifact
+    BI --> VC([Proof-assistant and<br/>Comparator checking]):::process
+    VC --> VR[Verification report]:::artifact
+    VR --> RP([Registry publication]):::process
+    RP --> REG[(Registry record)]:::institution
+
+    GH[[Git hosting and repository services]]:::external -.-> FR
+    CA[[Compiled caches and package services]]:::external -.-> BI
+    OS[[Runner, Linux, sandbox,<br/>systemd and storage]]:::external -.-> VC
+    POL[[Verification and review policy]]:::external -.-> VC
+    ARC[[Preservation infrastructure]]:::external -.-> REG
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The Mathlib compiled cache provides a particularly useful example because Palomar's trust note explicitly states that the registry trusts the compiled contents returned by Mathlib's official cache. The requested cache key is source-sensitive and incorporates information derived from the pinned toolchain, manifest, source contents, path, and import closure, yet that key is not itself a detached signature or cryptographic digest of the archive bytes returned by the cache service.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-mathlib-cache]
+
+The source-derived name of a cached artifact and authentication of the actual downloaded bytes are therefore different security properties. A sufficiently privileged cache publisher or storage-layer compromise could substitute a well-formed compiled object against which both final checker paths might subsequently operate correctly; dual kernels reduce checker-specific risk, but they cannot repair an upstream common-mode substitution in the shared environment.
+
+This illustrates a broader distinction among identity, authenticity, availability, and interpretability. A Git commit can identify a precise source state; a content digest can authenticate bytes once those bytes are available; a preservation service can keep the object retrievable; and a reproducible toolchain can make the bytes interpretable as a mathematical project. None of these properties automatically supplies the others, so an archival verification record needs to preserve enough information to reconstruct the whole evidentiary context rather than merely a theorem name.
+
+The same reasoning applies to preservation forks. A PalomarArchive copy protects against disappearance of the author's repository, which is a meaningful reduction in one failure mode, but if both original and preservation copy live inside GitHub they remain inside one platform-level failure domain. Redundant copies within one administrative platform improve durability without providing the same resilience as independently administered preservation domains.
+
+The hosted runner introduces another category of trust. Palomar's sandboxing strategy uses operating-system mechanisms to isolate candidate-controlled project execution from protected verifier state, so a Linux-kernel or confinement defect could threaten the integrity of the verification process even though it would not constitute a theorem-kernel soundness bug. Formal proof therefore intersects ordinary systems security: the proof kernel governs derivability, while the operating-system kernel helps ensure that hostile project code cannot tamper with the process that claims to have checked that derivation.
+
+Attribution also has different dependencies from mechanical validity. The submission service can select which repository, commit, path, workflow revision, and submission context are associated with a job, while the downstream verifier independently fetches and inspects the named source. A compromised submission layer might therefore misattribute a correct report without necessarily forging the proof check itself, illustrating why verification integrity and attribution integrity should remain distinct security properties in machine-scale scholarly systems.
+
+Resource limits add a further institutional distinction. Palomar's current security policy treats resource exhaustion as an infrastructure outcome rather than a mathematical rejection, preserving the difference among a successful verification, a genuine verification failure, and an inconclusive run that could not complete under current time, memory, or disk constraints.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-security] This matters because otherwise hardware budgets and hosted-runner limits would silently become part of the mathematical admissibility criterion.
+
+The registry ledger itself is also a trust surface. Schema validation can establish that currently visible records have the expected structure, but proving that no historical record has ever been deleted or rewritten requires trusted historical evidence outside the current repository state. Palomar's own security documentation discusses limitations of repository-internal checks for enforcing append-only history against every possible administrative action, which points toward a more general archival problem that could eventually motivate independently witnessed transparency logs, externally anchored digests, signed releases, or replicated ledgers.
+
+The correct objective is not absolute zero trust, which would be impossible in any real computational institution, but **supply-chain discipline**: identify the remaining dependencies, pin them where possible, authenticate them where possible, diversify correlated failure where the benefit justifies the cost, preserve evidence in more than one failure domain when appropriate, and describe what still has to be trusted. This is one respect in which machine-scale mathematics begins to resemble other industrial systems, because standardized infrastructure improves efficiency while simultaneously creating shared components whose failure can affect many results at once.
+
+## Palomar as infrastructure for industrialized mathematical intelligence
+
+Palomar is not currently operating at industrial mathematical scale, and the registry snapshot incorporated into the source article is evidence of an early institution rather than mass production.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-registry-data] Its significance lies instead in the architecture it makes conceivable, because industrialization in this context means decomposition, standardization, specialization, and high-throughput coordination rather than the reduction of theorems to interchangeable manufactured goods.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-industrial-pipeline
+%%| fig-cap: 'Industrialized mathematical intelligence decomposes a formerly bundled research process into specialized stages connected by assurance interfaces.'
+%%| fig-alt: 'Problem selection flows into search, formalization, proof generation, mechanical verification, semantic review, registration, proof digestion, expert evaluation, and formal-library integration. Palomar occupies the verification, review, and registration region, while models, proof assistants, journals, and libraries provide external or institutional capabilities at different stages. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    Q[Problem selection]:::artifact --> S([Search]):::process
+    S --> F([Formalization]):::process
+    F --> PG([Proof generation]):::process
+    PG --> V([Mechanical verification]):::process
+    V --> SR([Semantic review]):::process
+    SR --> RG([Registration]):::process
+    RG --> D([Proof digestion]):::process
+    D --> E([Expert evaluation]):::process
+    E --> L([Library integration]):::process
+    L --> K[Reusable mathematical knowledge]:::artifact
+
+    M[[AI models and search systems]]:::external -.-> S
+    M -.-> F
+    M -.-> PG
+    PA[[Proof assistants and checkers]]:::external -.-> V
+    PR[(Palomar registry)]:::institution -.-> V
+    PR -.-> SR
+    PR -.-> RG
+    JR[(Journals and scholarly institutions)]:::institution -.-> E
+    FL[(Formal libraries)]:::institution -.-> L
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+The current registry already illustrates producer heterogeneity because its public descriptions include projects reporting extensive AI-agent-written Lean under human direction, human–AI workflows, specialized theorem-proving-system assistance, and more conventional formalization processes.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-registry-data] The sample is far too small and self-selected to support claims about prevalence, yet it demonstrates that the assurance interface can evaluate an artifact without requiring one particular production model.
+
+The same producer-agnostic boundary matters for future systems because the verifier can ask stable downstream questions even when upstream research architectures differ. What exact formal statement is claimed, what exact artifact proves it, which assumptions and dependencies enter the proof, which protected checks succeeded, what production history is declared, and how faithfully does the formal statement appear to represent the informal claim? The interface becomes valuable precisely because these questions do not depend on whether the proof was produced by a person, an AI agent, a specialized theorem prover, a mixed human–machine team, or some future system that does not resemble any of them.
+
+Standardization also changes cost structure because the fixed work required to design statement boundaries, security controls, provenance standards, review rules, preservation procedures, and verifier integrations can be reused across many submissions. When recurrent checks become standardized, the average institutional effort required to establish the same baseline property can fall as volume rises, which is why reusable infrastructure matters more under proof abundance than under a regime in which only a handful of unusual formalizations appear each year.
+
+The throughput consequence can be represented by a queueing model rather than by a decorative chain of arrows. Suppose the required stages of a serial pipeline are indexed by (i), each stage has effective service capacity (\mu_i), and a steady arrival rate (\lambda) reaches every required stage. Define the utilization of stage (i) by (\rho_i=\lambda/\mu_i). A necessary stability condition for this idealized network is
+
+$$
+\rho_i=\frac{\lambda}{\mu_i}
+\quad\text{for every required stage }i,
+\qquad
+\max_i\rho_i<1.
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-pipeline-stability}
+
+Under the stronger simplifying assumption that each stage behaves approximately as an independent M/M/1 queue, its expected queue population is
+
+$$
+\mathbb{E}[N_i]
+===============
+
+\frac{\rho_i}{1-\rho_i},
+$$ {#eq-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-pipeline-queue-length}
+
+which diverges as a stage approaches saturation. The M/M/1 assumptions are not realistic descriptions of heterogeneous mathematical labor, but the model captures the systems principle relevant here: increasing generation and verification capacity does not remove bottlenecks because congestion reappears at whichever downstream capacity remains closest to full utilization.
+
+AI progress can sharply raise search and formalization capacity, while kernels, CI, and registries can raise verification and registration capacity; once those stages improve, proof digestion, semantic auditing, expert judgment, governance, or formal-library integration can become the limiting service stage. Proof abundance is therefore not the end of scarcity but a mechanism for moving the location at which scarcity becomes visible.
+
+Standard interfaces also permit specialization. A theorem generator can optimize search without understanding how a downstream registry renders its result; a verifier can optimize assurance without knowing the private reasoning trajectory that discovered the proof; a journal can rely on lower-layer verification evidence while concentrating on scholarly evaluation; and a proof-digestion system can begin from a stable formal artifact without reproducing the search process that created it. No single institution has to become competent at every function, although poorly designed interfaces can still discard information that later stages need.
+
+Machine-readable registry records can additionally become inputs to later machine reasoning. A growing corpus of identifiable formal statements, dependencies, source states, and assurance evidence can support premise selection, theorem retrieval, conjecture generation, proof search, and capability evaluation, producing a feedback loop in which verified outputs become new production inputs. This can create cumulative returns, but only if indexing, canonicalization, dependency structure, and retrieval quality scale alongside theorem count; a corpus containing millions of opaque but valid declarations may be difficult for machines as well as humans to exploit.
+
+Provenance becomes the production log of this industrialized system. When something later goes wrong, investigators need to know whether the artifact came from an existing paper, an independently generated proof, a mechanical translation, a common AI agent, a shared library abstraction, or a pipeline whose earlier stage already contained the semantic error. Kernel validity alone cannot answer those forensic questions, whereas structured provenance makes at least some of the production history available to later researchers.
+
+Industrialization also increases the cost of systematic specification errors. If one human proves the wrong theorem once, the damage is local; if an automated pipeline repeatedly misformalizes a class of problems in the same way, it can manufacture thousands of impeccable proofs of the wrong formal targets. The more reliable and scalable execution becomes, the more consequential errors in specification, policy, and data can become, which is why small Challenge interfaces, semantic auditing, provenance, and versioned policy should be seen as controls against industrial-scale error propagation rather than peripheral administrative features.
+
+Standardization similarly creates systemic risk. Thousands of artifacts can share one verifier revision, one compiled cache, one hosting platform, one model reviewer, or one policy schema, producing economies of scale and common-mode exposure at the same time. Industrial maturity therefore requires reproducible implementations, explicit trust boundaries, checker diversity where useful, portable records, and enough institutional plurality that one shared component does not become an unnecessary epistemic choke point.
+
+The industrial metaphor reaches its limit at objective formation because mathematical research often discovers the specification itself. Mathematicians reformulate conjectures, invent definitions, interpret failed proofs, notice that a counterexample reveals a more important phenomenon, or determine that a surprising connection matters more than the problem that initiated the search. A system optimized to solve a supplied queue of conjectures can therefore become extraordinarily capable while remaining conservative about which questions deserve to exist.
+
+Industrialized mathematical intelligence should consequently be understood as infrastructure for a **trusted knowledge flow**, not as maximization of theorem count. Production metrics remain operationally useful, but they cannot be allowed to become proxies for mathematical value, since one conceptual reorganization of a field can matter more than thousands of registered lemmas and one negative result can be more informative than an enormous volume of routine positive outputs.
+
+## After proof abundance: what remains scarce
+
+The argument returns to its starting point with a sharper conclusion: proof abundance does not abolish scarcity in mathematics because improving one stage of the epistemic process exposes the constraints of the next. If candidate generation becomes cheap, verification becomes relatively scarce; if mechanical verification becomes standardized and reusable, attention, understanding, semantic judgment, research direction, provenance, governance, and resilient infrastructure become more visible as bottlenecks rather than fading away.
+
+**Attention** remains scarce because a mathematical community cannot deeply inspect every formally valid theorem merely because machines can produce them. A minimum research-interest floor can determine that an artifact plausibly belongs in a research registry, but it cannot decide which among thousands of legitimate results should receive days or weeks of specialist attention, and that allocation can depend on conceptual novelty, explanatory power, relevance to major open problems, usefulness as infrastructure, pedagogical value, or potential to reorganize a field.
+
+**Understanding** remains scarce because possession of a derivation is not possession of an explanation. Proof digestion becomes central precisely when valid artifacts arrive faster than their mechanisms can be absorbed, and Tao's Sendov experience illustrates how a verified formal development can still require substantial mathematical work before its architecture, relationship to the literature, and strongest conceptual consequences become visible.[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-sendov-digestion]
+
+**Semantic judgment** remains scarce because a kernel establishes derivability relative to a formal specification, while someone or something still has to determine whether the specification captures the intended mathematics. Better models may automate more of this work, but the problem does not disappear merely because the reviewer is computational: model choice, prompt design, tool access, training distribution, error tolerance, and policy become part of the judgment infrastructure.
+
+**Research direction** may become scarcer than proof because solving a supplied target is different from recognizing which targets deserve to be posed. Mathematical progress depends on abandoning misleading conjectures, inventing useful definitions, detecting connections among fields, interpreting counterexamples, and recognizing when the most important result is not the theorem that initiated the search but the structure discovered along the way. Proof abundance does not automatically imply an equally abundant supply of good questions.
+
+**Independent intellectual lineage** remains valuable because large proof counts can conceal common origins. Many formal proofs may depend on the same source argument, training data, library abstraction, machine translator, AI agent, or semantic mistake, so provenance becomes essential whenever a community wants to distinguish genuine corroboration from repeated derivations along one inherited path.
+
+**Legitimate governance** remains scarce because increasingly valuable assurance status gives rule-setters increasingly consequential authority. Versioned policies can make decisions inspectable, yet only institutions and communities can determine who should have the power to change admission rules, how affected groups participate, how conflicts are handled, when advisory bodies should have binding authority, and whether alternative implementations can remain interoperable enough to provide meaningful exit.
+
+**Infrastructure resilience** remains scarce because theorem-level formal certainty still depends on repositories, libraries, caches, operating systems, runners, archives, ledgers, identity systems, and organizations that must remain secure and available over time. Shared infrastructure creates valuable economies of scale, but the same reuse creates correlated failure domains whose risks have to be managed rather than ignored.
+
+What increasingly becomes scarce, then, is not simply the theorem but the **trusted transition** between epistemic states: from candidate to formally proved artifact, from proof to verified record, from record to faithful interpretation, from interpretation to understanding, from understanding to scholarly judgment, and from judgment to durable incorporation in mathematical practice. Proof assistants, registries, preprint servers, journals, libraries, and communities specialize in different transitions, and mathematical trust becomes stronger when no institution claims authority over transitions its methods do not actually warrant.
+
+```{mermaid}
+%%| label: fig-after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-trusted-transitions
+%%| fig-cap: 'Mathematical knowledge emerges through several distinct transitions rather than through proof verification alone.'
+%%| fig-alt: 'A candidate artifact passes through formal proving, verification and registration, semantic interpretation, proof digestion and explanation, expert scholarly judgment, and eventual integration into mathematical practice. Proof assistants, registries, journals, libraries, and communities participate at different stages. A legend identifies diagram conventions.'
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    C[Candidate artifact]:::artifact --> P([Formal proving]):::process
+    P --> F[Formal proof]:::artifact
+    F --> V([Verification and registration]):::process
+    V --> R[(Registry record)]:::institution
+    R --> S([Semantic interpretation]):::process
+    S --> D([Digestion and explanation]):::process
+    D --> E([Expert scholarly judgment]):::process
+    E --> I[Integrated mathematical knowledge]:::artifact
+
+    PA[[Proof assistants and checkers]]:::external -.-> V
+    JR[(Journals and scholarly institutions)]:::institution -.-> E
+    FL[(Formal libraries)]:::institution -.-> I
+    MC[(Mathematical communities)]:::institution -.-> S
+    MC -.-> D
+    MC -.-> I
+
+    subgraph LEG[Legend]
+        LA[Artifact or state]:::artifact -->|direct flow| LP([Check or transformation]):::process
+        LI[(Institution or persistent service)]:::institution
+        LX[[External or shared infrastructure]]:::external -.->|dependency or influence| LP
+    end
+
+    classDef artifact fill:#EAF2F8,stroke:#2F6690,color:#17202A,stroke-width:1.5px
+    classDef process fill:#FFF4D6,stroke:#A66A00,color:#17202A,stroke-width:1.5px
+    classDef institution fill:#E8F5E9,stroke:#3D7A45,color:#17202A,stroke-width:1.5px
+    classDef external fill:#F2F3F4,stroke:#6C757D,color:#17202A,stroke-width:1.5px
+```
+
+This perspective changes the unit of mathematical knowledge. A theorem does not cease developing epistemically when its first correct proof appears, because later formalizations can expose specification errors, independent proofs can reveal better mechanisms, historical work can alter attribution, proof digestion can change what the community thinks the result really says, library refactoring can make it computationally reusable, and subsequent scholarship can change its perceived significance.
+
+A second proof can therefore matter without changing the truth value of the theorem because it may reveal a shorter mechanism, establish independence from the first evidentiary path, introduce tools that generalize further, or show that an apparently essential assumption was only an artifact of the earlier proof. A digest can reorganize understanding without changing the formal derivation, historical work can alter attribution without changing either proof, and a formal-library refactor can make the theorem vastly more useful computationally without adding a new mathematical result. The theorem is consequently one node in a larger and temporally evolving epistemic object.
+
+This is why Palomar's most consequential feature is not that it supplies a stronger synonym for *correct* but that it refuses to collapse a repository into a registry record, a formal derivation into semantic fidelity, deterministic checking into probabilistic review, declared provenance into historical truth, registration into peer review, minimum research interest into significance, or verification into formal-library endorsement. Those distinctions become more important as mathematical artifacts become abundant because contextual ambiguity that can be managed socially at small scale becomes a systemic source of confusion when millions of machine-produced artifacts circulate through automated workflows.
+
+Proof abundance should consequently increase epistemic ambition rather than lower it. If machines can perform more local derivation, scarce mathematical effort can in principle move toward better questions, stronger abstractions, deeper explanations, more careful attribution, and more legitimate systems of evaluation; nothing guarantees that this redistribution will occur, and later-stage judgment may itself become increasingly automated, but there is no reason to assume that all capacities will scale at identical rates or that institutions will become unnecessary merely because machines can perform more of the underlying cognitive work.
+
+A mathematical future dominated by machine-generated formal proofs therefore need not become a warehouse of opaque truths. The alternative is to build institutions in which formal abundance is converted into trustworthy and intelligible knowledge through explicit interfaces, calibrated claims, provenance, reproducibility, explanation, criticism, and governance.
+
+Palomar is one early piece of that infrastructure because it demonstrates that a machine-generated proof need not move directly from *a system produced this* to *mathematics now knows this*. Between those states there can be an assurance layer requiring immutable identity, protected specifications, reproducible checking, checker diversity, provenance, versioned policy, semantic scrutiny, preservation, and deliberately bounded public claims.
+
+That layer can make mathematical trust more structured, but it cannot complete the final transition by itself. Between a verified artifact and accepted mathematical knowledge remain explanation, criticism, comparison, teaching, reuse, institutional judgment, community legitimacy, and time; those processes are not residual imperfections that will necessarily disappear once formal verification becomes efficient, because they are among the mechanisms through which mathematics determines what its formally valid artifacts mean, which of them matter, and how they should shape subsequent inquiry.
+
+That is what remains after proof abundance.
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-launch]: Tao, T. (2026, August 18). **Palomar – a registry of Lean verified mathematics**. *What's new*. [Author's announcement](https://terrytao.wordpress.com/2026/08/18/palomar-a-registry-of-lean-verified-mathematics/comment-page-1/)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-statement]: Avigad, J., Ballard, M., de Dios, J., Guillen, N., Kra, B., Morrison, K., Tao, T., Vakil, R., & Venkatesh, A. (2026, August 18). **Palomar: a registry of Lean-verified mathematics**. *Palomar*. [Founding statement](https://palomar-registry.org/statement)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-about]: Palomar. (2026). **About Palomar**. *Palomar*. [Official documentation](https://palomar-registry.org/about)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-protocol]: PalomarRegistry. (2026). **Palomar protocol**. *PalomarPolicy*. [Official specification](https://github.com/PalomarRegistry/PalomarPolicy/blob/main/docs/specification.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-comparator]: Lean FRO. (2026). **Comparator: A trustworthy judge for Lean proofs**. *leanprover/comparator*. [Official repository documentation](https://github.com/leanprover/comparator/blob/master/README.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-security]: PalomarRegistry. (2026). **Palomar security policy**. *PalomarSubmission*. [Official security documentation](https://github.com/PalomarRegistry/PalomarSubmission/blob/main/SECURITY.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-nanoda]: NanoDa contributors. (2026). **NanoDa: External type checking for Lean 4**. *coproduct-opensource/nanoda*. [Official repository documentation](https://github.com/coproduct-opensource/nanoda/blob/main/README.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-lean-validation]: Lean Project. (2026). **Validating a Lean Proof**. *The Lean Language Reference*. [Official documentation](https://lean-lang.org/doc/reference/latest/ValidatingProofs/)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-rubric]: PalomarRegistry. (2026). **Palomar automated-review rubric and prompts**. *PalomarPolicy*. [Versioned policy repository](https://github.com/PalomarRegistry/PalomarPolicy)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-reviewer]: PalomarRegistry. (2026). **PalomarReviewer: Automated AI review and registration tooling for Palomar**. *GitHub*. [Official implementation](https://github.com/PalomarRegistry/PalomarReviewer)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-formalization-yaml]: Mathlib Initiative. (2026). **formalization.yaml: A self-reporting standard for autoformalization projects**. *GitHub*. [Official standard](https://github.com/mathlib-initiative/formalization.yaml)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-sendov-provenance]: Tao, T. (2026). **formalization.yaml for Sendov's conjecture and the Phelps–Rodriguez conjecture, registered source revision 1ddea92d89f951a0a7cbbffa6c267cf7e6640b1d**. *teorth/sendov*. [Pinned provenance record](https://github.com/teorth/sendov/blob/1ddea92d89f951a0a7cbbffa6c267cf7e6640b1d/formalization.yaml)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-policy]: PalomarRegistry. (2026). **PalomarPolicy: The versioned editorial contract for the Palomar registry**. *GitHub*. [Policy repository](https://github.com/PalomarRegistry/PalomarPolicy)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-policy-head]: PalomarRegistry. (2026, August 20). **doc: bound arXiv classifications at eight codes (#86), commit 2d7c43b9c2d1dcc4e642c732091e4fea2569b81c**. *PalomarPolicy*. [Git commit](https://github.com/PalomarRegistry/PalomarPolicy/commit/2d7c43b9c2d1dcc4e642c732091e4fea2569b81c)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-about]: arXiv. (2026). **About arXiv**. *arXiv info*. [Official documentation](https://info.arxiv.org/about/index.html)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-moderation]: arXiv. (2026). **Content moderation**. *arXiv info*. [Official policy](https://info.arxiv.org/help/moderation/index.html)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-arxiv-versions]: arXiv. (2026). **Submission version availability**. *arXiv info*. [Official documentation](https://info.arxiv.org/help/versions.html)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-leiden]: Alper, J., Barany, M. J., Chavarri Villarello, A., Dahmen, S., Dean, W., Ganapathy, K., Harris, M., Holmes, D., Jamnik, M., Kelk, S., Kra, B., Martin, U., Naskręcki, B., Ochigame, R., Portegies, J., & Schmitt, J. (2026). **Leiden Declaration on Artificial Intelligence and Mathematics**. *Zenodo*. [DOI](https://doi.org/10.5281/zenodo.20302944)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-sendov-digestion]: Tao, T. (2026, August 12). **A digestion of the proof of Sendov's conjecture**. *What's new*. [Author's exposition](https://terrytao.wordpress.com/2026/08/12/a-digestion-of-the-proof-of-sendovs-conjecture/)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-tao-distillation]: Tao, T. (2026, March 13). **Mathematics Distillation Challenge – Equational Theories**. *What's new*. [Project announcement](https://terrytao.wordpress.com/2026/03/13/mathematics-distillation-challenge-equational-theories/comment-page-1/)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-hattori]: Hattori, S., Matsuzaki, T., & Fujiwara, M. (2025). **Natural Language Translation of Formal Proofs through Informalization of Proof Steps and Recursive Summarization along Proof Structure**. *Proceedings of the 18th International Natural Language Generation Conference*, 376–389. [ACL Anthology](https://aclanthology.org/2025.inlg-main.23/)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-governance]: PalomarRegistry. (2026). **Palomar governance**. *PalomarPolicy*. [Official governance document](https://github.com/PalomarRegistry/PalomarPolicy/blob/main/docs/governance.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-rocq]: The Rocq Development Team. (2026). **Core language**. *The Rocq Prover Reference Manual*. [Official documentation](https://rocq-prover.org/doc/V9.2.0/refman/language/core/index.html)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-isabelle]: Wenzel, M., et al. (2025). **Primitive logic: Proof terms**. *The Isabelle/Isar Implementation Manual*. [Official documentation](https://isabelle.in.tum.de/website-Isabelle2025/dist/library/Doc/Implementation/Logic.html)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-mathlib-cache]: PalomarRegistry. (2026, August). **Mathlib cache trust note**. *PalomarSubmission*. [Official trust analysis](https://github.com/PalomarRegistry/PalomarSubmission/blob/main/docs/mathlib-cache-trust.md)
+
+[^after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust-palomar-registry-data]: Palomar. (2026). **Palomar registry data: current registered results**. *Palomar public data service*. [Machine-readable registry projection](https://data.palomar-registry.org/recent.json)
+
+<!-- Baseline article normalized from the attached full-length version. :contentReference[oaicite:0]{index=0} -->
