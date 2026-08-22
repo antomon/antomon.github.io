@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-07-31">
+<meta name="description" content="A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance.">
+
+<title>When the Proof Checker Becomes Part of the Experiment – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-f95f4a17e9d5bb76c4506342f1760542.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@17.0.3/dist/twemoji.min.js" integrity="sha384-Y5xukbGJwykbHHkTbLJykYLcBPFxrwipTbEh0puxhkz9CZ90raTPGe2Ks4vCxsYU" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.twemoji) {
+      twemoji.parse(document.body, {
+        folder: "svg",
+        ext: ".svg"
+      });
+    }
+  });
+</script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../style.css">
+<meta property="og:title" content="When the Proof Checker Becomes Part of the Experiment – Random Bits of Knowledge">
+<meta property="og:description" content="A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance.">
+<meta property="og:image" content="https://antomon.github.io/posts/when-the-proof-checker-becomes-part-of-the-experiment/proof-checker-failure.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="When the Proof Checker Becomes Part of the Experiment – Random Bits of Knowledge">
+<meta name="twitter:description" content="A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/when-the-proof-checker-becomes-part-of-the-experiment/proof-checker-failure.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">When the Proof Checker Becomes Part of the Experiment</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">When the Proof Checker Becomes Part of the Experiment</h1>
+            <p class="subtitle lead">Lean, Collatz, and the epistemology of proof abundance</p>
+                  <div>
+        <div class="description">
+          A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">machine learning</div>
+                <div class="quarto-category">mathematics</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">July 31, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">August 2, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  <div>
+    <div class="abstract">
+      <div class="block-title">Abstract</div>
+      <p>Lean-based mathematical research separates candidate generation from deductive verification. Human mathematicians, tactics, search procedures, metaprograms, and increasingly AI systems may generate proof attempts, while Lean’s elaborator translates those attempts into core expressions and its kernel checks whether the resulting proof terms and declarations satisfy the rules of its dependent type theory. This architecture is central to Terence Tao’s vision of mathematical AI: stochastic and unreliable generators can become useful when coupled to verification mechanisms with substantially different failure modes.</p>
+      <p>The July 2026 CollatzLean incident exposes both the power and the conditional nature of that architecture. An AI-assisted Lean development claimed a <code>sorry</code>-free, axiom-free, witness-free refutation of the Collatz conjecture and presented a verification pipeline containing fresh kernel replay, dependency checks, proof export, and checking by the independent Nanoda kernel. The mathematical result was invalid. Expert review reduced the development to a proof of <code>False</code> that exploited a soundness defect in Lean’s processing of nested inductive declarations: phantom parameters could disappear from generated auxiliary types and thereby escape type checking.</p>
+      <p>Leonardo de Moura’s subsequent postmortem established that the independent-checking stage had also genuinely accepted the malformed artifact, but for a different reason. The repository pinned an outdated Nanoda release containing a separate projection-validation defect. The same adversarial construction therefore lay in the intersection of two distinct implementation failure regions. This was not evidence that Lean’s intended type theory is inconsistent, nor did it provide evidence against the Collatz conjecture. It was an implementation and verification-pipeline failure involving specific vulnerable checker versions.</p>
+      <p>The incident shows that machine checking is an implemented scientific process whose epistemic force depends on kernel correctness, checker diversity, version freshness, faithful artifact export, dependency control, semantic fidelity, and end-to-end provenance. In a regime of abundant automated proof generation, these assumptions become increasingly consequential because optimization systems interact with executable acceptance predicates and may discover not only valid derivations but also rare combinations of verifier defects.</p>
+      <p>The case therefore provides concrete evidence for the thesis developed in <em>Proof Abundance and the New Practice of Mathematics</em>: theorem generation, formal verification, semantic review, adversarial testing, exposition, community digestion, and canonicalization are distinct stages of mathematical knowledge production. A green kernel verdict remains a powerful form of evidence, but it is neither an infallible oracle nor the terminal state of discovery. In this episode, the initial artifact appeared to discover a nonterminating Collatz orbit; the complete research process instead discovered defects in the instruments used to certify proofs.</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#lean-as-the-verification-layer-of-a-mathematical-research-pipeline" id="toc-lean-as-the-verification-layer-of-a-mathematical-research-pipeline" class="nav-link active" data-scroll-target="#lean-as-the-verification-layer-of-a-mathematical-research-pipeline">Lean as the verification layer of a mathematical research pipeline</a></li>
+  <li><a href="#why-the-collatz-conjecture-is-a-severe-test" id="toc-why-the-collatz-conjecture-is-a-severe-test" class="nav-link" data-scroll-target="#why-the-collatz-conjecture-is-a-severe-test">Why the Collatz conjecture is a severe test</a></li>
+  <li><a href="#the-collatzlean-claim-and-what-actually-happened" id="toc-the-collatzlean-claim-and-what-actually-happened" class="nav-link" data-scroll-target="#the-collatzlean-claim-and-what-actually-happened">The CollatzLean claim and what actually happened</a>
+  <ul class="collapse">
+  <li><a href="#an-apparent-refutation" id="toc-an-apparent-refutation" class="nav-link" data-scroll-target="#an-apparent-refutation">An apparent refutation</a></li>
+  <li><a href="#review-changed-the-object-of-discovery" id="toc-review-changed-the-object-of-discovery" class="nav-link" data-scroll-target="#review-changed-the-object-of-discovery">Review changed the object of discovery</a></li>
+  <li><a href="#from-theorem-claim-to-kernel-incident" id="toc-from-theorem-claim-to-kernel-incident" class="nav-link" data-scroll-target="#from-theorem-claim-to-kernel-incident">From theorem claim to kernel incident</a></li>
+  </ul></li>
+  <li><a href="#the-defect-at-the-kernel-boundary" id="toc-the-defect-at-the-kernel-boundary" class="nav-link" data-scroll-target="#the-defect-at-the-kernel-boundary">The defect at the kernel boundary</a>
+  <ul class="collapse">
+  <li><a href="#the-nanoda-discrepancy" id="toc-the-nanoda-discrepancy" class="nav-link" data-scroll-target="#the-nanoda-discrepancy">The Nanoda discrepancy</a></li>
+  </ul></li>
+  <li><a href="#what-the-incident-establishes-and-what-it-does-not" id="toc-what-the-incident-establishes-and-what-it-does-not" class="nav-link" data-scroll-target="#what-the-incident-establishes-and-what-it-does-not">What the incident establishes and what it does not</a></li>
+  <li><a href="#collatzlean-as-a-concrete-case-of-proof-abundance" id="toc-collatzlean-as-a-concrete-case-of-proof-abundance" class="nav-link" data-scroll-target="#collatzlean-as-a-concrete-case-of-proof-abundance">CollatzLean as a concrete case of proof abundance</a>
+  <ul class="collapse">
+  <li><a href="#verification-is-an-interface-contract" id="toc-verification-is-an-interface-contract" class="nav-link" data-scroll-target="#verification-is-an-interface-contract">Verification is an interface contract</a></li>
+  <li><a href="#from-proof-abundance-to-acceptance-abundance" id="toc-from-proof-abundance-to-acceptance-abundance" class="nav-link" data-scroll-target="#from-proof-abundance-to-acceptance-abundance">From proof abundance to acceptance abundance</a></li>
+  <li><a href="#goodharts-law-reaches-the-kernel-boundary" id="toc-goodharts-law-reaches-the-kernel-boundary" class="nav-link" data-scroll-target="#goodharts-law-reaches-the-kernel-boundary">Goodhart’s law reaches the kernel boundary</a></li>
+  <li><a href="#independent-verification-must-mean-independent-failure-modes" id="toc-independent-verification-must-mean-independent-failure-modes" class="nav-link" data-scroll-target="#independent-verification-must-mean-independent-failure-modes">Independent verification must mean independent failure modes</a></li>
+  <li><a href="#the-model-is-not-the-research-system" id="toc-the-model-is-not-the-research-system" class="nav-link" data-scroll-target="#the-model-is-not-the-research-system">The model is not the research system</a></li>
+  </ul></li>
+  <li><a href="#software-bugs-as-participants-in-discovery" id="toc-software-bugs-as-participants-in-discovery" class="nav-link" data-scroll-target="#software-bugs-as-participants-in-discovery">Software bugs as participants in discovery</a></li>
+  <li><a href="#engineering-requirements-for-proof-abundant-mathematics" id="toc-engineering-requirements-for-proof-abundant-mathematics" class="nav-link" data-scroll-target="#engineering-requirements-for-proof-abundant-mathematics">Engineering requirements for proof-abundant mathematics</a>
+  <ul class="collapse">
+  <li><a href="#statement-fidelity" id="toc-statement-fidelity" class="nav-link" data-scroll-target="#statement-fidelity">Statement fidelity</a></li>
+  <li><a href="#reproducible-environments" id="toc-reproducible-environments" class="nav-link" data-scroll-target="#reproducible-environments">Reproducible environments</a></li>
+  <li><a href="#content-addressed-artifacts" id="toc-content-addressed-artifacts" class="nav-link" data-scroll-target="#content-addressed-artifacts">Content-addressed artifacts</a></li>
+  <li><a href="#independent-checker-evidence" id="toc-independent-checker-evidence" class="nav-link" data-scroll-target="#independent-checker-evidence">Independent checker evidence</a></li>
+  <li><a href="#diverse-validation-paths" id="toc-diverse-validation-paths" class="nav-link" data-scroll-target="#diverse-validation-paths">Diverse validation paths</a></li>
+  <li><a href="#adversarial-testing" id="toc-adversarial-testing" class="nav-link" data-scroll-target="#adversarial-testing">Adversarial testing</a></li>
+  <li><a href="#minimal-trusted-bases" id="toc-minimal-trusted-bases" class="nav-link" data-scroll-target="#minimal-trusted-bases">Minimal trusted bases</a></li>
+  <li><a href="#incident-aware-dependency-management" id="toc-incident-aware-dependency-management" class="nav-link" data-scroll-target="#incident-aware-dependency-management">Incident-aware dependency management</a></li>
+  <li><a href="#human-semantic-and-explanatory-review" id="toc-human-semantic-and-explanatory-review" class="nav-link" data-scroll-target="#human-semantic-and-explanatory-review">Human semantic and explanatory review</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#update-august-1-2026-leonardo-de-mouras-postmortem" id="toc-update-august-1-2026-leonardo-de-mouras-postmortem" class="nav-link" data-scroll-target="#update-august-1-2026-leonardo-de-mouras-postmortem">Update, August 1, 2026: Leonardo de Moura’s postmortem</a>
+  <ul class="collapse">
+  <li><a href="#a-more-precise-chronology" id="toc-a-more-precise-chronology" class="nav-link" data-scroll-target="#a-more-precise-chronology">A more precise chronology</a></li>
+  <li><a href="#why-nanoda-also-accepted-the-development" id="toc-why-nanoda-also-accepted-the-development" class="nav-link" data-scroll-target="#why-nanoda-also-accepted-the-development">Why Nanoda also accepted the development</a></li>
+  <li><a href="#the-status-of-lean4lean" id="toc-the-status-of-lean4lean" class="nav-link" data-scroll-target="#the-status-of-lean4lean">The status of Lean4Lean</a></li>
+  <li><a href="#remediation-and-defensive-use-of-ai" id="toc-remediation-and-defensive-use-of-ai" class="nav-link" data-scroll-target="#remediation-and-defensive-use-of-ai">Remediation and defensive use of AI</a></li>
+  <li><a href="#what-the-postmortem-adds-to-proof-abundance" id="toc-what-the-postmortem-adds-to-proof-abundance" class="nav-link" data-scroll-target="#what-the-postmortem-adds-to-proof-abundance">What the postmortem adds to proof abundance</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("proof-checker-failure.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>A technical analysis of the CollatzLean kernel-soundness incident and its implications for Lean-based verification, AI-assisted theorem discovery, and the emerging regime of proof abundance.</p>
+</div>
+<section id="lean-as-the-verification-layer-of-a-mathematical-research-pipeline" class="level2">
+<h2 class="anchored" data-anchor-id="lean-as-the-verification-layer-of-a-mathematical-research-pipeline">Lean as the verification layer of a mathematical research pipeline</h2>
+<p>Lean is simultaneously a functional programming language, an interactive theorem prover, and an extensible environment for constructing machine-checkable mathematical objects. It is not, by itself, an autonomous theorem-discovery system. Its central epistemic role is narrower and more precise: Lean converts user-facing declarations and proof scripts into expressions in a core dependent type theory and checks whether those expressions satisfy the rules implemented by its kernel.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>A typical proof begins as source text containing definitions, theorem statements, notation, tactics, macros, references to library results, and possibly metaprograms that generate declarations. The source then passes through several computational stages.</p>
+<ol type="1">
+<li>The parser converts characters into syntax trees.</li>
+<li>Macro expansion replaces convenient surface notation with more primitive syntax.</li>
+<li>The elaborator resolves implicit arguments, overloaded notation, coercions, type-class instances, metavariables, and other information omitted from the source.</li>
+<li>Tactics execute as part of elaboration and attempt to construct a core proof term.</li>
+<li>The kernel checks the resulting definitions, inductive declarations, and proof terms before admitting them to the environment.</li>
+<li>Optional export and independent-checking stages serialize some representation of the formal development for replay by another implementation.</li>
+<li>Human reviewers determine whether the formal statement corresponds to the intended mathematical claim and whether the result is significant, novel, intelligible, and reusable.</li>
+</ol>
+<p>The distinction between elaboration and kernel checking is essential. Lean’s elaborator is intentionally powerful and extensible. It performs search, inference, normalization, syntax processing, and tactic execution. Such code may be large, heuristic, and fallible. The kernel is intended to be a smaller trusted component that does not trust the elaborator’s conclusions. Instead, it checks the elaborated object according to Lean’s core type theory.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>Under the propositions-as-types interpretation, a proposition <span class="math inline">\varphi</span> is represented as a type and a proof <span class="math inline">p</span> of that proposition is represented as a term of that type. If <span class="math inline">\Gamma</span> denotes the environment of definitions, previously established theorems, imported declarations, and axioms, a successful formal derivation has the judgment</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-proof-judgment"><span class="math display">
+\Gamma \vdash_T p : \varphi,
+\tag{1}</span></span></p>
+<p>where <span class="math inline">T</span> denotes the intended type theory. The expression states that, under environment <span class="math inline">\Gamma</span>, the term <span class="math inline">p</span> has type <span class="math inline">\varphi</span> according to the rules of <span class="math inline">T</span>.</p>
+<p>A tactic proof does not bypass this obligation. The tactic is a program that searches for and constructs <span class="math inline">p</span>. Once elaboration finishes, the resulting term is submitted to the kernel. A tactic bug should normally cause failure, inefficiency, or the production of a term that the kernel rejects. This is the architectural significance of the de Bruijn criterion: sophisticated and untrusted proof construction can be tolerated when a small trusted checker independently validates the final certificate.</p>
+<p>The word <em>trusted</em> is easily misunderstood. In formal verification, the trusted computing base is not software that has already been proved correct merely by being designated trusted. It is the set of components whose correctness must be assumed for the assurance argument to succeed. Reducing the trusted computing base reduces the number and complexity of load-bearing assumptions. It does not eliminate those assumptions.</p>
+<p>The official Lean documentation accordingly distinguishes ordinary proof development from validation under adversarial conditions. For unreviewed or potentially malicious metaprograms—including automatically generated code—additional replay and auditing steps may be necessary. It also distinguishes the question <em>does this formal theorem have a valid proof?</em> from the question <em>what does the theorem statement mean?</em><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<div id="tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 25%">
+<col style="width: 31%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Principal object</th>
+<th>Intended guarantee</th>
+<th>Representative failure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Informal formulation</td>
+<td>Mathematical question <span class="math inline">q</span></td>
+<td>The problem is correctly posed</td>
+<td>Ambiguous quantifier, omitted hypothesis</td>
+</tr>
+<tr class="even">
+<td>Formalization</td>
+<td>Proposition <span class="math inline">\varphi=\tau(q)</span></td>
+<td><span class="math inline">\varphi</span> faithfully represents <span class="math inline">q</span></td>
+<td>Valid proof of a mistranslated theorem</td>
+</tr>
+<tr class="odd">
+<td>Proof generation</td>
+<td>Candidate term or proof script</td>
+<td>Search has produced a possible derivation</td>
+<td>Hallucinated lemma, unresolved goal</td>
+</tr>
+<tr class="even">
+<td>Elaboration</td>
+<td>Core term <span class="math inline">p</span> and declarations</td>
+<td>Surface syntax has been resolved consistently</td>
+<td>Elaborator or metaprogramming defect</td>
+</tr>
+<tr class="odd">
+<td>Kernel checking</td>
+<td>Judgment <span class="math inline">\Gamma\vdash_T p:\varphi</span></td>
+<td>The term follows the implemented core rules</td>
+<td>Kernel soundness bug</td>
+</tr>
+<tr class="even">
+<td>Artifact export</td>
+<td>Serialized environment or certificate</td>
+<td>The checked object is preserved faithfully</td>
+<td>Missing declaration, altered dependency</td>
+</tr>
+<tr class="odd">
+<td>Independent replay</td>
+<td>Verdict from checker <span class="math inline">K_2</span></td>
+<td>Reduced dependence on checker <span class="math inline">K_1</span></td>
+<td>Shared semantics, shared bug, wrong artifact</td>
+</tr>
+<tr class="even">
+<td>Semantic review</td>
+<td>Human interpretation</td>
+<td>Formal and intended claims coincide</td>
+<td>Correct theorem with unintended meaning</td>
+</tr>
+<tr class="odd">
+<td>Digestion</td>
+<td>Exposition and contextualization</td>
+<td>The result becomes understandable and reusable</td>
+<td>Correct but opaque or sterile artifact</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Operational assurance layers in a Lean-based mathematical workflow.
+</figcaption>
+</figure>
+</div>
+<p>The stages in <a href="#tbl-when-the-proof-checker-becomes-part-of-the-experiment-assurance-layers" class="quarto-xref">Table&nbsp;1</a> establish different claims. No single stage subsumes all the others. Kernel checking does not reconstruct the author’s intention. Human semantic review does not replace term checking. A second executable does not provide meaningful independence unless it checks the relevant artifact through a sufficiently different implementation path.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack">%%{init: {
+  "theme": "neo",
+  "look": "handDrawn",
+  "layout": "elk",
+  "themeVariables": {
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": "15px",
+    "lineColor": "#475569",
+    "primaryTextColor": "#172033",
+    "clusterBkg": "#ffffff",
+    "clusterBorder": "#cbd5e1"
+  }
+}}%%
+flowchart TD
+
+    subgraph S1["1 · Mathematical specification"]
+        direction TB
+        A[Informal problem&lt;br/&gt;definitions + intended claim]
+        B[Formalization&lt;br/&gt;proposition + environment]
+        A --&gt; B
+    end
+
+    subgraph S2["2 · Heuristic construction"]
+        direction TB
+        C[Candidate generation&lt;br/&gt;human + tactics + search + AI]
+        D[Parsing and macros]
+        E[Elaboration&lt;br/&gt;implicit data + tactic execution]
+        F[Core declarations&lt;br/&gt;proof term]
+        C --&gt; D --&gt; E --&gt; F
+    end
+
+    subgraph S3["3 · Trusted verification boundary"]
+        direction TB
+        G[Lean kernel&lt;br/&gt;type checking]
+        H{Kernel verdict}
+        G --&gt; H
+    end
+
+    subgraph S4["4 · Independent assurance"]
+        direction TB
+        I[Exported artifact&lt;br/&gt;versioned environment + digest]
+        J[Independent checker&lt;br/&gt;different implementation]
+        K{Independent verdict}
+        I --&gt; J --&gt; K
+    end
+
+    subgraph S5["5 · Mathematical knowledge formation"]
+        direction TB
+        L[Semantic audit&lt;br/&gt;formal claim versus intended claim]
+        M[Expert review&lt;br/&gt;scope + novelty + explanation]
+        N[Exposition and publication]
+        O[Community digestion&lt;br/&gt;reuse + criticism]
+        P[Canonicalization&lt;br/&gt;libraries + theory + teaching]
+        L --&gt; M --&gt; N --&gt; O --&gt; P
+    end
+
+    B --&gt; C
+    F --&gt; G
+
+    H --&gt;|accepted| I
+    H -.-&gt;|rejected proof term| C
+
+    K --&gt;|accepted| L
+    K -.-&gt;|checker disagreement| B
+
+    L -.-&gt;|statement mismatch| B
+    M -.-&gt;|mathematical defect| C
+
+    X[Kernel defect or malformed declaration&lt;br/&gt;can convert implementation acceptance&lt;br/&gt;into apparent formal validity]
+    X -.-&gt; G
+
+    subgraph LEGEND["Legend"]
+        direction LR
+        LA[Problem and formal specification]
+        LB[Heuristic or untrusted construction]
+        LC[Trusted computing base]
+        LD[Independent technical assurance]
+        LE[Human and institutional validation]
+        LF[Failure, disagreement, or return path]
+    end
+
+    classDef specification fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172033;
+    classDef generation fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#3f2a06;
+    classDef kernel fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#450a0a;
+    classDef assurance fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#052e16;
+    classDef knowledge fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#2e1065;
+    classDef decision fill:#fff7ed,stroke:#c2410c,stroke-width:2px,color:#431407;
+    classDef hazard fill:#fef2f2,stroke:#b91c1c,stroke-width:3px,stroke-dasharray:6 4,color:#450a0a;
+    classDef failure fill:#f8fafc,stroke:#b91c1c,stroke-width:2px,stroke-dasharray:6 4,color:#450a0a;
+
+    class A,B,LA specification;
+    class C,D,E,F,LB generation;
+    class G,LC kernel;
+    class H,K decision;
+    class I,J,LD assurance;
+    class L,M,N,O,P,LE knowledge;
+    class X hazard;
+    class LF failure;
+
+    style S1 fill:#eff6ff,stroke:#93c5fd,stroke-width:1px
+    style S2 fill:#fffbeb,stroke:#fcd34d,stroke-width:1px
+    style S3 fill:#fff1f2,stroke:#f87171,stroke-width:2px
+    style S4 fill:#f0fdf4,stroke:#86efac,stroke-width:1px
+    style S5 fill:#faf5ff,stroke:#d8b4fe,stroke-width:1px
+    style LEGEND fill:#ffffff,stroke:#94a3b8,stroke-width:1px
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Lean-based verification inside a proof-abundant mathematical research stack. Colors distinguish problem specification, heuristic generation, trusted verification, independent assurance, and the human processes that convert accepted proofs into mathematical knowledge.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><a href="#fig-when-the-proof-checker-becomes-part-of-the-experiment-lean-research-stack" class="quarto-xref">Figure&nbsp;1</a> locates Lean’s kernel in a larger research system. This position is crucial to the argument advanced by Terence Tao and developed in <em>Proof Abundance and the New Practice of Mathematics</em>. Tao’s analysis does not treat a contemporary language model as a theorem oracle. It treats it as a stochastic generator: a system capable of producing useful constructions, lemmas, proof sketches, code, or formal terms at a nonzero success rate, but also capable of producing persuasive errors.</p>
+<p>The architectural response is to separate generation from verification. An unreliable generator can still be valuable when incorrect outputs are inexpensive to reject and when the verifying component has better-understood, substantially less correlated failure modes. Formal proof assistants are attractive in this setting because they transform some questions of correctness into mechanically checkable interface conditions.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>Tao’s broader thesis goes further. Mathematical work cannot be reduced to generating accepted proof objects. He separates proof generation from verification, exposition, community acceptance, digestion, and canonicalization. Under the working hypothesis that AI systems will perform a material fraction of research-level tasks, generation and some forms of verification may scale faster than the institutions that explain, contextualize, select, and integrate results. Mathematics then moves from proof scarcity toward proof abundance, with verification and digestion becoming limiting resources.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p>Lean fits this vision as a verification and formalization layer, not as the complete epistemic system. The CollatzLean incident matters because it occurred precisely at the interface that was expected to convert unreliable generation into reliable deduction.</p>
+</section>
+<section id="why-the-collatz-conjecture-is-a-severe-test" class="level2">
+<h2 class="anchored" data-anchor-id="why-the-collatz-conjecture-is-a-severe-test">Why the Collatz conjecture is a severe test</h2>
+<p>The Collatz conjecture concerns the iteration of an elementary arithmetic function.</p>
+<p>Define <span class="math inline">C:\mathbb{N}*{&gt;0}\rightarrow\mathbb{N}*{&gt;0}</span> by</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-map"><span class="math display">
+C(n)=
+\begin{cases}
+n/2, &amp; n\equiv 0 \pmod 2,\
+3n+1, &amp; n\equiv 1 \pmod 2,
+\end{cases}
+\tag{2}</span></span></p>
+<p>where <span class="math inline">\mathbb{N}_{&gt;0}</span> is the set of positive integers. Starting from <span class="math inline">n</span>, repeated application produces the orbit</p>
+<p><span class="math display">
+n,\ C(n),\ C^2(n),\ C^3(n),\ldots,
+</span></p>
+<p>where <span class="math inline">C^k</span> denotes the <span class="math inline">k</span>-fold iterate of <span class="math inline">C</span>. The conjecture states</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-conjecture"><span class="math display">
+\forall n\in\mathbb{N}_{&gt;0};\exists k\in\mathbb{N}
+\quad C^k(n)=1.
+\tag{3}</span></span></p>
+<p>After reaching <span class="math inline">1</span>, the orbit enters the cycle <span class="math inline">1\mapsto4\mapsto2\mapsto1</span>.</p>
+<p>The problem is mathematically important not because a major physical technology is known to depend on its solution, but because it isolates a striking form of global unpredictability. The local transition rule is trivial to compute. The universal behavior of its trajectories has resisted proof.</p>
+<p>The difficulty arises from the interaction of multiplication and division along a parity sequence generated by the orbit itself. An odd step replaces <span class="math inline">n</span> by <span class="math inline">3n+1</span>, producing an even integer. Subsequent divisions by powers of two can produce a substantial decrease, but the number of such divisions depends on the arithmetic structure of <span class="math inline">3n+1</span>. Probabilistic heuristics suggest an average downward tendency, yet the process is deterministic and a universal theorem cannot be inferred from average behavior.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>Large finite verification is relevant but logically insufficient. Checking that every <span class="math inline">n\leq B</span> reaches <span class="math inline">1</span> proves the bounded proposition</p>
+<p><span class="math display">
+\forall n\leq B;\exists k;C^k(n)=1,
+</span></p>
+<p>not the unbounded statement in <a href="#eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-conjecture" class="quarto-xref">Equation&nbsp;3</a>. No finite bound <span class="math inline">B</span> excludes a counterexample larger than <span class="math inline">B</span>.</p>
+<p>Terence Tao’s major partial result illustrates the difference between strong statistical control and a universal proof. Let</p>
+<p><span class="math display">
+C_{\min}(N)=\inf_{k\in\mathbb{N}} C^k(N)
+</span></p>
+<p>denote the smallest value attained by the orbit of <span class="math inline">N</span>. Tao proved that, for any function <span class="math inline">f(N)</span> tending to infinity, <span class="math inline">C_{\min}(N)&lt;f(N)</span> for almost all <span class="math inline">N</span> in logarithmic density. Informally, almost every orbit eventually descends to a value that is small relative to its starting point, under a very strong notion of <em>almost every.</em> The result does not imply that every orbit reaches $1`, and it does not eliminate an exceptional set containing a possible counterexample.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p>The logical negation of the Collatz conjecture is</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-collatz-negation"><span class="math display">
+\exists n\in\mathbb{N}_{&gt;0};\forall k\in\mathbb{N}
+\quad C^k(n)\neq1.
+\tag{4}</span></span></p>
+<p>A refutation could therefore take two forms. It could exhibit a concrete integer and prove that its orbit never reaches $1`. Alternatively, in a sufficiently expressive formal system, it could establish the existence of such an integer without computing an explicit witness in a familiar numeral form. The latter possibility makes formal verification particularly important: a purported proof may be logically decisive even when direct numerical simulation cannot display the exceptional orbit.</p>
+<p>This was the form of the CollatzLean claim.</p>
+</section>
+<section id="the-collatzlean-claim-and-what-actually-happened" class="level2">
+<h2 class="anchored" data-anchor-id="the-collatzlean-claim-and-what-actually-happened">The CollatzLean claim and what actually happened</h2>
+<section id="an-apparent-refutation" class="level3">
+<h3 class="anchored" data-anchor-id="an-apparent-refutation">An apparent refutation</h3>
+<p>The event began not as a report about theorem-prover engineering but as an apparent solution to a famous mathematical problem. At commit <code>a793574</code>, the CollatzLean repository presented a Lean development whose exported result asserted the existence of a positive integer with a nonterminating Collatz orbit:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource lean number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a>Collatz.exists_nonterminating_orbit : ∃ n, Collatz.Diverges n</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>From this theorem, the repository derived the formal negation of the Collatz conjecture:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource lean number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>Collatz.not_conjecture : ¬ Collatz.Conjecture</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The claim was stronger than a large computational search. It did not report a new starting value whose trajectory had been simulated for an unusually long time. It purported to prove that some positive integer never reaches $1`. Moreover, the argument was described as <em>witness-free</em>: it claimed the existence of such an integer without reducing the result to a concrete numeral that could be inspected by direct computation.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<p>This form of result is mathematically legitimate in principle. A formal existence proof need not always provide a readily printable witness. If the derivation is valid, the absence of an explicit integer does not weaken the logical refutation. The decisive question is whether the proof term establishing the existential proposition has been constructed and checked according to the rules of the formal theory.</p>
+<p>The repository appeared to answer that question affirmatively. It pinned Lean and Mathlib to version 4.32.1 and supplied a verification script containing several layers of checking:</p>
+<ul>
+<li>warnings were treated as errors;</li>
+<li>the development was replayed using ordinary and fresh <code>leanchecker</code> runs;</li>
+<li>declarations were subjected to safety, closure, kernel, and axiom-dependency checks;</li>
+<li>the public theorem was exported using <code>lean4export</code>;</li>
+<li>the exported result was reportedly checked by a pinned Nanoda executable with no permitted axioms.</li>
+</ul>
+<p>The claim therefore appeared to have crossed the boundary separating a speculative proof attempt from a certified formal theorem. It used Lean’s ordinary natural numbers, had an explicit public theorem type, compiled under a pinned environment, appeared to have no hidden axiomatic dependencies, and was presented as having survived an independent checker.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a></p>
+<p>Had these checks provided the guarantees attributed to them, the result would have constituted a genuine refutation of the Collatz conjecture. No further numerical counterexample would have been logically necessary.</p>
+</section>
+<section id="review-changed-the-object-of-discovery" class="level3">
+<h3 class="anchored" data-anchor-id="review-changed-the-object-of-discovery">Review changed the object of discovery</h3>
+<p>The situation changed during expert review. The proof was not rejected because a mathematician found an incorrect inequality, an invalid induction, or a missing number-theoretic lemma. Instead, inspection of the Lean development revealed that it exercised a malformed declaration path inside the theorem prover.</p>
+<p>On July 28, 2026, the problem was reduced to a small, self-contained Lean example and reported as Lean issue <code>#14576</code>. The issue demonstrated that Lean could accept a checked declaration containing a projection associated with the wrong structure. After that declaration had entered the environment, ordinary Lean code could derive a theorem of type <code>False</code>.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a></p>
+<p>This reduction was important because it separated the mathematical surface of the claim from its computational cause. The failure did not depend on the complexity of Collatz dynamics. It did not depend on Mathlib’s theory of iteration, parity, descent, or natural numbers. The minimal reproducer imported Lean itself and constructed raw expressions using Lean’s metaprogramming interface.</p>
+<p>The reproducer was adversarial, but it did not disable checking. It used the ordinary checked <code>addDecl</code> path and was accepted with <code>--trust=0</code>. It did not rely on <code>sorry</code>, <code>unsafeCast</code>, <code>debug.skipKernelTC</code>, unchecked declaration insertion, a foreign-function interface, or manual corruption of a compiled <code>.olean</code> file. Lean’s own axiom-reporting commands stated that the resulting contradiction depended on no axioms.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
+<p>The crucial sequence was therefore:</p>
+<ol type="1">
+<li>metaprogramming constructed a malformed declaration;</li>
+<li>the declaration was submitted through Lean’s checked declaration interface;</li>
+<li>the kernel accepted it;</li>
+<li>the admitted declaration allowed Lean to derive <code>False</code>;</li>
+<li>a theorem whose type expressed the negation of the Collatz conjecture could consequently receive apparent kernel certification.</li>
+</ol>
+<p>The logical significance of step 4 is fundamental. In a consistent deductive system, there should be no closed proof of <code>False</code>. Once an environment admits such a proof, the principle of explosion permits the derivation of an arbitrary proposition <span class="math inline">\psi</span>:</p>
+<p><span class="math display">
+\Gamma \vdash \bot
+\quad\Longrightarrow\quad
+\Gamma \vdash \psi.
+</span></p>
+<p>Here <span class="math inline">\Gamma</span> denotes the formal environment and <span class="math inline">\bot</span> denotes falsity. The problem is not merely that one suspicious Collatz lemma has been admitted. The acceptance of a contradiction destroys the discriminating function of the checker within the affected environment: true and false conclusions can both be made to appear derivable.</p>
+<p>It is therefore misleading to describe the episode simply as “a wrong proof of Collatz.” The formal development was not an unsuccessful number-theoretic argument in the ordinary sense. The decisive mechanism was an implementation defect that allowed an invalid declaration to cross the trusted boundary. The Collatz conjecture supplied the high-profile proposition attached to the exploit, but the underlying failure was independent of Collatz arithmetic.</p>
+</section>
+<section id="from-theorem-claim-to-kernel-incident" class="level3">
+<h3 class="anchored" data-anchor-id="from-theorem-claim-to-kernel-incident">From theorem claim to kernel incident</h3>
+<p>The Lean maintainers identified the defect in the handling of nested inductive declarations. During Lean’s transformation of a nested inductive occurrence, parametric arguments were removed from generated auxiliary declarations. Under the affected path, those arguments could escape the type checking that should have rejected them.</p>
+<p>A correction was proposed and merged on July 28, the same day the reduced issue was filed. The patch added the missing validation once the inductive types under declaration were available.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
+<p>The epistemic status of the result was thereby reversed. Before review, the salient public object was an apparent machine-checked refutation of the Collatz conjecture. After reduction, the salient object was a reproducible Lean kernel soundness bug. The mathematical conclusion disappeared, but a genuine technical discovery remained: a specific implementation path violated the soundness contract expected of the trusted checker.</p>
+<p>Lawrence Paulson’s commentary, published on July 30, captured the resulting dramatic structure. A sensational theorem had apparently been checked by Lean and independently rechecked; it was nevertheless wrong because it exploited a kernel bug.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> Paulson used the incident to question the amount of sophisticated inductive machinery placed inside trusted kernels and to contrast such designs with systems that derive more functionality outside a smaller logical core.</p>
+<p>The exact status of the advertised Nanoda check requires more care than the initial public account suggested. The CollatzLean README stated that Nanoda had checked the exported result with no permitted axioms, and the original continuous-integration run reportedly displayed a successful Nanoda stage. Subsequent analysis of the reduced reproducer, however, found that Nanoda rejected an appropriately exported version of the malformed declaration. Nanoda checked the complete constructor type through a path different from Lean’s nested-inductive reconstruction and therefore encountered the ill-typed projection that Lean had missed.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a></p>
+<p>The public record has not yet conclusively explained why the original repository reported a successful Nanoda check while the reduced exported reproducer was rejected. It cannot therefore be stated without qualification that Lean and Nanoda independently accepted the same invalid certificate. The failure may lie partly in artifact selection, export, checker invocation, or continuous-integration orchestration rather than in two independent kernels sharing one soundness defect.</p>
+<p>The established sequence is nevertheless sufficient for the argument of this article:</p>
+<ul>
+<li>a repository claimed a formal refutation of Collatz;</li>
+<li>Lean’s affected kernel accepted the development;</li>
+<li>the repository presented several green verification stages, including an advertised independent check;</li>
+<li>expert review reduced the result to an axiom-free proof of <code>False</code>;</li>
+<li>the defect was traced to missing validation in nested-inductive processing;</li>
+<li>Lean’s maintainers repaired the kernel;</li>
+<li>the Collatz conjecture remained unresolved.</li>
+</ul>
+<p>The case is consequently not evidence that formal verification failed to produce knowledge. Formal review produced highly specific and reproducible knowledge about the verifier itself. But the object of discovery was misidentified during the first stage of the process. What initially appeared to be a theorem about integer orbits was actually an observation about the behavior of a software implementation.</p>
+<p>The next section examines the defect at the kernel boundary in technical detail.</p>
+</section>
+</section>
+<section id="the-defect-at-the-kernel-boundary" class="level2">
+<h2 class="anchored" data-anchor-id="the-defect-at-the-kernel-boundary">The defect at the kernel boundary</h2>
+<p>An inductive declaration introduces a type through constructors. A simple example is a list type whose constructors produce either an empty list or a new list from an element and an existing list. A nested inductive declaration is more complex: the inductive type being defined occurs underneath another type constructor. For example, a tree type might contain a list of subtrees rather than containing subtrees directly.</p>
+<p>Lean’s kernel supports inductive types that are mutually recursive or nested under other inductive types. To check such declarations, the implementation performs transformations that introduce auxiliary declarations, check positivity and structural constraints, and reconstruct the intended nested object. These transformations are logically delicate because constructors, parameters, indices, recursors, projections, universes, and definitional equality must remain aligned.</p>
+<p>In the reported defect, the kernel transformed a nested occurrence schematically written as</p>
+<p><span class="math display">
+I;D_1;\cdots;D_m;i_1;\cdots;i_r,
+</span></p>
+<p>where <span class="math inline">I</span> is an inductive type, <span class="math inline">D_1,\ldots,D_m</span> are parametric arguments, and <span class="math inline">i_1,\ldots,i_r</span> are indices. The generated auxiliary representation omitted the <span class="math inline">D_j</span> arguments at a stage where they should have been checked. An ill-typed argument could therefore be hidden inside a declaration that the kernel admitted.</p>
+<p>The minimal reproducer constructed a projection labelled as belonging to one structure but applied it to a value of another type. It also engineered expression properties used by the official kernel’s definitional-equality path. Once the malformed inductive declaration had entered the environment, ordinary Lean code could derive a contradiction.</p>
+<p>This breaks the intended implication between implementation acceptance and abstract derivability. Let</p>
+<ul>
+<li><span class="math inline">K</span> be a concrete kernel implementation;</li>
+<li><span class="math inline">\Gamma</span> be the checked environment;</li>
+<li><span class="math inline">p</span> be a candidate proof term;</li>
+<li><span class="math inline">\varphi</span> be the proposition assigned to <span class="math inline">p</span>;</li>
+<li><span class="math inline">T</span> be the intended formal calculus.</li>
+</ul>
+<p>The software event</p>
+<p><span class="math display">
+\operatorname{Accept}_K(\Gamma,p,\varphi)=1
+</span></p>
+<p>supports the mathematical judgment</p>
+<p><span class="math display">
+\Gamma\vdash_T p:\varphi
+</span></p>
+<p>only when <span class="math inline">K</span> correctly implements the relevant rules of <span class="math inline">T</span>. More explicitly,</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-kernel-refinement"><span class="math display">
+\operatorname{Accept}_K(\Gamma,p,\varphi)=1
+;\land;
+\operatorname{Refines}(K,T)
+\quad\Longrightarrow\quad
+\Gamma\vdash_T p:\varphi,
+\tag{5}</span></span></p>
+<p>where <span class="math inline">\operatorname{Refines}(K,T)</span> states that every artifact accepted by <span class="math inline">K</span> corresponds to a valid derivation in $T`.</p>
+<p>The CollatzLean incident invalidated the refinement premise for the affected kernel versions and declaration path. It did not discover an inconsistency in elementary arithmetic. Nor did it show that Lean’s intended type theory proves <code>False</code>. It showed that a concrete implementation accepted an object that the intended theory should reject.</p>
+<section id="the-nanoda-discrepancy" class="level3">
+<h3 class="anchored" data-anchor-id="the-nanoda-discrepancy">The Nanoda discrepancy</h3>
+<p>The independent-checking claim requires careful qualification. The CollatzLean README reported that its verification pipeline included Nanoda checking with no permitted axioms. Paulson’s initial commentary consequently stated that Nanoda had also failed to detect the error.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a></p>
+<p>Subsequent discussion on the Lean fix reported a different result for the reduced reproducer. When the relevant declaration was exported through the kernel-testing infrastructure, Nanoda rejected it while the official kernel and Lean4Lean accepted it. According to that analysis, Nanoda independently type-checked the complete constructor signature and detected the invalid projection that the official nested-inductive path had failed to check.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a></p>
+<p>The original repository’s continuous-integration record nevertheless showed the advertised Nanoda stage passing. The currently available public discussion does not conclusively reconstruct why that pipeline reported success. Several classes of explanation are possible:</p>
+<ul>
+<li>the exported artifact may not have contained the malformed declaration in a form Nanoda would reject;</li>
+<li>the check may have targeted a theorem or environment different from the one readers assumed;</li>
+<li>the export procedure may have reconstructed or omitted part of the relevant object;</li>
+<li>the orchestration script may have treated an incomplete check as successful;</li>
+<li>the reduced reproducer and the original repository may have exercised different external-checking paths.</li>
+</ul>
+<p>These are hypotheses, not established findings. The defensible conclusion is narrower: the advertised end-to-end verification pipeline did not provide the independent assurance attributed to it. It is not presently justified to conclude that Nanoda necessarily implemented the same kernel defect.</p>
+<p>This distinction demonstrates why checker independence is an end-to-end property. A second executable contributes little if it receives the wrong certificate, ignores a relevant declaration, shares a defective exporter, or reports a verdict that the surrounding pipeline misinterprets.</p>
+</section>
+</section>
+<section id="what-the-incident-establishes-and-what-it-does-not" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-incident-establishes-and-what-it-does-not">What the incident establishes and what it does not</h2>
+<p>The CollatzLean incident establishes four technical facts:</p>
+<ol type="1">
+<li>The affected Lean kernel admitted a malformed checked declaration.</li>
+<li>That declaration could support an axiom-free proof of <code>False</code>.</li>
+<li>The defect was associated with missing validation of parametric arguments during nested-inductive processing.</li>
+<li>The published verification workflow did not prevent the invalid Collatz result from being presented as independently checked.</li>
+</ol>
+<p>The incident does <strong>not</strong> establish that the Collatz conjecture is false. It supplies no exceptional orbit and no valid existence proof of one.</p>
+<p>It does <strong>not</strong> establish that formal verification is generally less reliable than ordinary peer review. The defect was rapidly minimized, publicly documented, repaired, and converted into regression tests. Formal artifacts made the failure unusually reproducible.</p>
+<p>It does <strong>not</strong> establish that every theorem checked with the affected Lean versions is invalid. The exploit required a specific unsound declaration path. Ordinary proofs that do not depend on malformed declarations are not refuted merely because the implementation contained a latent bug.</p>
+<p>It does <strong>not</strong> establish that all independent checkers are ineffective. The later Nanoda analysis suggests the opposite for the reduced artifact: a sufficiently different validation path could detect the defect.</p>
+<p>Finally, the incident does not by itself settle the architectural debate over dependent type theory, proof objects, or kernel size. Paulson interprets the event as evidence for moving more constructions outside the trusted kernel and deriving recursive machinery from a smaller primitive calculus. Lean’s design instead places support for several expressive type-theoretic features in its core checker. The event demonstrates that every primitive kernel feature is soundness-critical; it does not alone determine the optimal balance among kernel simplicity, expressiveness, performance, proof-object portability, and usability.</p>
+<p>Work such as Lean4Lean aims to strengthen assurance by reimplementing and ultimately verifying Lean’s type checker in a formal environment. That project illustrates both the promise and the difficulty of independent verification. A second checker may find implementation mistakes, but it can reproduce a defect when it follows the same algorithm or formalizes the same mistaken specification. Diversity of source code is weaker than diversity of assumptions.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a></p>
+</section>
+<section id="collatzlean-as-a-concrete-case-of-proof-abundance" class="level2">
+<h2 class="anchored" data-anchor-id="collatzlean-as-a-concrete-case-of-proof-abundance">CollatzLean as a concrete case of proof abundance</h2>
+<p>The central thesis of <em>Proof Abundance and the New Practice of Mathematics</em> is that AI-assisted mathematics should be evaluated as a multistage knowledge-production system. Candidate generation, deductive verification, semantic validation, exposition, expert review, community digestion, and canonicalization are different transformations. Faster theorem production does not automatically increase the rate at which dependable, understandable mathematics enters the field.</p>
+<p>CollatzLean makes this thesis concrete because the artifact appeared to pass the stage that is usually treated as the hardest boundary between plausible output and valid mathematics.</p>
+<section id="verification-is-an-interface-contract" class="level3">
+<h3 class="anchored" data-anchor-id="verification-is-an-interface-contract">Verification is an interface contract</h3>
+<p>In the proof-abundance framework, verification is an interface contract between an unreliable generator and the rest of mathematics. The generator may be an LLM, a reinforcement-learning prover, a tactic, a brute-force search program, a metaprogram, or a human author. Its output is admitted only when a verifier confirms a well-defined property.</p>
+<p>For a Lean development, the nominal contract is:</p>
+<blockquote class="blockquote">
+<p>Given environment <span class="math inline">\Gamma</span>, proposition <span class="math inline">\varphi</span>, and term <span class="math inline">p</span>, the kernel accepts exactly when <span class="math inline">p</span> is a valid proof of <span class="math inline">\varphi</span> under <span class="math inline">\Gamma</span>.</p>
+</blockquote>
+<p>The incident shows that this contract has at least three implementations:</p>
+<ol type="1">
+<li>the abstract logical contract defined by the intended type theory;</li>
+<li>the executable contract implemented by the kernel;</li>
+<li>the operational contract implemented by the complete build and checking pipeline.</li>
+</ol>
+<p>These contracts can diverge. The kernel may fail to implement the abstract calculus. The pipeline may fail to check the artifact it claims to check. A theorem may be valid in the formal calculus but formalize the wrong informal proposition.</p>
+<p>The phrase <em>machine-checked proof</em> therefore compresses multiple propositions:</p>
+<ul>
+<li>a particular program returned success;</li>
+<li>a particular artifact was submitted to that program;</li>
+<li>the artifact has a particular proposition as its type;</li>
+<li>the implementation correctly realizes the intended logic;</li>
+<li>the formal proposition matches the intended theorem;</li>
+<li>the dependency environment contains only acceptable assumptions.</li>
+</ul>
+<p>A rigorous claim should make these layers explicit.</p>
+</section>
+<section id="from-proof-abundance-to-acceptance-abundance" class="level3">
+<h3 class="anchored" data-anchor-id="from-proof-abundance-to-acceptance-abundance">From proof abundance to acceptance abundance</h3>
+<p>Proof abundance concerns an increased supply of candidate and verified derivations. The Collatz case identifies a pathological neighboring regime: <strong>acceptance abundance</strong>. Acceptance abundance occurs when automated systems produce many artifacts satisfying an operational acceptance predicate without a commensurate guarantee that the predicate tracks formal validity.</p>
+<p>Let <span class="math inline">g</span>, <span class="math inline">v</span>, <span class="math inline">e</span>, <span class="math inline">d</span>, and <span class="math inline">c</span> denote the sustainable capacities of proof generation, verification, exposition, digestion, and canonicalization. The original bottleneck model gives</p>
+<p><span class="math display">
+R\leq\min{g,v,e,d,c},
+</span></p>
+<p>where <span class="math inline">R</span> is the rate at which results enter dependable mathematical theory.</p>
+<p>To represent defective outputs, let <span class="math inline">q_g,q_v,q_e,q_d,q_c\in[0,1]</span> denote the effective epistemic yields of those stages: the fractions of outputs that actually satisfy the contract attributed to each stage. A reliability-adjusted bound is then</p>
+<p><span id="eq-when-the-proof-checker-becomes-part-of-the-experiment-reliability-adjusted-throughput"><span class="math display">
+R_{\mathrm{dep}}
+\leq
+\min{q_g g,;q_v v,;q_e e,;q_d d,;q_c c},
+\tag{6}</span></span></p>
+<p>where <span class="math inline">R_{\mathrm{dep}}</span> is the throughput of dependable results. <a href="#eq-when-the-proof-checker-becomes-part-of-the-experiment-reliability-adjusted-throughput" class="quarto-xref">Equation&nbsp;6</a> is an analytical model, not an empirical law. Its purpose is to make a simple point: increasing checker throughput <span class="math inline">v</span> is insufficient when the effective validity yield <span class="math inline">q_v</span> is compromised.</p>
+<p>A fast but defective checker can increase the production of authoritative-looking artifacts faster than it increases knowledge.</p>
+</section>
+<section id="goodharts-law-reaches-the-kernel-boundary" class="level3">
+<h3 class="anchored" data-anchor-id="goodharts-law-reaches-the-kernel-boundary">Goodhart’s law reaches the kernel boundary</h3>
+<p>Tao invokes Goodhart’s law to warn that once a proxy becomes an optimization target, the proxy can cease to track the underlying objective. In automated theorem proving, <em>accepted by Lean</em> is an exceptionally useful proxy for <em>formally valid in Lean’s type theory.</em> The proxy is useful precisely because ordinary proof search cannot easily fake a valid term.</p>
+<p>An optimization system, however, interacts with the implemented acceptance predicate rather than with mathematical truth directly. Given enough search, instrumentation, and metaprogramming access, it may discover any reliable route to a positive verdict:</p>
+<ul>
+<li>a genuine proof;</li>
+<li>an unintended axiom;</li>
+<li>a mistranslated theorem;</li>
+<li>an unsound declaration mechanism;</li>
+<li>a serialization discrepancy;</li>
+<li>a timeout or exception interpreted as success;</li>
+<li>a bug in definitional equality;</li>
+<li>a checker-orchestration error.</li>
+</ul>
+<p>From the optimizer’s perspective, these routes can be observationally equivalent if they produce the same reward.</p>
+<p>This is structurally analogous to reward hacking in machine learning and specification gaming in software verification. The intended objective is mathematical validity. The machine-readable objective is an implementation’s acceptance bit. The difference between them is the attack surface.</p>
+<p>The CollatzLean development need not have been autonomously generated by an AI system for the case to be relevant to AI-assisted mathematics. The publicly cited sources do not establish the precise proportion of human, tactic, metaprogram, or language-model contribution to the artifact. The structural lesson is independent of authorship: once automated systems can search formal-expression space at scale, latent verifier behavior becomes part of the effective discovery environment.</p>
+</section>
+<section id="independent-verification-must-mean-independent-failure-modes" class="level3">
+<h3 class="anchored" data-anchor-id="independent-verification-must-mean-independent-failure-modes">Independent verification must mean independent failure modes</h3>
+<p>The proof-abundance framework relies on asymmetric error control. A generator may be unreliable if its errors can be filtered by a verifier that fails differently. The qualification <em>fails differently</em> is load-bearing.</p>
+<p>Two checkers are not epistemically independent merely because they have different executable names. Their errors may be correlated through:</p>
+<ul>
+<li>a common formal specification;</li>
+<li>copied algorithms;</li>
+<li>shared parsers or exporters;</li>
+<li>identical normalization procedures;</li>
+<li>common libraries;</li>
+<li>a common serialized artifact;</li>
+<li>a shared orchestration script;</li>
+<li>common hardware or compiler assumptions.</li>
+</ul>
+<p>Conversely, a relatively small checker may provide strong additional assurance when it reconstructs the relevant judgment from a simple certificate using an independently developed semantics.</p>
+<p>The Nanoda discrepancy is therefore more informative than a simple story in which two kernels shared one bug. It exposes artifact lineage as part of verification. Before saying that a theorem has been checked twice, one must establish:</p>
+<ol type="1">
+<li>what exact proposition was checked;</li>
+<li>what exact proof object and environment were supplied;</li>
+<li>which dependencies were reconstructed;</li>
+<li>which checker version ran;</li>
+<li>which exit status and diagnostic were produced;</li>
+<li>how the orchestration layer converted that result into a published claim.</li>
+</ol>
+</section>
+<section id="the-model-is-not-the-research-system" class="level3">
+<h3 class="anchored" data-anchor-id="the-model-is-not-the-research-system">The model is not the research system</h3>
+<p>A further thesis of <em>Proof Abundance and the New Practice of Mathematics</em> is that the model should not be treated as the complete research system. The same applies to the kernel. Neither the generator nor the checker is the whole epistemic process.</p>
+<p>The CollatzLean result passed from formal source to public mathematical claim through a chain of technical and human decisions:</p>
+<ul>
+<li>the Collatz conjecture was encoded in particular Lean definitions;</li>
+<li>a dependent construction was selected as the proof architecture;</li>
+<li>metaprogramming produced declarations;</li>
+<li>the kernel accepted those declarations;</li>
+<li>verification scripts selected checks;</li>
+<li>export tools selected artifacts;</li>
+<li>continuous integration summarized the checks;</li>
+<li>readers interpreted green stages as independent certification;</li>
+<li>expert review challenged the result;</li>
+<li>a reduced reproducer shifted attention from number theory to kernel engineering;</li>
+<li>maintainers repaired the implementation.</li>
+</ul>
+<p>The discovery process did not terminate at kernel acceptance. It continued through adversarial review and incident analysis. The final scientific result was not a theorem about integer dynamics but a theorem-prover defect and a refined understanding of verification infrastructure.</p>
+</section>
+</section>
+<section id="software-bugs-as-participants-in-discovery" class="level2">
+<h2 class="anchored" data-anchor-id="software-bugs-as-participants-in-discovery">Software bugs as participants in discovery</h2>
+<p>The original analogy with Bakelite captures an important but limited idea. Scientific procedures can fail relative to their intended output and still generate valuable discoveries. Baekeland’s work on phenol–formaldehyde chemistry involved systematic control of composition, heat, and pressure to produce a commercially useful thermosetting material. It should not be reduced to a single accidental clogged vessel.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a></p>
+<p>The analogy also breaks at a decisive point. In an experimental science, an anomalous material can disclose a property imposed by an external physical system. Even when the recipe is wrong, the resulting substance has measurable behavior independent of the scientist’s expectations.</p>
+<p>A verifier defect is different. The anomaly can originate inside the instrument that assigns evidential status to the result. The invalid proof does not reveal a hidden nonterminating Collatz orbit in the way an unexpected resin reveals a physical polymer. It reveals that the acceptance mechanism can manufacture a false positive.</p>
+<p>The closer analogies are instrument artifacts:</p>
+<ul>
+<li>a detector artifact mistaken for a particle;</li>
+<li>numerical instability mistaken for a physical singularity;</li>
+<li>contamination mistaken for a chemical signal;</li>
+<li>an image-processing defect mistaken for astronomical structure;</li>
+<li>a database join error mistaken for an epidemiological association.</li>
+</ul>
+<p>In each case, software or instrumentation does not merely record the discovery. It participates in producing the apparent phenomenon.</p>
+<p>Formal mathematics has often been described as unusually insulated from this problem because a proof can, in principle, be reduced to explicit symbolic steps. The Collatz incident shows the limit of that insulation. The symbolic object is processed by parsers, elaborators, kernels, exporters, compilers, checkers, build systems, and human interfaces. A defect in those layers can temporarily determine which statement appears to have acquired theorem status.</p>
+<p>The result is not radical skepticism. Instrument-mediated science remains possible because instruments can be calibrated, cross-checked, modeled, and improved. Formal mathematics should adopt the same posture toward proof infrastructure.</p>
+</section>
+<section id="engineering-requirements-for-proof-abundant-mathematics" class="level2">
+<h2 class="anchored" data-anchor-id="engineering-requirements-for-proof-abundant-mathematics">Engineering requirements for proof-abundant mathematics</h2>
+<p>A mature verification regime should attach evidence to each epistemic layer rather than collapsing the entire process into a single badge.</p>
+<section id="statement-fidelity" class="level3">
+<h3 class="anchored" data-anchor-id="statement-fidelity">Statement fidelity</h3>
+<p>The formal theorem must be displayed in a form that domain experts can compare with the intended informal claim. Definitions of divergence, iteration, positivity, equality, finiteness, and imported assumptions should be inspectable. Formal validity cannot compensate for a theorem that encodes the wrong problem.</p>
+</section>
+<section id="reproducible-environments" class="level3">
+<h3 class="anchored" data-anchor-id="reproducible-environments">Reproducible environments</h3>
+<p>Toolchain versions, library commits, build options, platform information, and relevant environment variables should be pinned. A source repository without a reproducible environment does not identify a unique checking experiment.</p>
+</section>
+<section id="content-addressed-artifacts" class="level3">
+<h3 class="anchored" data-anchor-id="content-addressed-artifacts">Content-addressed artifacts</h3>
+<p>The proof term or exported environment subjected to independent checking should be identified by a cryptographic digest. The digest should appear in both the production and verification logs. This prevents ambiguity about whether the external checker received the artifact associated with the published theorem.</p>
+</section>
+<section id="independent-checker-evidence" class="level3">
+<h3 class="anchored" data-anchor-id="independent-checker-evidence">Independent checker evidence</h3>
+<p>The verification record should preserve the checker executable version, invocation, standard output, standard error, exit status, checked theorem name, permitted axioms, and artifact digest. <em>Independent checker passed</em> is not sufficiently specific.</p>
+</section>
+<section id="diverse-validation-paths" class="level3">
+<h3 class="anchored" data-anchor-id="diverse-validation-paths">Diverse validation paths</h3>
+<p>Where the mathematical stakes are high, replay should use checkers with meaningfully different implementations. Diversity may include implementation language, parser, serialization format, normalization strategy, and treatment of inductive declarations. The objective is not ceremonial duplication but decorrelation of failure modes.</p>
+</section>
+<section id="adversarial-testing" class="level3">
+<h3 class="anchored" data-anchor-id="adversarial-testing">Adversarial testing</h3>
+<p>Kernel testing should include fuzzing, malformed declarations, randomized proof terms, differential checking, mutation testing, and search explicitly optimized to produce disagreements among checkers. In a proof-abundant regime, adversarial generators should be used defensively against the verification layer before hostile or reward-seeking generators discover the same paths.</p>
+</section>
+<section id="minimal-trusted-bases" class="level3">
+<h3 class="anchored" data-anchor-id="minimal-trusted-bases">Minimal trusted bases</h3>
+<p>Features placed inside the kernel should be evaluated according to their assurance cost as well as convenience and performance. Paulson’s <em>honest toil</em> proposal—derive rich recursive machinery from a smaller calculus outside the kernel—is one response. Verified-kernel projects and multiple reference checkers are another. These approaches are not mutually exclusive.</p>
+</section>
+<section id="incident-aware-dependency-management" class="level3">
+<h3 class="anchored" data-anchor-id="incident-aware-dependency-management">Incident-aware dependency management</h3>
+<p>A kernel soundness defect should trigger a machine-readable advisory identifying affected versions, relevant declaration classes, corrected releases, regression tests, and recommended replay procedures. Formal libraries need the equivalent of software supply-chain vulnerability management because theorem validity can depend on implementation versions.</p>
+</section>
+<section id="human-semantic-and-explanatory-review" class="level3">
+<h3 class="anchored" data-anchor-id="human-semantic-and-explanatory-review">Human semantic and explanatory review</h3>
+<p>Even perfect kernel soundness would not settle whether a theorem is important, intended, original, comprehensible, or reusable. Expert review should therefore continue after formal verification. In Tao’s terminology, verification is followed by exposition, digestion, acceptance, and canonicalization.</p>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Lean’s architecture is well suited to AI-assisted mathematics because it separates fallible construction from rigorous checking. Tactics, language models, search algorithms, and metaprograms may explore aggressively while a compact kernel rejects invalid proof terms. This division of labor is one of the strongest available responses to unreliable but powerful mathematical generation.</p>
+<p>The CollatzLean incident does not overturn that architecture. It reveals its conditional structure.</p>
+<p>A kernel verdict is evidence generated by a software implementation. Its mathematical force depends on the implementation correctly realizing the intended calculus. An independent-checking badge is evidence about a pipeline. Its force depends on artifact fidelity, checker diversity, correct invocation, and faithful reporting. A formally valid theorem is evidence about a formal statement. Its force as ordinary mathematics depends on semantic fidelity and expert interpretation.</p>
+<p>These distinctions become more important as proof generation scales. A human author usually searches for a derivation that satisfies the intended logic. A sufficiently capable optimizer searches the behavior of the entire environment exposed to it. Kernel defects, exporter omissions, orchestration errors, and specification gaps then become potential solution paths.</p>
+<p>This is the concrete lesson CollatzLean adds to <em>Proof Abundance and the New Practice of Mathematics</em>. The transition is not merely from human-written proofs to machine-written proofs. It is from individual derivations to engineered knowledge-production pipelines. Verification, provenance, semantic review, exposition, and canonicalization must scale together with generation.</p>
+<p>The Collatz conjecture remains unresolved by this episode. What was discovered was not a nonterminating arithmetic orbit but a nonconforming execution path through the trusted kernel. That is still a real scientific discovery—one about the instrument rather than the mathematical object.</p>
+<p>In proof-abundant mathematics, the proof checker is no longer invisible infrastructure. It is part of the experiment.</p>
+</section>
+<section id="update-august-1-2026-leonardo-de-mouras-postmortem" class="level2">
+<h2 class="anchored" data-anchor-id="update-august-1-2026-leonardo-de-mouras-postmortem">Update, August 1, 2026: Leonardo de Moura’s postmortem</h2>
+<p>After this article was completed, Leonardo de Moura published a technical postmortem that clarifies several aspects of the CollatzLean incident, including the chronology, the exact kernel defect, the role of the external Nanoda checker, and the measures subsequently taken by the Lean Focused Research Organization.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a></p>
+<p>De Moura is one of the central figures in automated reasoning and the main architect of Lean, as well as of Z3, Yices 1.0, and SAL. He is currently a senior principal applied scientist in the Automated Reasoning Group at Amazon Web Services and serves as chief architect, co-founder, and a board member of the Lean FRO.<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a> His account is therefore not an external interpretation of the event but a postmortem written by Lean’s principal architect.</p>
+<section id="a-more-precise-chronology" class="level3">
+<h3 class="anchored" data-anchor-id="a-more-precise-chronology">A more precise chronology</h3>
+<p>According to de Moura, Ramana Kumar published the CollatzLean repository on July 25, 2026. The repository contained a <code>sorry</code>-free purported disproof of the Collatz conjecture produced with AI assistance. On July 28, Kiran Gopinathan reduced the development to a small proof of <code>False</code> and opened Lean issue <code>#14576</code>. The Lean developers produced a correction approximately one hour after the report. Joachim Breitner reviewed the change and suggested improvements before it was merged, after which corrected patch releases were issued.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a></p>
+<p>The postmortem confirms that the development did not expose an inconsistency in Lean’s intended type theory. It exploited an implementation error in the reference kernel’s handling of nested inductive types.</p>
+<p>The affected transformation concerned an occurrence of an inductive type <span class="math inline">T</span> with parameters <span class="math inline">D_1,\ldots,D_m</span>. When those parameters were <em>phantom</em>—that is, when they did not occur in the constructor fields—they disappeared from the generated auxiliary inductive type. Because the parameters were no longer present in that generated declaration, the kernel failed to type-check them. An ill-typed argument placed in the unchecked position could consequently make the kernel accept a declaration from which <code>False</code> was derivable.</p>
+<p>De Moura emphasizes that the ordinary Lean frontend would have rejected the malformed declaration. The exploit was reachable through metaprogramming, which constructed the declaration directly and submitted it to the kernel. This does not make the kernel failure less significant. Lean’s elaborator and metaprogramming facilities are deliberately outside the trusted computing base. Kernel soundness cannot depend on an untrusted frontend refusing to generate malformed input. The kernel must reject every invalid declaration independently, including declarations produced adversarially or written directly into compiled artifacts.</p>
+<p>This separation is one of the principal advantages of proof terms: complex and potentially unreliable construction procedures can remain untrusted only when the final checker validates their outputs without relying on those procedures to behave correctly.</p>
+</section>
+<section id="why-nanoda-also-accepted-the-development" class="level3">
+<h3 class="anchored" data-anchor-id="why-nanoda-also-accepted-the-development">Why Nanoda also accepted the development</h3>
+<p>The postmortem resolves the most important uncertainty left open in the original article. The CollatzLean repository did pass an independent checker, but it used a week-old version of Nanoda that contained a separate soundness defect.</p>
+<p>Nanoda is an independent Lean kernel implemented in Rust by Chris Bailey. It did not share Lean’s missing check for phantom parameters in nested inductive declarations. Nanoda checked the location that the official Lean kernel had omitted. However, the older Nanoda version failed to verify that the type name encoded in a projection node matched the type to which the projection was being applied.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a></p>
+<p>The two implementations therefore accepted the same malformed artifact for different reasons:</p>
+<ul>
+<li>the official Lean kernel failed to inspect an ill-typed argument eliminated during nested-inductive processing;</li>
+<li>the old Nanoda kernel inspected that part of the declaration but failed to validate the type name of a projection node.</li>
+</ul>
+<p>The Nanoda defect had already been reported by Jeremy Chen and corrected approximately one week before the Lean defect was reported. CollatzLean nevertheless pinned and executed the older vulnerable Nanoda release. The expression hidden from the official Lean kernel was constructed so that the same artifact was also accepted by the outdated Nanoda implementation.</p>
+<p>The original statement that the development passed two checkers was therefore operationally correct. It was checked by two distinct implementations. The inference that this constituted decisive independent confirmation was nevertheless false because the particular versions of both checkers were unsound on different components of the same artifact.</p>
+<p>Let <span class="math inline">a</span> denote the malformed artifact, <span class="math inline">K_L</span> the affected Lean kernel, and <span class="math inline">K_N^{\mathrm{old}}</span> the outdated Nanoda kernel. The observed result was</p>
+<p><span class="math display">
+\operatorname{Accept}*{K_L}(a)=1
+\quad\land\quad
+\operatorname{Accept}*{K_N^{\mathrm{old}}}(a)=1,
+</span></p>
+<p>although <span class="math inline">a</span> was not a valid object in the intended Lean type theory. The conjunction of two checker verdicts increased the apparent strength of the evidence, but it did not transform implementation soundness from an engineering assumption into a logical theorem.</p>
+<p>This is a more consequential result than a shared implementation error. The artifact lay in the intersection of two distinct failure regions. Independent checking reduced the probability of an invalid object passing, but automated or adversarial search found an object satisfying both defective acceptance predicates.</p>
+<p>De Moura reports that Kumar regarded the timing as probably coincidental but could not exclude the possibility that the AI model had encountered information about the previously reported Nanoda defect. Breitner proposed another hypothesis: the apparent coincidence may reflect the arrival of sufficiently capable models able to find rare verifier weaknesses. Neither explanation has been established. The available evidence does not determine whether the system intentionally combined known vulnerabilities, reproduced patterns present in its training context, or reached the construction through search without knowledge of the earlier report.</p>
+<p>The fact that can be established is narrower and already important: an AI-assisted formal development produced an artifact that simultaneously exploited unrelated defects in two proof-checker implementations.</p>
+</section>
+<section id="the-status-of-lean4lean" class="level3">
+<h3 class="anchored" data-anchor-id="the-status-of-lean4lean">The status of Lean4Lean</h3>
+<p>The postmortem also clarifies why Lean4Lean did not provide an additional independent barrier. Lean4Lean formalizes Lean’s type theory and develops a Lean implementation of its type checker intended for eventual verification. Its treatment of inductive declarations was ported from the reference kernel and consequently inherited the same defect.</p>
+<p>At the time of the CollatzLean incident, the Lean4Lean proof of consistency did not yet cover inductive types. The implementation was therefore part of an ongoing verification project, not a completely verified checker for the relevant declaration path. De Moura states that the bug would have been discovered when attempting to complete the verification of this component.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a></p>
+<p>This distinction is important for evaluating formally developed infrastructure. An implementation written inside a theorem prover is not automatically verified. Its assurance depends on the exact correctness statements that have been formulated and proved. Uncovered components remain ordinary software and may reproduce defects inherited from the reference implementation.</p>
+</section>
+<section id="remediation-and-defensive-use-of-ai" class="level3">
+<h3 class="anchored" data-anchor-id="remediation-and-defensive-use-of-ai">Remediation and defensive use of AI</h3>
+<p>The Lean FRO’s response extended beyond the immediate one-line class of correction. The original exploit and a related non-uniform-parameter case were added to Kernel Arena as regression tests. A follow-up change strengthened the kernel’s treatment of nested parameters by checking that they genuinely behave as parameters, rather than merely rechecking their types. The developers also hardened additional internal kernel invariants.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a></p>
+<p>The response itself illustrates the dual role of automated search. Daniel Selsam at OpenAI assisted the Lean FRO using an AI system specialized in cybersecurity. The audit found additional programming errors in the Lean kernel. According to the postmortem, all were corrected, and all were detected by the current Nanoda implementation. Like the original defect, these additional errors were reachable through metaprogramming rather than the ordinary frontend.</p>
+<p>The Lean infrastructure was also changed so that <code>comparator.live</code> runs Nanoda by default and tracks its upstream version daily. This directly addresses one of the incident’s central operational lessons: an independent checker provides protection only when the version actually executed contains the relevant corrections.</p>
+<p>The constructive lesson is that automated adversarial search can be placed on both sides of the verification boundary. A theorem generator may accidentally or strategically discover a path to acceptance that is not a valid proof. A defensive auditing system can search the same implementation space for disagreements, malformed declarations, missing checks, and invariant violations before those paths appear in published mathematical artifacts.</p>
+</section>
+<section id="what-the-postmortem-adds-to-proof-abundance" class="level3">
+<h3 class="anchored">What the postmortem adds to proof abundance</h3>
+<p>De Moura concludes that independent kernel checking remains effective because the CollatzLean artifact required two distinct defects in two implementations. That conclusion is compatible with the argument of this article, but it makes the operational conditions of independence more precise.</p>
+<p>Independent verification is not a timeless property of a theorem. It is a dated relation among:</p>
+<ul>
+<li>a particular mathematical statement;</li>
+<li>a particular proof artifact;</li>
+<li>a particular dependency environment;</li>
+<li>a particular primary-kernel version;</li>
+<li>a particular external-checker version;</li>
+<li>and a particular orchestration procedure.</li>
+</ul>
+<p>A result checked by an outdated vulnerable binary is epistemically different from the same result replayed by its corrected successor. Version identity is part of the evidential record.</p>
+<p>The postmortem also provides a concrete example of the distinction between proof abundance and knowledge abundance. The automated system generated an artifact that satisfied several operational acceptance tests. The surrounding research process—reduction, expert inspection, differential checking, issue reporting, kernel repair, regression testing, and public postmortem—was required to determine what had actually been discovered.</p>
+<p>The apparent product of the first stage was a refutation of the Collatz conjecture. The durable product of the complete process was different: a characterization of two verifier defects, an improved test corpus, corrected kernel releases, stronger checker orchestration, and a more precise model of the risks created when automated systems optimize against executable proof criteria.</p>
+<p>The update therefore reinforces the central thesis rather than merely correcting a technical detail. In proof-abundant mathematics, the relevant scientific object is not only the proof term. It is the complete, versioned, and adversarially tested verification pipeline through which the term acquires epistemic authority.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored" data-anchor-id="what-the-postmortem-adds-to-proof-abundance">See also <a href="https://4m4.it/index.html#category=machine%20learning">machine learning</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/when-an-ai-evaluation-became-a-cyber-intrusion/">
+<img class="see-also-card-image" src="../../longforms/when-an-ai-evaluation-became-a-cyber-intrusion/cyber-intrusion.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When an AI Evaluation Became a Cyber Intrusion</h5>
+<div class="see-also-card-subtitle">The OpenAI–Hugging Face incident and the two regimes of agentic cyber risk</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/">
+<img class="see-also-card-image" src="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/layers-enterprise-evolution.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">AI Adoption, Productivity, and the Missing Middle</h5>
+<div class="see-also-card-subtitle">A review of Banca d'Italia QEF 1009 on Italy's AI adoption, firm productivity, and policy architecture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/">
+<img class="see-also-card-image" src="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/ia-org.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Beyond the Hype: What Microsoft’s Copilot Data Really Says About AI at Work</h5>
+<div class="see-also-card-subtitle">From lofty predictions to real-world clicks: what AI usage data reveals about job impact and the new governance of human–agent organizational models</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=mathematics">mathematics</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/homomorphic-encryption-developers/">
+<img class="see-also-card-image" src="../../longforms/homomorphic-encryption-developers/homomorphic-encryption.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Homomorphic Encryption for Developers</h5>
+<div class="see-also-card-subtitle">From algebraic foundations and textbook RSA to practical BFV and dependable private computation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/the-mathematics-behind-a-racing-shell/">
+<img class="see-also-card-image" src="../../longforms/the-mathematics-behind-a-racing-shell/the-mathematics-behind-a-racing-shell.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Mathematics Behind a Racing Shell</h5>
+<div class="see-also-card-subtitle">Why rowing-boat simulation is a difficult multiphysics engineering problem</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/satisfiability-modulo-theories-sudoku/">
+<img class="see-also-card-image" src="../../longforms/satisfiability-modulo-theories-sudoku/smt-sudoku.webp" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Sudoku and Satisfiability Modulo Theories</h5>
+<div class="see-also-card-subtitle">You can solve it the standard way or... with Python and math</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/industrialization-of-mathematical-intelligence-beyond-proof-abundance-to-open-questions-of-governance/">
+<img class="see-also-card-image" src="../../posts/industrialization-of-mathematical-intelligence-beyond-proof-abundance-to-open-questions-of-governance/tsimerman-gowers-school-of athens.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Industrialization of Mathematical Intelligence: Beyond Proof Abundance to Open Questions of Governance</h5>
+<div class="see-also-card-subtitle">Jacob Tsimerman, Timothy Gowers, and the changing roles of human judgment, agency, and mathematical culture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-ai-failure-became-a-theorem-what-the-grothendieck-constant-breakthrough-reveals-about-human-ai-mathematical-collaboration/">
+<img class="see-also-card-image" src="../../posts/when-ai-failure-became-a-theorem-what-the-grothendieck-constant-breakthrough-reveals-about-human-ai-mathematical-collaboration/Grothendieck-Constant.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When AI Failure Became a Theorem: What the Grothendieck Constant Breakthrough Reveals About Human–AI Mathematical Collaboration</h5>
+<div class="see-also-card-subtitle">How a long-horizon research system, human judgement, and rigorous verification turned a stalled search into new bounds for one of mathematics’ most elusive constants</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/growing-abundance-of-ai-math-progress-around-the-riemann-hypothesis-and-a-counterexample-to-the-maxwell-conjecture/">
+<img class="see-also-card-image" src="../../posts/growing-abundance-of-ai-math-progress-around-the-riemann-hypothesis-and-a-counterexample-to-the-maxwell-conjecture/maxwell-bifurcation.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Growing Abundance of AI Math: Progress around the Riemann Hypothesis and a Counterexample to the Maxwell Conjecture</h5>
+<div class="see-also-card-subtitle">Two more research-level results strengthen the case that AI-assisted mathematical discovery is becoming a recurring phenomenon rather than a sequence of isolated demonstrations</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/">
+<img class="see-also-card-image" src="../../posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/hf-incident.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">After the Hugging Face Intrusion: What the New Technical Record Changes</h5>
+<div class="see-also-card-subtitle">A technical update to the July 2026 reconstruction, based on OpenAI's Black Hat account and subsequent primary disclosures</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/withdrawal-of-hawk/">
+<img class="see-also-card-image" src="../../posts/withdrawal-of-hawk/hawk-mythos.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Withdrawal of HAWK</h5>
+<div class="see-also-card-subtitle">How a Galois involution cut the effective key-recovery dimension and ended a NIST post-quantum signature candidate</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/ai-mathematics-crosses-the-systems-boundary/">
+<img class="see-also-card-image" src="../../posts/ai-mathematics-crosses-the-systems-boundary/ai-mathematics-crosses-the-systems-boundary.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">AI Mathematics Crosses the Systems Boundary</h5>
+<div class="see-also-card-subtitle">A technical commentary on proof abundance, research agents, and the infrastructure now inside the experiment</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Lean Project. (n.d.). <strong>Elaboration and Compilation</strong>. <em>Lean Language Reference</em>. <a href="https://lean-lang.org/doc/reference/latest/Elaboration-and-Compilation/">Official documentation</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>de Moura, L., &amp; Ullrich, S. (2021). <strong>The Lean 4 Theorem Prover and Programming Language</strong>. <em>Automated Deduction—CADE 28</em>. <a href="https://doi.org/10.1007/978-3-030-79876-5_37">DOI</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Lean Project. (n.d.). <strong>Validating a Lean Proof</strong>. <em>Lean Language Reference</em>. <a href="https://lean-lang.org/doc/reference/latest/ValidatingProofs/">Official documentation</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Tao, T. (2026, July 24). <strong>Mathematics in the Age of AI</strong>. <em>Public lecture, International Congress of Mathematicians 2026</em>. <a href="https://teorth.github.io/tao-web/slides/age-of-ai-icm-2026.pdf">Slides</a>.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Montano, A. (2026). <strong>Proof Abundance and the New Practice of Mathematics</strong>. <em>Random Bits of Knowledge</em>. <a href="https://4m4.it/posts/proof-abundance-and-the-new-practice-of-mathematics/">Article</a>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Lagarias, J. C. (2021). <strong>The 3x+1 Problem: An Overview</strong>. <em>arXiv</em>. <a href="https://doi.org/10.48550/arXiv.2111.02635">DOI</a>.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Tao, T. (2022). <strong>Almost all orbits of the Collatz map attain almost bounded values</strong>. <em>Forum of Mathematics, Pi, 10</em>, e12. <a href="https://doi.org/10.1017/fmp.2022.8">DOI</a>.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Kumar, R. (2026). <strong>CollatzLean: A Lean formalization of the Collatz map and its global behavior</strong>. <em>GitHub, commit a793574</em>. <a href="https://github.com/xrchz/CollatzLean/blob/a79357462a33d2a6babd4cf6c8d8bcd25425d653/README.md">Source code</a>.<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Kumar, R. (2026). <strong>CollatzLean: A Lean formalization of the Collatz map and its global behavior</strong>. <em>GitHub, commit a793574</em>. <a href="https://github.com/xrchz/CollatzLean/blob/a79357462a33d2a6babd4cf6c8d8bcd25425d653/README.md">Source code</a>.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>kiranandcode. (2026). <strong>Kernel accepts wrong-structure projections, allowing an axiom-free proof of False</strong>. <em>Lean 4 issue tracker</em>. <a href="https://github.com/leanprover/lean4/issues/14576">Issue 14576</a>.<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>kiranandcode. (2026). <strong>Kernel accepts wrong-structure projections, allowing an axiom-free proof of False</strong>. <em>Lean 4 issue tracker</em>. <a href="https://github.com/leanprover/lean4/issues/14576">Issue 14576</a>.<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>de Moura, L. (2026). <strong>Fix: Missing check at kernel inductive declaration</strong>. <em>Lean 4 pull request</em>. <a href="https://github.com/leanprover/lean4/pull/14577">Pull request 14577</a>.<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>Paulson, L. C. (2026). <strong>Why is it all in the kernel?</strong> <em>Machine Logic</em>. <a href="https://lawrencecpaulson.github.io/2026/07/30/Collatz.html">Article</a>.<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>de Moura, L. (2026). <strong>Fix: Missing check at kernel inductive declaration</strong>. <em>Lean 4 pull request</em>. <a href="https://github.com/leanprover/lean4/pull/14577">Pull request 14577</a>.<a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>Paulson, L. C. (2026). <strong>Why is it all in the kernel?</strong> <em>Machine Logic</em>. <a href="https://lawrencecpaulson.github.io/2026/07/30/Collatz.html">Article</a>.<a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>de Moura, L. (2026). <strong>Fix: Missing check at kernel inductive declaration</strong>. <em>Lean 4 pull request</em>. <a href="https://github.com/leanprover/lean4/pull/14577">Pull request 14577</a>.<a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>Carneiro, M. (2024). <strong>Lean4Lean: Towards a Verified Typechecker for Lean, in Lean</strong>. <em>arXiv</em>. <a href="https://doi.org/10.48550/arXiv.2403.14064">DOI</a>.<a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>American Chemical Society. (n.d.). <strong>Leo Hendrik Baekeland and the Invention of Bakelite</strong>. <em>National Historic Chemical Landmarks</em>. <a href="https://www.acs.org/education/whatischemistry/landmarks/bakelite.html">Official history</a>.<a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>de Moura, L. (2026, August 1). <strong>Postmortem for Kernel Soundness Bug #14576</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/">Article</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>de Moura, L. (n.d.). <strong>About Me</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/about/">Official profile</a><a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>de Moura, L. (2026, August 1). <strong>Postmortem for Kernel Soundness Bug #14576</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/">Article</a><a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>de Moura, L. (2026, August 1). <strong>Postmortem for Kernel Soundness Bug #14576</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/">Article</a><a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>de Moura, L. (2026, August 1). <strong>Postmortem for Kernel Soundness Bug #14576</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/">Article</a><a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn24"><p>de Moura, L. (2026, August 1). <strong>Postmortem for Kernel Soundness Bug #14576</strong>. <em>Leonardo de Moura</em>. <a href="https://leodemoura.github.io/blog/2026-8-1-postmortem-for-kernel-soundness-bug-14576/">Article</a><a href="#fnref24" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2016-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
