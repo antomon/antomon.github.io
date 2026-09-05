@@ -1,0 +1,688 @@
+---
+title: "When Formalization Became Industrial"
+subtitle: "Fermat's Last Theorem, Prove2Me, and the transition from proof abundance to formalization abundance"
+description: "Anthropic's Lean formalization of Fermat's Last Theorem is evidence of a deeper transition: formalization itself is becoming scalable infrastructure, shifting mathematical scarcity from proof construction toward specification, semantic fidelity, interpretation, curation, and governance."
+abstract: |
+    Anthropic's September 2026 release of a complete Lean formalization of Fermat's Last Theorem is important less because it discovers new mathematics than because it demonstrates a new production regime for existing mathematics. A multi-agent system, coordinated through Prove2Me and supported by substantial inherited formal infrastructure, produced an end-to-end formal artifact in eleven days. Anthropic reports approximately thirteen million lines of Lean, roughly 29,500 intermediate theorems in the final corpus, and about six billion model-output tokens. The released artifact is mechanically replayable through Lean, Comparator, and the independently implemented NanoDa kernel.
+
+    This article argues that the episode marks a transition from proof abundance to formalization abundance. The relevant technological object is not a model in isolation but a production system comprising models, agents, theorem interfaces, formal libraries, search, orchestration, proof kernels, registries, and human judgment. Prove2Me makes this architecture explicit by separating immutable theorem statements from proofs, organizing formalization projects into audited missions and milestones, and turning proof dependencies into distributed work. Palomar addresses the complementary problem of how machine-scale formal artifacts acquire durable identity, provenance, verification records, and a publicly auditable statement surface.
+
+    Formal correctness, however, is narrower than mathematical understanding. A proof assistant can establish that a formal proof proves a declared proposition; it cannot by itself establish that every generated definition or intermediate theorem expresses the intended mathematics, that an abstraction is suitable for long-term reuse, or that a result is mathematically significant. Kevin Buzzard's response to the Fermat release makes this distinction especially concrete: rapid end-to-end formalization and the construction of reusable, well-designed mathematical infrastructure are related but different achievements. As local proof construction and formal elaboration become cheaper, scarcity moves toward specification, semantic audit, abstraction stewardship, library integration, selection, exposition, reproducibility, and institutional governance.
+
+    The empirical evidence also has clear limits. The Fermat campaign is an existence proof for one successful production configuration, not a controlled estimate of a general formalization cost curve. Eleven days is wall-clock time rather than aggregate work; six billion output tokens do not determine total economic cost; independent replay of the released artifact is not independent reproduction of the generative campaign; and success on a deeply studied theorem with mature formal infrastructure does not establish equivalent performance on open or poorly formalized mathematics. The central conclusion is therefore neither that mathematics has been automated nor that formalization has become trivial. It is that the historical cost of manually producing every formal deductive step can no longer safely be assumed to remain the organizing bottleneck of mathematical practice, while specification, curation, interpretation, and institutional stewardship become correspondingly more important.
+date: "2026-09-06"
+date-modified: "2026-09-06"
+categories: [machine learning, mathematics, 🇬🇧]
+audiences: practitioner, researcher, subject-matter-expert, technical specialist
+difficulty: intermediate
+image: "formalization-industry.png"
+---
+
+## From proof abundance to formalization abundance
+
+The recent discussion of artificial intelligence and mathematics has been organized around a scarcity transition. As models become better at generating plausible proofs, constructions, conjectures, and intermediate arguments, producing *candidate* mathematical reasoning becomes cheaper relative to verifying, understanding, selecting, explaining, and integrating it. I previously described this as **proof abundance**: a regime in which the principal bottleneck begins to move from producing arguments to digesting them as mathematical knowledge.[^when-formalization-became-industrial-montano-proof-abundance]
+
+Anthropic's formalization of Fermat's Last Theorem pushes that argument one step further. On September 4, 2026, Anthropic released what it describes as the first complete computer-checked proof of Fermat's Last Theorem. Claude worked largely autonomously for eleven days; the resulting development contains approximately thirteen million lines of Lean and about 29,500 intermediate theorems in the final corpus.[^when-formalization-became-industrial-anthropic-flt] The full repository is public and can be replayed through Lean's kernel, checked against a separately specified target using Comparator, and replayed through NanoDa, an independently implemented Lean kernel.[^when-formalization-became-industrial-anthropic-repository]
+
+The mathematical theorem is not new. The argument follows the modern route through the work of Frey, Serre, Ribet, Wiles, and Taylor–Wiles, using an exposition by Henri Darmon, Fred Diamond, and Richard Taylor; the formal development also inherits material from Mathlib, the Imperial College London FLT project, and `flt-regular`.[^when-formalization-became-industrial-ddt][^when-formalization-became-industrial-anthropic-inherited-capital] What is new is the scale and organization of the conversion from known mathematics into a checked formal artifact.
+
+That distinction is decisive. The significance of the project is not that AI discovered Fermat's Last Theorem. Rather, it demonstrated that a very large body of established mathematics could be transformed into a machine-generated formal corpus and then checked by a proof-assistant kernel.
+
+For decades, formal proof assistants offered exceptionally strong deductive guarantees, but formalization itself remained expensive. A human—or a tightly coordinated group of humans—had to translate informal definitions and theorems into a formal language, build library infrastructure, manage dependencies, repair elaboration failures, and supply the detailed proof terms or tactics required by the prover.
+
+If that conversion can increasingly be delegated to agents, then the scarcity transition changes again. It is no longer only the production of informal proofs that becomes abundant. The production of **formalized** proofs can become abundant as well. I will call this **formalization abundance**: a regime in which substantial portions of the work required to transform mathematical reasoning into machine-checkable formal artifacts can themselves be executed at computational scale.
+
+This extends the earlier idea of a **cognitive infrastructure** for science. Models are not the whole system. The effective research unit increasingly consists of models, agents, formal libraries, theorem search, orchestration mechanisms, proof assistants, repositories, and human institutions.[^when-formalization-became-industrial-montano-cognitive-infrastructure] The Anthropic result is especially instructive because the project reportedly failed when strong agents were deployed without an adequate collaboration architecture. It succeeded after the workflow shifted to Prove2Me, which maintained theorem-level dependencies, separated statements from proofs, and supported search and reuse.[^when-formalization-became-industrial-anthropic-flt]
+
+Industrialization is therefore the appropriate metaphor only if it is understood structurally. A factory is not merely a very strong worker. It is a system that decomposes production, establishes interfaces, enables parallel execution, accumulates reusable capital, coordinates flows, and applies quality control. The same pattern is now visible in formal mathematics.
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-scarcity-migration
+%%| fig-cap: "As proof generation, formalization, and deductive checking become cheaper, mathematical scarcity moves toward semantic fidelity, selection, understanding, and governance."
+%%| fig-alt: "Flow diagram showing a sequence from proof production through formalization and deductive verification to semantic fidelity, selection, understanding and exposition, and governance and stewardship. Generative models reduce scarcity in proof production, agents and Prove2Me reduce scarcity in formalization, and Lean, Comparator, and NanoDa mechanize deductive verification. Semantic fidelity remains a separate downstream problem."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Proof production] --> B[Formalization]
+    B --> C[Deductive verification]
+    C --> D[Semantic fidelity]
+    D --> E[Selection]
+    E --> F[Understanding + exposition]
+    F --> G[Governance + stewardship]
+
+    H[Generative models] -.->|reduce scarcity| A
+    I[Agents + Prove2Me] -.->|reduce scarcity| B
+    J[Lean + Comparator + NanoDa] -.->|mechanize| C
+```
+
+The important claim in @fig-when-formalization-became-industrial-scarcity-migration is relative rather than absolute. Proof remains difficult. Formalization still consumes substantial resources. Semantic errors remain possible. The Fermat campaign is one project, not a universal cost curve. But once a credible production configuration can generate a formal development of this size in days rather than years, it becomes necessary to ask what happens when the formalization bottleneck itself begins to weaken.
+
+That question links several themes developed in this series: proof abundance, the industrialization of intelligence, the cognitive infrastructure of science, the Leiden Declaration's insistence that formal validity is not equivalent to understanding, and Palomar's attempt to make verification, provenance, and registration part of the public mathematical record.[^when-formalization-became-industrial-montano-proof-abundance][^when-formalization-became-industrial-montano-leiden][^when-formalization-became-industrial-montano-palomar]
+
+The central thesis of this article is consequently narrower than _AI can do mathematics_ and more consequential than _AI can write Lean._
+
+Anthropic's Fermat result is evidence that **formalization is becoming an industrially scalable activity**. If that transition continues, the scarce resources of mathematics move toward specifying the right objects, auditing their intended meaning, choosing abstractions, curating shared libraries, deciding which results matter, explaining what verified artifacts teach us, and governing the infrastructure through which machine-generated mathematics becomes public knowledge.
+
+## What Anthropic actually formalized
+
+Fermat's Last Theorem states that for positive integers $a$, $b$, and $c$, and an integer exponent $n>2$,
+
+$$
+a^n+b^n\neq c^n.
+$$ {#eq-when-formalization-became-industrial-flt}
+
+Anthropic's released Lean theorem is:
+
+```lean
+theorem fermat_last_theorem
+    (n : ℕ) (hn : 3 ≤ n)
+    (a b c : ℕ)
+    (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) :
+    a ^ n + b ^ n ≠ c ^ n
+```
+
+The repository reports that this theorem depends only on Lean's standard axioms `propext`, `Classical.choice`, and `Quot.sound`, and that the development contains no undeclared `axiom`, `sorry`, `native_decide`, `unsafe`, `extern`, `implemented_by`, `partial def`, or `#eval` escape route, apart from the deliberate `sorry` in the separate Comparator challenge file.[^when-formalization-became-industrial-anthropic-repository]
+
+Three different questions must nevertheless be kept separate:
+
+1. **Deductive validity**: does the proof term check under the formal system?
+2. **Statement fidelity**: does the formal target express Fermat's Last Theorem as mathematicians mean it?
+3. **Mathematical intelligibility**: can a human reader understand the structure, concepts, and reasons behind the formal development?
+
+Anthropic's verification architecture is strongest on deductive validity and on a narrower statement-identity boundary. Lean checks the proof, while Comparator checks that the proved declaration and every constant it mentions are identical to a separately specified challenge statement built from stock Mathlib. This prevents the proof from silently changing or weakening the advertised formal target.[^when-formalization-became-industrial-anthropic-repository]
+
+That is strong evidence for the integrity of the formal claim, but it is not by itself a proof of semantic fidelity. Determining whether the independently specified Lean statement expresses Fermat's Last Theorem as mathematicians intend remains an interpretive judgment, albeit an unusually straightforward one here because the final declaration is written using natural numbers and ordinary arithmetic operations.[^when-formalization-became-industrial-anthropic-repository]
+
+The third question is harder. Anthropic's repository explicitly cautions that no checker can establish that every intermediate theorem means what its generated name suggests. The formal statement remains authoritative; generated English summaries and names are aids to navigation rather than additional proof obligations.[^when-formalization-became-industrial-anthropic-repository] This is why the project should not be interpreted as a thirteen-million-line human-readable proof. It is a **verification artifact**: an enormous formal object designed principally to be accepted by a small trusted kernel.
+
+Its mathematical route is nonetheless recognizable. Anthropic states that the proof follows the exposition of Darmon, Diamond, and Taylor and proceeds through the classical chain connecting a hypothetical Fermat solution to the Frey curve, Ribet's theorem, modularity results, and the contradiction produced by the Wiles–Taylor-Wiles machinery.[^when-formalization-became-industrial-ddt][^when-formalization-became-industrial-anthropic-flt]
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-flt-proof-route
+%%| fig-cap: "High-level mathematical route underlying the formalized proof; the generated Lean development expands each arrow into a large formal dependency structure."
+%%| fig-alt: "Flow diagram starting from a hypothetical nontrivial solution of Fermat's equation, constructing a Frey elliptic curve, obtaining a mod-p Galois representation, applying Ribet-type non-modularity consequences and Wiles–Taylor-Wiles modularity results, and ending in a contradiction."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TD
+    A[Hypothetical solution<br/>a^n + b^n = c^n]
+    B[Frey elliptic curve]
+    C[Galois representation]
+    D[Ribet-type consequence<br/>non-modularity]
+    E[Wiles + Taylor-Wiles<br/>modularity]
+    F[Contradiction]
+
+    A --> B --> C --> D
+    C --> E
+    D --> F
+    E --> F
+```
+
+The resulting corpus is remarkable in scale. Anthropic's public article reports approximately thirteen million lines of Lean and 29,500 intermediate theorems; the repository's generated documentation exposes 29,511 theorem pages and 1,450 definition modules.[^when-formalization-became-industrial-anthropic-flt][^when-formalization-became-industrial-anthropic-repository]
+
+Those numbers should not be mistaken for a measure of mathematical insight. Generated formal code contains elaboration detail, scaffolding, repetition, and proof-engineering structure that have no direct analogue in the length of a conventional mathematical paper. They are better understood as measures of production volume.
+
+The appropriate comparison is therefore not between a single human mathematician and a single language model, but between different mathematical production systems. Anthropic's eleven-day result reflects one particular configuration of model capability, formal-library infrastructure, human intervention, supplied mathematical knowledge, computational resources, and coordination mechanisms. It does not show that any sufficiently capable model, given eleven days, could reproduce a formalization of Fermat's Last Theorem from an empty Lean environment.
+
+This distinction matters because the campaign inherited a substantial mathematical and formal supply chain. Anthropic credits Mathlib, the Imperial College London FLT project, `flt-regular`, and centuries of prior mathematical work. Its repository identifies 106 files containing adapted material from the Imperial and `flt-regular` projects and 23 files reproducing Mathlib text.[^when-formalization-became-industrial-anthropic-inherited-capital]
+
+The historical achievement belongs to that mathematical lineage. The new achievement lies in the speed and scale with which existing mathematics was reconstructed as a machine-checkable formal artifact.
+
+## Prove2Me as coordination infrastructure
+
+Anthropic's account makes one feature of the Fermat project especially informative: strong agents were not enough. The initial approach reportedly made progress but failed to maintain a coherent global project state. Agents lost track of what had already been proved and ceased to collaborate effectively. Material from those failed attempts still contributed roughly seven percent of the non-boilerplate lines in the final artifact, but the campaign succeeded only after switching to Prove2Me.[^when-formalization-became-industrial-anthropic-flt]
+
+This makes coordination infrastructure part of the scientific result. Prove2Me's basic unit is not a mutable proof file but an immutable **theorem object**. Each theorem has a natural-language description, a formal Lean statement, a pinned environment, and potentially multiple proofs. A valid proof must provide a theorem named `solution` whose type matches the target exactly and that closes without `sorry` or new axioms.[^when-formalization-became-industrial-prove2me-paper][^when-formalization-became-industrial-prove2me-about]
+
+The important architectural feature is the separation between theorem statements and their proofs. Agents do not need to coordinate through a single continuously edited proof file; instead, they work against stable theorem interfaces. Several agents can attempt the same target independently, successful proofs can be reused without rewriting the statement, and proofs can change without changing the identity of the theorem itself.
+
+Prove2Me groups these theorem objects into **missions**. A mission contains a headline goal, the necessary definitions, and a set of curated milestone lemmas. A human captain audits this core before publication, a moderator approves the mission, and agents are then free to generate the lower-level intermediate proof structure required to complete it.[^when-formalization-became-industrial-prove2me-paper][^when-formalization-became-industrial-prove2me-about]
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-prove2me-audit-boundary
+%%| fig-cap: "Prove2Me concentrates semantic auditing on a bounded mission core while allowing agents to elaborate a much larger machine-checked proof structure beneath it."
+%%| fig-alt: "A small upper layer contains the human-audited mission goal, definitions, and milestone statements. Beneath it is a large network of agent-generated intermediate lemmas and proofs. Lean's kernel checks the entire lower network while humans focus on the semantic correctness of the small upper boundary."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    A[Mission goal<br/>human audited]
+    B[Definitions<br/>human audited]
+    C[Milestones<br/>human audited]
+
+    D[Intermediate theorem]
+    E[Intermediate theorem]
+    F[Intermediate theorem]
+    G[Intermediate theorem]
+    H[Intermediate theorem]
+
+    A --> C
+    B --> C
+    C --> D
+    C --> E
+    D --> F
+    D --> G
+    E --> G
+    G --> H
+
+    K[Lean kernel<br/>checks proof closure]
+    F --> K
+    H --> K
+```
+
+The architecture depends on a strong but narrow claim: once the intended top-level statements and definitions have been audited, intermediate lemmas do not necessarily need independent semantic authority. Their role can instead be judged by whether they contribute to a kernel-checked proof of an audited target.[^when-formalization-became-industrial-prove2me-paper]
+
+This does not eliminate semantic risk; it concentrates that risk at the specification boundary. The captain's work therefore becomes unusually high leverage. An error in a core definition, theorem statement, or milestone can direct an entire proof campaign toward a proposition that is formally correct but mathematically unintended.
+
+Prove2Me extends this approach through **proof-sketches**, which allow a proof to depend temporarily on theorem statements whose proofs have not yet been completed. A difficult target can therefore be decomposed into a collection of unresolved dependencies, each of which becomes an independent task that another agent can attempt.[^when-formalization-became-industrial-prove2me-about]
+
+The resulting collaboration structure is best understood as dependency management rather than joint editing. Instead of many agents modifying the same proof simultaneously, they work on separate theorem-level tasks connected by explicit dependencies. This makes parallel work easier to coordinate while preserving a clear account of which unresolved results block progress on the main theorem.
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-proof-sketch-dag
+%%| fig-cap: "A proof-sketch turns a difficult theorem into a dependency graph of independently solvable theorem interfaces."
+%%| fig-alt: "Directed acyclic graph with one goal theorem at the top depending on several milestone theorems, which in turn depend on smaller sub-theorems. Different agents are shown working on separate frontier nodes in parallel."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    A[Goal theorem]
+    B[Milestone 1]
+    C[Milestone 2]
+    D[Sub-theorem A]
+    E[Sub-theorem B]
+    F[Sub-theorem C]
+    G[Sub-theorem D]
+
+    A --> B
+    A --> C
+    B --> D
+    B --> E
+    C --> F
+    C --> G
+```
+
+A further mechanism is search and reuse. Prove2Me stores natural-language descriptions of theorem objects and allows completed results to become reusable building blocks. Anthropic identifies this retrieval layer as one of the mechanisms that helped simplify the Fermat formalization by making existing results easier for agents to discover and import.[^when-formalization-became-industrial-anthropic-flt]
+
+The resulting architecture resembles distributed software construction. Theorem statements function as stable interfaces, proofs as implementations, and milestones as coordination points between larger parts of the project. Explicit dependency relations make it possible to schedule work across many agents, while the formal library acts as a growing stock of reusable components. Lean's kernel then provides the final mechanical check that the assembled proof satisfies the declared statements.
+
+The analogy is not exact, because mathematical meaning and software behavior are not interchangeable. It is nevertheless useful for understanding why the scalability of the system depends as much on interfaces, retrieval, reuse, and coordination as on the raw proof-generating capability of individual agents.
+
+## The economics of theorem decomposition
+
+Once formalization is organized as a dependency graph, its economics change. The relevant question is no longer only how much proof work must be done, but how much of that work can proceed independently, how much is forced onto a sequential critical path, and how much additional overhead is introduced by decomposition itself.
+
+A simple **work–span model** provides a useful first approximation. Represent the formalization as a directed acyclic graph of theorem-level tasks. Each task has an associated amount of work, and a task can begin only after the results on which it depends have been completed. Let $W$ denote the total work required by all tasks and $D$ the **span**, meaning the total work along the longest dependency chain. If $m$ identical agents execute ready tasks in parallel, then the completion time $T_m$ cannot be smaller than
+
+$$
+T_m \geq \max\left(\frac{W}{m},D\right).
+$$ {#eq-when-formalization-became-industrial-parallel-lower-bound}
+
+The bound rests on deliberately simplifying assumptions. It treats the dependency graph as fixed, assumes that task costs can be represented by a common measure of work, and supposes that independent tasks can in principle execute concurrently. It abstracts away differences among agents, communication latency, theorem-search costs, duplicated attempts, failures and retries, context-management overhead, contention for computational resources, and the cost of discovering new dependencies while a proof is being developed. In an actual multi-agent formalization campaign, several of these assumptions will be violated: the proof graph can evolve as agents introduce intermediate lemmas, tasks can differ greatly in difficulty, and coordination itself consumes resources.
+
+The model should therefore not be interpreted as a predictive cost model for the Anthropic campaign or for Prove2Me more generally. Its purpose is narrower. The term $W/m$ represents a **work constraint**: even perfectly parallelizable work must ultimately be performed by the available agents. The term $D$ represents a **dependency constraint**: no number of additional agents can reduce the time required by a chain of tasks that must be completed sequentially. Real completion time will generally exceed both lower bounds because search, coordination, unequal task sizes, failures, and other forms of overhead consume resources that the simple model does not represent.
+
+This distinction explains both the promise and the limitation of multi-agent formalization. Adding agents can reduce the time spent on independent branches of a proof, but it cannot shorten the critical path simply by increasing concurrency. Scalability therefore depends not only on how many agents are available but also on the structure of the dependency graph they are asked to execute.
+
+The quality of theorem decomposition consequently becomes an important determinant of throughput. If a project is divided too coarsely, individual tasks remain large, feedback cycles are long, and relatively little work can proceed in parallel. If it is divided too finely, the project accumulates coordination costs: agents must search for more dependencies, understand more interfaces, reconcile overlapping abstractions, and manage a larger number of intermediate theorem objects. The useful unit of decomposition is therefore not the smallest possible lemma, but a theorem boundary that is simultaneously tractable, reusable, and mathematically meaningful.
+
+This gives human mathematical judgment a new source of leverage. A well-chosen milestone can expose several independent branches of a proof to parallel work and provide a useful abstraction for later results. A poorly chosen milestone can have the opposite effect: it may force otherwise independent work onto the same dependency chain, encode an awkward abstraction that later agents repeatedly have to circumvent, or produce a theorem too specialized to be useful outside the immediate proof.
+
+The economic effect is therefore not simply that agents make individual proofs cheaper. Good decomposition changes the *structure* of the work. It converts parts of a sequential mathematical argument into independently solvable tasks, while stable theorem interfaces allow those tasks to be attempted, verified, replaced, and reused without requiring every contributor to share the same mutable proof state.
+
+Reuse adds a second source of increasing returns. Once a theorem, definition, or bridge lemma has been formalized and made discoverable, later agents may import it rather than reconstruct it. At small scale this is merely convenient. At corpus scale it becomes an important determinant of productivity, because the cost of finding and adapting an existing result can be far lower than the cost of proving it again.
+
+Discoverability is therefore economically significant. A theorem that exists somewhere in a large formal corpus but cannot be found by an agent provides little practical advantage over a theorem that has not yet been formalized. Natural-language descriptions, structured metadata, stable theorem identities, explicit dependencies, and effective search systems all increase the probability that previous work can be converted into present savings.
+
+This is the sense in which reusable formal mathematics becomes **formal mathematical capital**. The output of a project is not limited to its headline theorem. It may also leave behind definitions, intermediate lemmas, proof interfaces, translations between representations, and searchable theorem objects that lower the cost of subsequent formalizations. Unlike a conventional one-off proof script, these objects can become direct inputs into later machine-assisted work.
+
+The possibility of accumulation changes the long-run economics of formalization. A successful project can enlarge the formal library; the larger library can make later projects cheaper; those projects can in turn contribute additional reusable components. The resulting gains need not come solely from more capable models. They can also arise from improved search and coordination infrastructure and from the growing stock of already formalized mathematics.
+
+There is, however, an important qualification. The same accumulation process can preserve bad abstractions as easily as good ones. A definition that becomes widely reused acquires switching costs because many later theorems depend on it. Formal mathematical capital therefore requires curation as well as accumulation. Search, naming, documentation, deprecation, equivalence lemmas, and library architecture become part of the productivity problem rather than peripheral maintenance work.
+
+The Fermat campaign provides strong qualitative evidence that decomposition, search, reuse, and parallel coordination can support formalization at very large scale. Anthropic reports approximately six billion model-output tokens and dozens of agents, and describes the transition to Prove2Me as important to the successful organization of the project.[^when-formalization-became-industrial-anthropic-flt] What the experiment does not provide is a controlled estimate of how much each architectural component contributed. Agent count, theorem granularity, model capability, harness design, inherited library coverage, human intervention, and source mathematics were not varied independently.
+
+The same limitation applies to the Prove2Me case studies. They demonstrate that large formalization projects can be organized through theorem-level decomposition and distributed agent work, but they do not establish a general causal speedup attributable to the platform alone.[^when-formalization-became-industrial-prove2me-paper]
+
+The justified conclusion is therefore architectural rather than econometric. Formalization becomes more scalable when a difficult proof can be decomposed into stable theorem interfaces, independent branches can be scheduled in parallel, completed results can be found and reused, and accumulated formal work becomes infrastructure for subsequent projects. What remains unknown is the shape of the resulting cost curve: how productivity scales with additional agents, where coordination overhead begins to dominate, which kinds of mathematical arguments decompose well, and how much future formalization can be accelerated by the growing stock of reusable formal mathematics.
+
+## Verification is not semantic fidelity
+
+Formal verification gives an exceptionally strong answer to a narrow question: whether a formal proof establishes a formal proposition in a specified formal environment. It does not automatically answer a different question: whether that proposition faithfully represents the mathematical claim that humans intended to formalize.
+
+This distinction matters because proof assistants verify relationships internal to the formal system. If Lean accepts a proof of a theorem, then the theorem follows from the declared definitions, assumptions, and imported results under Lean's logic. That guarantee is extremely strong, but it begins only after the mathematical meaning has already been encoded into formal statements.
+
+The semantic problem lies at that encoding boundary. A proof assistant cannot, merely from a natural-language source and a generated Lean declaration, determine whether the formal statement captures the intended theorem in all relevant respects. This limitation is central to Prove2Me's design. Its paper explicitly distinguishes kernel-level proof checking from semantic faithfulness and retains human auditing for the definitions, goals, and milestones that define the meaning of a mission.[^when-formalization-became-industrial-prove2me-paper]
+
+A formalization can diverge from its source in several ways while remaining perfectly valid inside the proof assistant. A quantifier can be reversed, a hypothesis can be strengthened until the result becomes easier or even trivial, or the domain of the theorem can be narrowed unintentionally. A generated definition may capture only a special case of the intended concept, or it may adopt conventions different from those assumed by the source. Even the name of a theorem can suggest a stronger or more familiar mathematical statement than the formal type actually expresses.
+
+None of these problems necessarily produces a kernel error. If the statement is well-formed and the proof establishes exactly that statement, the proof assistant has done its job correctly. The problem is not failed verification but failed correspondence between the formal object and the mathematics it is supposed to represent.
+
+Anthropic's Fermat repository makes this boundary unusually explicit. Its verification machinery establishes the final theorem and checks the deductive chain leading to it, but the repository cautions that generated names and descriptions of intermediate declarations should not themselves be treated as authoritative accounts of their mathematical meaning. The formal statements are authoritative; the surrounding linguistic descriptions are aids to navigation.[^when-formalization-became-industrial-anthropic-repository]
+
+This suggests that large formal developments have two different structures requiring different kinds of scrutiny. The first is the **proof structure**: the network of formal dependencies through which one theorem is derived from others. Proof assistants are exceptionally good at checking this structure. The second is the **semantic structure**: the smaller collection of definitions, theorem statements, abstractions, and conventions that determine what the formal development means mathematically.
+
+These two structures overlap, but they are not identical. A theorem may sit deep inside the proof dependency network while carrying little independent mathematical meaning; conversely, a single foundational definition may have few lines of code but determine the interpretation of thousands of downstream results. Semantic importance therefore cannot be inferred directly from proof size or dependency depth.
+
+The practical consequence is that machine-scale formalization should not try to assign equal human attention to every generated declaration. It should instead identify and protect the semantic boundary: the definitions, assumptions, top-level statements, and intermediate abstractions whose correctness determines whether the entire formal corpus corresponds to the intended mathematics. This is one reason Prove2Me concentrates human auditing on the mission core while allowing agents to elaborate much larger amounts of lower-level proof detail beneath it.[^when-formalization-became-industrial-prove2me-paper]
+
+That strategy does not eliminate semantic risk. It changes where the risk is concentrated. If the audited core is faithful, a large amount of mechanically generated proof detail can be delegated safely to the kernel. If a central definition or milestone is wrong, however, the same machinery can produce an enormous and perfectly verified proof of the wrong formal problem.
+
+Formal verification should therefore be understood as one layer of mathematical trust rather than as a complete substitute for interpretation. It is extraordinarily powerful at establishing deductive correctness. Semantic fidelity still depends on specification, comparison with the source mathematics, review of central abstractions, and accountable human judgment.
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-two-verification-loops
+%%| fig-cap: "Machine-scale formalization requires two different verification loops: deductive checking of proofs and semantic checking of the statement boundary."
+%%| fig-alt: "Two connected verification loops. The deductive loop runs from the formal statement to a generated proof and the Lean kernel, which accepts or rejects the proof. The semantic loop compares the formal statement with the informal mathematical source and sends mismatches back for revision of the formal statement. The loops meet at the formal specification but establish different kinds of assurance."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart LR
+    A[Informal mathematics]
+    B[Formal statement]
+    C[Generated proof]
+    D[Lean kernel]
+    E[Semantic audit]
+
+    A --> B
+    B --> C --> D
+    D -->|proof accepted or rejected| C
+    B --> E
+    E -.->|revise formal statement if needed| B
+```
+
+This is why Prove2Me's decision to reduce the **semantic audit surface** is important. Humans inspect the mission goal, definitions, and milestones, while agents elaborate the lower-level proof structure and Lean's kernel checks that this larger body of generated material actually establishes the audited targets.[^when-formalization-became-industrial-prove2me-about]
+
+The strategy changes the economics of review. If an agent system produces thousands of intermediate lemmas, it is neither realistic nor necessary for experts to inspect each one as an independent mathematical contribution. Human attention can instead be concentrated on the smaller set of objects that carry most of the semantic load: definitions, assumptions, interfaces, milestone statements, and final claims. Mechanical verification can then handle the much larger volume of deductive detail beneath that boundary.
+
+The effectiveness of this architecture depends, however, on whether the chosen audit boundary actually contains the semantically important decisions. A badly designed definition can influence thousands of downstream theorems, while many locally generated lemmas may have almost no independent interpretive significance. Review effort should therefore be allocated according to semantic influence rather than simply according to the number or size of formal declarations.
+
+This shifts scarcity toward **abstraction stewardship**: the work of deciding which formal representations should become stable shared objects, how closely they correspond to the intended mathematics, and whether they remain suitable as increasingly many later results depend on them. In a large reusable formal library, abstraction design is not merely a local implementation choice. It can shape the structure of future mathematical work.
+
+The broader epistemic point is also emphasized by the Leiden Declaration. Published on June 2, 2026 and endorsed by the International Mathematical Union, it treats proof, understanding, attribution, independent verification, and human responsibility as distinct requirements for responsible AI-assisted mathematics.[^when-formalization-became-industrial-leiden] Formal certainty is therefore one component of mathematical trust, not a substitute for semantic interpretation, explanation, provenance, or accountable judgment.
+
+## From Palomar to Prove2Me: registry and factory
+
+Prove2Me and Palomar address different stages of the same emerging formalization ecosystem. Prove2Me is concerned primarily with production: how a large formalization can be decomposed, coordinated, and completed by many agents. Palomar addresses the subsequent problem of public mathematical record: once a formal artifact exists, how can the community determine exactly what was claimed, what was checked, where the artifact came from, and what its registration does—and does not—establish?
+
+Palomar was announced in August 2026 as a public registry of Lean-verified mathematics. Its founding statement describes a durable, searchable record analogous in some respects to a repository or preprint server, while explicitly rejecting the idea that registration by itself certifies novelty, significance, or complete correspondence between an informal mathematical source and its formal counterpart.[^when-formalization-became-industrial-palomar-statement]
+
+The complementarity is useful. Prove2Me can be understood as a **factory architecture** for formalization: it is designed around decomposition, coordination, parallel work, and completion. Palomar is better understood as a **registry architecture**: it emphasizes stable identity, provenance, reproducibility, verification evidence, and public audit. One organizes production; the other organizes the scholarly record that production leaves behind.
+
+Palomar's use of Comparator makes this boundary especially clear. A small, human-auditable Challenge statement is separated from the Solution that supplies the proof. Comparator then checks mechanically that the Solution proves the advertised declaration rather than some modified, strengthened, weakened, or otherwise different target.[^when-formalization-became-industrial-palomar-policy]
+
+This architecture exploits an important asymmetry between semantic review and deductive verification. The proof artifact may be extremely large, while the statement that defines what the artifact is supposed to establish can remain comparatively small. Human attention can therefore be concentrated on understanding the statement, assumptions, definitions, and provenance, while the much larger deductive object is checked mechanically. The point is not that mathematicians should cease reading proofs. They may still study them for ideas, methods, pedagogy, novelty, or explanatory value. The point is that basic deductive trust no longer has to depend on line-by-line human inspection of every machine-generated proof step.
+
+Palomar adds a further layer through `formalization.yaml`, using structured metadata to record aspects of the artifact that are not captured by the theorem statement alone. These include project identity, mathematical sources, related formalizations, scope, automation methods, model use, costs where available, fidelity divergences, review status, source alignment, and acknowledgments.[^when-formalization-became-industrial-palomar-metadata]
+
+This changes what should count as the scholarly object. For large AI-assisted formalizations, a theorem together with a proof is no longer a sufficiently complete public description. The record also needs to preserve where the mathematics came from, how the artifact was produced, which tools and models contributed, what verification was performed, which limitations are known, and what forms of human review occurred.
+
+The conceptual consequence is important: **provenance becomes part of mathematical identity**. In a large machine-assisted formalization, the relevant genealogy may extend across several layers of prior work and infrastructure. For Anthropic's Fermat artifact, that genealogy includes the mathematics of Wiles and Taylor–Wiles, the exposition by Darmon, Diamond, and Taylor, Mathlib, the Imperial College London FLT project, `flt-regular`, Anthropic's agent campaign, Prove2Me, the model and harness, and the verification tools used to check the resulting development.[^when-formalization-became-industrial-anthropic-flt][^when-formalization-became-industrial-anthropic-inherited-capital]
+
+No single item in that chain adequately describes the artifact's origin. The formal theorem identifies what was proved; the proof object establishes the deductive claim; the source record identifies the mathematical inheritance; the automation record identifies how the formalization was produced; and the verification record identifies which checks support trust in the result.
+
+A mature formalization ecosystem therefore needs several distinct functions:
+
+* **Source identification:** specify the informal mathematics, prior formalizations, and inherited libraries on which the project depends.
+* **Audited specification:** identify the definitions, theorem statements, and milestones whose semantic fidelity requires expert attention.
+* **Distributed production:** allow agents to construct and reuse the lower-level formal material needed to discharge those targets.
+* **Mechanical verification:** check that the generated proofs establish the declared statements under the recorded environment.
+* **Registry and provenance:** preserve the artifact, its exact version, its sources, its automation history, and the evidence supporting verification.
+* **Scholarly evaluation:** determine mathematical significance, novelty, explanatory value, fidelity to the source, and usefulness to the wider community.
+
+These functions form a conceptual pipeline, not a claim that Prove2Me currently exports directly into Palomar or that either platform implements the entire sequence. Their importance lies in showing that production, verification, registration, and scholarly judgment are separable institutional tasks.
+
+That separation matters because registration is not the same as acceptance. Palomar's automated editorial layer uses language models to identify blocking issues and obvious mismatches, but the registry explicitly states that this process is not human peer review and does not constitute endorsement of mathematical novelty or importance.[^when-formalization-became-industrial-palomar-about]
+
+A formally checked proof can therefore become a durable public artifact without thereby becoming accepted mathematical knowledge. The latter transition still requires interpretation, criticism, comparison with existing work, exposition, teaching, reuse, and expert judgment. Prove2Me and Palomar together illustrate why industrial-scale formalization needs both kinds of infrastructure: systems capable of producing verified artifacts at scale, and institutions capable of making those artifacts legible, attributable, reproducible, and assessable by a mathematical community.
+
+## What changes in mathematical labor
+
+The strongest labor claim supported by the Fermat episode is not that mathematicians disappear, but that the **task composition of formal mathematics changes**. Activities that were previously bundled together—specifying the mathematics, constructing the formal proof, verifying it, and interpreting its significance—can increasingly be separated and assigned to different combinations of humans, agents, libraries, and verification systems.
+
+Anthropic reports that dozens of agents performed much of the detailed Lean work in the Fermat project, with occasional high-level human interventions. Prove2Me makes this division of labor more explicit: a human captain supplies source material and mathematical judgment, audits the mission goals and milestones, and can delegate much of the lower-level Lean construction to agents.[^when-formalization-became-industrial-anthropic-flt][^when-formalization-became-industrial-prove2me-paper] The result is not the elimination of mathematical expertise but a redistribution of where that expertise has the greatest leverage.
+
+The first shift is toward **specification labor**. A proof assistant can verify a formal statement with extraordinary rigor, but it cannot guarantee that the statement is the theorem humans intended to formalize. As proof generation becomes cheaper, choosing the right definitions, hypotheses, quantifiers, conventions, and theorem boundaries becomes proportionally more important. An error at this level can propagate through a large formal development while remaining invisible to the kernel, because the generated proofs may be perfectly correct relative to the mistaken specification.
+
+The second shift is from local proof construction toward **decomposition and research design**. As the work–span analysis in the previous section suggests, the organization of a theorem into intermediate results affects how much work can proceed independently. The best decomposition is not necessarily the one with the smallest lemmas. It is the one that exposes mathematically useful interfaces, opens independent branches to parallel work, and produces intermediate results that later agents can discover and reuse. In this environment, knowing *where to cut the theorem* becomes a consequential form of mathematical judgment.
+
+This moves part of proof engineering upward in abstraction. Instead of supplying every local deductive step, a mathematician may increasingly design the structure within which those steps are generated. The role begins to resemble mathematical architecture: deciding which objects should be primitive, which intermediate results deserve stable identities, which dependencies should be exposed, and which abstractions are sufficiently general to support later work.
+
+A third scarce activity is **abstraction stewardship**. Search and reuse give successful formal objects a life beyond the project in which they were created. A definition or interface that becomes widely reused can accumulate many downstream dependencies, making later replacement expensive. Early design choices can therefore become path-dependent features of the formal library.[^when-formalization-became-industrial-prove2me-about] Maintaining such a library requires more than proving additional theorems. It requires decisions about naming, generality, compatibility, deprecation, equivalence between competing representations, and which abstractions should become shared infrastructure.
+
+A fourth change concerns **review**. When machines can generate formal material faster than experts can read it, exhaustive human inspection becomes increasingly impractical. Review must become more selective without becoming less rigorous. Human attention is most valuable at points where errors would have broad semantic consequences: foundational definitions, top-level statements, novel abstractions, highly reused interfaces, surprising assumptions, and other objects with substantial downstream influence.
+
+This makes review **exception-oriented and risk-sensitive**. The relevant question is no longer simply whether every generated lemma has been read by a mathematician, but which parts of the formal development require human understanding in addition to mechanical verification. Semantic importance, novelty, reuse, and dependency influence can all matter more than the raw size of a declaration. Such judgments cannot yet be reduced to an objective risk score, but the allocation problem is real: machine-scale proof production makes expert attention scarcer relative to the volume of material available for inspection.
+
+Provenance becomes part of this labor rather than an administrative afterthought. A large formal artifact can combine mathematical discoveries by one group, exposition by another, definitions inherited from existing libraries, machine-generated intermediate results, strategic human interventions, automated coordination infrastructure, and independent verification tools. Recording these contributions is necessary both for reproducibility and for assigning intellectual credit. Repository ownership alone cannot adequately describe the genealogy of such an artifact.
+
+Finally, **exposition becomes more valuable rather than less**. A thirteen-million-line checked formalization can be an extraordinary verification object while being unsuitable as a primary medium for human understanding. As the volume of machine-generated proof detail increases, so does the need for mathematicians who can recover the conceptual structure: which ideas drive the argument, why particular intermediate results matter, how the proof relates to existing mathematics, and which parts represent genuine novelty rather than formal scaffolding.
+
+This is a problem of conceptual compression, but not merely of shortening text. A successful exposition must discard enormous amounts of proof-engineering detail while preserving the mathematical dependencies and ideas that make the result intelligible. Compression that removes those ideas produces a summary, not understanding. Anthropic itself emphasizes that the formal Fermat artifact should not replace human mathematical exposition.[^when-formalization-became-industrial-anthropic-flt]
+
+Lower barriers to formal contribution should therefore not be confused with the elimination of expertise. Prove2Me may allow contributors to work through coding agents without mastering every detail of Lean syntax, but substantial expertise remains necessary for deciding what is worth formalizing, whether a specification captures its source, how a theorem should be decomposed, which abstractions should become shared infrastructure, where scarce review attention should be directed, and how a completed formal artifact should be interpreted.[^when-formalization-became-industrial-prove2me-paper]
+
+The emerging division of labor moves the mathematician away from having to produce every local deductive step and toward higher-leverage responsibilities: **specifying, decomposing, curating, auditing, and explaining**. That is a narrower claim than the displacement of mathematicians, but it is also a more consequential one. If formal proof production becomes abundant, the scarce human contribution increasingly lies in determining which mathematical structures machines should build, which of those structures deserve trust and reuse, and how their significance should be understood.
+
+## Reproducibility, costs, and the limits of the evidence
+
+The Fermat result is unusually strong as a **verification artifact** and much weaker as a **controlled experiment**. Those judgments are compatible because they refer to different questions.
+
+At least four forms of reproducibility should be distinguished.
+
+| Reproducibility target  | Question                                                                              | Evidence from the Fermat release    |
+| ----------------------- | ------------------------------------------------------------------------------------- | ----------------------------------- |
+| Deductive replay        | Can the released formal proof be checked again?                                       | Strong                              |
+| Artifact reconstruction | Can the public repository be rebuilt under the pinned toolchain?                      | Substantial, but resource-intensive |
+| Production reproduction | Can another team regenerate a comparable formalization from the mathematical sources? | Not established                     |
+| Economic reproduction   | Can comparable projects be repeated at predictable and accessible cost?               | Not established                     |
+
+: Distinct meanings of reproducibility in machine-scale formalization. {#tbl-when-formalization-became-industrial-reproducibility-levels}
+
+Anthropic's release provides substantial evidence for the first two. The repository reports that all 60,475 modules built under Lean 4.33.1, that every declaration was checked by the Lean kernel, that Comparator verified the exact challenge statement and replayed the proof, and that NanoDa 0.4.13 accepted an exported development containing 1,052,234 declarations.[^when-formalization-became-industrial-anthropic-repository]
+
+This is strong evidence that the released artifact is mechanically checkable under the documented environment. It does not, however, reproduce the eleven-day production campaign that created it.
+
+Production reproducibility is a much harder target. Re-running the final proof checks whether the published artifact is valid. Reproducing the production process would require another team to begin from comparable mathematical sources and infrastructure and obtain a similarly complete formalization under sufficiently similar conditions. That process depends on many interacting variables: model capability, coordination architecture, computational resources, human interventions, inherited formal libraries, and the mathematical material supplied to the agents.
+
+The published campaign does not isolate those variables experimentally. Anthropic reports that earlier attempts failed because the agents did not maintain a coherent project state, and that the successful phase followed a change in workflow involving Prove2Me, a Claude Code-based multi-agent harness, dozens of agents, occasional human prioritization, and an internal research model described as roughly comparable to Claude Fable 5.1.[^when-formalization-became-industrial-anthropic-flt] Because several important components changed together, the relative contribution of each remains underdetermined.
+
+The headline duration therefore also requires careful interpretation. Anthropic reports that the successful phase took a little under two weeks and generated approximately six billion output tokens.[^when-formalization-became-industrial-anthropic-flt] Eleven days is a measure of elapsed wall-clock time, not of total computational work. A highly parallel system can reduce elapsed time while consuming very large amounts of aggregate inference and compute.
+
+For this reason, the economics of the campaign cannot be summarized by duration alone. A fuller account would need to include at least wall-clock time, token volume, number of concurrent agents, hardware consumption, monetary cost, energy use, and human labor. The published record does not provide all of these quantities. Six billion output tokens establish that the campaign involved substantial inference volume, but they do not by themselves reveal the total financial or physical cost of producing the result.
+
+Verification also required significant infrastructure. Anthropic reports that a from-scratch build using 96 jobs took 5 hours 32 minutes and peaked at 153 GB of memory. The build directory occupied about 67 GB of disk, while generated C files could temporarily push storage requirements to roughly 220 GB. Comparator took 14 hours 46 minutes and reached a peak memory use of 230 GB. The NanoDa export produced a 37.8 GB file, and both export and independent-kernel checking required substantial additional memory.[^when-formalization-became-industrial-anthropic-repository]
+
+These measurements should not be read as intrinsic lower bounds for verifying a formalization of this scale. They describe Anthropic's reported configuration. Their significance is more modest but still important: replacing human line-by-line inspection with mechanical checking does not make verification computationally free. Very large formal developments remain substantial software artifacts with nontrivial memory, storage, and execution requirements.
+
+There is also evidence pointing in the opposite direction with respect to accessibility. Anthropic reports a separate experiment in which three personal Claude Max subscriptions, coordinated through Prove2Me, formalized Vinogradov's Three Primes Theorem in three days.[^when-formalization-became-industrial-anthropic-flt] This demonstrates that at least some substantial formalization projects can be completed using resources much closer to ordinary consumer access.
+
+That result should not be generalized too far. It establishes the existence of a substantial formalization achievable under relatively accessible conditions; it does not establish that major formalizations in general can be reproduced with consumer-level resources. Different theorems can vary enormously in source quality, library support, decomposition structure, and the amount of missing formal infrastructure.
+
+The same caution applies to inherited mathematical capital. The Fermat campaign did not begin from an empty Lean environment. It benefited from Mathlib, previous FLT-related formalizations, `flt-regular`, the Imperial College London FLT project, and a well-established human proof architecture.[^when-formalization-became-industrial-anthropic-inherited-capital] The observed completion time therefore reflects not only model and coordination capability but also the stock of formal mathematics that already existed before the campaign began.
+
+This inherited capital has two opposite implications for benchmarking. It makes comparisons more difficult because completion time cannot be attributed to model capability alone. At the same time, it creates the possibility of cumulative improvement: every successful formalization can contribute definitions, lemmas, interfaces, and proof infrastructure that reduce the cost of subsequent projects.
+
+Fermat is also an unusual benchmark. It is exceptionally deep, but it is also exceptionally well documented. The target is precise, the modern proof architecture is known, extensive exposition exists, relevant formal libraries are mature, and previous formalization projects had already developed substantial infrastructure around the theorem. A less famous result may be mathematically easier while being much harder to formalize because its definitions are less standardized, its literature is fragmented, or no reusable formal infrastructure exists.
+
+The strongest empirical conclusion is therefore deliberately narrow. Anthropic has demonstrated one production configuration capable of converting an exceptionally large and sophisticated body of known mathematics into an end-to-end checked Lean artifact in approximately eleven days.[^when-formalization-became-industrial-anthropic-flt]
+
+That is compelling evidence that a new production regime is possible. It is not yet a calibrated production function. The evidence does not establish how completion time scales with agent count, how much each architectural component contributes, what the full economic cost is, or how well the same approach transfers across different classes of mathematics.
+
+## Governing formalization abundance
+
+If formalization becomes industrial, governance cannot begin only after a proof has been produced. The infrastructure of production already shapes which mathematics is easy to formalize, which abstractions become widely reused, which theorems agents retrieve, what verification evidence counts as sufficient, whose contributions remain visible in the provenance chain, and which artifacts acquire durable public identities.
+
+The Palomar founding statement makes this institutional point explicitly. It argues that the mathematical community should retain a central role in setting standards rather than allowing those standards to emerge accidentally or to be determined solely by external technology providers.[^when-formalization-became-industrial-palomar-statement]
+
+Governance should therefore follow the entire formalization supply chain. Different layers exercise different kinds of authority: models determine what forms of automated reasoning are available; orchestration systems determine how work is allocated; formal libraries shape the inherited abstraction environment; verification tools determine what counts as mechanically accepted; registries determine what receives a durable public record; semantic audit determines whether formal objects are regarded as faithful representations; and scholarly institutions determine novelty, significance, exposition, and disciplinary recognition.
+
+The objective should not be to collapse these powers into a single institution. A healthier architecture keeps them sufficiently separable that the weaknesses of one layer can be detected, challenged, or compensated for by another.
+
+### Independent verification
+
+One of formal mathematics' strongest governance properties is the portability of deductive evidence. A model vendor may generate a proof, but the validity of that proof should not depend on continued access to the vendor's private model or service.
+
+Anthropic's Fermat release exemplifies this principle by publishing the formal artifact and supporting multiple checking paths.[^when-formalization-became-industrial-anthropic-repository] Palomar institutionalizes a similar separation by requiring Comparator and replay through Lean and NanoDa for registered artifacts.[^when-formalization-became-industrial-palomar-about]
+
+This suggests a useful minimum standard: proprietary production can coexist with publicly checkable evidence. The weaker arrangement is one in which a public mathematical claim is backed only by a private proof and a private verifier. A producer should not need to be trusted merely because it is the producer.
+
+Independent checking does more than guard against software failure. It also limits institutional dependence. If the artifact can be exported, rebuilt, and checked under documented conditions, then trust attaches more strongly to the mathematical object and less strongly to the organization that created it.
+
+### Narrow registry claims
+
+Registries should likewise resist becoming generalized authorities over mathematical truth. Palomar explicitly states that registration does not establish novelty, relevance, or complete alignment between a formal statement and its informal source.[^when-formalization-became-industrial-palomar-statement]
+
+Registration should therefore be understood as establishing a documented baseline. It can record that a specified artifact exists, that a specified theorem was checked under a specified environment, that certain provenance and verification information were supplied, and that the artifact satisfies the registry's technical requirements.
+
+Those claims are already valuable. They should not be inflated into stronger claims about mathematical significance, originality, explanatory quality, or scholarly acceptance. The institutional strength of a registry partly depends on its willingness to keep its claims narrow.
+
+### Machine-readable provenance
+
+Formalization abundance also makes structured provenance indispensable. A single artifact may combine source mathematics, earlier formalizations, generated proof material, inherited libraries, model-assisted coding, human review, orchestration infrastructure, and independent verification.
+
+Palomar's `formalization.yaml` infrastructure is designed to record this kind of supply chain in machine-readable form, including sources and their relationships, authorship, automation methods, scope, review, fidelity divergences, alignment, and acknowledgments.[^when-formalization-became-industrial-palomar-metadata]
+
+This matters because provenance is no longer peripheral metadata. In large AI-assisted formalizations, it helps determine what the artifact actually is as a scholarly object. Readers may need to know which mathematics was inherited, which parts were generated, which models and tools were involved, which claims were manually audited, and which verification paths were used.
+
+Without structured provenance, mathematical production can scale faster than mathematical memory. Artifacts may remain technically valid while the history required to interpret, reproduce, credit, or challenge them becomes increasingly difficult to reconstruct.
+
+### Canonicalization and search
+
+Reuse creates a further governance problem. Once a definition, theorem interface, or formal representation is adopted early and widely reused, it can acquire increasing structural advantage. More downstream dependencies make it more valuable to retrieve; greater retrieval increases the likelihood of further reuse; and repeated reuse can make replacement progressively more expensive.
+
+This feedback can be beneficial when it stabilizes good conventions. It can also entrench poor abstractions, accidental design choices, or representations that were appropriate for one project but become awkward when generalized.
+
+Shared formal libraries therefore require accountable stewardship. Versioning, explicit deprecation rather than silent mutation, bridge theorems between alternative representations, documented maintainership, and workable migration paths become part of mathematical infrastructure.
+
+Search must be governed with equal care. In a corpus too large for direct inspection, what an agent retrieves strongly influences what it reuses. Ranking criteria, metadata quality, naming conventions, and search interfaces therefore acquire mathematical consequences. The formal commons is not only a collection of files; it is also the indexing and retrieval system through which those files become visible.
+
+### Interoperability and exit
+
+Consumer access to agents does not by itself guarantee decentralized mathematical infrastructure. Concentration can occur at many points: model access, compute, orchestration platforms, theorem libraries, search indexes, verification tooling, registries, or archival services.
+
+A healthy ecosystem should therefore be evaluated partly by its **exit properties**. Can a theorem and its proof move between platforms? Can a public artifact be checked without using the producer's service? Can provenance metadata be exported? Can a library be forked? Can registry records remain resolvable if an organization changes or disappears? Can independent kernels or alternative proof assistants challenge a dominant implementation?
+
+These questions distinguish openness from mere access. A service may be inexpensive or widely available while still creating substantial lock-in. The more important governance property is portability: whether mathematical artifacts, metadata, and verification evidence remain usable outside the system that originally produced them.
+
+### Reporting standards
+
+The evidentiary limits of the Fermat campaign also suggest the need for more systematic reporting standards for large formalization projects.
+
+| Dimension     | Evidence to record                                                            |
+| ------------- | ----------------------------------------------------------------------------- |
+| Target        | Exact theorem statement and formal environment                                |
+| Models        | Models or model classes used                                                  |
+| Orchestration | Agent framework and collaboration mechanism                                   |
+| Resources     | Wall time, concurrency, token use, hardware, monetary expenditure where known |
+| Human role    | Intervention categories, statement audits, decomposition decisions            |
+| Inheritance   | Formal libraries and prior formalizations reused                              |
+| Failures      | Material abandoned or failed work                                             |
+| Verification  | Kernel, Comparator, independent checker, allowed axioms                       |
+| Fidelity      | Known differences from the informal source                                    |
+| Provenance    | Sources, authorship, automation, review, versions                             |
+
+: Suggested reporting dimensions for machine-scale mathematical formalization. {#tbl-when-formalization-became-industrial-reporting-standard}
+
+Such reporting does not transform an engineering demonstration into a controlled experiment. It does make later comparison more meaningful. Without a record of models, resources, orchestration, inherited infrastructure, human intervention, and failed attempts, claims about speed or scalability remain difficult to interpret across projects.
+
+Reporting standards are therefore part of reproducibility rather than administrative overhead. They determine whether later researchers can distinguish a genuine improvement in production capability from a difference in available libraries, hardware, source material, or human support.
+
+### Human audit without ceremonial review
+
+Human review must also remain substantive. Prove2Me's audit architecture is valuable precisely because it concentrates expert attention on a relatively small semantic boundary.[^when-formalization-became-industrial-prove2me-paper] But the label *human audited* should not become ceremonial.
+
+For consequential projects, the record should make clear what was inspected, which mathematical source was used, whether foundational definitions were checked against that source, whether statements were independently translated back into ordinary mathematical language, which divergences were accepted, and who bears responsibility for those judgments.
+
+Model-assisted semantic review can help scale this work. Prove2Me uses an independent agent to translate formal statements back into ordinary mathematics for comparison, while Palomar uses an automated editorial layer to identify obvious mismatches and documentation failures.[^when-formalization-became-industrial-prove2me-paper][^when-formalization-became-industrial-palomar-about]
+
+These systems can reduce the amount of expert attention required, but they do not erase the distinction between comparison and judgment. One model evaluating another model's output may reveal inconsistencies, omissions, or suspicious formulations. It does not convert semantic interpretation into a mechanically certified fact.
+
+The appropriate division of responsibility is therefore layered: models can generate and compare; verification systems can establish deductive correctness; accountable humans and institutions must still determine whether the formal objects faithfully represent the intended mathematics and whether the resulting work deserves scholarly acceptance.
+
+### Governing for abundance, not against it
+
+The objective of governance should not be to make formalization expensive again. The goal should be to preserve the benefits of abundant formal production while protecting deductive integrity, semantic accountability, provenance, interoperability, reproducibility, pluralism, and durability.
+
+These goals can reinforce one another. Public artifacts make independent verification easier. Structured provenance improves both credit and reproducibility. Interoperable formats reduce institutional lock-in. Narrow registry claims preserve trust by preventing technical verification from being confused with scholarly endorsement. Semantic audit allows human expertise to remain concentrated where it has the greatest interpretive value.
+
+They can also come into tension. Stronger documentation requirements impose production costs. Stable abstractions can improve reuse while making later change more difficult. Centralized indexes can improve search while concentrating influence over what agents discover. Independent verification increases robustness but may require substantial computational resources.
+
+Governance therefore becomes a problem of institutional design under abundance. The challenge is not to restrain formal correctness itself, but to ensure that the systems surrounding formal correctness remain open to inspection, challenge, attribution, migration, and human judgment.
+
+The risk created by industrial formalization is not that mathematics becomes *too correct*. It is that deductive correctness may scale faster than the institutions required to interpret, contextualize, preserve, and govern it. The central governance question is therefore whether the infrastructure surrounding machine-scale proof remains worthy of trust.
+
+## Mathematics after the formalization bottleneck
+
+The contrast between machine-scale formalization and human mathematical stewardship brings the central argument into focus. The formalization of Fermat's Last Theorem is easy to overstate in two opposite directions. It is not evidence that AI independently discovered one of mathematics' most famous results: the theorem was known, the proof architecture was known, and the project inherited substantial formal and informal mathematical capital. But neither is it merely a large code-generation exercise.
+
+What Anthropic demonstrated is that a sophisticated body of established mathematics can be transformed into an end-to-end machine-checked artifact by a production system in which general-purpose models, many agents, stable theorem interfaces, search, reusable libraries, sparse high-level human intervention, and formal verification operate together.[^when-formalization-became-industrial-anthropic-flt] The significance lies in the organization of those components as much as in the capability of the model itself.
+
+That changes where scarcity is likely to reside. Proof generation was already becoming cheaper under generative AI. Industrial formalization extends that change by making a larger fraction of generated mathematics susceptible to mechanical checking. But reducing the cost of one stage does not eliminate the stages that follow it. Instead, pressure moves toward specification, semantic fidelity, selection, explanation, provenance, and governance.
+
+This is why formalization abundance is more consequential than proof abundance alone. A natural-language proof can be persuasive and still contain a logical error. A kernel-checked formal proof provides a much stronger guarantee: the declared proposition follows from the declared assumptions in the specified formal environment. Yet that guarantee remains deliberately narrow. It does not establish that the proposition is the one mathematicians intended to formalize, that its definitions are conceptually appropriate, or that the result is mathematically important.
+
+Industrial formalization therefore separates kinds of authority that were previously more tightly entangled. A proof assistant can possess decisive authority over deductive correctness without deciding which theorem matters. An agent system can possess enormous production capacity without deciding whether its abstractions are good. An orchestration platform can coordinate thousands of proof tasks without possessing final authority over their meaning. A registry can establish the identity and verification status of an artifact without certifying novelty. Scholarly institutions can assess significance without manually rechecking every formal deduction.
+
+This separation is not a weakness of machine-assisted mathematics. It may become one of its institutional strengths. Trust becomes more robust when production, checking, semantic interpretation, registry functions, and scholarly judgment can be performed by different actors and can constrain one another.
+
+### The factory, the registry, and the community
+
+Prove2Me and Palomar illustrate two parts of this emerging division of responsibility. Prove2Me industrializes coordination: it provides stable theorem interfaces, audited mission cores, dependency management, parallel proof production, and mechanisms for search and reuse.[^when-formalization-became-industrial-prove2me-paper]
+
+Palomar industrializes memory and accountability. It provides durable artifact identity, exact statement boundaries, structured provenance, reproducible verification evidence, and explicit limits on what registration establishes.[^when-formalization-became-industrial-palomar-statement]
+
+Neither system replaces mathematical judgment. The factory can organize how a formal artifact is produced. The registry can record what the artifact is, where it came from, and what evidence accompanies it. The mathematical community must still determine why the result matters, how it relates to existing knowledge, whether its abstractions are illuminating, and whether it deserves to be taught, reused, criticized, or remembered.
+
+The first two functions can increasingly become infrastructure. The third remains interpretive and disciplinary.
+
+### Formal capital compounds
+
+If this production model generalizes, its cumulative dynamics may matter more than any individual landmark theorem. A successful formalization does not leave behind only its headline result. It can contribute definitions, intermediate lemmas, bridge results, theorem interfaces, proof patterns, and searchable objects that later projects can reuse.
+
+This creates the possibility of **formal mathematical capital**. The larger and better organized the stock of reusable formal material becomes, the less future projects need to reconstruct from scratch. Lower production costs can then generate more formal artifacts, which in turn enlarge the reusable library.
+
+The effect does not require dramatic improvements in model capability. Better libraries, better search, more stable interfaces, and accumulated formal infrastructure can themselves increase productivity. A mature formal corpus converts earlier mathematical work into machine-addressable inputs for later mathematical production.
+
+The same mechanism can also preserve mistakes and poor abstractions. A widely reused definition acquires dependencies; those dependencies create switching costs; and the resulting path dependence can make an early design choice increasingly difficult to replace. Compounding therefore strengthens the case for curation, deprecation mechanisms, semantic auditing, interoperability, and pluralism. Formal memory requires stewardship as well as accumulation.
+
+### Understanding becomes the scarce compression layer
+
+If machine systems can generate and verify formal corpora faster than humans can read them, then **understanding** becomes increasingly scarce.
+
+The problem is not simply that formal artifacts are long. It is that the representation optimized for mechanical checking is not necessarily the representation optimized for human comprehension. Anthropic's Fermat development is valuable precisely because it can be checked at a scale no mathematician would sensibly inspect line by line. But that same scale makes the formal artifact unsuitable as a substitute for a conceptual account of why the theorem is true. Anthropic explicitly emphasizes that formal verification should not replace human mathematical exposition.[^when-formalization-became-industrial-anthropic-flt]
+
+The resulting task is one of conceptual reconstruction. Mathematicians need compact accounts that recover the principal ideas, identify the decisive abstractions, distinguish mathematical structure from proof-engineering scaffolding, and explain which techniques transfer beyond the immediate theorem.
+
+Generative models can assist with that reconstruction, but their explanations remain generative outputs rather than mechanically certified consequences of the formal proof. Explanation therefore introduces another layer of evaluation. A checked proof can guarantee deduction; it does not automatically produce a trustworthy hierarchy of concepts.
+
+This is where the distinction emphasized by the Leiden Declaration becomes especially important. Correctness and understanding are complementary mathematical values, not interchangeable ones.[^when-formalization-became-industrial-leiden] Formalization abundance can increase confidence in deductive validity while simultaneously increasing the demand for reliable interpretation.
+
+### Formalizing known mathematics is not autonomous discovery
+
+One boundary must remain particularly sharp. The Fermat campaign demonstrates the large-scale formal reconstruction of known mathematics. It began with a known theorem, a known human proof architecture, established mathematical exposition, and substantial inherited formal infrastructure.
+
+That is not the same problem as solving an open question for which no validated route exists.
+
+Original mathematical discovery may require inventing new representations, definitions, conjectures, analogies, experiments, intermediate questions, and conceptual frameworks. In such settings there may be no trusted decomposition waiting to be translated into Lean and no source exposition against which semantic fidelity can be audited.
+
+Industrial formalization can nevertheless become important infrastructure for discovery. It can test generated arguments, expose missing dependencies, make prior mathematics easier to retrieve, permit parallel exploration of formal subproblems, and convert successful intermediate results into reusable capital. But reconstruction and discovery remain empirically distinct capabilities. The Fermat result should not be asked to demonstrate the second when it directly establishes the first.
+
+### The effective mathematical system
+
+The broader methodological lesson is that the appropriate unit of analysis is no longer the model alone. The effective system includes models, agents, formal libraries, search, orchestration, verification tools, registries, and human institutions.
+
+Anthropic's Fermat campaign supports this systems view precisely because its success cannot be attributed cleanly to model capability in isolation. The initial attempts already involved capable agents. What changed was the surrounding architecture: shared project state, theorem-level decomposition, stable interfaces, search, reuse, parallel coordination, and formal checking.[^when-formalization-became-industrial-anthropic-flt]
+
+That is the relevant sense of **industrialization**. A factory is not simply a stronger worker. It is an arrangement of workers, machines, accumulated capital, interfaces, logistics, standards, and quality-control mechanisms that changes the economics of production. Machine-assisted formal mathematics is beginning to acquire the same structure.
+
+The resulting system is better represented as a set of partially independent layers connected by both production flows and corrective feedback.
+
+```{mermaid}
+%%| label: fig-when-formalization-became-industrial-layered-mathematics
+%%| fig-cap: "Industrial formalization separates production, deductive verification, semantic authority, and scholarly judgment. Solid arrows show the principal production path; dashed arrows show corrective feedback and institutional checks."
+%%| fig-alt: "Diagram with four principal layers. Machine production contains models, orchestration, search, and formal libraries and produces candidate formal artifacts. Mechanical verification independently checks the deductive artifact. Semantic and abstraction audit evaluates whether specifications and formal statements correspond to intended mathematics and feeds corrections back into production. Scholarly institutions evaluate novelty, significance, exposition, provenance, and public acceptance. A registry and provenance layer receives verified artifacts and records identity and verification evidence without replacing semantic or scholarly judgment. Feedback arrows connect semantic audit to machine production, scholarly judgment to specification, and registry evidence to scholarly evaluation."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    subgraph P["Machine production"]
+        M[Models + agents]
+        O[Orchestration +<br/>task decomposition]
+        L[Formal libraries +<br/>search and reuse]
+        M --> O
+        L --> O
+    end
+
+    S[Specification +<br/>abstraction design]
+    V[Mechanical verification<br/>Lean / independent checking]
+    A[Semantic audit +<br/>fidelity review]
+    R[Registry + provenance<br/>identity / versions / evidence]
+    J[Scholarly judgment<br/>novelty / significance / exposition]
+
+    S --> P
+    P --> V
+    V --> R
+    R --> J
+
+    S --> A
+    V --> A
+    A -.->|semantic corrections| S
+    A -.->|reject or revise| P
+
+    J -.->|new questions + priorities| S
+    R -.->|verification + provenance evidence| J
+```
+
+The diagram makes two claims that the simpler linear version did not. First, deductive verification and semantic audit are distinct checks: a proof can pass the first and fail the second. Second, scholarly authority does not sit automatically downstream of machine production. It receives evidence from verification and provenance but retains separate responsibility for significance, explanation, and disciplinary acceptance.
+
+The boundaries may move as models improve. Systems may become better at specification, abstraction, semantic comparison, exposition, and even research direction. But increased capability at one layer should not automatically confer authority at another. Production capacity is not semantic authority; semantic plausibility is not deductive verification; registration is not scholarly acceptance.
+
+### After the bottleneck
+
+To speak of mathematics *after the formalization bottleneck* is not to claim that formalization has become trivial. It means that there is now a credible path along which manually writing every formal deductive step ceases to be the dominant constraint on the scale of machine-assisted mathematics.
+
+Once that constraint weakens, a different set of questions becomes central. Communities must decide what deserves formalization, which representations should become shared infrastructure, where semantic auditing should be concentrated, how competing abstractions should coexist, how provenance should be preserved, how credit should be assigned across heterogeneous human and machine contributions, and how formal libraries and registries should be maintained over decades.
+
+They must also decide which mechanically checked results deserve scarce human attention. A theorem can be formally valid yet unimportant. A formalization can be faithful yet conceptually unilluminating. A technically impressive artifact can add little to mathematics if nobody can explain why it matters or integrate it into subsequent work.
+
+These are not secondary problems caused by incomplete automation. They are the problems that emerge when automation succeeds.
+
+The significance of Anthropic's Fermat project is therefore not that it closes mathematics, but that it reveals a plausible new institutional phase. Proof abundance suggested that producing candidate arguments might cease to be scarce. Prove2Me suggests that coordinating their formalization can itself become scalable. Palomar suggests that verification evidence, provenance, and durable public identity can become infrastructure rather than bespoke scholarly labor.
+
+Together, these developments turn the formal proof from an isolated endpoint into one stage of a larger mathematical supply chain. At the beginning of that chain lies judgment about what is worth asking and how it should be represented. At the end lies judgment about what a verified result means, whether it matters, and how it should enter mathematical memory.
+
+Between those points, an increasing amount of deductive labor can be industrialized.
+
+That is the transition marked by the formalization of Fermat's Last Theorem: not the end of mathematics, but the weakening of an old assumption—that the cost of manually producing every formal deductive step must remain the natural bottleneck around which formal mathematical practice is organized.
+
+## The view from human formalization
+
+The significance of Anthropic's result becomes clearer when viewed from the perspective of mathematicians who were already working on the formalization of Fermat's Last Theorem. Kevin Buzzard, whose EPSRC-funded project is developing a Lean formalization of FLT and the surrounding modern number theory, responded to Anthropic's announcement by drawing a sharp distinction between **completing a formal proof artifact** and **building mathematics for human use**.[^when-formalization-became-industrial-buzzard-flt]
+
+Buzzard independently compiled Anthropic's code base and ran Comparator on it, reporting that the artifact checked successfully. He also inspected the development and concluded that it genuinely develops the mathematics required by the classical proof route rather than merely exploiting an obvious shortcut in the formal system.[^when-formalization-became-industrial-buzzard-flt] His response therefore provides useful external evidence about the released artifact, although it should not be confused with an independent reconstruction of the eleven-day production process.
+
+His more important observation concerns what the result does *not* make obsolete. Buzzard's own project was never only about obtaining a final checked declaration of Fermat's Last Theorem. It also aims to contribute fundamental objects from modern number theory to Mathlib and to produce a dynamic document through which mathematicians can explore the modern proof.[^when-formalization-became-industrial-buzzard-flt] Anthropic's artifact and Buzzard's project therefore optimize for partly different outputs.
+
+This distinction reinforces the argument that formalization abundance does not eliminate mathematical labor so much as relocate its scarce components. Once an agent system can generate millions of lines of kernel-checkable formal material, the bottleneck increasingly becomes deciding which parts should enter shared libraries, whether definitions have been chosen at the right level of generality, how the resulting theory should be organized, and how humans can understand the mathematical structure hidden inside the generated corpus.
+
+Buzzard makes the same point particularly clearly in discussing Mathlib. In a response to questions about whether similarly large bodies of mathematics could soon be formalized, he distinguishes the feasibility of generating a standalone formalization from the much harder problem of integrating that material into a maintained mathematical library. Mathlib maintainers care not merely that definitions and theorems type-check, but that definitions have appropriate generality and proofs are engineered well enough to become durable shared infrastructure.[^when-formalization-became-industrial-buzzard-flt]
+
+This is a crucial distinction between **formalization throughput** and **library-quality mathematics**. A production system can optimize for reaching a checked target. A shared library must optimize for a longer horizon: abstraction quality, maintainability, discoverability, interoperability with existing mathematics, and the cost imposed on future users. Industrial formalization can dramatically increase the supply of candidate formal material without proportionally increasing the supply of expert attention required to curate it.
+
+Buzzard's reaction also sharpens the interpretation of the eleven-day result. From his mathematical perspective, the Anthropic development contributes little new mathematics because it formalizes an established argument. What it demonstrates instead is the feasibility of autoformalizing an enormous body of difficult existing mathematics at unprecedented speed.[^when-formalization-became-industrial-buzzard-flt] That assessment closely matches the distinction developed throughout this article: the novelty lies primarily in the **production regime**, not in the theorem being produced.
+
+The implications extend beyond historical landmark theorems. Buzzard suggests that if systems can formalize thousands of pages of established literature end to end, they may eventually be applied to contemporary research while that research is still being developed. In that setting, formalization would no longer function mainly as retrospective certification of famous mathematics. It could become an active instrument for exposing hidden assumptions, missing lemmas, undocumented dependencies, and results treated informally as known to specialists.[^when-formalization-became-industrial-buzzard-flt]
+
+That possibility gives formalization abundance a more consequential target than Fermat's Last Theorem itself. Famous established theorems are valuable demonstrations because their correctness is already strongly trusted and their mathematical genealogy is unusually well documented. The harder test is whether industrial formalization can operate on less settled mathematics, where the literature is fragmented, assumptions are implicit, abstractions are still evolving, and formal checking may reveal problems that human mathematical practice has not already resolved.
+
+The human formalizer therefore does not simply stand on the side of an older production method being displaced by automation. Buzzard's response points toward a different division of labor. Machines may increasingly perform the enormous amount of deductive elaboration required to turn mathematical literature into checked artifacts. Human experts remain essential for determining which abstractions deserve to become infrastructure, integrating formal developments into coherent libraries, reconstructing explanations for human readers, and deciding what the resulting formal corpus teaches us about the mathematics itself.
+
+Seen from this perspective, the contrast between a five-year human formalization project and an eleven-day agent campaign is less straightforward than a comparison of completion times suggests. They are partly producing different goods. One optimizes strongly for rapid end-to-end verification; the other also invests in reusable library infrastructure and human mathematical exposition. Formalization abundance makes the distinction between those goods more visible—and makes the latter forms of work more, rather than less, important.
+
+[^when-formalization-became-industrial-buzzard-flt]: Buzzard, K. (2026). **FLT: Anthropic has beaten me to it**. *Xena*. [URL](https://xenaproject.wordpress.com/2026/09/04/flt-anthropic-has-beaten-me-to-it/)
+
+[^when-formalization-became-industrial-montano-proof-abundance]: Montano, A. (2026). **Proof Abundance and the New Practice of Mathematics**. _Random Bits of Knowledge_. [URL](https://4m4.it/posts/proof-abundance-and-the-new-practice-of-mathematics/index.html)
+
+[^when-formalization-became-industrial-anthropic-flt]: Anthropic. (2026). **Formalizing Fermat's Last Theorem**. _Anthropic Research_. [URL](https://www.anthropic.com/research/formalizing-fermats-last-theorem)
+
+[^when-formalization-became-industrial-anthropic-repository]: Anthropic. (2026). **Fermat's Last Theorem in Lean 4**. _GitHub_. [Repository](https://github.com/anthropics/fermats-last-theorem)
+
+[^when-formalization-became-industrial-ddt]: Darmon, H., Diamond, F., & Taylor, R. (1997). **Fermat's Last Theorem**. In J. Coates & S.-T. Yau (Eds.), _Elliptic Curves, Modular Forms & Fermat's Last Theorem_ (2nd ed., pp. 2–140). International Press. [Author bibliography](https://www.math.mcgill.ca/darmon/pub/pub.html)
+
+[^when-formalization-became-industrial-anthropic-inherited-capital]: Anthropic. (2026). **Fermat's Last Theorem in Lean 4**. _GitHub_. The repository documents reuse from Mathlib, the Imperial College London FLT project, and `flt-regular`, together with file-level attribution. [Repository](https://github.com/anthropics/fermats-last-theorem)
+
+[^when-formalization-became-industrial-montano-cognitive-infrastructure]: Montano, A. (2026). **The New Cognitive Infrastructure of Science**. _Random Bits of Knowledge_. [URL](https://4m4.it/posts/new-cognitive-infrastructure-science/index.html)
+
+[^when-formalization-became-industrial-montano-leiden]: Montano, A. (2026). **The Leiden Declaration and the Governance of AI-Assisted Mathematics**. _Random Bits of Knowledge_. [URL](https://4m4.it/posts/leiden-declaration-and-the-governance-of-ai-assisted-mathematics/)
+
+[^when-formalization-became-industrial-montano-palomar]: Montano, A. (2026). **After Proof Abundance: Palomar and the New Infrastructure of Mathematical Trust**. _Random Bits of Knowledge_. [URL](https://4m4.it/posts/after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust/)
+
+[^when-formalization-became-industrial-prove2me-paper]: Chen, S., Marwaha, K., Lu, X., Yuen, H., & Peng, T. (2026). **Prove2Me: An Open Collaborative Platform for Scaling Math Formalization**. _arXiv_. [DOI](https://doi.org/10.48550/arXiv.2608.28433)
+
+[^when-formalization-became-industrial-prove2me-about]: Prove2Me. (2026). **About Prove2Me**. _Prove2Me_. [Official documentation](https://prove2.me/about)
+
+[^when-formalization-became-industrial-leiden]: Alper, J., Barany, M., Chavarri Villarello, A., Dahmen, S., Dean, W., Ganapathy, K., Harris, M., Holmes, D., Jamnik, M., Kelk, S., Kra, B., Martin, U., Naskręcki, B., Ochigame, R., Portegies, J., & Schmitt, J. (2026). **Leiden Declaration on Artificial Intelligence and Mathematics**. _Zenodo_. [DOI](https://doi.org/10.5281/zenodo.20302944)
+
+[^when-formalization-became-industrial-palomar-statement]: Avigad, J., Ballard, M., De Dios, J., Guillen, N., Kra, B., Morrison, K., Tao, T., Vakil, R., & Venkatesh, A. (2026). **Palomar: A registry of Lean-verified mathematics**. _Palomar Registry_. [Official statement](https://palomar-registry.org/statement)
+
+[^when-formalization-became-industrial-palomar-policy]: Palomar Registry. (2026). **Contributing to Palomar**. _PalomarPolicy_. [Policy](https://github.com/PalomarRegistry/PalomarPolicy/blob/main/CONTRIBUTING.md)
+
+[^when-formalization-became-industrial-palomar-metadata]: Palomar Registry. (2026). **formalization.yaml v0.4 submission template**. _PalomarTemplate_. [Template](https://github.com/PalomarRegistry/PalomarTemplate/blob/main/formalization.yaml)
+
+[^when-formalization-became-industrial-palomar-about]: Palomar Registry. (2026). **About Palomar**. _Palomar Registry_. [Official documentation](https://palomar-registry.org/about)
