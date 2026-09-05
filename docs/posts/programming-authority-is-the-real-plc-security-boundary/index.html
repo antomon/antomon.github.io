@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-09-05">
+<meta name="description" content="Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments.">
+
+<title>Programming Authority Is the Real PLC Security Boundary – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-f95f4a17e9d5bb76c4506342f1760542.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@17.0.3/dist/twemoji.min.js" integrity="sha384-Y5xukbGJwykbHHkTbLJykYLcBPFxrwipTbEh0puxhkz9CZ90raTPGe2Ks4vCxsYU" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.twemoji) {
+      twemoji.parse(document.body, {
+        folder: "svg",
+        ext: ".svg"
+      });
+    }
+  });
+</script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+
+<link rel="stylesheet" href="../../style.css">
+<meta property="og:title" content="Programming Authority Is the Real PLC Security Boundary – Random Bits of Knowledge">
+<meta property="og:description" content="Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments.">
+<meta property="og:image" content="https://antomon.github.io/posts/programming-authority-is-the-real-plc-security-boundary/plc-security-boundary.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="Programming Authority Is the Real PLC Security Boundary – Random Bits of Knowledge">
+<meta name="twitter:description" content="Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/programming-authority-is-the-real-plc-security-boundary/plc-security-boundary.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Programming Authority Is the Real PLC Security Boundary</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Programming Authority Is the Real PLC Security Boundary</h1>
+            <p class="subtitle lead">Why network reachability, authentication, and controller programming must be treated as separate security states.</p>
+                  <div>
+        <div class="description">
+          Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">cybersecurity</div>
+                <div class="quarto-category">enterprise architecture</div>
+                <div class="quarto-category">enterprise risk management</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 5, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">September 5, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  <div>
+    <div class="abstract">
+      <div class="block-title">Abstract</div>
+      <p>Network reachability, authenticated access, and authority to modify a PLC are different security properties. A host may reach a controller, establish a protected session, and authenticate successfully without necessarily possessing authority to download logic, perform online edits, change CPU mode, apply forces, modify configuration, replace firmware, or alter the controller’s own security state.</p>
+      <p>This article treats programming authority as an exceptional engineering capability that should be deliberately assembled from an authorized principal, approved engineering endpoint, constrained controller scope, permitted operation class, maintenance context, and temporary programming window. It develops a practical least-privilege model for PLC engineering, covering project deployment, runtime intervention, firmware and recovery operations, security administration, safety-controller considerations, dedicated Engineering Workstations, restricted engineering conduits, controlled project repositories, monitoring, post-change verification, and explicit privilege revocation.</p>
+      <p>Siemens S7-1500, Rockwell Logix and FactoryTalk Security, OPC UA, CIP Security, legacy Modbus/TCP, and Modbus Security are used to show how the effective authorization point moves between the controller, engineering platform, protocol, endpoint, and network according to product capability. The resulting guidance provides a reference architecture, maintenance workflow, FAT/SAT verification model, negative authorization tests, and procurement criteria for ensuring that normal production communication does not silently become standing PLC programming authority.</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-network-access-to-executable-industrial-state" id="toc-from-network-access-to-executable-industrial-state" class="nav-link active" data-scroll-target="#from-network-access-to-executable-industrial-state">From Network Access to Executable Industrial State</a>
+  <ul class="collapse">
+  <li><a href="#programming-is-an-engineering-plane-capability-not-a-network-service" id="toc-programming-is-an-engineering-plane-capability-not-a-network-service" class="nav-link" data-scroll-target="#programming-is-an-engineering-plane-capability-not-a-network-service">Programming is an engineering-plane capability, not a network service</a></li>
+  <li><a href="#separate-operational-control-from-authority-over-the-control-system" id="toc-separate-operational-control-from-authority-over-the-control-system" class="nav-link" data-scroll-target="#separate-operational-control-from-authority-over-the-control-system">Separate operational control from authority over the control system</a></li>
+  <li><a href="#determine-the-final-enforcement-point-for-every-high-consequence-operation" id="toc-determine-the-final-enforcement-point-for-every-high-consequence-operation" class="nav-link" data-scroll-target="#determine-the-final-enforcement-point-for-every-high-consequence-operation">Determine the final enforcement point for every high-consequence operation</a></li>
+  <li><a href="#move-enforcement-toward-the-protected-operation" id="toc-move-enforcement-toward-the-protected-operation" class="nav-link" data-scroll-target="#move-enforcement-toward-the-protected-operation">Move enforcement toward the protected operation</a></li>
+  </ul></li>
+  <li><a href="#three-security-states-reachability-authentication-and-authority" id="toc-three-security-states-reachability-authentication-and-authority" class="nav-link" data-scroll-target="#three-security-states-reachability-authentication-and-authority">Three Security States: Reachability, Authentication, and Authority</a>
+  <ul class="collapse">
+  <li><a href="#reachability-is-a-communications-path-property" id="toc-reachability-is-a-communications-path-property" class="nav-link" data-scroll-target="#reachability-is-a-communications-path-property">Reachability is a communications-path property</a></li>
+  <li><a href="#authentication-is-not-one-identity" id="toc-authentication-is-not-one-identity" class="nav-link" data-scroll-target="#authentication-is-not-one-identity">Authentication is not one identity</a></li>
+  <li><a href="#authority-is-an-operation-specific-property" id="toc-authority-is-an-operation-specific-property" class="nav-link" data-scroll-target="#authority-is-an-operation-specific-property">Authority is an operation-specific property</a></li>
+  <li><a href="#secure-transport-does-not-imply-authenticated-authority" id="toc-secure-transport-does-not-imply-authenticated-authority" class="nav-link" data-scroll-target="#secure-transport-does-not-imply-authenticated-authority">Secure transport does not imply authenticated authority</a></li>
+  <li><a href="#treat-denial-as-security-evidence" id="toc-treat-denial-as-security-evidence" class="nav-link" data-scroll-target="#treat-denial-as-security-evidence">Treat denial as security evidence</a></li>
+  </ul></li>
+  <li><a href="#what-programming-authority-should-look-like-in-practice" id="toc-what-programming-authority-should-look-like-in-practice" class="nav-link" data-scroll-target="#what-programming-authority-should-look-like-in-practice">What Programming Authority Should Look Like in Practice</a>
+  <ul class="collapse">
+  <li><a href="#start-with-a-restrictive-production-state" id="toc-start-with-a-restrictive-production-state" class="nav-link" data-scroll-target="#start-with-a-restrictive-production-state">Start with a restrictive production state</a></li>
+  <li><a href="#use-a-dedicated-engineering-workstation" id="toc-use-a-dedicated-engineering-workstation" class="nav-link" data-scroll-target="#use-a-dedicated-engineering-workstation">Use a dedicated engineering workstation</a></li>
+  <li><a href="#do-not-give-the-engineering-workstation-unrestricted-plc-reachability" id="toc-do-not-give-the-engineering-workstation-unrestricted-plc-reachability" class="nav-link" data-scroll-target="#do-not-give-the-engineering-workstation-unrestricted-plc-reachability">Do not give the engineering workstation unrestricted PLC reachability</a></li>
+  <li><a href="#use-named-identities-all-the-way-to-the-controller-where-possible" id="toc-use-named-identities-all-the-way-to-the-controller-where-possible" class="nav-link" data-scroll-target="#use-named-identities-all-the-way-to-the-controller-where-possible">Use named identities all the way to the controller where possible</a></li>
+  <li><a href="#treat-full-project-download-as-a-controlled-deployment" id="toc-treat-full-project-download-as-a-controlled-deployment" class="nav-link" data-scroll-target="#treat-full-project-download-as-a-controlled-deployment">Treat full project download as a controlled deployment</a></li>
+  <li><a href="#restrict-online-edits-more-aggressively-than-their-convenience-suggests" id="toc-restrict-online-edits-more-aggressively-than-their-convenience-suggests" class="nav-link" data-scroll-target="#restrict-online-edits-more-aggressively-than-their-convenience-suggests">Restrict online edits more aggressively than their convenience suggests</a></li>
+  <li><a href="#make-forces-exceptional-and-visible" id="toc-make-forces-exceptional-and-visible" class="nav-link" data-scroll-target="#make-forces-exceptional-and-visible">Make forces exceptional and visible</a></li>
+  <li><a href="#separate-cpu-mode-authority" id="toc-separate-cpu-mode-authority" class="nav-link" data-scroll-target="#separate-cpu-mode-authority">Separate CPU mode authority</a></li>
+  <li><a href="#separate-firmware-from-application-engineering" id="toc-separate-firmware-from-application-engineering" class="nav-link" data-scroll-target="#separate-firmware-from-application-engineering">Separate firmware from application engineering</a></li>
+  <li><a href="#keep-security-administration-separate-from-plc-programming" id="toc-keep-security-administration-separate-from-plc-programming" class="nav-link" data-scroll-target="#keep-security-administration-separate-from-plc-programming">Keep security administration separate from PLC programming</a></li>
+  <li><a href="#use-the-privilege-model-as-the-design-baseline" id="toc-use-the-privilege-model-as-the-design-baseline" class="nav-link" data-scroll-target="#use-the-privilege-model-as-the-design-baseline">Use the privilege model as the design baseline</a></li>
+  </ul></li>
+  <li><a href="#implementing-the-model-on-real-ot-platforms" id="toc-implementing-the-model-on-real-ot-platforms" class="nav-link" data-scroll-target="#implementing-the-model-on-real-ot-platforms">Implementing the Model on Real OT Platforms</a>
+  <ul class="collapse">
+  <li><a href="#siemens-s7-1500-use-cpu-user-management-not-merely-network-trust" id="toc-siemens-s7-1500-use-cpu-user-management-not-merely-network-trust" class="nav-link" data-scroll-target="#siemens-s7-1500-use-cpu-user-management-not-merely-network-trust">Siemens S7-1500: use CPU user management, not merely network trust</a></li>
+  <li><a href="#rockwell-logix-bind-authority-to-user-workstation-action-and-controller" id="toc-rockwell-logix-bind-authority-to-user-workstation-action-and-controller" class="nav-link" data-scroll-target="#rockwell-logix-bind-authority-to-user-workstation-action-and-controller">Rockwell Logix: bind authority to user, workstation, action and controller</a></li>
+  <li><a href="#opc-ua-configure-rbac-for-ua-operations-but-do-not-mistake-it-for-plc-programming-security" id="toc-opc-ua-configure-rbac-for-ua-operations-but-do-not-mistake-it-for-plc-programming-security" class="nav-link" data-scroll-target="#opc-ua-configure-rbac-for-ua-operations-but-do-not-mistake-it-for-plc-programming-security">OPC UA: configure RBAC for UA operations, but do not mistake it for PLC programming security</a></li>
+  <li><a href="#cip-security-secure-ethernetip-then-verify-product-authorization-separately" id="toc-cip-security-secure-ethernetip-then-verify-product-authorization-separately" class="nav-link" data-scroll-target="#cip-security-secure-ethernetip-then-verify-product-authorization-separately">CIP Security: secure EtherNet/IP, then verify product authorization separately</a></li>
+  <li><a href="#legacy-modbustcp-assume-that-write-reachability-is-authority" id="toc-legacy-modbustcp-assume-that-write-reachability-is-authority" class="nav-link" data-scroll-target="#legacy-modbustcp-assume-that-write-reachability-is-authority">Legacy Modbus/TCP: assume that write reachability is authority</a></li>
+  <li><a href="#choose-the-enforcement-model-explicitly" id="toc-choose-the-enforcement-model-explicitly" class="nav-link" data-scroll-target="#choose-the-enforcement-model-explicitly">Choose the enforcement model explicitly</a></li>
+  </ul></li>
+  <li><a href="#make-programming-a-controlled-maintenance-state" id="toc-make-programming-a-controlled-maintenance-state" class="nav-link" data-scroll-target="#make-programming-a-controlled-maintenance-state">Make Programming a Controlled Maintenance State</a>
+  <ul class="collapse">
+  <li><a href="#step-1-define-the-exact-change-before-opening-the-path" id="toc-step-1-define-the-exact-change-before-opening-the-path" class="nav-link" data-scroll-target="#step-1-define-the-exact-change-before-opening-the-path">Step 1: define the exact change before opening the path</a></li>
+  <li><a href="#step-2-activate-the-minimum-engineering-path" id="toc-step-2-activate-the-minimum-engineering-path" class="nav-link" data-scroll-target="#step-2-activate-the-minimum-engineering-path">Step 2: activate the minimum engineering path</a></li>
+  <li><a href="#step-3-elevate-the-required-controller-privilege" id="toc-step-3-elevate-the-required-controller-privilege" class="nav-link" data-scroll-target="#step-3-elevate-the-required-controller-privilege">Step 3: elevate the required controller privilege</a></li>
+  <li><a href="#step-4-establish-the-controllers-pre-change-state" id="toc-step-4-establish-the-controllers-pre-change-state" class="nav-link" data-scroll-target="#step-4-establish-the-controllers-pre-change-state">Step 4: establish the controller’s pre-change state</a></li>
+  <li><a href="#step-5-perform-and-monitor-the-state-changing-operation" id="toc-step-5-perform-and-monitor-the-state-changing-operation" class="nav-link" data-scroll-target="#step-5-perform-and-monitor-the-state-changing-operation">Step 5: perform and monitor the state-changing operation</a></li>
+  <li><a href="#step-6-verify-the-resulting-controller-not-merely-the-transaction" id="toc-step-6-verify-the-resulting-controller-not-merely-the-transaction" class="nav-link" data-scroll-target="#step-6-verify-the-resulting-controller-not-merely-the-transaction">Step 6: verify the resulting controller, not merely the transaction</a></li>
+  <li><a href="#step-7-withdraw-programming-authority" id="toc-step-7-withdraw-programming-authority" class="nav-link" data-scroll-target="#step-7-withdraw-programming-authority">Step 7: withdraw programming authority</a></li>
+  <li><a href="#treat-emergency-access-as-an-accelerated-version-of-the-same-model" id="toc-treat-emergency-access-as-an-accelerated-version-of-the-same-model" class="nav-link" data-scroll-target="#treat-emergency-access-as-an-accelerated-version-of-the-same-model">Treat emergency access as an accelerated version of the same model</a></li>
+  </ul></li>
+  <li><a href="#verify-the-programming-boundary-not-the-security-features" id="toc-verify-the-programming-boundary-not-the-security-features" class="nav-link" data-scroll-target="#verify-the-programming-boundary-not-the-security-features">Verify the Programming Boundary, Not the Security Features</a>
+  <ul class="collapse">
+  <li><a href="#build-an-authority-matrix-before-testing" id="toc-build-an-authority-matrix-before-testing" class="nav-link" data-scroll-target="#build-an-authority-matrix-before-testing">Build an authority matrix before testing</a></li>
+  <li><a href="#prove-the-normal-production-state-first" id="toc-prove-the-normal-production-state-first" class="nav-link" data-scroll-target="#prove-the-normal-production-state-first">Prove the normal production state first</a></li>
+  <li><a href="#test-positive-and-negative-authorization-cases" id="toc-test-positive-and-negative-authorization-cases" class="nav-link" data-scroll-target="#test-positive-and-negative-authorization-cases">Test positive and negative authorization cases</a></li>
+  <li><a href="#test-the-programming-window-as-a-state-transition" id="toc-test-the-programming-window-as-a-state-transition" class="nav-link" data-scroll-target="#test-the-programming-window-as-a-state-transition">Test the programming window as a state transition</a></li>
+  <li><a href="#verify-engineering-endpoint-containment" id="toc-verify-engineering-endpoint-containment" class="nav-link" data-scroll-target="#verify-engineering-endpoint-containment">Verify engineering-endpoint containment</a></li>
+  <li><a href="#verify-the-controller-after-the-test" id="toc-verify-the-controller-after-the-test" class="nav-link" data-scroll-target="#verify-the-controller-after-the-test">Verify the controller after the test</a></li>
+  <li><a href="#require-evidence-that-can-reconstruct-a-programming-event" id="toc-require-evidence-that-can-reconstruct-a-programming-event" class="nav-link" data-scroll-target="#require-evidence-that-can-reconstruct-a-programming-event">Require evidence that can reconstruct a programming event</a></li>
+  </ul></li>
+  <li><a href="#a-reference-plc-programming-security-baseline" id="toc-a-reference-plc-programming-security-baseline" class="nav-link" data-scroll-target="#a-reference-plc-programming-security-baseline">A Reference PLC Programming Security Baseline</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("plc-security-boundary.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments.</p>
+</div>
+<section id="from-network-access-to-executable-industrial-state" class="level2">
+<h2 class="anchored" data-anchor-id="from-network-access-to-executable-industrial-state">From Network Access to Executable Industrial State</h2>
+<p>The security boundary of a production PLC is frequently drawn in the wrong place. Network diagrams naturally encourage the architect to place it at the industrial firewall, the cell/area-zone boundary, the remote-access gateway, or the controller’s Ethernet interface. Those are important enforcement points, but none of them necessarily controls the capability that matters most: <strong>the ability to alter the state from which the controller derives future industrial behavior</strong>.</p>
+<p>For PLC security, the first architectural task is therefore to distinguish the <strong>communications plane</strong> from the <strong>engineering authority plane</strong>. A controller may legitimately need continuous network communication for HMI supervision, historian acquisition, peer-controller exchange, process-value publication, time synchronization, alarm handling, supervisory setpoints, or other operational functions. None of those requirements implies that the same communications architecture must continuously expose project download, online editing, CPU mode control, forcing, firmware management, hardware reconfiguration, or controller security administration.</p>
+<p>That distinction should be made explicit in the security design. The question is not merely whether a host can communicate with a PLC. It is whether the architecture allows that communication relationship to become an <strong>engineering transaction capable of changing the controller’s effective control state</strong>.</p>
+<p>This article uses <strong>executable industrial state</strong> for that protected object. The term intentionally includes more than PLC application code. For security purposes, changes to any of the following may alter what the controller does, whether it does it, or under which rules it can subsequently be changed:</p>
+<ul>
+<li>executable program blocks, routines, functions, tasks, and sequences;</li>
+<li>hardware and I/O configuration;</li>
+<li>communications configuration and controller-to-controller relationships;</li>
+<li>technology-object, motion, drive, or process-control configuration;</li>
+<li>runtime values whose modification can override normal control behavior;</li>
+<li>active forces and other test or commissioning mechanisms;</li>
+<li>CPU operating state and remote operating-mode transitions;</li>
+<li>retentive or persistent controller state;</li>
+<li>boot projects and restoration images;</li>
+<li>controller firmware;</li>
+<li>certificates, users, roles, passwords, protection levels, and other security configuration.</li>
+</ul>
+<p>A PLC can therefore remain byte-for-byte unchanged at the application-program level while its effective industrial behavior has nevertheless been materially altered. Changing the mapping between a logical variable and an output channel, leaving a force active, modifying a technology-object parameter, placing a CPU in STOP, restoring an unexpected retentive state, or altering the controller’s protection configuration can be as operationally significant as modifying ladder logic. This leads to the first design rule:</p>
+<blockquote class="blockquote">
+<p><strong>Protect the effective controller state, not merely the source program.</strong></p>
+</blockquote>
+<section id="programming-is-an-engineering-plane-capability-not-a-network-service" class="level3">
+<h3 class="anchored" data-anchor-id="programming-is-an-engineering-plane-capability-not-a-network-service">Programming is an engineering-plane capability, not a network service</h3>
+<p>OT network design often describes PLC access in terms such as <em>allowed</em>, <em>blocked</em>, <em>reachable</em>, or <em>isolated</em>. These terms are necessary for network engineering but insufficient for controller security. Suppose an engineering workstation is permitted through an industrial firewall to communicate with a PLC. That decision establishes a communications relationship. Depending on the product and configuration, the same relationship may permit only diagnostics, or it may expose a much larger set of functions: project upload, project download, partial block transfer, online modification, test functions, forcing, operating-mode changes, firmware operations, or security administration.</p>
+<p>The firewall normally cannot infer that distinction from the existence of the TCP session alone. Even where an industrial firewall performs protocol inspection, the security architecture should not assume that network enforcement is equivalent to controller authorization. Proprietary engineering protocols evolve, operations can be multiplexed inside permitted sessions, encrypted engineering traffic can reduce intermediary visibility, and some controller functions are meaningful only in the context of controller state and engineering-system semantics.</p>
+<p>The correct assessment sequence is therefore:</p>
+<ol type="1">
+<li><strong>Path admission.</strong></li>
+<li><strong>Peer or user authentication.</strong></li>
+<li><strong>Engineering-session establishment.</strong></li>
+<li><strong>Operation authorization.</strong></li>
+<li><strong>Controller state change.</strong></li>
+</ol>
+<p>Each stage answers a different question. A path may be allowed while authentication fails. Authentication may succeed while engineering functions remain restricted. An engineering session may be established while project download is denied. Project download may be permitted while firmware replacement or user administration remains prohibited.</p>
+<p>When those distinctions collapse into one credential, one trusted workstation, or one broad controller access level, the resulting security property should be documented accurately: <strong>successful admission to the engineering environment effectively grants a large bundle of controller authority</strong>. That is not necessarily avoidable on every brownfield platform, but it is materially different from fine-grained authorization and should be treated as such in the risk assessment.</p>
+</section>
+<section id="separate-operational-control-from-authority-over-the-control-system" class="level3">
+<h3 class="anchored" data-anchor-id="separate-operational-control-from-authority-over-the-control-system">Separate operational control from authority over the control system</h3>
+<p>A particularly important distinction is between <strong>using the deployed control system</strong> and <strong>changing the system that defines how control is performed</strong>. An HMI may legitimately write a production setpoint continuously. A supervisory controller may send active-power or reactive-power references. An operator may issue a start or stop command through an authorized HMI function. These are consequential industrial actions, but they normally occur through interfaces and constraints deliberately implemented in the deployed automation.</p>
+<p>Engineering functions occupy a different trust category. A project download can change the logic that validates future operator commands. A hardware-configuration change can alter which physical channel a logical output controls. An online edit can change interlocks while the process remains running. A force can override the relationship between field state and program state. A firmware operation can change the software platform on which those controls depend. Security administration can determine which identities will be trusted the next time someone attempts any of these operations.</p>
+<p>Programming authority is therefore not simply “write access with higher privileges.” It is, in important cases, <strong>authority over the mechanism that defines or constrains subsequent operational authority</strong>. That difference should drive segmentation, identity design and privilege separation.</p>
+<p>An HMI that requires continuous process-write capability does not thereby require an engineering relationship with the PLC. A historian that requires unrestricted read access does not require test functions. A condition-monitoring system does not require project upload. A maintenance engineer who needs block download does not automatically require firmware authority. A controls engineer who can modify application logic does not automatically need the ability to create controller users or replace trust certificates.</p>
+<p>The objective is to eliminate these implicit privilege unions.</p>
+</section>
+<section id="determine-the-final-enforcement-point-for-every-high-consequence-operation" class="level3">
+<h3 class="anchored" data-anchor-id="determine-the-final-enforcement-point-for-every-high-consequence-operation">Determine the final enforcement point for every high-consequence operation</h3>
+<p>For each state-changing PLC function, the security architect should identify the <strong>last component in the path that can independently reject the operation</strong>. This is the effective authority-enforcement point.</p>
+<p>For example, a programming transaction may traverse:</p>
+<ol type="1">
+<li>Remote access service.</li>
+<li>OT access gateway.</li>
+<li>Jump host.</li>
+<li>Engineering workstation.</li>
+<li>Industrial firewall.</li>
+<li>Controller.</li>
+</ol>
+<p>Several security decisions may occur along that path, but they do not enforce the same property. The remote-access service may decide whether a vendor engineer can enter the OT access environment, while the jump host may constrain which administrative resources the engineer can reach. The firewall may determine whether the engineering workstation can initiate the controller protocol, and the engineering application may require credentials or project permissions. The controller may independently decide whether the authenticated identity can perform a download or change operating mode.</p>
+<p>These controls are valuable precisely because they can be independent. They become much less valuable when they all resolve to the same root of trust.</p>
+<p>Consider an architecture in which:</p>
+<ul>
+<li>the remote engineer authenticates to a VPN;</li>
+<li>VPN membership permits access to a shared jump host;</li>
+<li>the jump host can connect to every PLC;</li>
+<li>the engineering software holds reusable controller credentials;</li>
+<li>all production controllers use the same credentials;</li>
+<li>those credentials provide full controller access.</li>
+</ul>
+<p>The architecture contains multiple visible security products, but the practical authority chain is extremely short. Compromise of the remote identity or engineering environment may be sufficient to derive programming authority over the entire controller population.</p>
+<p>A more defensible architecture deliberately prevents that collapse. Authentication to remote access should not automatically authorize programming. Access to a jump host should not automatically authorize every controller. Possession of an engineering workstation should not automatically confer every CPU function. Authorization for one controller should not imply authorization for the cell, plant, or fleet. Permission to modify application logic should not imply authority over firmware or security configuration.</p>
+<p>This gives a second design rule:</p>
+<blockquote class="blockquote">
+<p><strong>Do not count security layers; determine which independently enforced conditions must fail before unauthorized executable-state modification becomes possible.</strong></p>
+</blockquote>
+</section>
+<section id="move-enforcement-toward-the-protected-operation" class="level3">
+<h3 class="anchored" data-anchor-id="move-enforcement-toward-the-protected-operation">Move enforcement toward the protected operation</h3>
+<p>The preferred architecture is to enforce authorization as close as technically possible to the controller function being protected. If the PLC can distinguish users, roles, applications, or function rights, use those capabilities rather than relying exclusively on upstream network admission.</p>
+<p>Where the controller cannot provide the required granularity, the missing control must move outward into the engineering architecture: dedicated Engineering Workstations, restricted engineering conduits, privileged credential handling, physical or local mode controls, temporary access activation, and independent verification of the deployed state.</p>
+<p>This distinction is particularly important in brownfield environments. A legacy controller protected by a shared full-access password does not acquire fine-grained authorization because it sits behind an industrial firewall. The firewall can reduce who reaches the controller; it cannot create controller function rights that the device does not implement.</p>
+<p>The remainder of the design should therefore preserve three independent questions: which systems can reach the PLC, which identities are admitted, and which state-changing operations those identities can execute. The following sections turn those questions into a practical engineering and verification model.</p>
+</section>
+</section>
+<section id="three-security-states-reachability-authentication-and-authority" class="level2">
+<h2 class="anchored" data-anchor-id="three-security-states-reachability-authentication-and-authority">Three Security States: Reachability, Authentication, and Authority</h2>
+<p>Once programming is treated as an exceptional engineering capability, PLC access should be assessed through three separate security states:</p>
+<ol type="1">
+<li><strong>Reachability</strong>:&nbsp;can the initiating system establish the communications path required to interact with the controller?</li>
+<li><strong>Authentication</strong>:&nbsp;which human, device, or application identity has been accepted on that path?</li>
+<li><strong>Authority</strong>:&nbsp;which controller functions may that authenticated principal actually invoke?</li>
+</ol>
+<p>These states are cumulative in a successful engineering transaction, but they are enforced by different mechanisms and should be tested independently.</p>
+<p>The distinction is operationally important because OT architectures frequently prove the first state and infer the other two. A firewall review establishes that only an engineering subnet can reach TCP ports associated with a controller and the assessment concludes that programming is restricted to authorized engineers. That conclusion is not supported by the evidence. The firewall has established a source-to-destination communications policy. It has not necessarily established who is operating the source, which engineering application is generating the traffic, what credentials the controller accepts, or which controller functions become available after the session is established.</p>
+<p>The same problem occurs with authentication. A protected and mutually authenticated connection establishes a much stronger communications relationship than an unauthenticated one, but it still does not establish least privilege. An authenticated engineer may have diagnostic access, project-read access, download authority, firmware authority, or effectively unrestricted controller administration. Authentication answers <strong>who has been admitted</strong>. Authorization answers <strong>what the admitted identity may cause the controller to do</strong>. A PLC security assessment should therefore produce separate evidence for all three states.</p>
+<div id="tbl-programming-authority-is-the-real-plc-security-boundary-three-security-states" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-programming-authority-is-the-real-plc-security-boundary-three-security-states-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 22%">
+<col style="width: 41%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Security state</th>
+<th>Security question</th>
+<th>Typical enforcement points</th>
+<th>Evidence required</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Reachability</td>
+<td>Which systems can initiate the communications required for this PLC function?</td>
+<td>Routing, VLANs, zones and conduits, industrial firewalls, ACLs, VPNs, jump infrastructure</td>
+<td>Source and destination assets, allowed services, network paths, firewall policy, observed connections</td>
+</tr>
+<tr class="even">
+<td>Authentication</td>
+<td>Which identity is established before access is accepted?</td>
+<td>Controller authentication, certificates, engineering platform, identity provider, PAM or remote-access infrastructure</td>
+<td>Named user, device/application identity, credential mechanism, certificate validation, authentication logs</td>
+</tr>
+<tr class="odd">
+<td>Authority</td>
+<td>Which operation can the authenticated principal perform on this controller?</td>
+<td>Controller roles and function rights, engineering-platform security, protocol authorization, physical mode controls, compensating enforcement</td>
+<td>Effective role, permitted controller functions, denied functions, operation logs, configuration evidence</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-programming-authority-is-the-real-plc-security-boundary-three-security-states-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Reachability, authentication, and authority are separate security properties and require separate evidence.
+</figcaption>
+</figure>
+</div>
+<section id="reachability-is-a-communications-path-property" class="level3">
+<h3 class="anchored" data-anchor-id="reachability-is-a-communications-path-property">Reachability is a communications-path property</h3>
+<p>Reachability should be evaluated for the <strong>actual engineering path</strong>, not inferred from high-level network zoning. Saying that a PLC is located in an automation cell or behind an industrial firewall is insufficient. The assessment should determine which systems can actually initiate the protocol exchanges required by the engineering tool and under which network conditions. This includes more than explicit firewall policy. Effective reachability can be introduced through:</p>
+<ul>
+<li>dual-homed engineering stations;</li>
+<li>remotely accessible jump hosts;</li>
+<li>maintenance laptops temporarily connected inside the control zone;</li>
+<li>VPN termination inside an OT network;</li>
+<li>routing between nominally separate automation cells;</li>
+<li>permissive any-to-any rules between engineering and controller segments;</li>
+<li>vendor remote-support infrastructure;</li>
+<li>NAT that obscures the original initiating endpoint;</li>
+<li>secondary controller interfaces connected to less restricted networks;</li>
+<li>temporary commissioning rules that were never removed.</li>
+</ul>
+<p>For each PLC family, the assessor should inventory every path capable of invoking a state-changing controller function, not only routable IP services. This includes vendor engineering protocols, web administration, secondary network interfaces, serial or service interfaces, local programming ports, removable media or controller memory cards, and physical mode or protection controls where the platform provides them.</p>
+<p>Only then should the required production services be separated from programming and maintenance services. This is particularly important where engineering discovery, diagnostics, programming, web administration, OPC UA, Modbus/TCP, EtherNet/IP, PROFINET-related services, and other management or process functions coexist on the same controller interface. A network programming boundary is incomplete if equivalent authority remains available through an unmanaged local or removable-media path.</p>
+<p>A requirement such as <code>Engineering VLAN may communicate with PLC VLAN</code> is therefore too coarse. A defensible conduit definition should instead specify that approved engineering endpoints may initiate only the minimum services required for defined engineering functions and only toward an explicitly identified population of controllers.</p>
+<p>The difference is substantial. The first rule trusts a network location. The second constrains an engineering capability. Reachability should also be evaluated independently in both normal and maintenance states. If additional controller services become reachable during maintenance, that transition is itself a privileged security event and should be controlled and logged.</p>
+</section>
+<section id="authentication-is-not-one-identity" class="level3">
+<h3 class="anchored" data-anchor-id="authentication-is-not-one-identity">Authentication is not one identity</h3>
+<p>PLC engineering commonly involves several identities at once:</p>
+<ul>
+<li>the human engineer;</li>
+<li>the engineering workstation;</li>
+<li>the engineering application;</li>
+<li>the remote-access session;</li>
+<li>the engineering project or environment;</li>
+<li>the controller;</li>
+<li>and, on some platforms, a service or application account used by the engineering software.</li>
+</ul>
+<p>These identities should not be collapsed into a generic concept of an <em>authenticated connection</em>. For example, MFA at the remote-access gateway can establish that a named engineer entered the OT environment. It does not necessarily prove which user subsequently operated the engineering workstation if that workstation uses a shared local account. Likewise, a controller certificate can authenticate the PLC to the engineering application without authenticating the human engineer to the PLC. A workstation certificate may identify the engineering endpoint while all engineers operating that endpoint obtain the same controller privilege.</p>
+<p>Each mechanism therefore needs to be mapped to the identity that it actually proves.&nbsp;For high-consequence programming, the preferred design is to retain attribution as far toward the controller as the product allows. Where controller-native named-user authentication exists, it should normally be used. Where only workstation or shared controller credentials are available, the loss of identity granularity should be documented and compensated upstream through controlled workstation access, privileged-session recording, credential management, and change correlation.</p>
+<p>The assessment should specifically look for <strong>identity collapse</strong>:</p>
+<blockquote class="blockquote">
+<p>many real users → one jump-host account → one engineering account → one shared PLC credential</p>
+</blockquote>
+<p>Such a chain may satisfy several authentication requirements individually while providing poor attribution at the point where controller state actually changes. Shared credentials are particularly problematic when they are also shared across controllers. A credential compromise then expands simultaneously along two dimensions: from one person to multiple persons and from one controller to multiple assets.</p>
+</section>
+<section id="authority-is-an-operation-specific-property" class="level3">
+<h3 class="anchored" data-anchor-id="authority-is-an-operation-specific-property">Authority is an operation-specific property</h3>
+<p>Authorization should be assessed at the granularity of controller operations, not at the level of <em>access to the PLC</em>. The relevant question is not:</p>
+<blockquote class="blockquote">
+<p>Can this engineer access PLC-17?</p>
+</blockquote>
+<p>It is:</p>
+<blockquote class="blockquote">
+<p><strong>Which operations can this engineer perform against PLC-17 after all preceding access controls have succeeded?</strong></p>
+</blockquote>
+<p>That operation set should be enumerated. At minimum, distinguish:</p>
+<ul>
+<li>diagnostics and status observation;</li>
+<li>program or project upload;</li>
+<li>program or project download;</li>
+<li>partial block or routine transfer;</li>
+<li>online editing;</li>
+<li>test functions;</li>
+<li>runtime value modification;</li>
+<li>forcing;</li>
+<li>CPU mode change;</li>
+<li>hardware and communications configuration;</li>
+<li>firmware update;</li>
+<li>persistent-state restore;</li>
+<li>security configuration;</li>
+<li>user and role administration;</li>
+<li>certificate or trust-store administration.</li>
+</ul>
+<p>The exact list is platform-specific. The principle is not. <strong>Safety PLCs and controllers implementing safety functions should be treated as a distinct authorization case.</strong> Modification of the safety application, safety signatures or locks, safety-mode transitions, and safety-related commissioning functions should not automatically inherit the authorization model used for ordinary process-control logic. Where the platform or functional-safety lifecycle requires local action, physical keys, signatures, safety credentials, or additional approval, those mechanisms form part of the effective programming boundary.</p>
+<p>A controller role called <code>Engineer</code>, <code>Programmer</code>, <code>Administrator</code>, or <code>Full Access</code> should never be accepted as sufficient evidence of least privilege. The assessment must resolve the role into the controller functions it actually authorizes.</p>
+<p>This is especially important where engineering platforms expose coarse permissions. If <code>Programmer</code> permits logic download, CPU STOP, forcing, and configuration transfer as a single indivisible privilege, the security documentation should state exactly that. The inability to separate those functions is a technical limitation of the deployed authorization model and should drive compensating controls.</p>
+<p>Conversely, where the controller provides function-level authorization, broad access groups should not be retained merely because they are easier to administer.</p>
+</section>
+<section id="secure-transport-does-not-imply-authenticated-authority" class="level3">
+<h3 class="anchored" data-anchor-id="secure-transport-does-not-imply-authenticated-authority">Secure transport does not imply authenticated authority</h3>
+<p>Industrial security reviews also need to prevent a common category error: equating cryptographic protection with authorization.</p>
+<p>TLS, IPsec, CIP Security, secure OPC UA configurations, VPNs, and similar technologies can provide essential properties including confidentiality, integrity, endpoint authentication, and resistance to traffic manipulation. Those properties protect communications. They do not automatically define which industrial operation an authenticated peer may perform.</p>
+<p>OPC UA illustrates the distinction particularly clearly. SecureChannels and Sessions can provide protected communication and authenticated application or user identity, while authorization is subsequently applied to access to Nodes, Variables, Methods, and other address-space resources.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a><a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>The same architectural rule applies outside OPC UA:</p>
+<blockquote class="blockquote">
+<p><strong>A secure session is a precondition for trustworthy authorization; it is not authorization itself.</strong></p>
+</blockquote>
+<p>This matters especially for procurement. Requirements such as <code>TLS shall be enabled</code>, <code>CIP Security shall be supported</code>, or <code>certificate authentication shall be used</code> do not establish the programming-security objective unless the supplier also demonstrates how authenticated identities are mapped to privileged controller functions.</p>
+</section>
+<section id="treat-denial-as-security-evidence" class="level3">
+<h3 class="anchored" data-anchor-id="treat-denial-as-security-evidence">Treat denial as security evidence</h3>
+<p>Reachability, authentication, and authority should be verified with both positive and negative tests. A successful engineering transaction demonstrates that the intended path works; it does not demonstrate that adjacent unauthorized paths are blocked.</p>
+<p>At this stage the required evidence is simple: an unauthorized endpoint must fail before acquiring engineering reachability, an unauthorized identity must fail authentication, and an authenticated identity must be denied operations outside its assigned authority. The complete FAT/SAT and cybersecurity-acceptance test model is defined later in <strong>Verify the Programming Boundary, Not the Security Features</strong>.</p>
+</section>
+</section>
+<section id="what-programming-authority-should-look-like-in-practice" class="level2">
+<h2 class="anchored" data-anchor-id="what-programming-authority-should-look-like-in-practice">What Programming Authority Should Look Like in Practice</h2>
+<p>The previous distinctions become useful only when they change how the engineering environment is configured. For a production PLC, the objective should not be to create a generic <code>Engineer</code> role with permanent full access. The objective should be to separate routine engineering activity from the small number of operations capable of materially changing controller behavior or its security state.</p>
+<p>A practical design can normally be built around five operational profiles:</p>
+<div id="tbl-programming-authority-is-the-real-plc-security-boundary-practical-privilege-model" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-programming-authority-is-the-real-plc-security-boundary-practical-privilege-model-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 33%">
+<col style="width: 17%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Profile</th>
+<th>Typical functions</th>
+<th style="text-align: right;">Normal availability</th>
+<th>Recommended treatment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Observe / Diagnose</strong></td>
+<td>Online diagnostics, status, alarms, program inspection where supported</td>
+<td style="text-align: right;">Continuous or broadly available within OT</td>
+<td>Named users, read-oriented rights, no controller modification</td>
+</tr>
+<tr class="even">
+<td><strong>Control Engineering</strong></td>
+<td>Project/block download, approved online edits, selected configuration changes</td>
+<td style="text-align: right;">Temporary</td>
+<td>Enabled for approved engineers, endpoints, controllers and change windows</td>
+</tr>
+<tr class="odd">
+<td><strong>Commissioning / Recovery</strong></td>
+<td>CPU mode changes, forces, broader configuration, application/project restoration</td>
+<td style="text-align: right;">Exceptional</td>
+<td>Explicit activation, additional procedural controls, intensive monitoring</td>
+</tr>
+<tr class="even">
+<td><strong>Platform Maintenance</strong></td>
+<td>Firmware, boot-image or persistent-state recovery, controller lifecycle operations</td>
+<td style="text-align: right;">Rare</td>
+<td>Separate maintenance identity; temporary activation</td>
+</tr>
+<tr class="odd">
+<td><strong>Security Administration</strong></td>
+<td>Users, roles, credentials, certificates, trust configuration, protection settings</td>
+<td style="text-align: right;">Rare</td>
+<td>Separate security-administration identity; temporary activation</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-programming-authority-is-the-real-plc-security-boundary-practical-privilege-model-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: A practical PLC authorization model should separate observation, application engineering, exceptional runtime intervention, platform maintenance, and security administration.
+</figcaption>
+</figure>
+</div>
+<p>The exact implementation depends on the controller family, but this is a useful target configuration because it separates privileges according to operational need rather than organizational job title.</p>
+<p>A controls engineer may require the ability to modify application logic. That does not imply a requirement to replace controller firmware. A commissioning engineer may temporarily need forcing and CPU-mode authority, but that does not justify leaving those capabilities permanently available. Platform maintenance may require firmware or recovery operations without requiring authority over controller users and trust configuration. Conversely, security administration may require management of users, roles, credentials and certificates without requiring any ability to change process logic or firmware.</p>
+<p>The separation should be preserved wherever the controller and engineering platform make it technically possible. Where the PLC supports sufficiently granular function rights, implement these separations in the controller itself. Where it does not, reproduce them as far as possible using engineering hosts, privileged-access controls, network conduits, credential separation, controller mode controls, and maintenance procedures. The important point is to start with the required authority model and then determine how much of it the selected platform can actually enforce.</p>
+<section id="start-with-a-restrictive-production-state" class="level3">
+<h3 class="anchored" data-anchor-id="start-with-a-restrictive-production-state">Start with a restrictive production state</h3>
+<p>For a PLC already commissioned and controlling a running process, the default security state should permit only the communications and engineering functions required for normal production. In a typical plant this means:</p>
+<ul>
+<li>HMI and supervisory control remain available;</li>
+<li>controller-to-controller communications remain available;</li>
+<li>telemetry and historian acquisition remain available;</li>
+<li>required process writes remain available;</li>
+<li>engineering diagnostics may remain available from controlled endpoints;</li>
+<li>project download is unavailable unless deliberately enabled;</li>
+<li>firmware operations are unavailable;</li>
+<li>security administration is unavailable to ordinary engineering accounts;</li>
+<li>exceptional runtime functions such as forcing are unavailable or tightly restricted.</li>
+</ul>
+<p>This distinction is important because disabling all controller communication outside maintenance would normally be operationally impossible. Disabling or restricting <strong>engineering authority</strong>, however, is often entirely feasible. The architecture should therefore separate a permanent <strong>production conduit</strong> from an exceptional <strong>engineering capability</strong>, even when both ultimately reach the same physical controller interface. For a modern controller with suitable native authorization, that separation may occur largely inside the PLC. For a legacy controller, it may instead depend on whether the engineering workstation can reach the programming service at all. The desired production state is simple:</p>
+<blockquote class="blockquote">
+<p><strong>The controller remains fully usable for production while no ordinary user possesses an immediately usable path to unrestricted programming authority.</strong></p>
+</blockquote>
+</section>
+<section id="use-a-dedicated-engineering-workstation" class="level3">
+<h3 class="anchored" data-anchor-id="use-a-dedicated-engineering-workstation">Use a dedicated engineering workstation</h3>
+<p>PLC programming should originate from a dedicated and governed engineering endpoint, not from whichever workstation happens to contain the vendor software. For a small site, this may be one hardened Engineering Workstation. For a larger installation, it may be a pool of privileged engineering workstations or virtual engineering desktops in a dedicated engineering zone. The important properties are more significant than the deployment form. The workstation should have:</p>
+<ul>
+<li>only approved automation and engineering software;</li>
+<li>controlled software installation and local administration;</li>
+<li>no routine corporate email;</li>
+<li>no unrestricted Internet browsing;</li>
+<li>restricted removable-media use;</li>
+<li>endpoint protection compatible with the automation platform;</li>
+<li>controlled access to project repositories;</li>
+<li>protected engineering credentials and certificates;</li>
+<li>time synchronization sufficient for correlation with controller and security logs;</li>
+<li>logging of privileged user access and engineering activity;</li>
+<li>controlled mechanisms for obtaining vendor updates, firmware, libraries and device packages.</li>
+</ul>
+<p>The workstation should also have a stable machine identity where the surrounding technology can use it in policy decisions. This avoids one of the weakest common configurations: relying on a user credential while allowing that credential to program PLCs from arbitrary devices. For high-consequence controllers, both conditions should normally be required:</p>
+<blockquote class="blockquote">
+<p><strong>approved engineer + approved engineering endpoint</strong></p>
+</blockquote>
+<p>A compromised corporate laptop should not become a controller-programming station merely because an engineer’s password was stolen. Conversely, compromise of the engineering workstation should not automatically provide the attacker with every human privilege available in the automation environment.</p>
+</section>
+<section id="do-not-give-the-engineering-workstation-unrestricted-plc-reachability" class="level3">
+<h3 class="anchored" data-anchor-id="do-not-give-the-engineering-workstation-unrestricted-plc-reachability">Do not give the engineering workstation unrestricted PLC reachability</h3>
+<p>A dedicated Engineering Workstation is not itself a sufficient control. It can become one of the highest-value attack assets in the plant, so its network reach should be constrained to the controllers that it genuinely needs to engineer. Avoid <code>Engineering Workstation → all OT subnets → all controller services</code>; prefer explicit source, destination, and service relationships such as <code>Engineering Workstation A → PLC group A → required engineering services</code>.</p>
+<p>Where operationally practical, the engineering conduit should be closed or reduced outside approved programming activity. If permanent connectivity is needed for diagnostics, separate the services required for diagnostics from those required for programming wherever the protocol and enforcement technology permit that distinction. For controller fleets, segmentation should also reduce lateral programming capability. An engineering station used for one production line should not automatically obtain programming reachability to every PLC in the plant merely because all controllers belong to the same OT security zone. This is one of the places where zones and conduits need to become more granular than network administration convenience would otherwise dictate.</p>
+</section>
+<section id="use-named-identities-all-the-way-to-the-controller-where-possible" class="level3">
+<h3 class="anchored" data-anchor-id="use-named-identities-all-the-way-to-the-controller-where-possible">Use named identities all the way to the controller where possible</h3>
+<p>The preferred configuration is for the controller to distinguish the actual engineering identities exercising privileged functions. Where supported, configure named users and roles in the PLC rather than a common engineering password. Do not deliberately collapse <code>Engineer A</code>, <code>Engineer B</code>, and <code>Vendor C</code> into a single <code>PLC_ENGINEER</code> identity unless the controller technically forces that model.</p>
+<p>The closer identity persists to the controller, the better the resulting authorization and audit semantics. Where the platform supports controller-native roles or function rights, explicitly map engineering personas to functions rather than assigning full access to the entire controls team. A representative configuration would be:</p>
+<div id="tbl-programming-authority-is-the-real-plc-security-boundary-role-matrix" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-programming-authority-is-the-real-plc-security-boundary-role-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th style="text-align: center;">Observer</th>
+<th style="text-align: center;">Controls Engineer</th>
+<th style="text-align: center;">Commissioning Engineer</th>
+<th style="text-align: center;">Platform Maintainer</th>
+<th style="text-align: center;">Security Administrator</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Diagnostics</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">Restricted</td>
+</tr>
+<tr class="even">
+<td>Read/inspect program</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>Project/block download</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="even">
+<td>Online edit</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>Hardware configuration</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Restricted</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">Restricted</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="even">
+<td>CPU mode change</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">— / Temporary</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">Restricted</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>Forces/test overrides</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">— / Temporary</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="even">
+<td>Firmware / recovery operations</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">— / Exceptional</td>
+<td style="text-align: center;">Temporary</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>Manage users/roles</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Temporary</td>
+</tr>
+<tr class="even">
+<td>Certificates/trust/protection settings</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Temporary</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-programming-authority-is-the-real-plc-security-boundary-role-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Example least-privilege mapping for PLC engineering functions. Actual capability separation depends on the controller platform.
+</figcaption>
+</figure>
+</div>
+<p>The table is deliberately restrictive. It is easier to relax a permission for a documented operational requirement than to justify why every controls engineer permanently requires firmware, force, mode-change, and security-administration capabilities.</p>
+</section>
+<section id="treat-full-project-download-as-a-controlled-deployment" class="level3">
+<h3 class="anchored" data-anchor-id="treat-full-project-download-as-a-controlled-deployment">Treat full project download as a controlled deployment</h3>
+<p>A project download should be handled more like deployment of production executable code than like ordinary interactive access. The engineering workstation should not be treated as the authoritative source merely because it contains the project currently open in the engineering application. Before download, the operator should be able to establish:</p>
+<ul>
+<li>which controller is being modified;</li>
+<li>which project or project version is approved;</li>
+<li>whether the offline project corresponds to the intended plant configuration;</li>
+<li>who approved the modification;</li>
+<li>whether the required backup exists;</li>
+<li>whether the process is in the required state for deployment;</li>
+<li>whether a rollback or recovery path exists.</li>
+</ul>
+<p>The actual download should then be attributable to the engineer and engineering endpoint. After download, verify the controller against the intended project state rather than relying solely on the engineering tool reporting that the operation completed successfully.</p>
+<p>A secure workflow is therefore <code>approved project → controlled engineering workstation → authorized download → controller verification</code> not <code>project found on engineering laptop → download → success message</code>. The distinction matters because authentication protects who executed the transfer; it does not establish that the transferred project was the correct one.</p>
+</section>
+<section id="restrict-online-edits-more-aggressively-than-their-convenience-suggests" class="level3">
+<h3 class="anchored" data-anchor-id="restrict-online-edits-more-aggressively-than-their-convenience-suggests">Restrict online edits more aggressively than their convenience suggests</h3>
+<p>Online editing is operationally attractive because it can modify logic without a complete stop-and-download sequence. That same property makes it particularly sensitive. The controller may remain in RUN while executable behavior changes.</p>
+<p>Where online editing is required, it should be explicitly included in the authorization model rather than assumed to be part of generic programming rights. Where the platform distinguishes stages of the edit lifecycle, security monitoring should focus on the point at which the modification becomes effective, not merely on establishment of the engineering session. Rockwell Logix Designer, for example, distinguishes stages associated with online edits before they are finally incorporated into the executing program.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<p>For critical process logic, the organization may reasonably choose to prohibit online editing entirely during normal production and allow it only under a dedicated maintenance procedure. The correct choice depends on process availability requirements and the automation platform, but it should be a deliberate configuration decision.</p>
+</section>
+<section id="make-forces-exceptional-and-visible" class="level3">
+<h3 class="anchored" data-anchor-id="make-forces-exceptional-and-visible">Make forces exceptional and visible</h3>
+<p>Forces deserve separate treatment because they can alter process behavior while leaving the underlying application logic unchanged. They are indispensable during commissioning and troubleshooting, which is precisely why they are dangerous as standing authority. A good production policy is:</p>
+<ul>
+<li>no routine use of forces;</li>
+<li>activation only for an identified maintenance or commissioning activity;</li>
+<li>clear indication that forcing is active;</li>
+<li>recording of who enabled or modified the force;</li>
+<li>explicit verification that no unintended forces remain before the intervention is closed.</li>
+</ul>
+<p>Where controller or engineering software exposes force status, include it in post-maintenance verification. The failure mode to prevent is not merely unauthorized force creation. It is also an authorized engineer legitimately creating a force and the plant subsequently returning to nominal service with that exceptional state still active.</p>
+</section>
+<section id="separate-cpu-mode-authority" class="level3">
+<h3 class="anchored" data-anchor-id="separate-cpu-mode-authority">Separate CPU mode authority</h3>
+<p>Remote RUN/STOP, PROGRAM/RUN or equivalent mode transitions should not automatically accompany logic-editing authority. A mode transition may have immediate availability or safety consequences even though no project content changes. Where the controller supports independent rights for mode changes, use them. Where a physical key switch or local mode selector can constrain remote mode changes, its operating policy should be part of the security design rather than treated solely as an operations issue.</p>
+<p>The preferred production configuration is that remote mode changes are unavailable unless there is an explicit operational requirement for them. For remote maintenance, especially, the architecture should not assume that the ability to download necessarily requires unrestricted remote authority to place any controller in STOP.</p>
+</section>
+<section id="separate-firmware-from-application-engineering" class="level3">
+<h3 class="anchored" data-anchor-id="separate-firmware-from-application-engineering">Separate firmware from application engineering</h3>
+<p>Firmware maintenance should normally sit outside the everyday controls-engineering privilege set. Firmware installation can:</p>
+<ul>
+<li>restart or render a controller temporarily unavailable;</li>
+<li>change protocol behavior;</li>
+<li>change security functionality;</li>
+<li>alter compatibility with the engineering project;</li>
+<li>require conversion or migration of controller state;</li>
+<li>introduce a new trusted software base.</li>
+</ul>
+<p>Treat it as platform maintenance:</p>
+<ul>
+<li>Firmware packages should come from controlled sources, be checked according to vendor-supported integrity mechanisms, and be staged through the controlled engineering environment rather than downloaded casually from the Internet onto the programming workstation.</li>
+<li>Firmware authority should preferably belong to a separate administrative or maintenance role and should be enabled only when required.</li>
+</ul>
+<p>The fact that the same engineering suite provides both application download and firmware update is a user-interface convenience. It is not a reason to assign both authorities to the same users.</p>
+</section>
+<section id="keep-security-administration-separate-from-plc-programming" class="level3">
+<h3 class="anchored" data-anchor-id="keep-security-administration-separate-from-plc-programming">Keep security administration separate from PLC programming</h3>
+<p>The strongest separation should normally exist around the functions that change the controller’s own trust model. These include:</p>
+<ul>
+<li>creating or deleting controller users;</li>
+<li>modifying roles;</li>
+<li>assigning function rights;</li>
+<li>changing passwords or protection levels;</li>
+<li>enrolling or replacing certificates;</li>
+<li>modifying trusted applications or trust stores;</li>
+<li>disabling security features.</li>
+</ul>
+<p>A controls engineer who needs to change process logic does not thereby need to redefine who is permitted to change process logic. Security administration should therefore use a distinct administrative role wherever the controller or engineering platform supports sufficiently granular authorization. Application engineering and security administration should be technically separated wherever possible rather than relying solely on procedural separation.</p>
+<p>The administrative account itself should not be the account routinely used for programming. This reduces the consequence of compromise of a normal engineering identity: an attacker who obtains application-programming authority should not automatically be able to create a new persistent privileged user, replace trust certificates, or weaken the controls that would otherwise constrain subsequent access.</p>
+</section>
+<section id="use-the-privilege-model-as-the-design-baseline" class="level3">
+<h3 class="anchored" data-anchor-id="use-the-privilege-model-as-the-design-baseline">Use the privilege model as the design baseline</h3>
+<p>The controls above define the target production state: programming originates from controlled engineering endpoints, identities remain attributable, controller scope is constrained, high-consequence functions are separated, and modification authority is temporary rather than standing.</p>
+<p>Not every brownfield controller can enforce this model natively. Where named identities, function-level authorization, auditability, or temporary privilege are unavailable, the limitation should be stated explicitly and the missing enforcement moved outward into the engineering platform, endpoint, credential, network, or maintenance workflow. The next question is therefore implementation-specific:</p>
+<blockquote class="blockquote">
+<p><em>which parts of this authority model can Siemens, Rockwell, OPC UA, CIP Security, and legacy industrial stacks actually enforce, and at which layer?</em></p>
+</blockquote>
+</section>
+</section>
+<section id="implementing-the-model-on-real-ot-platforms" class="level2">
+<h2 class="anchored" data-anchor-id="implementing-the-model-on-real-ot-platforms">Implementing the Model on Real OT Platforms</h2>
+<p>The target architecture is clear: dedicated engineering endpoints, named identities, restricted engineering conduits, controller-native authorization where available, temporary high-consequence privileges, and independent verification after changes.</p>
+<p>The implementation, however, differs substantially by platform. The important design decision is not which protocol appears on the architecture diagram, but <strong>which component can actually distinguish and reject a privileged controller operation</strong>. A useful implementation hierarchy is:</p>
+<table class="table">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Platform capability</th>
+<th>Preferred security treatment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Controller supports named users and function rights</td>
+<td>Enforce privilege in the controller and reinforce it with network and endpoint controls</td>
+</tr>
+<tr class="even">
+<td>Engineering platform can authorize user + workstation + operation + controller</td>
+<td>Use it to constrain engineering authority before the request reaches the PLC</td>
+</tr>
+<tr class="odd">
+<td>Protocol supports identity and operation/resource authorization</td>
+<td>Apply it to the operations that actually traverse that protocol</td>
+</tr>
+<tr class="even">
+<td>Controller exposes only coarse password/access levels</td>
+<td>Compensate with dedicated EWS, tightly restricted conduits, temporary reachability and credential control</td>
+</tr>
+<tr class="odd">
+<td>Protocol exposes unauthenticated writes</td>
+<td>Treat network reachability to write functions as a privileged capability</td>
+</tr>
+</tbody>
+</table>
+<p>The following configurations illustrate what that means in practice.</p>
+<section id="siemens-s7-1500-use-cpu-user-management-not-merely-network-trust" class="level3">
+<h3 class="anchored" data-anchor-id="siemens-s7-1500-use-cpu-user-management-not-merely-network-trust">Siemens S7-1500: use CPU user management, not merely network trust</h3>
+<p>For current S7-1500 deployments, the preferred configuration is to make the CPU itself an authorization point. Siemens S7-1500 CPUs configured with firmware V3.1 or later support User Management &amp; Access Control based on users, roles and CPU function rights. TIA Portal manages the users and roles under the project security settings and stores the assignment of CPU function rights to roles for each configured CPU.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<p>This should materially change the design of the engineering environment. Do not configure <code>Engineering VLAN → S7-1500 → shared full-access credential</code> as the normal production model. Prefer <code>named engineer → controlled TIA Portal workstation → authorized CPU → role/function rights</code>.</p>
+<p>For each CPU or security-equivalent controller group, define at least a read-oriented engineering role and one or more modification roles. Do not assign <code>Full access</code> simply because a user requires TIA Portal. Siemens explicitly distinguishes full, read and HMI-related access through CPU function rights in the current S7-1500 access model; loading CPU configuration requires the corresponding full-access function right.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p>The practical configuration review should therefore inspect the TIA Portal project and the deployed CPU rather than merely record that password protection is enabled. For each production CPU, verify:</p>
+<ul>
+<li>configured firmware and available user-management model;</li>
+<li>whether local or applicable central user management is enabled;</li>
+<li>named users and assigned roles;</li>
+<li>CPU function rights attached to those roles;</li>
+<li>which users possess full-access rights;</li>
+<li>whether contractors or commissioning accounts remain configured;</li>
+<li>whether identical privileged credentials are reused across unrelated CPUs;</li>
+<li>whether TIA Portal can reach the CPU continuously or only through the intended engineering conduit.</li>
+</ul>
+<p>For a new S7-1500 deployment, <strong>full-access rights should be exceptional</strong>. An engineer who normally performs diagnostics should operate using read-oriented rights. Full access should be activated only for personnel and periods in which configuration or programming work actually requires it.</p>
+<p>The network architecture remains necessary. TIA Portal should originate from controlled engineering systems and the PLC engineering path should be limited to those systems. Controller-native authorization is the final control, not a justification for permitting arbitrary OT endpoints to reach engineering services.</p>
+</section>
+<section id="rockwell-logix-bind-authority-to-user-workstation-action-and-controller" class="level3">
+<h3 class="anchored" data-anchor-id="rockwell-logix-bind-authority-to-user-workstation-action-and-controller">Rockwell Logix: bind authority to user, workstation, action and controller</h3>
+<p>Rockwell provides a particularly useful model for engineering authorization because FactoryTalk Security can evaluate more than the username. For Logix Designer environments, access decisions can incorporate the logged-in user, the workstation, the action being attempted, and the protected resource such as the controller.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>That should be used directly in the design. Instead of defining a plant-wide <code>PLC Engineers</code> group with unrestricted Logix authority, create permissions around actual engineering operations and controller scope. A production configuration should aim to ensure that:</p>
+<ul>
+<li>engineers use individual FactoryTalk identities;</li>
+<li>Logix Designer runs only on authorized engineering workstations;</li>
+<li>permissions are scoped to the controllers the engineer supports;</li>
+<li>programming actions are separated from routine observation where possible;</li>
+<li>processor mode changes are restricted;</li>
+<li>administrative capabilities are not inherited merely from programming membership.</li>
+</ul>
+<p>This allows an authorization rule to become materially stronger than <code>Alice is an engineer</code> because the effective decision can also depend on <code>Alice + EWS-03 + requested action + PLC-17</code>. That is a useful model for high-consequence OT systems because compromise of any single identity attribute does not necessarily reproduce the complete legitimate engineering context.</p>
+<p>Rockwell controllers also expose controller change-detection capabilities that should be enabled and incorporated into monitoring. ControlLogix change detection can track events including online edits, I/O and SFC forces, firmware activity, remote and keyswitch mode changes, task or program-property changes, safety-related events and other controller changes.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> For Logix environments, therefore, the recommended setup combines <code>FactoryTalk authorization + dedicated EWS + restricted controller scope + controller change detection</code> rather than relying solely on an EtherNet/IP firewall rule.</p>
+<p>Change detection is not a substitute for authorization, and its audit value is not proof that the resulting controller state is correct. It is useful because it gives the defender a controller-proximate indication that privileged state changed.</p>
+</section>
+<section id="opc-ua-configure-rbac-for-ua-operations-but-do-not-mistake-it-for-plc-programming-security" class="level3">
+<h3 class="anchored" data-anchor-id="opc-ua-configure-rbac-for-ua-operations-but-do-not-mistake-it-for-plc-programming-security">OPC UA: configure RBAC for UA operations, but do not mistake it for PLC programming security</h3>
+<p>OPC UA should be configured rigorously wherever it carries operational writes, configuration Methods, recipe changes, parameterization, or other privileged functions. The specification cleanly separates authentication from authorization and permits Roles to be mapped to permissions on Nodes. Role assignment can also incorporate user identity and application identity, while the role model supports restrictions associated with applications and endpoints.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a><a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> A sensible production OPC UA configuration is therefore:</p>
+<ul>
+<li>disable anonymous access where it is not explicitly required;</li>
+<li>use authenticated client applications;</li>
+<li>authenticate users where user attribution is required;</li>
+<li>separate <code>Observer</code>, <code>Operator</code>, <code>Engineer</code>, <code>ConfigureAdmin</code> and <code>SecurityAdmin</code>-type responsibilities according to actual operational need;</li>
+<li>make process values read-only unless the consuming application requires writes;</li>
+<li>restrict Methods according to role;</li>
+<li>restrict privileged roles by application and endpoint where supported;</li>
+<li>separate security administration from ordinary engineering.</li>
+</ul>
+<p>The important limitation is architectural: <strong>OPC UA protects only the operations that traverse OPC UA</strong>. If TIA Portal, Studio 5000 or another vendor engineering suite uses a different protocol to download controller logic, OPC UA RBAC has no direct authority over that programming transaction.</p>
+<p>Do not therefore accept <code>OPC UA secured with certificates and RBAC</code> as evidence that PLC programming is secured. The assessment must ask which protocol performs the actual project download, online edit, firmware operation or CPU mode transition and identify the authorization mechanism on that path.</p>
+</section>
+<section id="cip-security-secure-ethernetip-then-verify-product-authorization-separately" class="level3">
+<h3 class="anchored" data-anchor-id="cip-security-secure-ethernetip-then-verify-product-authorization-separately">CIP Security: secure EtherNet/IP, then verify product authorization separately</h3>
+<p>CIP Security should similarly be treated as a set of security capabilities rather than as a single checkbox that establishes programming least privilege.</p>
+<p>The EtherNet/IP Confidentiality Profile provides protected communications and endpoint authentication. The CIP User Authentication Profile adds user authentication that can serve as a basis for authorization and role-based access control.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> That is useful, but the security requirement should not stop at:</p>
+<p><code>CIP Security enabled</code>.</p>
+<p>For each device type, determine:</p>
+<ul>
+<li>which CIP Security profiles the product actually supports;</li>
+<li>which profiles are enabled in the deployed configuration;</li>
+<li>how device identity is provisioned;</li>
+<li>whether user authentication is supported;</li>
+<li>how authenticated users are mapped to product permissions;</li>
+<li>whether the required engineering operation is actually constrained by that mapping.</li>
+</ul>
+<p>The last question is critical: secure EtherNet/IP can prevent unauthenticated endpoints from impersonating legitimate CIP peers and can protect communications against manipulation. Those properties are valuable. They do not by themselves prove that an authenticated engineering user has least-privilege access to Logix programming functions. For Rockwell controller programming, the resulting architecture may therefore involve both CIP Security at the communication layer and FactoryTalk/controller security at the engineering authorization layer. These are complementary controls.</p>
+</section>
+<section id="legacy-modbustcp-assume-that-write-reachability-is-authority" class="level3">
+<h3 class="anchored" data-anchor-id="legacy-modbustcp-assume-that-write-reachability-is-authority">Legacy Modbus/TCP: assume that write reachability is authority</h3>
+<p>Legacy Modbus/TCP requires a different design approach because the base protocol has no general human-user authentication or standardized role model. It defines operations such as reading and writing coils and registers; if the server accepts the request, there may be no intervening user-authorization decision comparable to that available on more modern engineering platforms.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> For such devices, the network boundary becomes much more important. Do not place historian, monitoring, HMI, engineering and third-party clients in the same write-capable trust set merely because all of them communicate using Modbus/TCP.</p>
+<p>Separate at least <code>read-only consumers</code> from <code>clients requiring write functions</code>. Where an industrial firewall can reliably enforce Modbus function codes for the specific implementation, monitoring paths should permit only the required read functions and deny write functions.</p>
+<p>For a device that cannot authenticate clients itself, the preferred rule is:</p>
+<blockquote class="blockquote">
+<p><strong>Only explicitly authorized systems should be capable of delivering a write request to the device.</strong></p>
+</blockquote>
+<p>This is one of the cases in which network reachability can become very close to operational authority. Modbus Security improves the model by combining Modbus with TLS, X.509 certificates and support for role information used in request authorization.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> Where both endpoints genuinely support it, it should be evaluated as an alternative to unprotected Modbus/TCP. But again, verify the implementation rather than the protocol label. The existence of a certificate does not tell the assessor which register writes the identified client is authorized to perform.</p>
+</section>
+<section id="choose-the-enforcement-model-explicitly" class="level3">
+<h3 class="anchored" data-anchor-id="choose-the-enforcement-model-explicitly">Choose the enforcement model explicitly</h3>
+<p>The final design decision can therefore be made using a simple hierarchy:</p>
+<ol type="1">
+<li><strong>Modern controller with usable native RBAC:</strong> enforce authorization in the controller, then reinforce it with dedicated engineering endpoints and restricted conduits.</li>
+<li><strong>Controller with strong engineering-platform security but limited native function rights:</strong> use engineering-platform authorization plus endpoint and network controls, and make broad controller credentials inaccessible outside that path.</li>
+<li><strong>Controller with coarse password protection:</strong> treat possession of the password as highly privileged, vault it where operationally feasible, constrain the EWS-to-controller path, and make programming availability temporary.</li>
+<li><strong>Legacy unauthenticated write protocol:</strong> treat allowed write-capable network paths as authority and aggressively minimize them.</li>
+</ol>
+<p>No product feature removes the need to determine the actual authority chain. The design is complete only when the architect can identify the component that denies each prohibited operation and demonstrate that compromising an earlier component does not automatically bypass that decision.</p>
+</section>
+</section>
+<section id="make-programming-a-controlled-maintenance-state" class="level2">
+<h2 class="anchored" data-anchor-id="make-programming-a-controlled-maintenance-state">Make Programming a Controlled Maintenance State</h2>
+<p>The most effective practical improvement in many PLC environments is not another authentication mechanism. It is to stop treating programming as a permanently available production service. A production plant usually needs continuous control communication. It rarely needs continuous project download, online editing, firmware maintenance, forcing or security administration.</p>
+<p>The preferred operating model is therefore to maintain two distinct security states:</p>
+<div id="tbl-programming-authority-is-the-real-plc-security-boundary-programming-window" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-programming-authority-is-the-real-plc-security-boundary-programming-window-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Normal production</th>
+<th>Programming window</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Process communications enabled</td>
+<td>Process communications remain enabled</td>
+</tr>
+<tr class="even">
+<td>Monitoring/diagnostics available as required</td>
+<td>Monitoring/diagnostics available</td>
+</tr>
+<tr class="odd">
+<td>Engineering path closed or restricted</td>
+<td>Engineering path activated for defined targets</td>
+</tr>
+<tr class="even">
+<td>Modification privileges absent or inactive</td>
+<td>Required modification privilege enabled</td>
+</tr>
+<tr class="odd">
+<td>Firmware/security administration disabled</td>
+<td>Enabled only if specifically required</td>
+</tr>
+<tr class="even">
+<td>No active forces expected</td>
+<td>Forces permitted only if the approved activity requires them</td>
+</tr>
+<tr class="odd">
+<td>Controller in intended production mode</td>
+<td>Mode changes permitted only if required</td>
+</tr>
+<tr class="even">
+<td>Baseline state known</td>
+<td>Change executed and resulting state verified</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-programming-authority-is-the-real-plc-security-boundary-programming-window-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Programming should be a temporary maintenance state superimposed on normal production, not a permanently available property of the PLC environment.
+</figcaption>
+</figure>
+</div>
+<p>The implementation does not require every controller to understand maintenance tickets or time windows. The workflow can be distributed across PAM, jump infrastructure, firewall policy, engineering workstations, controller roles and operational procedure. What matters is that opening the programming capability is deliberate and that closing it is equally explicit.</p>
+<section id="step-1-define-the-exact-change-before-opening-the-path" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-define-the-exact-change-before-opening-the-path">Step 1: define the exact change before opening the path</h3>
+<p>Before privileged PLC access is enabled, identify:</p>
+<ul>
+<li>responsible engineer;</li>
+<li>approved engineering workstation;</li>
+<li>target controller or controller set;</li>
+<li>project or configuration baseline;</li>
+<li>required operation;</li>
+<li>maintenance or change reference;</li>
+<li>expected CPU/process state;</li>
+<li>start and expiry of the intervention;</li>
+<li>recovery or rollback method.</li>
+</ul>
+<p>Do not open generic plant-wide programming access for a change affecting one controller. Likewise, do not enable firmware authority for an application-logic modification or enable security administration for a routine project download. The requested capability should correspond to the actual intervention.</p>
+</section>
+<section id="step-2-activate-the-minimum-engineering-path" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-activate-the-minimum-engineering-path">Step 2: activate the minimum engineering path</h3>
+<p>The programming window should then activate only the communications required for the work. A typical remote engineering path should be <code>engineer → MFA/PAM → OT jump environment → approved EWS → industrial firewall → selected PLC</code>. The external engineer’s laptop should not become a directly trusted controller client.</p>
+<p>Where the EWS normally has diagnostic reachability but not programming reachability, activate only the additional services or controller paths required for the change. Where protocol separation is not technically feasible, use the strongest available upstream and controller-native controls to restrict who can exploit the broader session. Temporary rules should have an explicit expiry. A firewall rule created for commissioning and left indefinitely in production is not a programming window; it is standing authority.</p>
+</section>
+<section id="step-3-elevate-the-required-controller-privilege" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-elevate-the-required-controller-privilege">Step 3: elevate the required controller privilege</h3>
+<p>Network admission should be followed by operation-specific privilege. Use the narrowest available controller or engineering-platform role. If the intervention requires block download, do not elevate the engineer to security administrator. If it requires a CPU mode transition, do not automatically add firmware authority. Where the product exposes only <code>Full Access</code>, document that limitation and compensate for it by making the privilege:</p>
+<ul>
+<li>available only to a named user;</li>
+<li>usable only from the approved EWS;</li>
+<li>limited to the required controller;</li>
+<li>active only for the maintenance period;</li>
+<li>monitored throughout the session.</li>
+</ul>
+<p>For systems using shared or device-level credentials, retrieve or expose the credential only inside the controlled engineering workflow rather than distributing it permanently to engineers.</p>
+</section>
+<section id="step-4-establish-the-controllers-pre-change-state" class="level3">
+<h3 class="anchored" data-anchor-id="step-4-establish-the-controllers-pre-change-state">Step 4: establish the controller’s pre-change state</h3>
+<p>Before modifying the PLC, capture the state necessary to verify and recover the intervention. Depending on platform and criticality, this should include:</p>
+<ul>
+<li>current project/version or project comparison status;</li>
+<li>current CPU operating mode;</li>
+<li>active force state;</li>
+<li>relevant hardware and communications configuration;</li>
+<li>controller diagnostics;</li>
+<li>firmware revision;</li>
+<li>security configuration where the intervention could affect it;</li>
+<li>recoverable backup or approved offline project.</li>
+</ul>
+<p>This step has two purposes:</p>
+<ol type="1">
+<li>It prevents an engineer from assuming that the online PLC is already identical to the repository baseline.</li>
+<li>It establishes evidence for determining exactly what changed during the intervention.</li>
+</ol>
+</section>
+<section id="step-5-perform-and-monitor-the-state-changing-operation" class="level3">
+<h3 class="anchored" data-anchor-id="step-5-perform-and-monitor-the-state-changing-operation">Step 5: perform and monitor the state-changing operation</h3>
+<p>The actual engineering operation should be observable at more than one layer where technically possible. Useful evidence sources include:</p>
+<ul>
+<li>PAM or remote-session logs;</li>
+<li>jump-host authentication logs;</li>
+<li>Engineering Workstation logs;</li>
+<li>engineering-platform audit records;</li>
+<li>industrial firewall connections;</li>
+<li>controller security logs;</li>
+<li>controller-native change detection.</li>
+</ul>
+<p>Controller-proximate evidence is especially valuable. For example, current Logix change-detection facilities can identify events such as project downloads, online edits, forces, firmware attempts, mode changes and program or task-property modifications.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a></p>
+<p>Monitoring should focus on the operation, not merely on session establishment. <code>Engineer logged into EWS</code> is useful evidence. <code>PLC-17 program changed</code> is the security-significant evidence. The two should be correlatable.</p>
+</section>
+<section id="step-6-verify-the-resulting-controller-not-merely-the-transaction" class="level3">
+<h3 class="anchored" data-anchor-id="step-6-verify-the-resulting-controller-not-merely-the-transaction">Step 6: verify the resulting controller, not merely the transaction</h3>
+<p>A successful download does not prove that the correct project was downloaded. After the intervention, compare the resulting online controller state with the approved intended state. At minimum, verify where applicable:</p>
+<ul>
+<li>expected project or block version;</li>
+<li>online/offline consistency;</li>
+<li>expected CPU mode;</li>
+<li>no unintended forces;</li>
+<li>expected hardware and communications configuration;</li>
+<li>expected firmware version;</li>
+<li>expected safety state or signature;</li>
+<li>unchanged users, roles and protection settings unless modification was authorized;</li>
+<li>absence of unexpected controller faults.</li>
+</ul>
+<p>For online edits, ensure that no pending, test or unassembled edits remain in an unintended state. The reference used for this verification should be controlled independently of the individual engineering workstation. If malware on the EWS can alter both the PLC and the only copy of the “approved” project, post-change comparison provides little independent assurance.</p>
+</section>
+<section id="step-7-withdraw-programming-authority" class="level3">
+<h3 class="anchored" data-anchor-id="step-7-withdraw-programming-authority">Step 7: withdraw programming authority</h3>
+<p>Closing the engineering application is not sufficient. The completion procedure should explicitly:</p>
+<ul>
+<li>terminate privileged sessions;</li>
+<li>close temporary engineering conduits;</li>
+<li>remove temporary firewall rules;</li>
+<li>revoke or expire temporary role elevation;</li>
+<li>return the controller to the required operating/protection mode;</li>
+<li>remove or verify the absence of forces;</li>
+<li>disconnect vendor remote access;</li>
+<li>return reusable privileged credentials to controlled storage;</li>
+<li>preserve the final project and change evidence.</li>
+</ul>
+<p>The environment should then return to the original production state in which normal automation continues but exceptional engineering authority is no longer immediately available.</p>
+</section>
+<section id="treat-emergency-access-as-an-accelerated-version-of-the-same-model" class="level3">
+<h3 class="anchored" data-anchor-id="treat-emergency-access-as-an-accelerated-version-of-the-same-model">Treat emergency access as an accelerated version of the same model</h3>
+<p>Break-glass engineering access may be necessary where delaying intervention could threaten safety, availability or equipment integrity. It should not become an undocumented bypass around the architecture. A good emergency mechanism relaxes <strong>approval latency</strong>, not identity, attribution or subsequent verification. Emergency access should therefore still establish:</p>
+<ul>
+<li>who activated it;</li>
+<li>from which engineering endpoint;</li>
+<li>which controllers became accessible;</li>
+<li>when access began;</li>
+<li>which privileged operations occurred;</li>
+<li>when access was revoked;</li>
+<li>what controller state resulted.</li>
+</ul>
+<p>Post-event review can occur after the urgent intervention, but the technical evidence must survive it. The final operational principle is simple:</p>
+<blockquote class="blockquote">
+<p><strong>A production PLC should not be perpetually programmable merely because somebody may eventually need to program it.</strong></p>
+</blockquote>
+<p>Programming authority should be deliberately assembled for the required maintenance activity from a named engineer, a controlled engineering endpoint, a constrained network path, the minimum controller privilege and a defined target. When the work finishes, those conditions should be dismantled and the resulting controller state independently verified. That is the practical difference between protecting access to a PLC and controlling programming authority.</p>
+</section>
+</section>
+<section id="verify-the-programming-boundary-not-the-security-features" class="level2">
+<h2 class="anchored" data-anchor-id="verify-the-programming-boundary-not-the-security-features">Verify the Programming Boundary, Not the Security Features</h2>
+<p>A PLC programming architecture should be accepted on demonstrated behavior, not on the presence of security features. A design can contain firewalls, MFA, certificates, RBAC, a jump host, an Engineering Workstation, and controller passwords and still leave programming authority effectively unrestricted. The relevant acceptance question is whether those mechanisms, in their deployed configuration, actually prevent unauthorized controller operations. For this reason, FAT, SAT, cybersecurity commissioning, and periodic OT security assessments should test the complete engineering path.</p>
+<p>The minimum test object is not the PLC alone. It is: <code>identity → access infrastructure → engineering endpoint → network conduit → engineering protocol → effective authorization point → controller state</code>. Every control claimed by the design should be observable somewhere on that path.</p>
+<section id="build-an-authority-matrix-before-testing" class="level3">
+<h3 class="anchored" data-anchor-id="build-an-authority-matrix-before-testing">Build an authority matrix before testing</h3>
+<p>For each controller family or security-equivalent controller group, define the intended permissions before starting technical verification. A practical matrix should identify:</p>
+<div id="tbl-programming-authority-is-the-real-plc-security-boundary-acceptance-matrix" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-programming-authority-is-the-real-plc-security-boundary-acceptance-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 12%">
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 16%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Principal / role</th>
+<th>Endpoint</th>
+<th>PLC scope</th>
+<th style="text-align: right;">Diagnostics</th>
+<th style="text-align: right;">Download / edit</th>
+<th style="text-align: right;">Mode change</th>
+<th style="text-align: right;">Forces</th>
+<th style="text-align: right;">Firmware</th>
+<th style="text-align: right;">Security admin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Operator</td>
+<td>HMI</td>
+<td>Assigned plant</td>
+<td style="text-align: right;">Limited</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr class="even">
+<td>OT monitoring</td>
+<td>Monitoring servers</td>
+<td>Plant</td>
+<td style="text-align: right;">Read only</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr class="odd">
+<td>Controls engineer</td>
+<td>Approved EWS</td>
+<td>Assigned PLCs</td>
+<td style="text-align: right;">Yes</td>
+<td style="text-align: right;">Temporary</td>
+<td style="text-align: right;">No / Temporary</td>
+<td style="text-align: right;">No / Temporary</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr class="even">
+<td>Commissioning engineer</td>
+<td>Approved EWS</td>
+<td>Approved assets</td>
+<td style="text-align: right;">Yes</td>
+<td style="text-align: right;">Temporary</td>
+<td style="text-align: right;">Temporary</td>
+<td style="text-align: right;">Temporary</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr class="odd">
+<td>Platform maintainer</td>
+<td>Administrative EWS</td>
+<td>Approved assets</td>
+<td style="text-align: right;">Yes</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">Restricted</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">Temporary</td>
+<td style="text-align: right;">No</td>
+</tr>
+<tr class="even">
+<td>Security administrator</td>
+<td>Administrative EWS</td>
+<td>Approved assets</td>
+<td style="text-align: right;">Restricted</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">No</td>
+<td style="text-align: right;">Temporary</td>
+</tr>
+<tr class="odd">
+<td>Vendor engineer</td>
+<td>Controlled remote EWS</td>
+<td>Explicit target set</td>
+<td style="text-align: right;">As required</td>
+<td style="text-align: right;">Only if approved</td>
+<td style="text-align: right;">Only if approved</td>
+<td style="text-align: right;">Only if approved</td>
+<td style="text-align: right;">Only if separately approved</td>
+<td style="text-align: right;">No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-programming-authority-is-the-real-plc-security-boundary-acceptance-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Example authority matrix to be converted into platform-specific permissions and negative test cases.
+</figcaption>
+</figure>
+</div>
+<p>The table should represent intended <strong>effective authority</strong>, not simply directory-group membership. If the platform cannot implement a distinction shown in the matrix, that limitation should emerge during design review. The architecture can then introduce compensating controls rather than discovering during commissioning that the controller’s <code>Engineer</code> permission actually means unrestricted administration.</p>
+</section>
+<section id="prove-the-normal-production-state-first" class="level3">
+<h3 class="anchored" data-anchor-id="prove-the-normal-production-state-first">Prove the normal production state first</h3>
+<p>Testing should begin with the plant in its normal security configuration, outside a programming window. The expected result is that required production communications continue while high-consequence engineering operations are unavailable. Verify at least that:</p>
+<ul>
+<li>HMIs retain required monitoring and control functions;</li>
+<li>SCADA, DCS, historian and supervisory communications operate normally;</li>
+<li>peer-controller communications remain unaffected;</li>
+<li>diagnostic access works only from authorized sources where required;</li>
+<li>an ordinary workstation cannot initiate PLC engineering;</li>
+<li>a corporate endpoint containing vendor engineering software cannot become a programming endpoint;</li>
+<li>vendor remote access does not independently provide a controller path;</li>
+<li>unused or temporary commissioning routes are absent;</li>
+<li>accounts intended only for observation cannot modify the controller;</li>
+<li>programming credentials are not permanently exposed to ordinary users.</li>
+</ul>
+<p>This test is important because it proves that removing standing programming authority does not require impairing production operation. If unrestricted project download remains possible in this normal state simply because an engineer is logged onto the engineering workstation, the architecture has not implemented temporary programming authority.</p>
+</section>
+<section id="test-positive-and-negative-authorization-cases" class="level3">
+<h3 class="anchored" data-anchor-id="test-positive-and-negative-authorization-cases">Test positive and negative authorization cases</h3>
+<p>PLC security testing should deliberately include failed operations. Positive tests demonstrate that legitimate engineering works. Negative tests demonstrate that the security boundary exists. For each implemented role, attempt representative operations outside that role. Examples include:</p>
+<ul>
+<li>observer attempts project download;</li>
+<li>controls engineer attempts firmware installation;</li>
+<li>controls engineer attempts user or role administration;</li>
+<li>engineer assigned to Line A attempts programming a Line B controller;</li>
+<li>engineering user attempts access from an unauthorized workstation;</li>
+<li>authorized workstation attempts access using an unauthorized identity;</li>
+<li>vendor user attempts another controller outside the approved maintenance scope;</li>
+<li>expired maintenance access attempts to reconnect;</li>
+<li>monitoring client attempts a write operation;</li>
+<li>unauthorized application attempts to use a permitted controller protocol.</li>
+</ul>
+<p>A denied operation should ideally generate useful evidence at the enforcement point. A mature acceptance test does not record merely: <code>Access denied — PASS</code>. It records: <code>Controls Engineer / EWS-02 / PLC-17 / firmware operation / denied at effective authorization point — PASS</code>. That level of detail demonstrates which control actually enforced the requirement.</p>
+</section>
+<section id="test-the-programming-window-as-a-state-transition" class="level3">
+<h3 class="anchored" data-anchor-id="test-the-programming-window-as-a-state-transition">Test the programming window as a state transition</h3>
+<p>Programming-window controls should also be tested as a sequence rather than as an administrative concept:</p>
+<ol type="1">
+<li>Start from the production state and verify that the required operation is impossible.</li>
+<li>Open the approved engineering path.</li>
+<li>Verify that only the specified:
+<ul>
+<li>user;</li>
+<li>engineering endpoint;</li>
+<li>controller;</li>
+<li>operation;</li>
+<li>and maintenance period have become available.</li>
+</ul></li>
+<li>Perform the approved operation.</li>
+<li>Close the intervention.</li>
+<li>Then repeat the access test and prove that the temporary authority has disappeared.</li>
+</ol>
+<p>This final denial test is particularly important. Temporary firewall rules, PAM entitlements, remote sessions, controller roles, and engineering accounts frequently survive maintenance because functionality testing normally stops once the change itself has succeeded. Security acceptance should continue until the environment has returned to the intended production state.</p>
+</section>
+<section id="verify-engineering-endpoint-containment" class="level3">
+<h3 class="anchored" data-anchor-id="verify-engineering-endpoint-containment">Verify engineering-endpoint containment</h3>
+<p>The Engineering Workstation should be treated as a likely future compromise point during testing. The assessor should determine what authority is obtained if the EWS itself is assumed compromised. Check whether the workstation can:</p>
+<ul>
+<li>reach all PLCs or only its assigned controller population;</li>
+<li>retrieve reusable credentials for other controller groups;</li>
+<li>administer firewall or remote-access infrastructure;</li>
+<li>modify the authoritative project repository;</li>
+<li>disable controller security;</li>
+<li>reach safety controllers unnecessarily;</li>
+<li>connect directly to unrelated OT zones;</li>
+<li>access the Internet without mediation;</li>
+<li>communicate with corporate endpoints outside required management paths.</li>
+</ul>
+<p>The preferred result is that compromise of the EWS creates a serious but <strong>bounded</strong> incident. It should not automatically create programming authority over the entire plant. This is one of the strongest tests of whether the architecture contains genuine independent controls or merely several security layers surrounding one highly trusted workstation.</p>
+</section>
+<section id="verify-the-controller-after-the-test" class="level3">
+<h3 class="anchored" data-anchor-id="verify-the-controller-after-the-test">Verify the controller after the test</h3>
+<p>Every successful state-changing test should finish with controller-state verification. Depending on platform and operational criticality, confirm:</p>
+<ul>
+<li>deployed project or program identity;</li>
+<li>expected online/offline comparison;</li>
+<li>CPU operating mode;</li>
+<li>force state;</li>
+<li>controller diagnostics;</li>
+<li>hardware and communications configuration;</li>
+<li>firmware revision;</li>
+<li>safety signatures or locks where applicable;</li>
+<li>controller users and roles;</li>
+<li>certificate and trust configuration;</li>
+<li>absence of unintended residual engineering state.</li>
+</ul>
+<p>The baseline used for verification should be under controlled configuration management. It should not exist solely on the workstation that performed the change. This provides a second trust source: the device that modifies the PLC is not also the only authority determining what the PLC was supposed to contain.</p>
+</section>
+<section id="require-evidence-that-can-reconstruct-a-programming-event" class="level3">
+<h3 class="anchored" data-anchor-id="require-evidence-that-can-reconstruct-a-programming-event">Require evidence that can reconstruct a programming event</h3>
+<p>The final acceptance criterion is forensic.</p>
+<p>For a representative programming operation, the organization should be able to reconstruct:</p>
+<ol type="1">
+<li>who requested or performed the intervention;</li>
+<li>how the engineer authenticated;</li>
+<li>which engineering workstation was used;</li>
+<li>which PLC was targeted;</li>
+<li>when the exceptional engineering capability was activated;</li>
+<li>what privileged operation occurred;</li>
+<li>whether the controller accepted or rejected it;</li>
+<li>what controller state resulted;</li>
+<li>when the temporary authority was removed.</li>
+</ol>
+<p>Not every piece of evidence must come from the PLC. In many real systems that is impossible. PAM, jump-host logs, EWS records, firewall telemetry, engineering-software audit data, controller logs, change-detection mechanisms, and the change-management system can collectively provide the chain.</p>
+<p>What should be avoided is an architecture in which the only available evidence is: <code>EWS-01 communicated with PLC-17</code>. That proves network activity. It says almost nothing about programming authority.</p>
+</section>
+</section>
+<section id="a-reference-plc-programming-security-baseline" class="level2">
+<h2 class="anchored" data-anchor-id="a-reference-plc-programming-security-baseline">A Reference PLC Programming Security Baseline</h2>
+<p>The most useful way to conclude the analysis is to state what a defensible production configuration should look like. For a modern PLC installation, the target baseline is:</p>
+<ol type="1">
+<li><strong>Separate normal control from engineering.</strong> Process communication remains continuously available as operationally required. Project download, firmware, mode-change, forcing, and security-administration capabilities do not become permanent side effects of that connectivity.</li>
+<li><strong>Allow programming only from controlled engineering endpoints.</strong> Vendor engineering software on an arbitrary OT or corporate laptop must not be sufficient to create a programming path.</li>
+<li><strong>Preserve named identity toward the controller.</strong> Use individual accounts and controller-native identity where supported. Avoid collapsing multiple engineers and multiple PLCs behind one reusable privileged credential.</li>
+<li><strong>Use controller-native authorization as the final enforcement point where available.</strong> Network segmentation controls who can present a request. The controller should still reject operations the current identity is not authorized to perform.</li>
+<li><strong>Separate controller privileges.</strong> Diagnostics, logic modification, CPU mode control, forces, firmware maintenance, and security administration should not automatically form one <code>Full Access</code> privilege.</li>
+<li><strong>Restrict controller scope.</strong> Programming authority over one unit, line, cell, or plant area should not automatically imply programming authority over the rest of the controller estate.</li>
+<li><strong>Make high-consequence authority temporary.</strong> Project modification, forcing, mode changes, firmware maintenance, and security administration should be activated for an engineering activity rather than permanently available.</li>
+<li><strong>Treat the Engineering Workstation as privileged OT infrastructure.</strong> Harden it, restrict its connectivity, control software and project content, protect credentials, and assume its compromise in the architecture threat model.</li>
+<li><strong>Monitor controller-changing operations.</strong> A network session is not the event of interest. Downloads, edits, mode changes, forces, firmware operations and security modifications are.</li>
+<li><strong>Verify and revoke.</strong> After engineering work, verify the actual controller state and explicitly remove the additional authority that enabled the intervention.</li>
+</ol>
+<p>For brownfield systems, some of these controls will not exist natively. A PLC with no named-user model cannot suddenly acquire modern RBAC through a firewall. A controller with one full-access password cannot distinguish firmware authority from logic modification. An unauthenticated industrial protocol cannot attribute a write to a human user.</p>
+<p>The correct response is not to describe these limitations as equivalent security controls. It is to move the missing enforcement outward and document the residual risk. The hierarchy should remain:</p>
+<p><code>controller-native enforcement where possible</code></p>
+<p><code>engineering-platform enforcement where available</code></p>
+<p><code>dedicated endpoint and credential controls</code></p>
+<p><code>restricted network conduits</code></p>
+<p><code>temporary operational activation</code></p>
+<p><code>monitoring and independent state verification</code></p>
+<p>The weaker the controller, the more deliberate the surrounding engineering architecture must become. This also provides a useful procurement criterion. Asking whether a PLC <em>supports cybersecurity</em> is nearly meaningless. Asking whether it supports TLS or RBAC is better, but still insufficient. For each proposed controller platform, ask instead:</p>
+<ul>
+<li>Can individual engineering users be identified?</li>
+<li>Can engineering endpoints or applications be authenticated?</li>
+<li>Can read access be separated from modification?</li>
+<li>Can logic modification be separated from CPU mode changes?</li>
+<li>Can forces be controlled independently?</li>
+<li>Can firmware authority be separated from application programming?</li>
+<li>Can security administration be assigned to another role?</li>
+<li>Can controller privileges be scoped to individual assets?</li>
+<li>Can privileged changes be logged?</li>
+<li>Can the deployed state be independently verified?</li>
+<li>Can the production system operate normally while programming authority is disabled?</li>
+</ul>
+<p>Those answers describe the real security capability of the engineering platform far more accurately than the protocol names on its datasheet. The central design question is therefore no longer:</p>
+<blockquote class="blockquote">
+<p><strong>Who can connect to the PLC?</strong></p>
+</blockquote>
+<p>It is:</p>
+<blockquote class="blockquote">
+<p><strong>Under the normal production configuration, what must deliberately change before a named engineer on an approved engineering endpoint can modify this specific controller, and what prevents every other combination of identity, endpoint, target and operation from doing the same?</strong></p>
+</blockquote>
+<p>If that question has a precise technical answer, the PLC has an identifiable programming boundary. If the answer is simply <em>the engineering network is trusted</em>, it does not.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=cybersecurity">cybersecurity</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/operational-technology-crosshairs-2025-2026-industrial-cyber-risk/">
+<img class="see-also-card-image" src="../../longforms/operational-technology-crosshairs-2025-2026-industrial-cyber-risk/ot-threats.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Operational Technology in the Crosshairs: What the 2025–2026 Attacks Reveal About Industrial Cyber Risk</h5>
+<div class="see-also-card-subtitle">What the 2026 warnings from Europe and the United States reveal about exposed PLCs, cyber-physical risk, and resilient industrial architecture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/vex-standards-from-first-principles/">
+<img class="see-also-card-image" src="../../longforms/vex-standards-from-first-principles/vex-standards.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">VEX Standards from First Principles</h5>
+<div class="see-also-card-subtitle">From software inventories to defensible vulnerability-exploitability decisions</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/poland-energy-sector-cyberattack-2025/">
+<img class="see-also-card-image" src="../../longforms/poland-energy-sector-cyberattack-2025/Cyberattack_on_Poland.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The December 2025 Cyberattack on Poland’s Energy Sector</h5>
+<div class="see-also-card-subtitle">A detailed reconstruction of the incident, the malware, and the wider significance for energy and OT security</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=enterprise%20architecture">enterprise architecture</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/archimate_4_and_the_cartography_of_complexity/">
+<img class="see-also-card-image" src="../../longforms/archimate_4_and_the_cartography_of_complexity/archimate-cartography.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">ArchiMate 4 and the Cartography of Complexity</h5>
+<div class="see-also-card-subtitle">How ArchiMate 4 simplifies enterprise modeling while enterprise systems grow more complex, shifting the real challenge from notation to semantic governance and operational evidence</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/">
+<img class="see-also-card-image" src="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/manufacturing-process-mining.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining in Manufacturing with Purchased Components and Variable Lead Times</h5>
+<div class="see-also-card-subtitle">A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-as-computational-process-intelligence/">
+<img class="see-also-card-image" src="../../longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining as Computational Process Intelligence</h5>
+<div class="see-also-card-subtitle">A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=enterprise%20risk%20management">enterprise risk management</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/operational-technology-crosshairs-2025-2026-industrial-cyber-risk/">
+<img class="see-also-card-image" src="../../longforms/operational-technology-crosshairs-2025-2026-industrial-cyber-risk/ot-threats.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Operational Technology in the Crosshairs: What the 2025–2026 Attacks Reveal About Industrial Cyber Risk</h5>
+<div class="see-also-card-subtitle">What the 2026 warnings from Europe and the United States reveal about exposed PLCs, cyber-physical risk, and resilient industrial architecture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/">
+<img class="see-also-card-image" src="../../longforms/measuring-cyber-risk-in-italian-corporate-sector/italy-shielded.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Measuring Cyber Risk in the Italian Corporate Sector</h5>
+<div class="see-also-card-subtitle">A Banca d’Italia indicator of cybersecurity vulnerability designed to support creditworthiness evaluation</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/">
+<img class="see-also-card-image" src="../../longforms/when-digital-trust-expires-quantum-computing-and-the-collapse-of-signature-based-security/bloch_sphere_against_padlock.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When Digital Trust Expires: Quantum Computing and the Collapse of Signature-Based Security</h5>
+<div class="see-also-card-subtitle">How quantum attacks turn long-lived signatures into silent integrity and impersonation risks</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/a-cve-is-not-an-article-14-report-what-makes-a-vulnerability-reportable/">
+<img class="see-also-card-image" src="../../posts/a-cve-is-not-an-article-14-report-what-makes-a-vulnerability-reportable/cra-cve.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">A CVE Is Not an Article 14 Report: What Actually Makes a Vulnerability Reportable?</h5>
+<div class="see-also-card-subtitle">How to distinguish identifiers, severity scores, exploitation signals, product evidence, and the CRA reporting threshold</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/cra-vulnerability-scanning-11-september-2026-reporting-decision-process/">
+<img class="see-also-card-image" src="../../posts/cra-vulnerability-scanning-11-september-2026-reporting-decision-process/cra-vulnerability-scanning.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Does the CRA Require Vulnerability Scanning from 11 September 2026? No, but It Does Require a Reporting Decision Process</h5>
+<div class="see-also-card-subtitle">What manufacturers must have ready for Article 14, what customers can legitimately expect, and how scanners, SBOMs, telemetry, and threat intelligence fit</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/">
+<img class="see-also-card-image" src="../../posts/after-the-hugging-face-intrusion-what-the-new-technical-record-changes/hf-incident.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">After the Hugging Face Intrusion: What the New Technical Record Changes</h5>
+<div class="see-also-card-subtitle">A technical update to the July 2026 reconstruction, based on OpenAI's Black Hat account and subsequent primary disclosures</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/withdrawal-of-hawk/">
+<img class="see-also-card-image" src="../../posts/withdrawal-of-hawk/hawk-mythos.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">The Withdrawal of HAWK</h5>
+<div class="see-also-card-subtitle">How a Galois involution cut the effective key-recovery dimension and ended a NIST post-quantum signature candidate</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/ai-mathematics-crosses-the-systems-boundary/">
+<img class="see-also-card-image" src="../../posts/ai-mathematics-crosses-the-systems-boundary/ai-mathematics-crosses-the-systems-boundary.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">AI Mathematics Crosses the Systems Boundary</h5>
+<div class="see-also-card-subtitle">A technical commentary on proof abundance, research agents, and the infrastructure now inside the experiment</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-digital-trust-gets-a-deadline/">
+<img class="see-also-card-image" src="../../posts/when-digital-trust-gets-a-deadline/pqc-deadline.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When Digital Trust Gets a Deadline</h5>
+<div class="see-also-card-subtitle">The U.S. 2030 post-quantum cryptography order, enterprise cryptographic debt, and why a federal mandate matters beyond America</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>OPC Foundation. (2025). <strong>OPC 10000-2: OPC Unified Architecture — Part 2: Security Model, Version 1.05.06</strong>. <em>OPC Foundation</em>. <a href="https://reference.opcfoundation.org/specs/OPC-10000-2/">Specification</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>OPC Foundation. (2025). <strong>OPC 10000-18: OPC Unified Architecture — Part 18: Role-Based Security, Version 1.05.06</strong>. <em>OPC Foundation</em>. <a href="https://reference.opcfoundation.org/specs/OPC-10000-18/">Specification</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Rockwell Automation. (n.d.). <strong>Finalize All Edits in Program/Phase Command</strong>. <em>Studio 5000 Logix Designer Online Help</em>. <a href="https://www.rockwellautomation.com/en-us/docs/studio-5000-logix-designer/38-01/contents-ditamap/studio-5000-logix-designer/navigating-the-application/-product_name_rsl5k--application-main-window/-product_name_rsl5k--application-commands/finalize-all-edits-in-program-phase-command.html">Official documentation</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Siemens AG. (2024). <strong>SIMATIC S7-1500, ET 200MP Automation System: System Manual — Local User Management</strong>. <em>Siemens Industry Online Support</em>. <a href="https://support.industry.siemens.com/cs/attachments/59191792/s71500_et200mp_system_manual_en-US_en-US.pdf">Official documentation</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Siemens AG. (2024). <strong>SIMATIC S7-1500, ET 200MP Automation System: System Manual — Local User Management</strong>. <em>Siemens Industry Online Support</em>. <a href="https://support.industry.siemens.com/cs/attachments/59191792/s71500_et200mp_system_manual_en-US_en-US.pdf">Official documentation</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>Rockwell Automation. (n.d.). <strong>Use FactoryTalk Security with the Logix Designer Application</strong>. <em>Studio 5000 Logix Designer Online Help</em>. <a href="https://www.rockwellautomation.com/en-us/docs/studio-5000-logix-designer/38-01/contents-ditamap/studio-5000-logix-designer/controller-security/use--fts--with-the--product_name_rsl5k--applicatio.html">Official documentation</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Rockwell Automation. (n.d.). <strong>Change Detection</strong>. <em>ControlLogix 5580 and GuardLogix 5580 Controllers Documentation</em>. <a href="https://www.rockwellautomation.com/en-us/docs/technical/logix5000/_online/1756-um543/controllogix-5580-and-guardlogix-5580-controllers-/develop-secure-applications/change-detection.html">Official documentation</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>OPC Foundation. (2025). <strong>OPC 10000-2: OPC Unified Architecture — Part 2: Security Model, Version 1.05.06</strong>. <em>OPC Foundation</em>. <a href="https://reference.opcfoundation.org/specs/OPC-10000-2/">Specification</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>OPC Foundation. (2025). <strong>OPC 10000-18: OPC Unified Architecture — Part 18: Role-Based Security, Version 1.05.06</strong>. <em>OPC Foundation</em>. <a href="https://reference.opcfoundation.org/specs/OPC-10000-18/">Specification</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>ODVA. (n.d.). <strong>CIP Security</strong>. <em>ODVA Technologies</em>. <a href="https://www.odva.org/technology-standards/distinct-cip-services/cip-security/">Official technical documentation</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>Modbus Organization. (2012). <strong>MODBUS Application Protocol Specification V1.1b3</strong>. <em>Modbus Organization</em>. <a href="https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf">Specification</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>Modbus Organization. (2021). <strong>MODBUS/TCP Security Protocol Specification, MB-TCP-Security-v36_2021-07-30</strong>. <em>Modbus Organization</em>. <a href="https://www.modbus.org/file/secure/modbussecurityprotocol.pdf">Specification</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>Rockwell Automation. (n.d.). <strong>Change Detection</strong>. <em>ControlLogix 5580 and GuardLogix 5580 Controllers Documentation</em>. <a href="https://www.rockwellautomation.com/en-us/docs/technical/logix5000/_online/1756-um543/controllogix-5580-and-guardlogix-5580-controllers-/develop-secure-applications/change-detection.html">Official documentation</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2016-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

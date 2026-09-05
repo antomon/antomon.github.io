@@ -1,0 +1,875 @@
+---
+title: "Programming Authority Is the Real PLC Security Boundary"
+subtitle: "Why network reachability, authentication, and controller programming must be treated as separate security states."
+description: "Technical guidance for designing, enforcing, operating, and verifying PLC programming authority across modern and legacy OT environments."
+abstract: |
+    Network reachability, authenticated access, and authority to modify a PLC are different security properties. A host may reach a controller, establish a protected session, and authenticate successfully without necessarily possessing authority to download logic, perform online edits, change CPU mode, apply forces, modify configuration, replace firmware, or alter the controller's own security state.
+
+    This article treats programming authority as an exceptional engineering capability that should be deliberately assembled from an authorized principal, approved engineering endpoint, constrained controller scope, permitted operation class, maintenance context, and temporary programming window. It develops a practical least-privilege model for PLC engineering, covering project deployment, runtime intervention, firmware and recovery operations, security administration, safety-controller considerations, dedicated Engineering Workstations, restricted engineering conduits, controlled project repositories, monitoring, post-change verification, and explicit privilege revocation.
+
+    Siemens S7-1500, Rockwell Logix and FactoryTalk Security, OPC UA, CIP Security, legacy Modbus/TCP, and Modbus Security are used to show how the effective authorization point moves between the controller, engineering platform, protocol, endpoint, and network according to product capability. The resulting guidance provides a reference architecture, maintenance workflow, FAT/SAT verification model, negative authorization tests, and procurement criteria for ensuring that normal production communication does not silently become standing PLC programming authority.
+date: "2026-09-05"
+date-modified: "2026-09-05"
+categories: [cybersecurity, enterprise architecture, enterprise risk management, 🇬🇧]
+audiences: practitioner, subject-matter-expert, technical specialist
+difficulty: intermediate
+image: "plc-security-boundary.png"
+---
+
+## From Network Access to Executable Industrial State
+
+The security boundary of a production PLC is frequently drawn in the wrong place. Network diagrams naturally encourage the architect to place it at the industrial firewall, the cell/area-zone boundary, the remote-access gateway, or the controller's Ethernet interface. Those are important enforcement points, but none of them necessarily controls the capability that matters most: **the ability to alter the state from which the controller derives future industrial behavior**.
+
+For PLC security, the first architectural task is therefore to distinguish the **communications plane** from the **engineering authority plane**. A controller may legitimately need continuous network communication for HMI supervision, historian acquisition, peer-controller exchange, process-value publication, time synchronization, alarm handling, supervisory setpoints, or other operational functions. None of those requirements implies that the same communications architecture must continuously expose project download, online editing, CPU mode control, forcing, firmware management, hardware reconfiguration, or controller security administration.
+
+That distinction should be made explicit in the security design. The question is not merely whether a host can communicate with a PLC. It is whether the architecture allows that communication relationship to become an **engineering transaction capable of changing the controller's effective control state**.
+
+This article uses **executable industrial state** for that protected object. The term intentionally includes more than PLC application code. For security purposes, changes to any of the following may alter what the controller does, whether it does it, or under which rules it can subsequently be changed:
+
+* executable program blocks, routines, functions, tasks, and sequences;
+* hardware and I/O configuration;
+* communications configuration and controller-to-controller relationships;
+* technology-object, motion, drive, or process-control configuration;
+* runtime values whose modification can override normal control behavior;
+* active forces and other test or commissioning mechanisms;
+* CPU operating state and remote operating-mode transitions;
+* retentive or persistent controller state;
+* boot projects and restoration images;
+* controller firmware;
+* certificates, users, roles, passwords, protection levels, and other security configuration.
+
+A PLC can therefore remain byte-for-byte unchanged at the application-program level while its effective industrial behavior has nevertheless been materially altered. Changing the mapping between a logical variable and an output channel, leaving a force active, modifying a technology-object parameter, placing a CPU in STOP, restoring an unexpected retentive state, or altering the controller's protection configuration can be as operationally significant as modifying ladder logic. This leads to the first design rule:
+
+> **Protect the effective controller state, not merely the source program.**
+
+### Programming is an engineering-plane capability, not a network service
+
+OT network design often describes PLC access in terms such as *allowed*, *blocked*, *reachable*, or *isolated*. These terms are necessary for network engineering but insufficient for controller security. Suppose an engineering workstation is permitted through an industrial firewall to communicate with a PLC. That decision establishes a communications relationship. Depending on the product and configuration, the same relationship may permit only diagnostics, or it may expose a much larger set of functions: project upload, project download, partial block transfer, online modification, test functions, forcing, operating-mode changes, firmware operations, or security administration.
+
+The firewall normally cannot infer that distinction from the existence of the TCP session alone. Even where an industrial firewall performs protocol inspection, the security architecture should not assume that network enforcement is equivalent to controller authorization. Proprietary engineering protocols evolve, operations can be multiplexed inside permitted sessions, encrypted engineering traffic can reduce intermediary visibility, and some controller functions are meaningful only in the context of controller state and engineering-system semantics.
+
+The correct assessment sequence is therefore:
+
+1. **Path admission.**
+2. **Peer or user authentication.**
+3. **Engineering-session establishment.**
+4. **Operation authorization.**
+5. **Controller state change.**
+
+Each stage answers a different question. A path may be allowed while authentication fails. Authentication may succeed while engineering functions remain restricted. An engineering session may be established while project download is denied. Project download may be permitted while firmware replacement or user administration remains prohibited.
+
+When those distinctions collapse into one credential, one trusted workstation, or one broad controller access level, the resulting security property should be documented accurately: **successful admission to the engineering environment effectively grants a large bundle of controller authority**. That is not necessarily avoidable on every brownfield platform, but it is materially different from fine-grained authorization and should be treated as such in the risk assessment.
+
+### Separate operational control from authority over the control system
+
+A particularly important distinction is between **using the deployed control system** and **changing the system that defines how control is performed**. An HMI may legitimately write a production setpoint continuously. A supervisory controller may send active-power or reactive-power references. An operator may issue a start or stop command through an authorized HMI function. These are consequential industrial actions, but they normally occur through interfaces and constraints deliberately implemented in the deployed automation.
+
+Engineering functions occupy a different trust category. A project download can change the logic that validates future operator commands. A hardware-configuration change can alter which physical channel a logical output controls. An online edit can change interlocks while the process remains running. A force can override the relationship between field state and program state. A firmware operation can change the software platform on which those controls depend. Security administration can determine which identities will be trusted the next time someone attempts any of these operations.
+
+Programming authority is therefore not simply "write access with higher privileges." It is, in important cases, **authority over the mechanism that defines or constrains subsequent operational authority**. That difference should drive segmentation, identity design and privilege separation.
+
+An HMI that requires continuous process-write capability does not thereby require an engineering relationship with the PLC. A historian that requires unrestricted read access does not require test functions. A condition-monitoring system does not require project upload. A maintenance engineer who needs block download does not automatically require firmware authority. A controls engineer who can modify application logic does not automatically need the ability to create controller users or replace trust certificates.
+
+The objective is to eliminate these implicit privilege unions.
+
+### Determine the final enforcement point for every high-consequence operation
+
+For each state-changing PLC function, the security architect should identify the **last component in the path that can independently reject the operation**. This is the effective authority-enforcement point.
+
+For example, a programming transaction may traverse:
+
+1. Remote access service.
+2. OT access gateway.
+3. Jump host.
+4. Engineering workstation.
+5. Industrial firewall.
+6. Controller.
+
+Several security decisions may occur along that path, but they do not enforce the same property. The remote-access service may decide whether a vendor engineer can enter the OT access environment, while the jump host may constrain which administrative resources the engineer can reach. The firewall may determine whether the engineering workstation can initiate the controller protocol, and the engineering application may require credentials or project permissions. The controller may independently decide whether the authenticated identity can perform a download or change operating mode.
+
+These controls are valuable precisely because they can be independent. They become much less valuable when they all resolve to the same root of trust.
+
+Consider an architecture in which:
+
+* the remote engineer authenticates to a VPN;
+* VPN membership permits access to a shared jump host;
+* the jump host can connect to every PLC;
+* the engineering software holds reusable controller credentials;
+* all production controllers use the same credentials;
+* those credentials provide full controller access.
+
+The architecture contains multiple visible security products, but the practical authority chain is extremely short. Compromise of the remote identity or engineering environment may be sufficient to derive programming authority over the entire controller population.
+
+A more defensible architecture deliberately prevents that collapse. Authentication to remote access should not automatically authorize programming. Access to a jump host should not automatically authorize every controller. Possession of an engineering workstation should not automatically confer every CPU function. Authorization for one controller should not imply authorization for the cell, plant, or fleet. Permission to modify application logic should not imply authority over firmware or security configuration.
+
+This gives a second design rule:
+
+> **Do not count security layers; determine which independently enforced conditions must fail before unauthorized executable-state modification becomes possible.**
+
+### Move enforcement toward the protected operation
+
+The preferred architecture is to enforce authorization as close as technically possible to the controller function being protected. If the PLC can distinguish users, roles, applications, or function rights, use those capabilities rather than relying exclusively on upstream network admission.
+
+Where the controller cannot provide the required granularity, the missing control must move outward into the engineering architecture: dedicated Engineering Workstations, restricted engineering conduits, privileged credential handling, physical or local mode controls, temporary access activation, and independent verification of the deployed state.
+
+This distinction is particularly important in brownfield environments. A legacy controller protected by a shared full-access password does not acquire fine-grained authorization because it sits behind an industrial firewall. The firewall can reduce who reaches the controller; it cannot create controller function rights that the device does not implement.
+
+The remainder of the design should therefore preserve three independent questions: which systems can reach the PLC, which identities are admitted, and which state-changing operations those identities can execute. The following sections turn those questions into a practical engineering and verification model.
+
+## Three Security States: Reachability, Authentication, and Authority
+
+Once programming is treated as an exceptional engineering capability, PLC access should be assessed through three separate security states:
+
+1. **Reachability**: can the initiating system establish the communications path required to interact with the controller?
+2. **Authentication**: which human, device, or application identity has been accepted on that path?
+3. **Authority**: which controller functions may that authenticated principal actually invoke?
+
+These states are cumulative in a successful engineering transaction, but they are enforced by different mechanisms and should be tested independently.
+
+The distinction is operationally important because OT architectures frequently prove the first state and infer the other two. A firewall review establishes that only an engineering subnet can reach TCP ports associated with a controller and the assessment concludes that programming is restricted to authorized engineers. That conclusion is not supported by the evidence. The firewall has established a source-to-destination communications policy. It has not necessarily established who is operating the source, which engineering application is generating the traffic, what credentials the controller accepts, or which controller functions become available after the session is established.
+
+The same problem occurs with authentication. A protected and mutually authenticated connection establishes a much stronger communications relationship than an unauthenticated one, but it still does not establish least privilege. An authenticated engineer may have diagnostic access, project-read access, download authority, firmware authority, or effectively unrestricted controller administration. Authentication answers **who has been admitted**. Authorization answers **what the admitted identity may cause the controller to do**. A PLC security assessment should therefore produce separate evidence for all three states.
+
+| Security state | Security question                                                             | Typical enforcement points                                                                                                                    | Evidence required                                                                                          |
+| -------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Reachability   | Which systems can initiate the communications required for this PLC function? | Routing, VLANs, zones and conduits, industrial firewalls, ACLs, VPNs, jump infrastructure                                                     | Source and destination assets, allowed services, network paths, firewall policy, observed connections      |
+| Authentication | Which identity is established before access is accepted?                      | Controller authentication, certificates, engineering platform, identity provider, PAM or remote-access infrastructure                         | Named user, device/application identity, credential mechanism, certificate validation, authentication logs |
+| Authority      | Which operation can the authenticated principal perform on this controller?   | Controller roles and function rights, engineering-platform security, protocol authorization, physical mode controls, compensating enforcement | Effective role, permitted controller functions, denied functions, operation logs, configuration evidence   |
+
+: Reachability, authentication, and authority are separate security properties and require separate evidence. {#tbl-programming-authority-is-the-real-plc-security-boundary-three-security-states}
+
+### Reachability is a communications-path property
+
+Reachability should be evaluated for the **actual engineering path**, not inferred from high-level network zoning. Saying that a PLC is located in an automation cell or behind an industrial firewall is insufficient. The assessment should determine which systems can actually initiate the protocol exchanges required by the engineering tool and under which network conditions. This includes more than explicit firewall policy. Effective reachability can be introduced through:
+
+* dual-homed engineering stations;
+* remotely accessible jump hosts;
+* maintenance laptops temporarily connected inside the control zone;
+* VPN termination inside an OT network;
+* routing between nominally separate automation cells;
+* permissive any-to-any rules between engineering and controller segments;
+* vendor remote-support infrastructure;
+* NAT that obscures the original initiating endpoint;
+* secondary controller interfaces connected to less restricted networks;
+* temporary commissioning rules that were never removed.
+
+For each PLC family, the assessor should inventory every path capable of invoking a state-changing controller function, not only routable IP services. This includes vendor engineering protocols, web administration, secondary network interfaces, serial or service interfaces, local programming ports, removable media or controller memory cards, and physical mode or protection controls where the platform provides them.
+
+Only then should the required production services be separated from programming and maintenance services. This is particularly important where engineering discovery, diagnostics, programming, web administration, OPC UA, Modbus/TCP, EtherNet/IP, PROFINET-related services, and other management or process functions coexist on the same controller interface. A network programming boundary is incomplete if equivalent authority remains available through an unmanaged local or removable-media path.
+
+A requirement such as `Engineering VLAN may communicate with PLC VLAN` is therefore too coarse. A defensible conduit definition should instead specify that approved engineering endpoints may initiate only the minimum services required for defined engineering functions and only toward an explicitly identified population of controllers.
+
+The difference is substantial. The first rule trusts a network location. The second constrains an engineering capability. Reachability should also be evaluated independently in both normal and maintenance states. If additional controller services become reachable during maintenance, that transition is itself a privileged security event and should be controlled and logged.
+
+### Authentication is not one identity
+
+PLC engineering commonly involves several identities at once:
+
+* the human engineer;
+* the engineering workstation;
+* the engineering application;
+* the remote-access session;
+* the engineering project or environment;
+* the controller;
+* and, on some platforms, a service or application account used by the engineering software.
+
+These identities should not be collapsed into a generic concept of an *authenticated connection*. For example, MFA at the remote-access gateway can establish that a named engineer entered the OT environment. It does not necessarily prove which user subsequently operated the engineering workstation if that workstation uses a shared local account. Likewise, a controller certificate can authenticate the PLC to the engineering application without authenticating the human engineer to the PLC. A workstation certificate may identify the engineering endpoint while all engineers operating that endpoint obtain the same controller privilege.
+
+Each mechanism therefore needs to be mapped to the identity that it actually proves. For high-consequence programming, the preferred design is to retain attribution as far toward the controller as the product allows. Where controller-native named-user authentication exists, it should normally be used. Where only workstation or shared controller credentials are available, the loss of identity granularity should be documented and compensated upstream through controlled workstation access, privileged-session recording, credential management, and change correlation.
+
+The assessment should specifically look for **identity collapse**:
+
+> many real users → one jump-host account → one engineering account → one shared PLC credential
+
+Such a chain may satisfy several authentication requirements individually while providing poor attribution at the point where controller state actually changes. Shared credentials are particularly problematic when they are also shared across controllers. A credential compromise then expands simultaneously along two dimensions: from one person to multiple persons and from one controller to multiple assets.
+
+### Authority is an operation-specific property
+
+Authorization should be assessed at the granularity of controller operations, not at the level of *access to the PLC*. The relevant question is not:
+
+> Can this engineer access PLC-17?
+
+It is:
+
+> **Which operations can this engineer perform against PLC-17 after all preceding access controls have succeeded?**
+
+That operation set should be enumerated. At minimum, distinguish:
+
+* diagnostics and status observation;
+* program or project upload;
+* program or project download;
+* partial block or routine transfer;
+* online editing;
+* test functions;
+* runtime value modification;
+* forcing;
+* CPU mode change;
+* hardware and communications configuration;
+* firmware update;
+* persistent-state restore;
+* security configuration;
+* user and role administration;
+* certificate or trust-store administration.
+
+The exact list is platform-specific. The principle is not. **Safety PLCs and controllers implementing safety functions should be treated as a distinct authorization case.** Modification of the safety application, safety signatures or locks, safety-mode transitions, and safety-related commissioning functions should not automatically inherit the authorization model used for ordinary process-control logic. Where the platform or functional-safety lifecycle requires local action, physical keys, signatures, safety credentials, or additional approval, those mechanisms form part of the effective programming boundary. 
+
+A controller role called `Engineer`, `Programmer`, `Administrator`, or `Full Access` should never be accepted as sufficient evidence of least privilege. The assessment must resolve the role into the controller functions it actually authorizes.
+
+This is especially important where engineering platforms expose coarse permissions. If `Programmer` permits logic download, CPU STOP, forcing, and configuration transfer as a single indivisible privilege, the security documentation should state exactly that. The inability to separate those functions is a technical limitation of the deployed authorization model and should drive compensating controls.
+
+Conversely, where the controller provides function-level authorization, broad access groups should not be retained merely because they are easier to administer.
+
+### Secure transport does not imply authenticated authority
+
+Industrial security reviews also need to prevent a common category error: equating cryptographic protection with authorization.
+
+TLS, IPsec, CIP Security, secure OPC UA configurations, VPNs, and similar technologies can provide essential properties including confidentiality, integrity, endpoint authentication, and resistance to traffic manipulation. Those properties protect communications. They do not automatically define which industrial operation an authenticated peer may perform.
+
+OPC UA illustrates the distinction particularly clearly. SecureChannels and Sessions can provide protected communication and authenticated application or user identity, while authorization is subsequently applied to access to Nodes, Variables, Methods, and other address-space resources.[^programming-authority-is-the-real-plc-security-boundary-opcua-security-model][^programming-authority-is-the-real-plc-security-boundary-opcua-role-administration]
+
+The same architectural rule applies outside OPC UA:
+
+> **A secure session is a precondition for trustworthy authorization; it is not authorization itself.**
+
+This matters especially for procurement. Requirements such as `TLS shall be enabled`, `CIP Security shall be supported`, or `certificate authentication shall be used` do not establish the programming-security objective unless the supplier also demonstrates how authenticated identities are mapped to privileged controller functions.
+
+### Treat denial as security evidence
+
+Reachability, authentication, and authority should be verified with both positive and negative tests. A successful engineering transaction demonstrates that the intended path works; it does not demonstrate that adjacent unauthorized paths are blocked.
+
+At this stage the required evidence is simple: an unauthorized endpoint must fail before acquiring engineering reachability, an unauthorized identity must fail authentication, and an authenticated identity must be denied operations outside its assigned authority. The complete FAT/SAT and cybersecurity-acceptance test model is defined later in **Verify the Programming Boundary, Not the Security Features**.
+
+## What Programming Authority Should Look Like in Practice
+
+The previous distinctions become useful only when they change how the engineering environment is configured. For a production PLC, the objective should not be to create a generic `Engineer` role with permanent full access. The objective should be to separate routine engineering activity from the small number of operations capable of materially changing controller behavior or its security state.
+
+A practical design can normally be built around five operational profiles:
+
+| Profile                                | Typical functions                                                             |                       Normal availability | Recommended treatment                                                     |
+| -------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------: | ------------------------------------------------------------------------- |
+| **Observe / Diagnose**                 | Online diagnostics, status, alarms, program inspection where supported        | Continuous or broadly available within OT | Named users, read-oriented rights, no controller modification             |
+| **Control Engineering**                | Project/block download, approved online edits, selected configuration changes |                                 Temporary | Enabled for approved engineers, endpoints, controllers and change windows |
+| **Commissioning / Recovery** | CPU mode changes, forces, broader configuration, application/project restoration | Exceptional | Explicit activation, additional procedural controls, intensive monitoring |
+| **Platform Maintenance** | Firmware, boot-image or persistent-state recovery, controller lifecycle operations | Rare | Separate maintenance identity; temporary activation |
+| **Security Administration** | Users, roles, credentials, certificates, trust configuration, protection settings | Rare | Separate security-administration identity; temporary activation |
+
+: A practical PLC authorization model should separate observation, application engineering, exceptional runtime intervention, platform maintenance, and security administration. {#tbl-programming-authority-is-the-real-plc-security-boundary-practical-privilege-model}
+
+The exact implementation depends on the controller family, but this is a useful target configuration because it separates privileges according to operational need rather than organizational job title.
+
+A controls engineer may require the ability to modify application logic. That does not imply a requirement to replace controller firmware. A commissioning engineer may temporarily need forcing and CPU-mode authority, but that does not justify leaving those capabilities permanently available. Platform maintenance may require firmware or recovery operations without requiring authority over controller users and trust configuration. Conversely, security administration may require management of users, roles, credentials and certificates without requiring any ability to change process logic or firmware.
+
+The separation should be preserved wherever the controller and engineering platform make it technically possible. Where the PLC supports sufficiently granular function rights, implement these separations in the controller itself. Where it does not, reproduce them as far as possible using engineering hosts, privileged-access controls, network conduits, credential separation, controller mode controls, and maintenance procedures. The important point is to start with the required authority model and then determine how much of it the selected platform can actually enforce.
+
+### Start with a restrictive production state
+
+For a PLC already commissioned and controlling a running process, the default security state should permit only the communications and engineering functions required for normal production. In a typical plant this means:
+
+* HMI and supervisory control remain available;
+* controller-to-controller communications remain available;
+* telemetry and historian acquisition remain available;
+* required process writes remain available;
+* engineering diagnostics may remain available from controlled endpoints;
+* project download is unavailable unless deliberately enabled;
+* firmware operations are unavailable;
+* security administration is unavailable to ordinary engineering accounts;
+* exceptional runtime functions such as forcing are unavailable or tightly restricted.
+
+This distinction is important because disabling all controller communication outside maintenance would normally be operationally impossible. Disabling or restricting **engineering authority**, however, is often entirely feasible. The architecture should therefore separate a permanent **production conduit** from an exceptional **engineering capability**, even when both ultimately reach the same physical controller interface. For a modern controller with suitable native authorization, that separation may occur largely inside the PLC. For a legacy controller, it may instead depend on whether the engineering workstation can reach the programming service at all. The desired production state is simple:
+
+> **The controller remains fully usable for production while no ordinary user possesses an immediately usable path to unrestricted programming authority.**
+
+### Use a dedicated engineering workstation
+
+PLC programming should originate from a dedicated and governed engineering endpoint, not from whichever workstation happens to contain the vendor software. For a small site, this may be one hardened Engineering Workstation. For a larger installation, it may be a pool of privileged engineering workstations or virtual engineering desktops in a dedicated engineering zone. The important properties are more significant than the deployment form. The workstation should have:
+
+* only approved automation and engineering software;
+* controlled software installation and local administration;
+* no routine corporate email;
+* no unrestricted Internet browsing;
+* restricted removable-media use;
+* endpoint protection compatible with the automation platform;
+* controlled access to project repositories;
+* protected engineering credentials and certificates;
+* time synchronization sufficient for correlation with controller and security logs;
+* logging of privileged user access and engineering activity;
+* controlled mechanisms for obtaining vendor updates, firmware, libraries and device packages.
+
+The workstation should also have a stable machine identity where the surrounding technology can use it in policy decisions. This avoids one of the weakest common configurations: relying on a user credential while allowing that credential to program PLCs from arbitrary devices. For high-consequence controllers, both conditions should normally be required:
+
+> **approved engineer + approved engineering endpoint**
+
+A compromised corporate laptop should not become a controller-programming station merely because an engineer's password was stolen. Conversely, compromise of the engineering workstation should not automatically provide the attacker with every human privilege available in the automation environment.
+
+### Do not give the engineering workstation unrestricted PLC reachability
+
+A dedicated Engineering Workstation is not itself a sufficient control. It can become one of the highest-value attack assets in the plant, so its network reach should be constrained to the controllers that it genuinely needs to engineer. Avoid `Engineering Workstation → all OT subnets → all controller services`; prefer explicit source, destination, and service relationships such as `Engineering Workstation A → PLC group A → required engineering services`.
+
+Where operationally practical, the engineering conduit should be closed or reduced outside approved programming activity. If permanent connectivity is needed for diagnostics, separate the services required for diagnostics from those required for programming wherever the protocol and enforcement technology permit that distinction. For controller fleets, segmentation should also reduce lateral programming capability. An engineering station used for one production line should not automatically obtain programming reachability to every PLC in the plant merely because all controllers belong to the same OT security zone. This is one of the places where zones and conduits need to become more granular than network administration convenience would otherwise dictate.
+
+### Use named identities all the way to the controller where possible
+
+The preferred configuration is for the controller to distinguish the actual engineering identities exercising privileged functions. Where supported, configure named users and roles in the PLC rather than a common engineering password. Do not deliberately collapse `Engineer A`, `Engineer B`, and `Vendor C` into a single `PLC_ENGINEER` identity unless the controller technically forces that model.
+
+The closer identity persists to the controller, the better the resulting authorization and audit semantics. Where the platform supports controller-native roles or function rights, explicitly map engineering personas to functions rather than assigning full access to the entire controls team. A representative configuration would be:
+
+| Function | Observer | Controls Engineer | Commissioning Engineer | Platform Maintainer | Security Administrator |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Diagnostics | ✓ | ✓ | ✓ | ✓ | Restricted |
+| Read/inspect program | ✓ | ✓ | ✓ | — | — |
+| Project/block download | — | Temporary | Temporary | — | — |
+| Online edit | — | Temporary | Temporary | — | — |
+| Hardware configuration | — | Restricted | Temporary | Restricted | — |
+| CPU mode change | — | — / Temporary | Temporary | Restricted | — |
+| Forces/test overrides | — | — / Temporary | Temporary | — | — |
+| Firmware / recovery operations | — | — | — / Exceptional | Temporary | — |
+| Manage users/roles | — | — | — | — | Temporary |
+| Certificates/trust/protection settings | — | — | — | — | Temporary |
+
+: Example least-privilege mapping for PLC engineering functions. Actual capability separation depends on the controller platform. {#tbl-programming-authority-is-the-real-plc-security-boundary-role-matrix}
+
+The table is deliberately restrictive. It is easier to relax a permission for a documented operational requirement than to justify why every controls engineer permanently requires firmware, force, mode-change, and security-administration capabilities.
+
+### Treat full project download as a controlled deployment
+
+A project download should be handled more like deployment of production executable code than like ordinary interactive access. The engineering workstation should not be treated as the authoritative source merely because it contains the project currently open in the engineering application. Before download, the operator should be able to establish:
+
+* which controller is being modified;
+* which project or project version is approved;
+* whether the offline project corresponds to the intended plant configuration;
+* who approved the modification;
+* whether the required backup exists;
+* whether the process is in the required state for deployment;
+* whether a rollback or recovery path exists.
+
+The actual download should then be attributable to the engineer and engineering endpoint. After download, verify the controller against the intended project state rather than relying solely on the engineering tool reporting that the operation completed successfully.
+
+A secure workflow is therefore `approved project → controlled engineering workstation → authorized download → controller verification` not `project found on engineering laptop → download → success message`. The distinction matters because authentication protects who executed the transfer; it does not establish that the transferred project was the correct one.
+
+### Restrict online edits more aggressively than their convenience suggests
+
+Online editing is operationally attractive because it can modify logic without a complete stop-and-download sequence. That same property makes it particularly sensitive. The controller may remain in RUN while executable behavior changes.
+
+Where online editing is required, it should be explicitly included in the authorization model rather than assumed to be part of generic programming rights. Where the platform distinguishes stages of the edit lifecycle, security monitoring should focus on the point at which the modification becomes effective, not merely on establishment of the engineering session. Rockwell Logix Designer, for example, distinguishes stages associated with online edits before they are finally incorporated into the executing program.[^programming-authority-is-the-real-plc-security-boundary-rockwell-online-edits]
+
+For critical process logic, the organization may reasonably choose to prohibit online editing entirely during normal production and allow it only under a dedicated maintenance procedure. The correct choice depends on process availability requirements and the automation platform, but it should be a deliberate configuration decision.
+
+### Make forces exceptional and visible
+
+Forces deserve separate treatment because they can alter process behavior while leaving the underlying application logic unchanged. They are indispensable during commissioning and troubleshooting, which is precisely why they are dangerous as standing authority. A good production policy is:
+
+* no routine use of forces;
+* activation only for an identified maintenance or commissioning activity;
+* clear indication that forcing is active;
+* recording of who enabled or modified the force;
+* explicit verification that no unintended forces remain before the intervention is closed.
+
+Where controller or engineering software exposes force status, include it in post-maintenance verification. The failure mode to prevent is not merely unauthorized force creation. It is also an authorized engineer legitimately creating a force and the plant subsequently returning to nominal service with that exceptional state still active.
+
+### Separate CPU mode authority
+
+Remote RUN/STOP, PROGRAM/RUN or equivalent mode transitions should not automatically accompany logic-editing authority. A mode transition may have immediate availability or safety consequences even though no project content changes. Where the controller supports independent rights for mode changes, use them. Where a physical key switch or local mode selector can constrain remote mode changes, its operating policy should be part of the security design rather than treated solely as an operations issue.
+
+The preferred production configuration is that remote mode changes are unavailable unless there is an explicit operational requirement for them. For remote maintenance, especially, the architecture should not assume that the ability to download necessarily requires unrestricted remote authority to place any controller in STOP.
+
+### Separate firmware from application engineering
+
+Firmware maintenance should normally sit outside the everyday controls-engineering privilege set. Firmware installation can:
+
+* restart or render a controller temporarily unavailable;
+* change protocol behavior;
+* change security functionality;
+* alter compatibility with the engineering project;
+* require conversion or migration of controller state;
+* introduce a new trusted software base.
+
+Treat it as platform maintenance:
+
+* Firmware packages should come from controlled sources, be checked according to vendor-supported integrity mechanisms, and be staged through the controlled engineering environment rather than downloaded casually from the Internet onto the programming workstation.
+* Firmware authority should preferably belong to a separate administrative or maintenance role and should be enabled only when required.
+
+The fact that the same engineering suite provides both application download and firmware update is a user-interface convenience. It is not a reason to assign both authorities to the same users.
+
+### Keep security administration separate from PLC programming
+
+The strongest separation should normally exist around the functions that change the controller's own trust model. These include:
+
+* creating or deleting controller users;
+* modifying roles;
+* assigning function rights;
+* changing passwords or protection levels;
+* enrolling or replacing certificates;
+* modifying trusted applications or trust stores;
+* disabling security features.
+
+A controls engineer who needs to change process logic does not thereby need to redefine who is permitted to change process logic. Security administration should therefore use a distinct administrative role wherever the controller or engineering platform supports sufficiently granular authorization. Application engineering and security administration should be technically separated wherever possible rather than relying solely on procedural separation.
+
+The administrative account itself should not be the account routinely used for programming. This reduces the consequence of compromise of a normal engineering identity: an attacker who obtains application-programming authority should not automatically be able to create a new persistent privileged user, replace trust certificates, or weaken the controls that would otherwise constrain subsequent access.
+
+### Use the privilege model as the design baseline
+
+The controls above define the target production state: programming originates from controlled engineering endpoints, identities remain attributable, controller scope is constrained, high-consequence functions are separated, and modification authority is temporary rather than standing.
+
+Not every brownfield controller can enforce this model natively. Where named identities, function-level authorization, auditability, or temporary privilege are unavailable, the limitation should be stated explicitly and the missing enforcement moved outward into the engineering platform, endpoint, credential, network, or maintenance workflow. The next question is therefore implementation-specific: 
+
+> *which parts of this authority model can Siemens, Rockwell, OPC UA, CIP Security, and legacy industrial stacks actually enforce, and at which layer?*
+
+## Implementing the Model on Real OT Platforms
+
+The target architecture is clear: dedicated engineering endpoints, named identities, restricted engineering conduits, controller-native authorization where available, temporary high-consequence privileges, and independent verification after changes.
+
+The implementation, however, differs substantially by platform. The important design decision is not which protocol appears on the architecture diagram, but **which component can actually distinguish and reject a privileged controller operation**. A useful implementation hierarchy is:
+
+| Platform capability                                                            | Preferred security treatment                                                                              |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Controller supports named users and function rights                            | Enforce privilege in the controller and reinforce it with network and endpoint controls                   |
+| Engineering platform can authorize user + workstation + operation + controller | Use it to constrain engineering authority before the request reaches the PLC                              |
+| Protocol supports identity and operation/resource authorization                | Apply it to the operations that actually traverse that protocol                                           |
+| Controller exposes only coarse password/access levels                          | Compensate with dedicated EWS, tightly restricted conduits, temporary reachability and credential control |
+| Protocol exposes unauthenticated writes                                        | Treat network reachability to write functions as a privileged capability                                  |
+
+The following configurations illustrate what that means in practice.
+
+### Siemens S7-1500: use CPU user management, not merely network trust
+
+For current S7-1500 deployments, the preferred configuration is to make the CPU itself an authorization point. Siemens S7-1500 CPUs configured with firmware V3.1 or later support User Management & Access Control based on users, roles and CPU function rights. TIA Portal manages the users and roles under the project security settings and stores the assignment of CPU function rights to roles for each configured CPU.[^programming-authority-is-the-real-plc-security-boundary-siemens-user-management]
+
+This should materially change the design of the engineering environment. Do not configure `Engineering VLAN → S7-1500 → shared full-access credential` as the normal production model. Prefer `named engineer → controlled TIA Portal workstation → authorized CPU → role/function rights`.
+
+For each CPU or security-equivalent controller group, define at least a read-oriented engineering role and one or more modification roles. Do not assign `Full access` simply because a user requires TIA Portal. Siemens explicitly distinguishes full, read and HMI-related access through CPU function rights in the current S7-1500 access model; loading CPU configuration requires the corresponding full-access function right.[^programming-authority-is-the-real-plc-security-boundary-siemens-user-management]
+
+The practical configuration review should therefore inspect the TIA Portal project and the deployed CPU rather than merely record that password protection is enabled. For each production CPU, verify:
+
+* configured firmware and available user-management model;
+* whether local or applicable central user management is enabled;
+* named users and assigned roles;
+* CPU function rights attached to those roles;
+* which users possess full-access rights;
+* whether contractors or commissioning accounts remain configured;
+* whether identical privileged credentials are reused across unrelated CPUs;
+* whether TIA Portal can reach the CPU continuously or only through the intended engineering conduit.
+
+For a new S7-1500 deployment, **full-access rights should be exceptional**. An engineer who normally performs diagnostics should operate using read-oriented rights. Full access should be activated only for personnel and periods in which configuration or programming work actually requires it.
+
+The network architecture remains necessary. TIA Portal should originate from controlled engineering systems and the PLC engineering path should be limited to those systems. Controller-native authorization is the final control, not a justification for permitting arbitrary OT endpoints to reach engineering services.
+
+### Rockwell Logix: bind authority to user, workstation, action and controller
+
+Rockwell provides a particularly useful model for engineering authorization because FactoryTalk Security can evaluate more than the username. For Logix Designer environments, access decisions can incorporate the logged-in user, the workstation, the action being attempted, and the protected resource such as the controller.[^programming-authority-is-the-real-plc-security-boundary-rockwell-factorytalk-context]
+
+That should be used directly in the design. Instead of defining a plant-wide `PLC Engineers` group with unrestricted Logix authority, create permissions around actual engineering operations and controller scope. A production configuration should aim to ensure that:
+
+* engineers use individual FactoryTalk identities;
+* Logix Designer runs only on authorized engineering workstations;
+* permissions are scoped to the controllers the engineer supports;
+* programming actions are separated from routine observation where possible;
+* processor mode changes are restricted;
+* administrative capabilities are not inherited merely from programming membership.
+
+This allows an authorization rule to become materially stronger than `Alice is an engineer` because the effective decision can also depend on `Alice + EWS-03 + requested action + PLC-17`. That is a useful model for high-consequence OT systems because compromise of any single identity attribute does not necessarily reproduce the complete legitimate engineering context.
+
+Rockwell controllers also expose controller change-detection capabilities that should be enabled and incorporated into monitoring. ControlLogix change detection can track events including online edits, I/O and SFC forces, firmware activity, remote and keyswitch mode changes, task or program-property changes, safety-related events and other controller changes.[^programming-authority-is-the-real-plc-security-boundary-rockwell-change-detection] For Logix environments, therefore, the recommended setup combines `FactoryTalk authorization + dedicated EWS + restricted controller scope + controller change detection` rather than relying solely on an EtherNet/IP firewall rule.
+
+Change detection is not a substitute for authorization, and its audit value is not proof that the resulting controller state is correct. It is useful because it gives the defender a controller-proximate indication that privileged state changed.
+
+### OPC UA: configure RBAC for UA operations, but do not mistake it for PLC programming security
+
+OPC UA should be configured rigorously wherever it carries operational writes, configuration Methods, recipe changes, parameterization, or other privileged functions. The specification cleanly separates authentication from authorization and permits Roles to be mapped to permissions on Nodes. Role assignment can also incorporate user identity and application identity, while the role model supports restrictions associated with applications and endpoints.[^programming-authority-is-the-real-plc-security-boundary-opcua-security-model][^programming-authority-is-the-real-plc-security-boundary-opcua-role-administration] A sensible production OPC UA configuration is therefore:
+
+* disable anonymous access where it is not explicitly required;
+* use authenticated client applications;
+* authenticate users where user attribution is required;
+* separate `Observer`, `Operator`, `Engineer`, `ConfigureAdmin` and `SecurityAdmin`-type responsibilities according to actual operational need;
+* make process values read-only unless the consuming application requires writes;
+* restrict Methods according to role;
+* restrict privileged roles by application and endpoint where supported;
+* separate security administration from ordinary engineering.
+
+The important limitation is architectural: **OPC UA protects only the operations that traverse OPC UA**. If TIA Portal, Studio 5000 or another vendor engineering suite uses a different protocol to download controller logic, OPC UA RBAC has no direct authority over that programming transaction.
+
+Do not therefore accept `OPC UA secured with certificates and RBAC` as evidence that PLC programming is secured. The assessment must ask which protocol performs the actual project download, online edit, firmware operation or CPU mode transition and identify the authorization mechanism on that path.
+
+### CIP Security: secure EtherNet/IP, then verify product authorization separately
+
+CIP Security should similarly be treated as a set of security capabilities rather than as a single checkbox that establishes programming least privilege.
+
+The EtherNet/IP Confidentiality Profile provides protected communications and endpoint authentication. The CIP User Authentication Profile adds user authentication that can serve as a basis for authorization and role-based access control.[^programming-authority-is-the-real-plc-security-boundary-odva-cip-security] That is useful, but the security requirement should not stop at:
+
+`CIP Security enabled`.
+
+For each device type, determine:
+
+* which CIP Security profiles the product actually supports;
+* which profiles are enabled in the deployed configuration;
+* how device identity is provisioned;
+* whether user authentication is supported;
+* how authenticated users are mapped to product permissions;
+* whether the required engineering operation is actually constrained by that mapping.
+
+The last question is critical: secure EtherNet/IP can prevent unauthenticated endpoints from impersonating legitimate CIP peers and can protect communications against manipulation. Those properties are valuable. They do not by themselves prove that an authenticated engineering user has least-privilege access to Logix programming functions. For Rockwell controller programming, the resulting architecture may therefore involve both CIP Security at the communication layer and FactoryTalk/controller security at the engineering authorization layer. These are complementary controls.
+
+### Legacy Modbus/TCP: assume that write reachability is authority
+
+Legacy Modbus/TCP requires a different design approach because the base protocol has no general human-user authentication or standardized role model. It defines operations such as reading and writing coils and registers; if the server accepts the request, there may be no intervening user-authorization decision comparable to that available on more modern engineering platforms.[^programming-authority-is-the-real-plc-security-boundary-modbus-application-protocol] For such devices, the network boundary becomes much more important. Do not place historian, monitoring, HMI, engineering and third-party clients in the same write-capable trust set merely because all of them communicate using Modbus/TCP.
+
+Separate at least `read-only consumers` from `clients requiring write functions`. Where an industrial firewall can reliably enforce Modbus function codes for the specific implementation, monitoring paths should permit only the required read functions and deny write functions.
+
+For a device that cannot authenticate clients itself, the preferred rule is:
+
+> **Only explicitly authorized systems should be capable of delivering a write request to the device.**
+
+This is one of the cases in which network reachability can become very close to operational authority. Modbus Security improves the model by combining Modbus with TLS, X.509 certificates and support for role information used in request authorization.[^programming-authority-is-the-real-plc-security-boundary-modbus-security-protocol-spec] Where both endpoints genuinely support it, it should be evaluated as an alternative to unprotected Modbus/TCP. But again, verify the implementation rather than the protocol label. The existence of a certificate does not tell the assessor which register writes the identified client is authorized to perform.
+
+### Choose the enforcement model explicitly
+
+The final design decision can therefore be made using a simple hierarchy:
+
+1. **Modern controller with usable native RBAC:** enforce authorization in the controller, then reinforce it with dedicated engineering endpoints and restricted conduits.
+2. **Controller with strong engineering-platform security but limited native function rights:** use engineering-platform authorization plus endpoint and network controls, and make broad controller credentials inaccessible outside that path.
+3. **Controller with coarse password protection:** treat possession of the password as highly privileged, vault it where operationally feasible, constrain the EWS-to-controller path, and make programming availability temporary.
+4. **Legacy unauthenticated write protocol:** treat allowed write-capable network paths as authority and aggressively minimize them.
+
+No product feature removes the need to determine the actual authority chain. The design is complete only when the architect can identify the component that denies each prohibited operation and demonstrate that compromising an earlier component does not automatically bypass that decision.
+
+## Make Programming a Controlled Maintenance State
+
+The most effective practical improvement in many PLC environments is not another authentication mechanism. It is to stop treating programming as a permanently available production service. A production plant usually needs continuous control communication. It rarely needs continuous project download, online editing, firmware maintenance, forcing or security administration.
+
+The preferred operating model is therefore to maintain two distinct security states:
+
+| Normal production                            | Programming window                                           |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| Process communications enabled               | Process communications remain enabled                        |
+| Monitoring/diagnostics available as required | Monitoring/diagnostics available                             |
+| Engineering path closed or restricted        | Engineering path activated for defined targets               |
+| Modification privileges absent or inactive   | Required modification privilege enabled                      |
+| Firmware/security administration disabled    | Enabled only if specifically required                        |
+| No active forces expected                    | Forces permitted only if the approved activity requires them |
+| Controller in intended production mode       | Mode changes permitted only if required                      |
+| Baseline state known                         | Change executed and resulting state verified                 |
+
+: Programming should be a temporary maintenance state superimposed on normal production, not a permanently available property of the PLC environment. {#tbl-programming-authority-is-the-real-plc-security-boundary-programming-window}
+
+The implementation does not require every controller to understand maintenance tickets or time windows. The workflow can be distributed across PAM, jump infrastructure, firewall policy, engineering workstations, controller roles and operational procedure. What matters is that opening the programming capability is deliberate and that closing it is equally explicit.
+
+### Step 1: define the exact change before opening the path
+
+Before privileged PLC access is enabled, identify:
+
+* responsible engineer;
+* approved engineering workstation;
+* target controller or controller set;
+* project or configuration baseline;
+* required operation;
+* maintenance or change reference;
+* expected CPU/process state;
+* start and expiry of the intervention;
+* recovery or rollback method.
+
+Do not open generic plant-wide programming access for a change affecting one controller. Likewise, do not enable firmware authority for an application-logic modification or enable security administration for a routine project download. The requested capability should correspond to the actual intervention.
+
+### Step 2: activate the minimum engineering path
+
+The programming window should then activate only the communications required for the work. A typical remote engineering path should be `engineer → MFA/PAM → OT jump environment → approved EWS → industrial firewall → selected PLC`. The external engineer's laptop should not become a directly trusted controller client.
+
+Where the EWS normally has diagnostic reachability but not programming reachability, activate only the additional services or controller paths required for the change. Where protocol separation is not technically feasible, use the strongest available upstream and controller-native controls to restrict who can exploit the broader session. Temporary rules should have an explicit expiry. A firewall rule created for commissioning and left indefinitely in production is not a programming window; it is standing authority.
+
+### Step 3: elevate the required controller privilege
+
+Network admission should be followed by operation-specific privilege. Use the narrowest available controller or engineering-platform role. If the intervention requires block download, do not elevate the engineer to security administrator. If it requires a CPU mode transition, do not automatically add firmware authority. Where the product exposes only `Full Access`, document that limitation and compensate for it by making the privilege:
+
+* available only to a named user;
+* usable only from the approved EWS;
+* limited to the required controller;
+* active only for the maintenance period;
+* monitored throughout the session.
+
+For systems using shared or device-level credentials, retrieve or expose the credential only inside the controlled engineering workflow rather than distributing it permanently to engineers.
+
+### Step 4: establish the controller's pre-change state
+
+Before modifying the PLC, capture the state necessary to verify and recover the intervention. Depending on platform and criticality, this should include:
+
+* current project/version or project comparison status;
+* current CPU operating mode;
+* active force state;
+* relevant hardware and communications configuration;
+* controller diagnostics;
+* firmware revision;
+* security configuration where the intervention could affect it;
+* recoverable backup or approved offline project.
+
+This step has two purposes:
+
+1. It prevents an engineer from assuming that the online PLC is already identical to the repository baseline.
+2. It establishes evidence for determining exactly what changed during the intervention.
+
+### Step 5: perform and monitor the state-changing operation
+
+The actual engineering operation should be observable at more than one layer where technically possible. Useful evidence sources include:
+
+* PAM or remote-session logs;
+* jump-host authentication logs;
+* Engineering Workstation logs;
+* engineering-platform audit records;
+* industrial firewall connections;
+* controller security logs;
+* controller-native change detection.
+
+Controller-proximate evidence is especially valuable. For example, current Logix change-detection facilities can identify events such as project downloads, online edits, forces, firmware attempts, mode changes and program or task-property modifications.[^programming-authority-is-the-real-plc-security-boundary-rockwell-change-detection]
+
+Monitoring should focus on the operation, not merely on session establishment. `Engineer logged into EWS` is useful evidence. `PLC-17 program changed` is the security-significant evidence. The two should be correlatable.
+
+### Step 6: verify the resulting controller, not merely the transaction
+
+A successful download does not prove that the correct project was downloaded. After the intervention, compare the resulting online controller state with the approved intended state. At minimum, verify where applicable:
+
+* expected project or block version;
+* online/offline consistency;
+* expected CPU mode;
+* no unintended forces;
+* expected hardware and communications configuration;
+* expected firmware version;
+* expected safety state or signature;
+* unchanged users, roles and protection settings unless modification was authorized;
+* absence of unexpected controller faults.
+
+For online edits, ensure that no pending, test or unassembled edits remain in an unintended state. The reference used for this verification should be controlled independently of the individual engineering workstation. If malware on the EWS can alter both the PLC and the only copy of the "approved" project, post-change comparison provides little independent assurance.
+
+### Step 7: withdraw programming authority
+
+Closing the engineering application is not sufficient. The completion procedure should explicitly:
+
+* terminate privileged sessions;
+* close temporary engineering conduits;
+* remove temporary firewall rules;
+* revoke or expire temporary role elevation;
+* return the controller to the required operating/protection mode;
+* remove or verify the absence of forces;
+* disconnect vendor remote access;
+* return reusable privileged credentials to controlled storage;
+* preserve the final project and change evidence.
+
+The environment should then return to the original production state in which normal automation continues but exceptional engineering authority is no longer immediately available.
+
+### Treat emergency access as an accelerated version of the same model
+
+Break-glass engineering access may be necessary where delaying intervention could threaten safety, availability or equipment integrity. It should not become an undocumented bypass around the architecture. A good emergency mechanism relaxes **approval latency**, not identity, attribution or subsequent verification. Emergency access should therefore still establish:
+
+* who activated it;
+* from which engineering endpoint;
+* which controllers became accessible;
+* when access began;
+* which privileged operations occurred;
+* when access was revoked;
+* what controller state resulted.
+
+Post-event review can occur after the urgent intervention, but the technical evidence must survive it. The final operational principle is simple:
+
+> **A production PLC should not be perpetually programmable merely because somebody may eventually need to program it.**
+
+Programming authority should be deliberately assembled for the required maintenance activity from a named engineer, a controlled engineering endpoint, a constrained network path, the minimum controller privilege and a defined target. When the work finishes, those conditions should be dismantled and the resulting controller state independently verified. That is the practical difference between protecting access to a PLC and controlling programming authority.
+
+## Verify the Programming Boundary, Not the Security Features
+
+A PLC programming architecture should be accepted on demonstrated behavior, not on the presence of security features. A design can contain firewalls, MFA, certificates, RBAC, a jump host, an Engineering Workstation, and controller passwords and still leave programming authority effectively unrestricted. The relevant acceptance question is whether those mechanisms, in their deployed configuration, actually prevent unauthorized controller operations. For this reason, FAT, SAT, cybersecurity commissioning, and periodic OT security assessments should test the complete engineering path.
+
+The minimum test object is not the PLC alone. It is: `identity → access infrastructure → engineering endpoint → network conduit → engineering protocol → effective authorization point → controller state`. Every control claimed by the design should be observable somewhere on that path.
+
+### Build an authority matrix before testing
+
+For each controller family or security-equivalent controller group, define the intended permissions before starting technical verification. A practical matrix should identify:
+
+| Principal / role       | Endpoint              | PLC scope           | Diagnostics |  Download / edit |      Mode change |           Forces |                    Firmware | Security admin |
+| ---------------------- | --------------------- | ------------------- | ----------: | ---------------: | ---------------: | ---------------: | --------------------------: | -------------: |
+| Operator               | HMI                   | Assigned plant      |     Limited |               No |               No |               No |                          No |             No |
+| OT monitoring          | Monitoring servers    | Plant               |   Read only |               No |               No |               No |                          No |             No |
+| Controls engineer      | Approved EWS          | Assigned PLCs       |         Yes |        Temporary |   No / Temporary |   No / Temporary |                          No |             No |
+| Commissioning engineer | Approved EWS          | Approved assets     |         Yes |        Temporary |        Temporary |        Temporary |                          No |             No |
+| Platform maintainer    | Administrative EWS    | Approved assets     |         Yes |               No |       Restricted |               No |                   Temporary |             No |
+| Security administrator | Administrative EWS    | Approved assets     |  Restricted |               No |               No |               No |                          No |      Temporary |
+| Vendor engineer        | Controlled remote EWS | Explicit target set | As required | Only if approved | Only if approved | Only if approved | Only if separately approved |             No |
+
+: Example authority matrix to be converted into platform-specific permissions and negative test cases. {#tbl-programming-authority-is-the-real-plc-security-boundary-acceptance-matrix}
+
+The table should represent intended **effective authority**, not simply directory-group membership. If the platform cannot implement a distinction shown in the matrix, that limitation should emerge during design review. The architecture can then introduce compensating controls rather than discovering during commissioning that the controller's `Engineer` permission actually means unrestricted administration.
+
+### Prove the normal production state first
+
+Testing should begin with the plant in its normal security configuration, outside a programming window. The expected result is that required production communications continue while high-consequence engineering operations are unavailable. Verify at least that:
+
+* HMIs retain required monitoring and control functions;
+* SCADA, DCS, historian and supervisory communications operate normally;
+* peer-controller communications remain unaffected;
+* diagnostic access works only from authorized sources where required;
+* an ordinary workstation cannot initiate PLC engineering;
+* a corporate endpoint containing vendor engineering software cannot become a programming endpoint;
+* vendor remote access does not independently provide a controller path;
+* unused or temporary commissioning routes are absent;
+* accounts intended only for observation cannot modify the controller;
+* programming credentials are not permanently exposed to ordinary users.
+
+This test is important because it proves that removing standing programming authority does not require impairing production operation. If unrestricted project download remains possible in this normal state simply because an engineer is logged onto the engineering workstation, the architecture has not implemented temporary programming authority.
+
+### Test positive and negative authorization cases
+
+PLC security testing should deliberately include failed operations. Positive tests demonstrate that legitimate engineering works. Negative tests demonstrate that the security boundary exists. For each implemented role, attempt representative operations outside that role. Examples include:
+
+* observer attempts project download;
+* controls engineer attempts firmware installation;
+* controls engineer attempts user or role administration;
+* engineer assigned to Line A attempts programming a Line B controller;
+* engineering user attempts access from an unauthorized workstation;
+* authorized workstation attempts access using an unauthorized identity;
+* vendor user attempts another controller outside the approved maintenance scope;
+* expired maintenance access attempts to reconnect;
+* monitoring client attempts a write operation;
+* unauthorized application attempts to use a permitted controller protocol.
+
+A denied operation should ideally generate useful evidence at the enforcement point. A mature acceptance test does not record merely: `Access denied — PASS`. It records: `Controls Engineer / EWS-02 / PLC-17 / firmware operation / denied at effective authorization point — PASS`. That level of detail demonstrates which control actually enforced the requirement.
+
+### Test the programming window as a state transition
+
+Programming-window controls should also be tested as a sequence rather than as an administrative concept:
+
+1. Start from the production state and verify that the required operation is impossible.
+2. Open the approved engineering path.
+3. Verify that only the specified:
+    * user;
+    * engineering endpoint;
+    * controller;
+    * operation;
+    * and maintenance period
+    have become available.
+4. Perform the approved operation.
+5. Close the intervention.
+6. Then repeat the access test and prove that the temporary authority has disappeared.
+
+This final denial test is particularly important. Temporary firewall rules, PAM entitlements, remote sessions, controller roles, and engineering accounts frequently survive maintenance because functionality testing normally stops once the change itself has succeeded. Security acceptance should continue until the environment has returned to the intended production state.
+
+### Verify engineering-endpoint containment
+
+The Engineering Workstation should be treated as a likely future compromise point during testing. The assessor should determine what authority is obtained if the EWS itself is assumed compromised. Check whether the workstation can:
+
+* reach all PLCs or only its assigned controller population;
+* retrieve reusable credentials for other controller groups;
+* administer firewall or remote-access infrastructure;
+* modify the authoritative project repository;
+* disable controller security;
+* reach safety controllers unnecessarily;
+* connect directly to unrelated OT zones;
+* access the Internet without mediation;
+* communicate with corporate endpoints outside required management paths.
+
+The preferred result is that compromise of the EWS creates a serious but **bounded** incident. It should not automatically create programming authority over the entire plant. This is one of the strongest tests of whether the architecture contains genuine independent controls or merely several security layers surrounding one highly trusted workstation.
+
+### Verify the controller after the test
+
+Every successful state-changing test should finish with controller-state verification. Depending on platform and operational criticality, confirm:
+
+* deployed project or program identity;
+* expected online/offline comparison;
+* CPU operating mode;
+* force state;
+* controller diagnostics;
+* hardware and communications configuration;
+* firmware revision;
+* safety signatures or locks where applicable;
+* controller users and roles;
+* certificate and trust configuration;
+* absence of unintended residual engineering state.
+
+The baseline used for verification should be under controlled configuration management. It should not exist solely on the workstation that performed the change. This provides a second trust source: the device that modifies the PLC is not also the only authority determining what the PLC was supposed to contain.
+
+### Require evidence that can reconstruct a programming event
+
+The final acceptance criterion is forensic.
+
+For a representative programming operation, the organization should be able to reconstruct:
+
+1. who requested or performed the intervention;
+2. how the engineer authenticated;
+3. which engineering workstation was used;
+4. which PLC was targeted;
+5. when the exceptional engineering capability was activated;
+6. what privileged operation occurred;
+7. whether the controller accepted or rejected it;
+8. what controller state resulted;
+9. when the temporary authority was removed.
+
+Not every piece of evidence must come from the PLC. In many real systems that is impossible. PAM, jump-host logs, EWS records, firewall telemetry, engineering-software audit data, controller logs, change-detection mechanisms, and the change-management system can collectively provide the chain.
+
+What should be avoided is an architecture in which the only available evidence is: `EWS-01 communicated with PLC-17`. That proves network activity. It says almost nothing about programming authority.
+
+## A Reference PLC Programming Security Baseline
+
+The most useful way to conclude the analysis is to state what a defensible production configuration should look like. For a modern PLC installation, the target baseline is:
+
+1. **Separate normal control from engineering.** Process communication remains continuously available as operationally required. Project download, firmware, mode-change, forcing, and security-administration capabilities do not become permanent side effects of that connectivity.
+2. **Allow programming only from controlled engineering endpoints.** Vendor engineering software on an arbitrary OT or corporate laptop must not be sufficient to create a programming path.
+3. **Preserve named identity toward the controller.** Use individual accounts and controller-native identity where supported. Avoid collapsing multiple engineers and multiple PLCs behind one reusable privileged credential.
+4. **Use controller-native authorization as the final enforcement point where available.** Network segmentation controls who can present a request. The controller should still reject operations the current identity is not authorized to perform.
+5. **Separate controller privileges.** Diagnostics, logic modification, CPU mode control, forces, firmware maintenance, and security administration should not automatically form one `Full Access` privilege.
+6. **Restrict controller scope.** Programming authority over one unit, line, cell, or plant area should not automatically imply programming authority over the rest of the controller estate.
+7. **Make high-consequence authority temporary.** Project modification, forcing, mode changes, firmware maintenance, and security administration should be activated for an engineering activity rather than permanently available.
+8. **Treat the Engineering Workstation as privileged OT infrastructure.** Harden it, restrict its connectivity, control software and project content, protect credentials, and assume its compromise in the architecture threat model.
+9. **Monitor controller-changing operations.** A network session is not the event of interest. Downloads, edits, mode changes, forces, firmware operations and security modifications are.
+10. **Verify and revoke.** After engineering work, verify the actual controller state and explicitly remove the additional authority that enabled the intervention.
+
+For brownfield systems, some of these controls will not exist natively. A PLC with no named-user model cannot suddenly acquire modern RBAC through a firewall. A controller with one full-access password cannot distinguish firmware authority from logic modification. An unauthenticated industrial protocol cannot attribute a write to a human user.
+
+The correct response is not to describe these limitations as equivalent security controls. It is to move the missing enforcement outward and document the residual risk. The hierarchy should remain:
+
+`controller-native enforcement where possible`
+
+`engineering-platform enforcement where available`
+
+`dedicated endpoint and credential controls`
+
+`restricted network conduits`
+
+`temporary operational activation`
+
+`monitoring and independent state verification`
+
+The weaker the controller, the more deliberate the surrounding engineering architecture must become. This also provides a useful procurement criterion. Asking whether a PLC *supports cybersecurity* is nearly meaningless. Asking whether it supports TLS or RBAC is better, but still insufficient. For each proposed controller platform, ask instead:
+
+* Can individual engineering users be identified?
+* Can engineering endpoints or applications be authenticated?
+* Can read access be separated from modification?
+* Can logic modification be separated from CPU mode changes?
+* Can forces be controlled independently?
+* Can firmware authority be separated from application programming?
+* Can security administration be assigned to another role?
+* Can controller privileges be scoped to individual assets?
+* Can privileged changes be logged?
+* Can the deployed state be independently verified?
+* Can the production system operate normally while programming authority is disabled?
+
+Those answers describe the real security capability of the engineering platform far more accurately than the protocol names on its datasheet. The central design question is therefore no longer:
+
+> **Who can connect to the PLC?**
+
+It is:
+
+> **Under the normal production configuration, what must deliberately change before a named engineer on an approved engineering endpoint can modify this specific controller, and what prevents every other combination of identity, endpoint, target and operation from doing the same?**
+
+If that question has a precise technical answer, the PLC has an identifiable programming boundary. If the answer is simply *the engineering network is trusted*, it does not.
+
+[^programming-authority-is-the-real-plc-security-boundary-siemens-user-management]: Siemens AG. (2024). **SIMATIC S7-1500, ET 200MP Automation System: System Manual — Local User Management**. *Siemens Industry Online Support*. [Official documentation](https://support.industry.siemens.com/cs/attachments/59191792/s71500_et200mp_system_manual_en-US_en-US.pdf)
+
+[^programming-authority-is-the-real-plc-security-boundary-opcua-security-model]: OPC Foundation. (2025). **OPC 10000-2: OPC Unified Architecture — Part 2: Security Model, Version 1.05.06**. *OPC Foundation*. [Specification](https://reference.opcfoundation.org/specs/OPC-10000-2/)
+
+[^programming-authority-is-the-real-plc-security-boundary-opcua-role-administration]: OPC Foundation. (2025). **OPC 10000-18: OPC Unified Architecture — Part 18: Role-Based Security, Version 1.05.06**. *OPC Foundation*. [Specification](https://reference.opcfoundation.org/specs/OPC-10000-18/)
+
+[^programming-authority-is-the-real-plc-security-boundary-odva-cip-security]: ODVA. (n.d.). **CIP Security**. *ODVA Technologies*. [Official technical documentation](https://www.odva.org/technology-standards/distinct-cip-services/cip-security/)
+
+[^programming-authority-is-the-real-plc-security-boundary-modbus-application-protocol]: Modbus Organization. (2012). **MODBUS Application Protocol Specification V1.1b3**. *Modbus Organization*. [Specification](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf)
+
+[^programming-authority-is-the-real-plc-security-boundary-modbus-security-protocol-spec]: Modbus Organization. (2021). **MODBUS/TCP Security Protocol Specification, MB-TCP-Security-v36_2021-07-30**. *Modbus Organization*. [Specification](https://www.modbus.org/file/secure/modbussecurityprotocol.pdf)
+
+[^programming-authority-is-the-real-plc-security-boundary-rockwell-online-edits]: Rockwell Automation. (n.d.). **Finalize All Edits in Program/Phase Command**. *Studio 5000 Logix Designer Online Help*. [Official documentation](https://www.rockwellautomation.com/en-us/docs/studio-5000-logix-designer/38-01/contents-ditamap/studio-5000-logix-designer/navigating-the-application/-product_name_rsl5k--application-main-window/-product_name_rsl5k--application-commands/finalize-all-edits-in-program-phase-command.html)
+
+[^programming-authority-is-the-real-plc-security-boundary-rockwell-factorytalk-context]: Rockwell Automation. (n.d.). **Use FactoryTalk Security with the Logix Designer Application**. *Studio 5000 Logix Designer Online Help*. [Official documentation](https://www.rockwellautomation.com/en-us/docs/studio-5000-logix-designer/38-01/contents-ditamap/studio-5000-logix-designer/controller-security/use--fts--with-the--product_name_rsl5k--applicatio.html)
+
+[^programming-authority-is-the-real-plc-security-boundary-rockwell-change-detection]: Rockwell Automation. (n.d.). **Change Detection**. *ControlLogix 5580 and GuardLogix 5580 Controllers Documentation*. [Official documentation](https://www.rockwellautomation.com/en-us/docs/technical/logix5000/_online/1756-um543/controllogix-5580-and-guardlogix-5580-controllers-/develop-secure-applications/change-detection.html)
