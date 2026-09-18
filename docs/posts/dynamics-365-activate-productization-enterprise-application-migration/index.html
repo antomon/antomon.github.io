@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Antonio Montano">
+<meta name="dcterms.date" content="2026-09-12">
+<meta name="description" content="An enterprise-architecture analysis of Microsoft Dynamics 365 Activate: why migration remains structurally difficult, where agentic implementation tooling can change its economics, and where architecture, semantics, governance, and assurance remain irreducibly enterprise concerns.">
+
+<title>Dynamics 365 Activate and the Productization of Enterprise Application Migration – Random Bits of Knowledge</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-bb62276ab45c84d9efd712f51ff97b5a.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-f95f4a17e9d5bb76c4506342f1760542.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js#property=663ff7b280d7c0001914e592&amp;product=sticky-share-buttons" async="async"></script>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@17.0.3/dist/twemoji.min.js" integrity="sha384-Y5xukbGJwykbHHkTbLJykYLcBPFxrwipTbEh0puxhkz9CZ90raTPGe2Ks4vCxsYU" crossorigin="anonymous"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.twemoji) {
+      twemoji.parse(document.body, {
+        folder: "svg",
+        ext: ".svg"
+      });
+    }
+  });
+</script>
+<script type="module">
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0/dist/mermaid-layout-elk.esm.min.mjs';
+function registerElkWhenMermaidIsReady() {
+  if (window.mermaid && typeof window.mermaid.registerLayoutLoaders === "function") {
+    window.mermaid.registerLayoutLoaders(elkLayouts);
+    return;
+  }
+  setTimeout(registerElkWhenMermaidIsReady, 50);
+}
+registerElkWhenMermaidIsReady();
+</script>
+
+
+<link rel="stylesheet" href="../../style.css">
+<meta property="og:title" content="Dynamics 365 Activate and the Productization of Enterprise Application Migration – Random Bits of Knowledge">
+<meta property="og:description" content="An enterprise-architecture analysis of Microsoft Dynamics 365 Activate: why migration remains structurally difficult, where agentic implementation tooling can change its economics, and where architecture, semantics, governance, and assurance remain irreducibly enterprise concerns.">
+<meta property="og:image" content="https://antomon.github.io/posts/dynamics-365-activate-productization-enterprise-application-migration/industrialization-of-enterprise-application-migration.png">
+<meta property="og:site_name" content="Random Bits of Knowledge">
+<meta property="og:image:height" content="941">
+<meta property="og:image:width" content="1672">
+<meta name="twitter:title" content="Dynamics 365 Activate and the Productization of Enterprise Application Migration – Random Bits of Knowledge">
+<meta name="twitter:description" content="An enterprise-architecture analysis of Microsoft Dynamics 365 Activate: why migration remains structurally difficult, where agentic implementation tooling can change its economics, and where architecture, semantics, governance, and assurance remain irreducibly enterprise concerns.">
+<meta name="twitter:image" content="https://antomon.github.io/posts/dynamics-365-activate-productization-enterprise-application-migration/industrialization-of-enterprise-application-migration.png">
+<meta name="twitter:image-height" content="941">
+<meta name="twitter:image-width" content="1672">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo light-content">
+    <img src="../../favicon.png" alt="AM logo" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Random Bits of Knowledge</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html"> 
+<span class="menu-text">Services</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../longforms.html"> 
+<span class="menu-text">Longforms</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../posts.html"> 
+<span class="menu-text">Posts</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-collections" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Collections</span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-menu-collections">    
+        <li>
+    <a class="dropdown-item" href="../../collections/bookmarks-inspiration.html">
+ <span class="dropdown-text">Bookmarks of Inspiration</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/cabinet-digital-curiosities.html">
+ <span class="dropdown-text">Cabinet of Digital Curiosities</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../collections/free-knowledge.html">
+ <span class="dropdown-text">Free Knowledge</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://4m4.it/corso-python/">
+ <span class="dropdown-text">Corso Python</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-reader-toggle quarto-navigation-tool px-1" onclick="window.quartoToggleReader(); return false;" title="Toggle reader mode">
+  <div class="quarto-reader-toggle-btn">
+  <i class="bi"></i>
+  </div>
+</a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+          <h1 class="quarto-secondary-nav-title">Dynamics 365 Activate and the Productization of Enterprise Application Migration</h1>
+        </a>     
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title d-none d-lg-block">Dynamics 365 Activate and the Productization of Enterprise Application Migration</h1>
+            <p class="subtitle lead">Agentic implementation tooling, architectural observability, and the changing economics of enterprise transformation</p>
+                  <div>
+        <div class="description">
+          An enterprise-architecture analysis of Microsoft Dynamics 365 Activate: why migration remains structurally difficult, where agentic implementation tooling can change its economics, and where architecture, semantics, governance, and assurance remain irreducibly enterprise concerns.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">digital transformation</div>
+                <div class="quarto-category">enterprise architecture</div>
+                <div class="quarto-category">machine learning</div>
+                <div class="quarto-category">software</div>
+                <div class="quarto-category">🇬🇧</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Antonio Montano </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">September 12, 2026</p>
+      </div>
+    </div>
+    
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">September 18, 2026</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  <div>
+    <div class="abstract">
+      <div class="block-title">Abstract</div>
+      <p>Enterprise software migrations are expensive not because records are intrinsically difficult to copy, but because mature CRM and ERP estates encode years of process decisions, integrations, customizations, controls, ownership boundaries, and tacit operating knowledge. The September 2026 realignment of ZEISS’s long-running S/4HANA programme from a greenfield transformation toward a brownfield-first migration is a contemporary example of the broader problem: changing the application and redesigning the enterprise at the same time can turn modernization into a multi-year architecture programme.</p>
+      <p>Microsoft introduced Dynamics 365 Activate in September 2026 as an AI-assisted implementation and migration capability intended to analyze existing business applications, identify dependencies and customizations, recommend transformation decisions, and automate parts of migration execution. The current public preview is materially narrower than the long-term vision: it supports Salesforce as the legacy source, Dynamics 365 Sales and Customer Service as targets, and US-region workspaces, while Microsoft states that additional CRM and ERP scenarios are planned. The important architectural proposition is therefore not autonomous migration, but the attempt to make implementation context persistent and machine-readable across discovery, design, configuration, migration, testing, and deployment.</p>
+      <p>This article interprets Activate as an early instance of a broader shift from episodic migration tooling toward agent-assisted architecture transformation. Its central thesis is that agents can industrialize the observable and repeatable portions of migration—inventory, dependency discovery, mapping, configuration, test preparation, and execution—while correct transformation still depends on target semantics, system-of-record decisions, non-functional requirements, security and regulatory constraints, and accountable governance that cannot be inferred reliably from source metadata alone. The resulting opportunity is substantial precisely because migration is often a bloodbath; the constraint is that automation becomes dangerous when implementation context is incomplete, stale, or mistaken for architectural intent.</p>
+      <p>The analysis develops the concept of a persistent implementation model that separates observed, derived, and human-approved context; evaluates Activate against integration meshes, master-data ownership, CRM-ERP coupling, multinational environments, and acquisition-driven heterogeneity; and examines the implications for switching costs, systems integrators, implementation assurance, and platform lock-in. The longer-term possibility is a governed implementation control plane that continuously relates observed state, architectural intent, approved transformations, and validation evidence. Whether Activate can evolve in that direction depends on architectural observability, provenance, context synchronization, policy and approval boundaries, portability, and independently demonstrated migration quality rather than on processing scale alone.</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="3">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#migration-is-becoming-an-architecture-transformation-problem" id="toc-migration-is-becoming-an-architecture-transformation-problem" class="nav-link active" data-scroll-target="#migration-is-becoming-an-architecture-transformation-problem">Migration is becoming an architecture transformation problem</a></li>
+  <li><a href="#what-dynamics-365-activate-actually-changes" id="toc-what-dynamics-365-activate-actually-changes" class="nav-link" data-scroll-target="#what-dynamics-365-activate-actually-changes">What Dynamics 365 Activate actually changes</a></li>
+  <li><a href="#a-persistent-implementation-model-is-the-more-important-architectural-idea" id="toc-a-persistent-implementation-model-is-the-more-important-architectural-idea" class="nav-link" data-scroll-target="#a-persistent-implementation-model-is-the-more-important-architectural-idea">A persistent implementation model is the more important architectural idea</a></li>
+  <li><a href="#architectural-observability-is-the-critical-boundary" id="toc-architectural-observability-is-the-critical-boundary" class="nav-link" data-scroll-target="#architectural-observability-is-the-critical-boundary">Architectural observability is the critical boundary</a></li>
+  <li><a href="#semantics-governance-and-non-functional-requirements-define-the-automation-boundary" id="toc-semantics-governance-and-non-functional-requirements-define-the-automation-boundary" class="nav-link" data-scroll-target="#semantics-governance-and-non-functional-requirements-define-the-automation-boundary">Semantics, governance, and non-functional requirements define the automation boundary</a></li>
+  <li><a href="#market-impact-lower-migration-friction-changes-the-competitive-boundary" id="toc-market-impact-lower-migration-friction-changes-the-competitive-boundary" class="nav-link" data-scroll-target="#market-impact-lower-migration-friction-changes-the-competitive-boundary">Market impact: lower migration friction changes the competitive boundary</a></li>
+  <li><a href="#the-systems-integrator-is-not-removed-but-its-economic-function-changes" id="toc-the-systems-integrator-is-not-removed-but-its-economic-function-changes" class="nav-link" data-scroll-target="#the-systems-integrator-is-not-removed-but-its-economic-function-changes">The systems integrator is not removed, but its economic function changes</a></li>
+  <li><a href="#enterprise-scale-effectiveness-requires-more-than-record-throughput" id="toc-enterprise-scale-effectiveness-requires-more-than-record-throughput" class="nav-link" data-scroll-target="#enterprise-scale-effectiveness-requires-more-than-record-throughput">Enterprise-scale effectiveness requires more than record throughput</a></li>
+  <li><a href="#from-migration-utility-to-governed-implementation-control-plane" id="toc-from-migration-utility-to-governed-implementation-control-plane" class="nav-link" data-scroll-target="#from-migration-utility-to-governed-implementation-control-plane">From migration utility to governed implementation control plane</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<style>
+.quarto-title-block .quarto-title-banner {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  background: #6437a0;
+}
+
+.quarto-title-block .quarto-title-banner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 3%;
+  transform: translateY(-50%);
+  width: 34%;
+  height: 270px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.quarto-title-block .quarto-title-banner::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
+  width: 14%;
+  height: 270px;
+  background: linear-gradient(
+    to right,
+    rgba(100,55,160,1) 0%,
+    rgba(100,55,160,0.92) 30%,
+    rgba(100,55,160,0.45) 72%,
+    rgba(100,55,160,0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quarto-title-block .quarto-title,
+.quarto-title-block .quarto-title-meta,
+.quarto-title-block .quarto-categories,
+.quarto-title-block .subtitle,
+.quarto-title-block .title {
+  position: relative;
+  z-index: 3;
+}
+
+.quarto-title-block .quarto-title {
+  max-width: 55%;
+  padding-right: 0.75rem;
+}
+
+.quarto-title-block .description {
+  display: none;
+}
+
+/* full width strip under title block */
+.banner-info-strip-outer {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.banner-info-strip-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.5rem 2rem 0.75rem 2rem;
+}
+
+.banner-meta-row {
+  width: 100%;
+  display: grid;
+  gap: 0.35rem 2rem;
+}
+
+.banner-meta-row.row-1,
+.banner-meta-row.row-2 {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.banner-meta-row.row-3 {
+  grid-template-columns: 1fr;
+}
+
+/* explicit vertical rhythm */
+.banner-meta-row.row-1 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-2 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row.row-3 {
+  margin: 0 0 1.5rem 0;
+}
+
+.banner-meta-row .quarto-title-meta,
+.banner-meta-row .keywords {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.banner-meta-row .quarto-title-meta > div {
+  min-width: 0;
+}
+
+.banner-info-strip-inner .quarto-title-meta-heading,
+.banner-info-strip-inner .block-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin: 0 0 0.35rem 0 !important;
+  font-family: inherit !important;
+}
+
+.banner-info-strip-inner .quarto-title-meta-contents,
+.banner-info-strip-inner .quarto-title-meta-contents *,
+.banner-info-strip-inner .keywords p {
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  color: #374151 !important;
+  font-family: inherit !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.banner-info-strip-inner .article-standfirst {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0.25rem 0 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid rgba(100,55,160,0.45);
+  background: rgba(100,55,160,0.06);
+  color: #5f6368;
+}
+
+.banner-info-strip-inner .article-standfirst p {
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  .quarto-title-block .quarto-title-banner {
+    min-height: 300px;
+  }
+
+  .quarto-title-block .quarto-title-banner::after {
+    width: 34%;
+    height: 220px;
+    right: 2%;
+    opacity: 0.7;
+  }
+
+  .quarto-title-block .quarto-title-banner::before {
+    right: 30%;
+    width: 16%;
+    height: 220px;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 62%;
+    padding-right: 0.5rem;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1.25rem 1.5rem 0.5rem 1.5rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.35rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .quarto-title-block .quarto-title-banner::after,
+  .quarto-title-block .quarto-title-banner::before {
+    display: none;
+  }
+
+  .quarto-title-block .quarto-title {
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .banner-info-strip-inner {
+    padding: 1rem 1rem 0.5rem 1rem;
+  }
+
+  .banner-meta-row.row-1,
+  .banner-meta-row.row-2 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem 0;
+  }
+
+  .banner-meta-row.row-1 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-meta-row.row-3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .banner-info-strip-inner .article-standfirst {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+</style>
+
+<style>.quarto-title-block .quarto-title-banner::after{background-image:url("industrialization-of-enterprise-application-migration.png");}</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var titleBlock = document.querySelector(".quarto-title-block");
+  if (!titleBlock) return;
+
+  var authorBlock = titleBlock.querySelector(".quarto-title-meta-author");
+  var metaBlock = titleBlock.querySelector(".quarto-title-meta");
+  var keywordsBlock = titleBlock.querySelector(".keywords");
+  var standfirst = document.querySelector(".article-standfirst");
+
+  function makeMetaBlock(labelText, valueNode) {
+    if (!labelText || !valueNode) return null;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "quarto-title-meta";
+
+    var item = document.createElement("div");
+
+    var heading = document.createElement("div");
+    heading.className = "quarto-title-meta-heading";
+    heading.textContent = labelText;
+
+    var contents = document.createElement("div");
+    contents.className = "quarto-title-meta-contents";
+    contents.appendChild(valueNode.cloneNode(true));
+
+    item.appendChild(heading);
+    item.appendChild(contents);
+    wrapper.appendChild(item);
+
+    return wrapper;
+  }
+
+  function normalizeAuthorBlock(block) {
+    if (!block) return [];
+
+    var children = Array.from(block.children);
+    if (children.length < 4) return [];
+
+    var authorHeading = children[0] ? children[0].textContent.trim() : "Author";
+    var affiliationHeading = children[1] ? children[1].textContent.trim() : "Affiliation";
+    var authorValue = children[2];
+    var affiliationValue = children[3];
+
+    var out = [];
+    var authorMeta = makeMetaBlock(authorHeading, authorValue);
+    var affiliationMeta = makeMetaBlock(affiliationHeading, affiliationValue);
+
+    if (authorMeta) out.push(authorMeta);
+
+    var affiliationText = affiliationValue ? affiliationValue.textContent.replace(/\s+/g, " ").trim() : "";
+    if (affiliationMeta && affiliationText !== "") out.push(affiliationMeta);
+
+    return out;
+  }
+
+  function normalizePublishedModified(block) {
+    if (!block) return [];
+
+    var items = Array.from(block.children);
+    if (!items.length) return [];
+
+    var out = [];
+
+    items.forEach(function(item) {
+      var heading = item.querySelector(".quarto-title-meta-heading");
+      var contents = item.querySelector(".quarto-title-meta-contents");
+      if (!heading || !contents) return;
+
+      var valueNode;
+      if (contents.children.length === 1) {
+        valueNode = contents.children[0];
+      } else {
+        valueNode = document.createElement("div");
+        Array.from(contents.childNodes).forEach(function(node) {
+          valueNode.appendChild(node.cloneNode(true));
+        });
+      }
+
+      var text = valueNode.textContent.replace(/\s+/g, " ").trim();
+      if (text === "") return;
+
+      var meta = makeMetaBlock(heading.textContent.trim(), valueNode);
+      if (meta) out.push(meta);
+    });
+
+    return out;
+  }
+
+  function buildReadingTimeBlock() {
+    var content = document.querySelector("#quarto-document-content");
+    if (!content) return null;
+
+    var text = content.innerText || "";
+    text = text.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+
+    var words = text.split(" ").length;
+    var minutes = Math.max(1, Math.round(words / 200));
+
+    var p = document.createElement("p");
+    p.textContent = minutes + " min";
+
+    return makeMetaBlock("Reading time", p);
+  }
+
+  var hasSomething = authorBlock || metaBlock || keywordsBlock || standfirst;
+  if (!hasSomething) return;
+
+  var outer = document.createElement("div");
+  outer.className = "banner-info-strip-outer";
+
+  var inner = document.createElement("div");
+  inner.className = "banner-info-strip-inner";
+
+  var row1 = document.createElement("div");
+  row1.className = "banner-meta-row row-1";
+
+  var row2 = document.createElement("div");
+  row2.className = "banner-meta-row row-2";
+
+  var row3 = document.createElement("div");
+  row3.className = "banner-meta-row row-3";
+
+  normalizeAuthorBlock(authorBlock).forEach(function(block) {
+    row1.appendChild(block);
+  });
+
+  normalizePublishedModified(metaBlock).forEach(function(block) {
+    row2.appendChild(block);
+  });
+
+  var readingTimeBlock = buildReadingTimeBlock();
+  if (readingTimeBlock) row2.appendChild(readingTimeBlock);
+
+  if (keywordsBlock) {
+    var kwText = keywordsBlock.textContent.replace(/\s+/g, " ").trim();
+    if (kwText !== "") {
+      row3.appendChild(keywordsBlock.cloneNode(true));
+    }
+  }
+
+  if (row1.children.length) inner.appendChild(row1);
+  if (row2.children.length) inner.appendChild(row2);
+  if (row3.children.length) inner.appendChild(row3);
+  if (standfirst) inner.appendChild(standfirst);
+
+  if (authorBlock) authorBlock.remove();
+  if (metaBlock) metaBlock.remove();
+  if (keywordsBlock) keywordsBlock.remove();
+
+  outer.appendChild(inner);
+  titleBlock.insertAdjacentElement("afterend", outer);
+});
+</script>
+
+<div class="article-standfirst">
+<p>An enterprise-architecture analysis of Microsoft Dynamics 365 Activate: why migration remains structurally difficult, where agentic implementation tooling can change its economics, and where architecture, semantics, governance, and assurance remain irreducibly enterprise concerns.</p>
+</div>
+<section id="migration-is-becoming-an-architecture-transformation-problem" class="level2">
+<h2 class="anchored" data-anchor-id="migration-is-becoming-an-architecture-transformation-problem">Migration is becoming an architecture transformation problem</h2>
+<p>Enterprise application migration is often described as movement between platforms: extract data from a source, translate it, reproduce required functions, validate the result, and cut over to the target. That description is adequate only when the source application can be treated as an isolated technical system. Mature CRM and ERP estates rarely satisfy that assumption because they encode years of business decisions, process variants, organizational responsibilities, security structures, integrations, ownership rules, reporting dependencies, contractual obligations, and local exceptions. Microsoft positions Dynamics 365 Activate directly against this accumulated complexity, describing legacy applications as environments customized over years and surrounded by point solutions and complex integrations.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>A useful contemporary counterexample to the idea that migration is merely technical conversion is ZEISS. In September 2026 the company confirmed that it had realigned its long-running SAP programme: rather than continuing with the previously described greenfield strategy, it would first migrate the existing ERP landscape to S/4HANA and then build segment-specific solutions on top of a group-wide core. <em>The Register</em> reported that the programme had begun around 2020 and cited reports of roughly €200 million in expenditure, while noting that ZEISS declined to confirm that spending figure.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> The important point is not the disputed number but the architectural mechanism. A greenfield programme simultaneously asks the enterprise to change platform, redesign processes, eliminate historical customizations, reconcile business-unit differences, migrate data, rebuild integrations, retrain users, and preserve operational continuity. Each objective can be rational in isolation; their coupling creates a transformation whose state space is much larger than a software upgrade.</p>
+<p>This is why migration programmes so often become a bloodbath. The enterprise is not copying an application; it is attempting to reconstruct a partially documented socio-technical system while changing it. Existing implementations are simultaneously evidence, technical debt, accumulated business knowledge, and sometimes the only executable specification of how the organization actually operates. The difficult question is therefore not simply <em>how do we reproduce the current system on a new platform?</em> but <em>which parts of the current system are requirements, which are accidents of history, and which should be deliberately changed?</em> Agentic tooling becomes interesting precisely because a large fraction of the cost of answering that question is spent reconstructing facts that are already present, but fragmented, across metadata, configuration, code, interfaces, documentation, test assets, and operational traces.</p>
+<p>For enterprise architecture, the relevant object is consequently the <strong>architecture transformation</strong> in which an application participates. ISO/IEC/IEEE 42010 distinguishes an architecture from the architecture description used to express it and organizes architecture descriptions around stakeholders, concerns, viewpoints, and model kinds; ISO/IEC/IEEE 42020 extends that perspective into architecture processes concerned with governance, conceptualization, evaluation, elaboration, and evolution across the life cycle.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> A machine-readable representation of an application estate is therefore an architecture description of some observable aspects of that estate; it is not automatically equivalent to the enterprise architecture itself.</p>
+<p>Microsoft introduced Dynamics 365 Activate on September 9, 2026. Its public-preview migration scenario analyzes Salesforce environments, identifies data, processes, customizations, relationships, and dependencies, produces recommendations, and supports parts of migration execution with guardrails.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> Microsoft explicitly rejects a blind lift-and-shift framing: implementation teams are expected to decide what should be preserved, simplified, redesigned, or left behind. That decision vocabulary places the product inside an architectural problem because a source application expresses an implemented state, whereas a migration requires a desired state. A custom approval workflow may be accidental technical debt, a contractual control, a regulatory requirement, or an obsolete workaround; an integration may represent a boundary that must be preserved, or merely a workaround created by the current platform. The implemented structure alone cannot decide which interpretation is correct.</p>
+<p>The theoretical boundary can be stated without artificial mathematical notation. An enterprise transformation requires evidence about the current state, requirements and constraints defining an acceptable target state, and accountable decisions that reconcile the two. Activate can automate portions of current-state reconstruction and assist with target decisions, but correctness depends on how much target intent is explicit. This is consistent with established enterprise-architecture practice: TOGAF separates business, data, application, and technology architecture and treats migration planning, implementation governance, change management, and requirements management as connected activities rather than independent technical tasks.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>The central thesis follows from that boundary. Dynamics 365 Activate could industrialize the machine-readable portions of enterprise application transformation by lowering the cost of discovering, relating, and translating implementation structures. That can be economically important even if the product never becomes an autonomous architect. Its limits appear where transformation decisions depend on information external to the source application, semantically ambiguous, normative rather than descriptive, stale, or governed by decision rights that cannot be inferred from technical metadata.</p>
+</section>
+<section id="what-dynamics-365-activate-actually-changes" class="level2">
+<h2 class="anchored" data-anchor-id="what-dynamics-365-activate-actually-changes">What Dynamics 365 Activate actually changes</h2>
+<p>The public preview combines activities that conventional transformation programmes frequently split among assessment teams, solution architects, functional consultants, migration specialists, developers, and testers. Microsoft describes source-environment analysis, actionable migration recommendations, and automated migration execution as parts of one experience.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a> The novelty is therefore not that any single task is unprecedented; metadata scanners, migration factories, code analyzers, mapping accelerators, test generators, and configuration tools already exist. The architectural change is the attempt to connect these tasks through a shared implementation context that can be reused rather than repeatedly reconstructed.</p>
+<p>The current preview should be described narrowly. Microsoft Learn states that the supported legacy source is Salesforce, the documented Dynamics 365 targets are Sales and Customer Service, and workspaces are currently supported in the US region; Microsoft also labels the capability prerelease and not intended for production use.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a> This matters because the strategic vision is broader than the demonstrated product surface. Microsoft describes future CRM and ERP migration scenarios and a single agentic implementation experience spanning organizations that <strong>start</strong> a new implementation, <strong>move</strong> from an existing application, or <strong>grow</strong> an existing Dynamics estate, with planned capabilities such as agentic mapping, test sampling, natural-language migration guidance, and executive assessment summaries.<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a></p>
+<p>Within the current scope, discovery profiles the source estate and builds an account of what exists, how elements relate, and which structures may complicate transformation. That is materially richer than a migration utility whose primary abstraction is a pair of source and target schemas. Recommendation then moves from observation to interpretation. A schema mapping can be deterministic when a source construct has a well-defined target equivalent; architecture transformation is less deterministic because several technically valid target designs can exist. Microsoft’s preserve-simplify-redesign framing implicitly acknowledges that a recommendation is a proposed target decision grounded in observed context, not the discovery of a uniquely correct architecture.</p>
+<p>Execution is where governance becomes decisive. Microsoft says Activate can automate migration execution with built-in guardrails, and its target-connection documentation shows that permissions granted to the Dataverse application user delimit which metadata, tables, and records the service can read or modify.<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> Public material does not yet establish a complete governance model for approval granularity, policy representation, rollback, separation between recommendation and commitment, or production deployment. Those are not secondary implementation details: they determine whether an agent is a controlled transformation mechanism or merely an efficient way to propagate a mistaken assumption.</p>
+</section>
+<section id="a-persistent-implementation-model-is-the-more-important-architectural-idea" class="level2">
+<h2 class="anchored" data-anchor-id="a-persistent-implementation-model-is-the-more-important-architectural-idea">A persistent implementation model is the more important architectural idea</h2>
+<p>The most significant claim in Microsoft’s description is that context obtained during discovery can inform later business-process decisions, solution design, configuration, migration, testing, and deployment.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> If this works reliably, the architecture of implementation changes because discovery ceases to be an ephemeral project phase. Traditional transformation programmes repeatedly reconstruct the same knowledge. Business analysts record requirements and process decisions, architects maintain diagrams, developers inspect code and integrations, migration teams create mapping workbooks, security teams maintain control matrices, testers derive validation scenarios, and project managers record dependencies and decisions. These artefacts overlap but are rarely one coherent computational representation. Information is lost when it moves between tools and teams, and the enterprise repeatedly pays to rebuild context.</p>
+<p>A persistent implementation model should distinguish three epistemically different forms of information. <strong>Observed context</strong> consists of facts obtained from accessible systems, such as metadata, schema, configuration, code, relationships, volumes, and integration endpoints. <strong>Derived context</strong> consists of machine-generated interpretations such as classifications, migration mappings, dependency hypotheses, recommendations, and candidate tests. <strong>Decided context</strong> consists of choices approved by accountable people and accepted as part of the target architecture. These categories are analytical rather than documented internal Activate data structures, but the distinction is necessary for safe automation.</p>
+<p>A trustworthy implementation system should preserve provenance among these categories. An observed field definition and a generated recommendation must not acquire the same authority merely because both reside in the same context store. Likewise, a recommendation accepted by a solution architect should remain distinguishable from a fact extracted directly from the source platform. Provenance becomes increasingly important as downstream agents reuse earlier results.</p>
+<p>The relationships among observation, interpretation, decision, execution, and validation are non-trivial because each stage can invalidate or constrain another. <a href="#fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop" class="quarto-xref">Figure&nbsp;1</a> represents the common semantic model used for the diagrams in this article: solid arrows represent required information or control dependencies, while dashed arrows represent incomplete or conditionally observable dependencies.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop">%%{init: {"theme": "base", "flowchart": {"curve": "basis"}}}%%
+flowchart TD
+    A[Observable enterprise state&lt;br/&gt;metadata + configuration + code + interfaces] --&gt; B[Observed context&lt;br/&gt;facts + dependencies]
+    B --&gt; C[Derived context&lt;br/&gt;mappings + hypotheses + candidate tests]
+    R[Enterprise requirements&lt;br/&gt;principles + controls + target intent] --&gt; D[Approved target decisions]
+    C --&gt; D
+    D --&gt; E[Transformation&lt;br/&gt;configuration + migration]
+    E --&gt; F[Validation evidence&lt;br/&gt;functional + operational + control tests]
+    B --&gt; G[Persistent implementation context&lt;br/&gt;state + provenance + decisions + evidence]
+    C --&gt; G
+    D --&gt; G
+    F --&gt; G
+    G -. refreshed context .-&gt; C
+
+    classDef observed fill:#DCEBFA,stroke:#315B7D,color:#102A43,stroke-width:1.5px;
+    classDef derived fill:#E9E1F7,stroke:#654E8A,color:#2D2340,stroke-width:1.5px;
+    classDef governed fill:#FFF0C7,stroke:#8A6A1F,color:#3D2F0C,stroke-width:1.5px;
+    classDef execution fill:#DDEFE2,stroke:#3F6B4C,color:#16351F,stroke-width:1.5px;
+    classDef external fill:#ECEFF1,stroke:#59636B,color:#263238,stroke-width:1.5px;
+
+    class A,B observed;
+    class C derived;
+    class R,D governed;
+    class E,F execution;
+    class G derived;
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A persistent implementation model separates observed state, machine-derived interpretation, accountable decision, execution, and validation while preserving provenance among them.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>A dependency-oriented representation is particularly valuable. A source field can be consumed by a workflow, referenced by custom code, synchronized through middleware, used by an analytics pipeline, and included in a regulatory report. A flat inventory cannot express the consequence of changing it. Microsoft states that Activate identifies relationships and dependencies during source analysis, which makes this graph-like interpretation plausible as an analytical model even though Microsoft has not publicly documented Activate’s internal representation.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
+<p>Persistence alone does not solve incomplete observability. A context model can preserve only what has been observed, inferred, or supplied. Manual procedures, undocumented batch jobs, external configuration, contractual semantics, political ownership boundaries, and tacit business practices can remain outside it. The architectural value of persistent context therefore depends not merely on retention but on the explicit treatment of uncertainty and incompleteness.</p>
+</section>
+<section id="architectural-observability-is-the-critical-boundary" class="level2">
+<h2 class="anchored" data-anchor-id="architectural-observability-is-the-critical-boundary">Architectural observability is the critical boundary</h2>
+<p>The appropriate stress test for Activate is not organizational size but <strong>architectural observability</strong>: the extent to which information relevant to a transformation decision is accessible through metadata, configuration, code, interfaces, operational evidence, or other machine-readable sources. The harder the enterprise scenario, the more likely it is that decisive information resides outside the application being migrated.</p>
+<p>A deeply customized but relatively self-contained Salesforce environment is the strongest documented fit. Custom objects, workflows, code, configuration, relationships, and data are largely represented inside one platform. Microsoft reports that early Activate engagements have processed more than six billion records, which supports exposure to substantial migration volume but does not establish correctness or architectural completeness.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> In this scenario, much of the implementation complexity is at least observable.</p>
+<p>An integration mesh is more difficult. Dynamics guidance treats enterprise integration as a concern involving messaging, middleware, monitoring, security, availability, disaster recovery, service limits, versioning, and overall architecture.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> Microsoft reference architectures illustrate patterns in which Dataverse participates in asynchronous processing, retries, and compensating transactions across Service Bus, Azure Functions, and external systems.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a> Discovering that a CRM invokes an endpoint does not necessarily reveal the transaction semantics, retry policies, ordering constraints, or compensation logic implemented downstream.</p>
+<p>The problem becomes more severe when the CRM contains a business object but is not its authoritative source. Microsoft’s own reference architecture for Dataverse as a master-data system demonstrates that authority, stewardship, and distribution are deliberate architecture decisions.<a href="#fn16" class="footnote-ref" id="fnref16" role="doc-noteref"><sup>16</sup></a> Presence of customer or product records in Salesforce cannot by itself establish that Salesforce owns those concepts.</p>
+<p>CRM-ERP coupling further expands the boundary. Microsoft documents patterns such as dual-write between finance and operations applications and Dataverse, in which business state can be synchronized across systems.<a href="#fn17" class="footnote-ref" id="fnref17" role="doc-noteref"><sup>17</sup></a> Replacing the CRM component of such a process can affect transaction ordering, ownership, reconciliation, exception handling, and operational responsibility. Microsoft’s planned ERP expansion is strategically relevant, but it should not be interpreted as evidence that the September 2026 preview autonomously reasons about these distributed processes.</p>
+<p>Multinational estates add environment topology, data-residency, operating-model, and regulatory concerns. Microsoft’s environment-strategy guidance explicitly connects environment design to security, compliance, application lifecycle management, scalability, maintainability, and performance.<a href="#fn18" class="footnote-ref" id="fnref18" role="doc-noteref"><sup>18</sup></a> Target environments therefore cannot be derived safely from source organizational structures alone.</p>
+<p>Acquisition-driven estates are harder again because the problem becomes semantic harmonization rather than platform translation. Several CRM systems can each contain different meanings of account, customer, contract, product, or region. No amount of source profiling determines which definition should become the enterprise canonical model unless strategic target semantics are supplied.</p>
+<p><a href="#fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-observability-boundary" class="quarto-xref">Figure&nbsp;2</a> uses the same arrow semantics as <a href="#fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-context-loop" class="quarto-xref">Figure&nbsp;1</a>. The important relationship is that architectural uncertainty grows as transformation-critical semantics move outside directly observable source structures.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-observability-boundary" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-observability-boundary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-observability-boundary">%%{init: {"theme": "base", "flowchart": {"curve": "basis"}}}%%
+flowchart LR
+    A[Source CRM&lt;br/&gt;directly observable structures] --&gt; B[Integration layer&lt;br/&gt;APIs + events + transformations]
+    B --&gt; C[ERP&lt;br/&gt;transactions + financial state]
+    B --&gt; D[Master data&lt;br/&gt;authority + stewardship]
+    B --&gt; E[Analytics&lt;br/&gt;derived information]
+    B --&gt; F[External services&lt;br/&gt;contracts + operational dependencies]
+    G[Enterprise requirements&lt;br/&gt;security + resilience + compliance + target operating model] --&gt; H[Target architecture]
+    C --&gt; H
+    D --&gt; H
+    E --&gt; H
+    F --&gt; H
+    A -. partial visibility .-&gt; C
+    A -. partial visibility .-&gt; D
+    A -. partial visibility .-&gt; F
+
+    classDef observed fill:#DCEBFA,stroke:#315B7D,color:#102A43,stroke-width:1.5px;
+    classDef derived fill:#E9E1F7,stroke:#654E8A,color:#2D2340,stroke-width:1.5px;
+    classDef governed fill:#FFF0C7,stroke:#8A6A1F,color:#3D2F0C,stroke-width:1.5px;
+    classDef execution fill:#DDEFE2,stroke:#3F6B4C,color:#16351F,stroke-width:1.5px;
+    classDef external fill:#ECEFF1,stroke:#59636B,color:#263238,stroke-width:1.5px;
+
+    class A observed;
+    class B derived;
+    class C,D,E,F external;
+    class G governed;
+    class H execution;
+</pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-observability-boundary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Transformation confidence decreases when architecture-critical semantics, authority, and controls reside beyond the directly observable source estate.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The architecture conclusion is therefore not that Activate is unsuitable for complex environments. A complex environment can still be highly machine-readable. The more precise conclusion is that an incompletely observable environment cannot be transformed safely from source analysis alone.</p>
+</section>
+<section id="semantics-governance-and-non-functional-requirements-define-the-automation-boundary" class="level2">
+<h2 class="anchored" data-anchor-id="semantics-governance-and-non-functional-requirements-define-the-automation-boundary">Semantics, governance, and non-functional requirements define the automation boundary</h2>
+<p>Structural equivalence is weaker than semantic equivalence. A migration system may determine that a field called <code>RiskClass</code> contains a small enumeration, is referenced by a workflow, and is exported to another application. Those observations do not establish whether the field encodes credit risk, underwriting risk, regulatory classification, internal prioritization, or obsolete process history. The architecture decision depends on meaning, not only representation.</p>
+<p>The same principle applies to process automation. An approval workflow may exist because of segregation of duties, a contractual threshold, a regulator, a management preference, or an old platform limitation. An agent can often detect the workflow. It cannot safely infer which of those explanations defines the future requirement unless additional context exists.</p>
+<p>Security creates a similar distinction between observed implementation and normative intent. Microsoft’s Dynamics implementation guidance treats security as a concern that affects compliance, rollout, reporting, scalability, and performance, and recommends involving legal, audit, privacy, and compliance stakeholders early.<a href="#fn19" class="footnote-ref" id="fnref19" role="doc-noteref"><sup>19</sup></a> Current permissions reveal who can access something; they do not necessarily reveal why that access is allowed, which segregation constraints are intended, or whether existing permissions are themselves defective.</p>
+<p>Compliance cannot be derived from platform capability either. Microsoft describes security, privacy, compliance, and data protection as shared responsibilities between Microsoft and the customer.<a href="#fn20" class="footnote-ref" id="fnref20" role="doc-noteref"><sup>20</sup></a> A target platform can provide controls without determining which controls a specific enterprise is legally or contractually required to apply. Environment location, retention, audit, access, and extension design must therefore be governed by explicit requirements.</p>
+<p>Non-functional requirements create another source-target discontinuity. Microsoft documents Dataverse service-protection limits intended to protect system availability and performance and recommends that clients respond correctly to throttling and retry conditions.<a href="#fn21" class="footnote-ref" id="fnref21" role="doc-noteref"><sup>21</sup></a> A source integration that performs large synchronous batches can be functionally correct yet become operationally inappropriate after migration. The target may require incremental synchronization, asynchronous messaging, different partitioning, or redesign around service limits.</p>
+<p>Historical behavior is also not the same as the desired target requirement. Existing latency, throughput, recovery time, concurrency, or batch duration can be evidence about the current estate, but transformation programmes often exist precisely because the enterprise expects different future characteristics. Growth, acquisition, regulatory change, resilience objectives, and new channels can all make the target requirement intentionally different from the source.</p>
+<p>For enterprise architects, this suggests a useful automation rule: a transformation is safely automatable only when both the relevant evidence and the acceptance conditions are sufficiently explicit and testable. Where evidence is incomplete, the system should expose uncertainty. Where acceptance conditions are normative, accountable stakeholders must supply them. Where consequences are material, architecture governance should control execution authority.</p>
+<p>This is also why “human in the loop” is an insufficient governance model. Enterprise automation needs differentiated authorities: who may observe, who may propose, who may approve, who may execute, and who may deploy to production. A migration agent that respects those separations is architecturally different from one that merely requests an undifferentiated confirmation before acting.</p>
+</section>
+<section id="market-impact-lower-migration-friction-changes-the-competitive-boundary" class="level2">
+<h2 class="anchored" data-anchor-id="market-impact-lower-migration-friction-changes-the-competitive-boundary">Market impact: lower migration friction changes the competitive boundary</h2>
+<p>Enterprise software competition is shaped by switching costs as well as feature quality. The installed base of a CRM or ERP accumulates customizations, integrations, skills, data structures, operating procedures, governance arrangements, and institutional knowledge. Replacing the application therefore requires reconstructing part of the enterprise’s implemented architecture.</p>
+<p>Activate attacks this accumulated friction directly. If a meaningful portion of source discovery, dependency reconstruction, target mapping, and migration execution can be automated, Microsoft can reduce the expected cost and uncertainty of evaluating Dynamics 365 as a replacement for Salesforce. That mechanism does not require the migration to become trivial; it only requires the cost curve to move downward.</p>
+<p>Salesforce remains a large incumbent. In its first fiscal quarter of 2027, ended April 30, 2026, Salesforce reported $10.6 billion in subscription and support revenue and $33.6 billion in current remaining performance obligation.<a href="#fn22" class="footnote-ref" id="fnref22" role="doc-noteref"><sup>22</sup></a> These figures establish commercial scale rather than customer propensity to migrate. There is currently no public empirical evidence that Activate has changed Salesforce-to-Dynamics win rates, renewal outcomes, or market share.</p>
+<p>The more plausible initial effect is on customers already facing a transformation trigger: consolidation after acquisition, contract renewal, platform rationalization, AI modernization, operating-model redesign, or dissatisfaction with current complexity. For those organizations, reducing discovery and migration uncertainty can make an alternative that was previously uneconomic worth considering.</p>
+<p>Microsoft’s competitive proposition is also broader than CRM. Dynamics 365 sits inside an ecosystem spanning Dataverse, Power Platform, Copilot Studio, Microsoft 365, Azure, and related data and security services. Microsoft reported fiscal 2026 Dynamics 365 revenue growth of 18 percent and Microsoft Cloud revenue of $214.4 billion.<a href="#fn23" class="footnote-ref" id="fnref23" role="doc-noteref"><sup>23</sup></a> Activate can therefore be interpreted as an acquisition mechanism into a wider platform architecture, not only as a CRM migration feature.</p>
+<p>Salesforce’s strategic response is structurally different. Agentforce 360 is positioned around agents that use business data, metadata, workflows, APIs, and external systems, while Salesforce’s acquisition of Informatica added integration, data-quality, catalog, governance, metadata, privacy, and master-data capabilities to that platform strategy.<a href="#fn24" class="footnote-ref" id="fnref24" role="doc-noteref"><sup>24</sup></a><a href="#fn25" class="footnote-ref" id="fnref25" role="doc-noteref"><sup>25</sup></a> At a high level, Microsoft is making a stronger case for migration and consolidation, whereas Salesforce is making a stronger case that agents can operate across heterogeneous estates. Both vendors support mixed environments in practice, so this distinction should be understood as strategic emphasis rather than an exclusive architectural choice.</p>
+<p>The deeper contest is therefore over where enterprise context is assembled. One model reduces heterogeneity by moving applications and data toward a target platform. Another leaves more systems in place and attempts to create a governed context layer above them. Agentic systems make this question more important because the platform that holds authoritative context, policies, and executable actions becomes strategically significant even when the underlying systems of record remain distributed.</p>
+<p>Activate should not, however, be described as eliminating lock-in. It is better understood as reducing <strong>source-platform migration friction</strong>. Moving into Dynamics can create new dependencies on Dataverse, Power Platform, Microsoft identity, integration services, Copilot Studio, and the implementation context accumulated around them. Long-term market impact will therefore depend partly on whether that implementation knowledge remains portable.</p>
+</section>
+<section id="the-systems-integrator-is-not-removed-but-its-economic-function-changes" class="level2">
+<h2 class="anchored" data-anchor-id="the-systems-integrator-is-not-removed-but-its-economic-function-changes">The systems integrator is not removed, but its economic function changes</h2>
+<p>Microsoft explicitly states that Activate should allow partners to spend less time on resource-intensive discovery and analysis and more time applying methodology, industry expertise, solution architecture, and change management.<a href="#fn26" class="footnote-ref" id="fnref26" role="doc-noteref"><sup>26</sup></a> This is a more useful statement than the generic claim that generative AI will “replace consultants” because it identifies which categories of implementation work are being targeted. Traditional transformation programmes require substantial labour to inventory applications, inspect configuration, trace dependencies, create mappings, document processes, prepare migration scripts, configure targets, and construct tests. Much of this effort is necessary because implementation context is fragmented and has to be reconstructed manually. If Activate can produce reliable first-pass context, some of that work becomes software-mediated.</p>
+<p>The economic boundary is between <strong>discovery</strong> and <strong>interpretation</strong>. Detecting a custom object is discovery; deciding whether it represents an enterprise capability worth preserving is interpretation. Detecting an API dependency is discovery; determining whether its external system should remain in the target architecture is an architecture decision. Generating a field mapping is automation; establishing semantic equivalence is assurance.</p>
+<p>This distinction changes the staffing model. Large implementation programmes have often supported a labour pyramid in which substantial numbers of junior and mid-level resources perform analysis, documentation, mapping, configuration, and testing under a smaller group of senior architects. If the repetitive layers become more automated, the ratio of labour types changes even if total demand for transformation remains high.</p>
+<div id="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-si-work" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-si-work-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Implementation activity</th>
+<th>Likely automation pressure</th>
+<th>Residual enterprise-architecture or partner value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Source inventory and profiling</td>
+<td>High where metadata is accessible</td>
+<td>Completeness assessment and exception resolution</td>
+</tr>
+<tr class="even">
+<td>Dependency discovery</td>
+<td>Medium to high for machine-visible relationships</td>
+<td>External dependency reconstruction and architectural interpretation</td>
+</tr>
+<tr class="odd">
+<td>Source-to-target mapping</td>
+<td>High for known platform patterns</td>
+<td>Semantic validation and target-state approval</td>
+</tr>
+<tr class="even">
+<td>Target configuration</td>
+<td>Medium to high for standard patterns</td>
+<td>Design of deviations and governed configuration</td>
+</tr>
+<tr class="odd">
+<td>Migration execution</td>
+<td>High for supported pathways</td>
+<td>Cutover governance, reconciliation and exception management</td>
+</tr>
+<tr class="even">
+<td>Testing preparation</td>
+<td>Increasing, with planned agentic assistance</td>
+<td>Acceptance criteria, risk-based coverage and assurance</td>
+</tr>
+<tr class="odd">
+<td>Integration architecture</td>
+<td>Partial</td>
+<td>Transaction semantics, resilience, ownership and cross-platform design</td>
+</tr>
+<tr class="even">
+<td>Security and compliance</td>
+<td>Decision support</td>
+<td>Policy interpretation, segregation, regulatory and risk decisions</td>
+</tr>
+<tr class="odd">
+<td>Business architecture</td>
+<td>Low direct automation</td>
+<td>Capability design, operating model and transformation intent</td>
+</tr>
+<tr class="even">
+<td>Change management</td>
+<td>Low direct automation</td>
+<td>Adoption, organizational redesign, communication and training</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-si-work-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Redistribution of implementation work under an agent-assisted migration model.
+</figcaption>
+</figure>
+</div>
+<p>The table does not predict job counts. It identifies the categories in which value is likely to migrate. Faster technical discovery can increase demand for senior architecture capacity because consequential decisions arrive earlier and in greater volume. The bottleneck moves from finding information to resolving ambiguity.</p>
+<p>The same pressure affects systems-integrator intellectual property. Generic knowledge about standard platform mappings and configuration patterns is increasingly codifiable. Domain semantics, industry regulations, reusable target architectures, architecture principles, control libraries, validation packs, and integration patterns are harder to commoditize. A strong partner can therefore respond to automation by converting methodology into reusable, eventually machine-consumable implementation knowledge rather than defending manual discovery as a source of billable hours.</p>
+<p>Commercial models may also change. Time-and-materials engagements create tension when automation reduces the hours required for routine work. Fixed-price, managed-outcome, or reusable-IP-based arrangements can align partner incentives more closely with productivity because automation improves margin when the same verified outcome can be delivered with less repetitive effort. Whether Activate actually produces this effect is an empirical question; no public evidence considered here quantifies changes in partner utilization, staffing ratios, margins, or total project cost.</p>
+<p>Persistent implementation context also changes knowledge ownership. Systems integrators often possess informational advantage because their consultants remember why the system was built in a particular way. If machine-readable context survives implementation, customers and successor partners can inherit more of that history. This can reduce dependence on a specific integrator while increasing dependence on the platform that stores the context. Portability therefore becomes an architectural and commercial requirement.</p>
+</section>
+<section id="enterprise-scale-effectiveness-requires-more-than-record-throughput" class="level2">
+<h2 class="anchored" data-anchor-id="enterprise-scale-effectiveness-requires-more-than-record-throughput">Enterprise-scale effectiveness requires more than record throughput</h2>
+<p>Microsoft states that early Activate engagements have processed more than six billion records.<a href="#fn27" class="footnote-ref" id="fnref27" role="doc-noteref"><sup>27</sup></a> That number is relevant to processing scale but should not be interpreted as evidence of architectural correctness. Record count, dependency completeness, semantic mapping accuracy, operational fitness, migration risk, and human-effort reduction are different properties.</p>
+<p>A credible evaluation should begin with workload characterization. A billion structurally simple historical records can be easier to migrate than a few million records embedded in dense custom logic and distributed processes. Benchmarks should therefore report not only volume but also numbers and types of objects, workflows, code components, integrations, dependencies, security structures, environments, data-quality defects, and business processes.</p>
+<p>Discovery should then be evaluated as an information-retrieval problem. Independent reviewers can construct a reference inventory of migration-relevant artefacts and dependencies, after which the system’s discovered relationships can be assessed for coverage and false positives. Severity matters because missing an obsolete report is not equivalent to missing an integration responsible for statutory reporting or financial posting.</p>
+<p>Recommendation quality requires a different evaluation design. Some mappings have effectively deterministic answers. Others permit several defensible designs. Still others cannot be resolved without business information. A strong implementation agent should therefore be evaluated not only for correctness but for calibration: does it distinguish high-confidence transformations from cases where available evidence cannot determine the answer?</p>
+<p>Appropriate abstention is an important capability. In enterprise architecture, refusal to automate an underdetermined decision can be more valuable than producing a plausible target state. A system that confidently transforms ambiguous structures can increase transformation risk even if its average automation rate is impressive.</p>
+<p>Migration execution should be evaluated independently of recommendation generation. Microsoft’s testing guidance treats data migration testing in terms of accuracy, completeness, and consistency and recommends realistic post-migration user and regression testing.<a href="#fn28" class="footnote-ref" id="fnref28" role="doc-noteref"><sup>28</sup></a> Relevant measures include record completeness, referential integrity, transformation correctness, security correctness, reconciliation, process continuity, and defect severity.</p>
+<p>Architectural completeness requires deliberately cross-boundary scenarios. Benchmarks should include cases in which CRM data participates in ERP transactions, master-data publication, identity processes, asynchronous integration, analytics, external services, and manual operations. Some dependencies should be discoverable from source metadata, some only from middleware, some only from downstream systems, and some only from documentation. The resulting coverage profile would establish where Activate’s architectural observability ends.</p>
+<p>Non-functional requirements require separate testing. Microsoft implementation guidance treats performance, migration duration, peak load, external-system failure, scalability, and cutover behaviour as relevant go-live concerns.<a href="#fn29" class="footnote-ref" id="fnref29" role="doc-noteref"><sup>29</sup></a> A functionally equivalent migration can still be architecturally unacceptable if it violates latency, availability, recovery, concurrency, observability, service-protection, or deployment constraints.</p>
+<p>Human productivity should also be measured end-to-end rather than inferred from generated output. If automation saves ten hours of mapping but creates eight hours of review and rework, the net effect is small. Studies should therefore measure labour by workstream, including validation, correction, architecture, exception handling, and post-migration remediation. Calendar duration should be reported separately because approvals, business decisions, environment provisioning, and change management may remain on the critical path even when technical labour falls.</p>
+<div id="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-evidence" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<div aria-describedby="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-evidence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Evidence dimension</th>
+<th>Representative measure</th>
+<th>What the evidence can establish</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Processing scale</td>
+<td>Records, objects, throughput</td>
+<td>Ability to operate on substantial workloads</td>
+</tr>
+<tr class="even">
+<td>Discovery quality</td>
+<td>Dependency coverage, false positives, severity of omissions</td>
+<td>Fidelity of observable source reconstruction</td>
+</tr>
+<tr class="odd">
+<td>Recommendation quality</td>
+<td>Expert review, calibration, appropriate abstention</td>
+<td>Reliability of target suggestions</td>
+</tr>
+<tr class="even">
+<td>Data transformation</td>
+<td>Completeness, referential integrity, reconciliation</td>
+<td>Correctness of approved data mappings</td>
+</tr>
+<tr class="odd">
+<td>Architectural coverage</td>
+<td>Cross-system dependency detection</td>
+<td>Breadth of captured enterprise context</td>
+</tr>
+<tr class="even">
+<td>Functional validation</td>
+<td>End-to-end business-process results</td>
+<td>Preservation or intentional redesign of required behaviour</td>
+</tr>
+<tr class="odd">
+<td>Non-functional validation</td>
+<td>Latency, throughput, resilience, cutover duration</td>
+<td>Operational fitness of the target</td>
+</tr>
+<tr class="even">
+<td>Human productivity</td>
+<td>Total effort, validation burden, rework</td>
+<td>Net manual-effort reduction</td>
+</tr>
+<tr class="odd">
+<td>Delivery outcome</td>
+<td>Duration, defects, rollback, cutover success</td>
+<td>Project-level effectiveness</td>
+</tr>
+<tr class="even">
+<td>Post-go-live outcome</td>
+<td>Incidents, remediation, stability</td>
+<td>Durability of migration quality</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-tbl" id="tbl-dynamics-365-activate-and-the-industrialization-of-enterprise-application-migration-evidence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Evidence required to establish enterprise-scale effectiveness rather than processing scale alone.
+</figcaption>
+</figure>
+</div>
+<p>The decisive measure is therefore not how much content Activate can generate but how much <strong>verified implementation context</strong> it can create per unit of human effort. If every generated mapping, dependency, and recommendation must be independently reconstructed by consultants, automation accelerates artefact production without changing assurance. If humans can concentrate primarily on uncertain and high-risk exceptions, the implementation operating model changes structurally.</p>
+<p>As of September 2026, no independently reproducible public benchmark considered in this analysis establishes Activate’s dependency-detection accuracy, recommendation calibration, migration-defect reduction, human validation burden, architectural completeness, or post-go-live outcomes. Microsoft’s current evidence supports a technically significant direction, not a demonstrated general capability across complex enterprise estates.</p>
+</section>
+<section id="from-migration-utility-to-governed-implementation-control-plane" class="level2">
+<h2 class="anchored" data-anchor-id="from-migration-utility-to-governed-implementation-control-plane">From migration utility to governed implementation control plane</h2>
+<p>The longer-term architectural significance of Activate appears when Microsoft’s “start, move, grow” model is interpreted as a continuous implementation lifecycle rather than three independent product scenarios.<a href="#fn30" class="footnote-ref" id="fnref30" role="doc-noteref"><sup>30</sup></a> A new implementation begins primarily from requirements. A migration begins from a substantial observed source state. Growth begins from an existing Dynamics estate plus a new requirement. In all three cases, the enterprise is reconciling a known or proposed state with an intended future state.</p>
+<p>A conventional migration utility is episodic. It is introduced for a transformation, performs a bounded task, and becomes less important after cutover. A persistent implementation model is different because the target state from one transformation becomes the observed state for the next. This creates the possibility of an <strong>implementation control plane</strong>: a layer that continuously relates observed state, requirements, proposed changes, approvals, execution, and validation evidence.</p>
+<p>The term should be used carefully. Microsoft does not describe Activate publicly as a general enterprise-architecture control plane, and no public source considered here establishes such a completed architecture. The concept is an analytical extrapolation from Microsoft’s stated intent to reuse context across implementation stages and across start, migration, and growth journeys.</p>
+<p>A control-plane interpretation is useful because it clarifies four functions that must remain distinct. <strong>Observation</strong> determines what exists. <strong>Decision support</strong> proposes what could change. <strong>Governance</strong> establishes what is permitted and who may approve it. <strong>Execution and validation</strong> apply the approved change and establish whether the result satisfies the required conditions. Conflating these functions would create precisely the architectural risk that enterprise governance is intended to prevent.</p>
+<p>Microsoft’s adjacent Dynamics 365 Implementation Portal reinforces the broader direction. Microsoft describes the portal as a platform for planning, deploying, and adopting Dynamics 365 and Power Platform workloads, tracking implementation progress, and collaborating with FastTrack experts. Its 2026 plans include richer project profiling, business-process information, AI-supported context, Copilot expansion, telemetry insights, and post-go-live guidance.<a href="#fn31" class="footnote-ref" id="fnref31" role="doc-noteref"><sup>31</sup></a> This does not establish that Activate and the Implementation Portal share one technical context model, but it shows that Microsoft is also making project and implementation knowledge more machine-readable.</p>
+<p>For such a model to become a durable enterprise-architecture asset, context synchronization is essential. Production systems continue changing after implementation. Administrators alter configuration, developers deploy extensions, integration teams modify APIs, business units introduce new workflows, and acquisitions add new systems. A persistent model that describes a historical state can become actively dangerous if automation treats it as current truth. Observed facts must therefore be refreshed, derived conclusions invalidated when their premises change, and differences between intended and actual state surfaced explicitly.</p>
+<p>Portability is equally important. The implementation context generated during transformation could eventually contain mappings, dependency knowledge, decisions, validation evidence, configuration rationale, and architecture constraints. That information has strategic value. If it cannot be exported through sufficiently open representations, a capability intended to lower migration friction could create a new form of platform dependency around accumulated implementation knowledge.</p>
+<p>This is where enterprise architecture retains its decisive role. The future architect is less valuable for manually reconstructing inventories that machines can observe and more valuable for defining the constraints that machines cannot derive safely from existing implementations. These include capability boundaries, canonical data ownership, integration principles, resilience requirements, security and regulatory controls, environment strategy, technology standards, target operating models, and conditions under which automated changes may proceed.</p>
+<p>The theoretical endpoint is therefore not autonomous enterprise architecture but <strong>governed continuous transformation</strong>. Architecture descriptions become increasingly executable and continuously updated; implementation agents use them to generate and evaluate changes; governance assigns decision rights; validation attaches evidence to the resulting state; and architects remain responsible for ensuring that optimization of the implementation does not substitute for optimization of the enterprise.</p>
+<p>Dynamics 365 Activate matters because it points toward this transition. Its current public preview establishes a narrower proposition: Microsoft can analyze a Salesforce implementation, derive migration context, recommend changes, and automate parts of execution while attempting to carry context forward.<a href="#fn32" class="footnote-ref" id="fnref32" role="doc-noteref"><sup>32</sup></a> That proposition is useful on its own.</p>
+<p>Its larger significance depends on whether Microsoft can extend the model while preserving architectural fidelity. If observed context becomes sufficiently complete, derived recommendations sufficiently calibrated, governance sufficiently explicit, validation sufficiently rigorous, and accumulated implementation knowledge sufficiently portable, Activate could become part of a persistent implementation control plane. If those conditions are not met, it will remain a valuable migration accelerator whose hardest enterprise-architecture decisions continue to be resolved elsewhere.</p>
+<p>For IT enterprise architects, that conditional conclusion is more consequential than either extreme interpretation. Activate should not be dismissed as another migration tool, because persistent machine-readable implementation context can materially alter transformation economics and governance. It should not be treated as an autonomous architect, because enterprise architecture is defined by stakeholder concerns, normative requirements, cross-system trade-offs, and accountable choices that cannot be recovered reliably from source metadata alone. The strategic question is therefore not whether agents will replace architecture, but whether enterprise architecture can become explicit enough to govern increasingly agentic implementation.</p>
+
+
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=digital%20transformation">digital transformation</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/">
+<img class="see-also-card-image" src="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/layers-enterprise-evolution.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">AI Adoption, Productivity, and the Missing Middle</h5>
+<div class="see-also-card-subtitle">A review of Banca d'Italia QEF 1009 on Italy's AI adoption, firm productivity, and policy architecture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/">
+<img class="see-also-card-image" src="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/manufacturing-process-mining.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining in Manufacturing with Purchased Components and Variable Lead Times</h5>
+<div class="see-also-card-subtitle">A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-as-computational-process-intelligence/">
+<img class="see-also-card-image" src="../../longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining as Computational Process Intelligence</h5>
+<div class="see-also-card-subtitle">A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=enterprise%20architecture">enterprise architecture</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/archimate_4_and_the_cartography_of_complexity/">
+<img class="see-also-card-image" src="../../longforms/archimate_4_and_the_cartography_of_complexity/archimate-cartography.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">ArchiMate 4 and the Cartography of Complexity</h5>
+<div class="see-also-card-subtitle">How ArchiMate 4 simplifies enterprise modeling while enterprise systems grow more complex, shifting the real challenge from notation to semantic governance and operational evidence</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/">
+<img class="see-also-card-image" src="../../longforms/process-mining-in-manufacturing-with-purchased-components-and-variable-lead-times/manufacturing-process-mining.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining in Manufacturing with Purchased Components and Variable Lead Times</h5>
+<div class="see-also-card-subtitle">A practical example of event-log analysis, object-centric modeling, lead-time diagnosis, and planning correction</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/process-mining-as-computational-process-intelligence/">
+<img class="see-also-card-image" src="../../longforms/process-mining-as-computational-process-intelligence/process_mining_enterprise_behavior.jpeg" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Process Mining as Computational Process Intelligence</h5>
+<div class="see-also-card-subtitle">A formal and technical view of event-log analysis, object-centric process models, conformance checking, performance diagnosis, and enterprise applications</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also <a href="https://4m4.it/index.html#category=machine%20learning">machine learning</a> longforms</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/when-an-ai-evaluation-became-a-cyber-intrusion/">
+<img class="see-also-card-image" src="../../longforms/when-an-ai-evaluation-became-a-cyber-intrusion/cyber-intrusion.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When an AI Evaluation Became a Cyber Intrusion</h5>
+<div class="see-also-card-subtitle">The OpenAI–Hugging Face incident and the two regimes of agentic cyber risk</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/">
+<img class="see-also-card-image" src="../../longforms/ai-adoption-productivity-missing-middle-banca-italia-qef-1009/layers-enterprise-evolution.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">AI Adoption, Productivity, and the Missing Middle</h5>
+<div class="see-also-card-subtitle">A review of Banca d'Italia QEF 1009 on Italy's AI adoption, firm productivity, and policy architecture</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/">
+<img class="see-also-card-image" src="../../longforms/beyond-the-hype-what-microsoft-copilot-data-really-says-about-AI-at-work/ia-org.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Beyond the Hype: What Microsoft’s Copilot Data Really Says About AI at Work</h5>
+<div class="see-also-card-subtitle">From lofty predictions to real-world clicks: what AI usage data reveals about job impact and the new governance of human–agent organizational models</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+<section class="see-also-inline-block" style="margin-top:2.75rem;">
+  <style>
+    .see-also-inline-block .see-also-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: var(--bs-body-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link {
+      color: inherit;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+    }
+
+    .see-also-inline-block .see-also-card-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .see-also-inline-block .see-also-card-image {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .see-also-inline-block .see-also-card-body {
+      padding: 1rem;
+    }
+
+    .see-also-inline-block .see-also-card-title {
+      margin: 0 0 0.45rem 0;
+      line-height: 1.25;
+      font-size: 1.1rem;
+    }
+
+    .see-also-inline-block .see-also-card-subtitle {
+      color: var(--bs-secondary-color, #6c757d);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 991px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 575px) {
+      .see-also-inline-block .see-also-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+<h2 class="anchored">See also posts</h2>
+<div class="see-also-cards">
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/data-is-not-the-new-oil/">
+<img class="see-also-card-image" src="../../posts/data-is-not-the-new-oil/data-is-not-the-new-oil.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Data Is Not the New Oil</h5>
+<div class="see-also-card-subtitle">What Google's bid for Spirit Airlines' corporate archive reveals about enterprise data in the AI era</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-the-user-becomes-the-exploit/">
+<img class="see-also-card-image" src="../../posts/when-the-user-becomes-the-exploit/when-the-user-becomes-the-exploit.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When the User Becomes the Exploit</h5>
+<div class="see-also-card-subtitle">TerminalFix, WeWorm, and why security must survive the failure of its first boundary</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/guerra-profonda-una-recensione-tecnicaa/">
+<img class="see-also-card-image" src="../../posts/guerra-profonda-una-recensione-tecnicaa/guerra-algoritmica.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Guerra profonda: recensione tecnica e guida all'approfondimento</h5>
+<div class="see-also-card-subtitle">Sovranità digitale, guerra algoritmica, AI e conflittualità ibrida nel libro di Arturo Di Corinto</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/when-formalization-became-industrial/">
+<img class="see-also-card-image" src="../../posts/when-formalization-became-industrial/formalization-industry.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">When Formalization Became Industrial</h5>
+<div class="see-also-card-subtitle">Fermat's Last Theorem, Prove2Me, and the transition from proof abundance to formalization abundance</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/programming-authority-is-the-real-plc-security-boundary/">
+<img class="see-also-card-image" src="../../posts/programming-authority-is-the-real-plc-security-boundary/plc-security-boundary.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">Programming Authority Is the Real PLC Security Boundary</h5>
+<div class="see-also-card-subtitle">Why network reachability, authentication, and controller programming must be treated as separate security states.</div>
+</div>
+</a>
+</article>
+<article class="see-also-card">
+<a class="see-also-card-link" href="../../posts/after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust/">
+<img class="see-also-card-image" src="../../posts/after-proof-abundance-palomar-and-the-new-infrastructure-of-mathematical-trust/palomar-registry.png" alt="">
+<div class="see-also-card-body">
+<h5 class="see-also-card-title anchored">After Proof Abundance: Palomar and the New Infrastructure of Mathematical Trust</h5>
+<div class="see-also-card-subtitle">Formal verification, provenance, semantic fidelity, and institutional governance in machine-scale mathematics</div>
+</div>
+</a>
+</article>
+</div>
+</section>
+</section>
+
+
+<a onclick="window.scrollTo(0, 0); return false;" role="button" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Clark, L. (2026). ****German optics giant ditches greenfield SAP migration****. <strong>The Register</strong>, 10 September 2026. The article reports ZEISS’s move from its previously described greenfield approach toward a brownfield-first S/4HANA migration. It cites reports of approximately €200 million in programme spending, while noting that ZEISS declined to comment on that figure. <a href="https://www.theregister.com/software/2026/09/10/german-optics-giant-ditches-greenfield-sap-migration/5295251">News report</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>International Organization for Standardization, International Electrotechnical Commission, &amp; Institute of Electrical and Electronics Engineers. (2022). ****ISO/IEC/IEEE 42010:2022: Software, systems and enterprise — Architecture description****. <strong>ISO</strong>. <a href="https://www.iso.org/standard/74393.html">Standard</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>International Organization for Standardization, International Electrotechnical Commission, &amp; Institute of Electrical and Electronics Engineers. (2019). ****ISO/IEC/IEEE 42020:2019: Software, systems and enterprise — Architecture processes****. <strong>ISO</strong>. <a href="https://www.iso.org/obp/ui/#iso:std:iso-iec-ieee:42020:ed-1:v1:en">Standard</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>The Open Group. ****Using TOGAF to define and govern service-oriented architectures****. <strong>The Open Group</strong>. <a href="https://www.opengroup.org/soa/source-book/togaf/p4.htm">Official guidance</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>Microsoft. (2026). ****Access and set up Dynamics 365 Activate (preview)****. <strong>Microsoft Learn</strong>. The prerelease documentation states that the current legacy source is Salesforce, the supported Dynamics 365 targets are Sales and Customer Service, and the currently supported workspace region is the United States. <a href="https://learn.microsoft.com/en-us/dynamics365/dynamics-365-activate/migrate-salesforce-to-dynamics-365-access-setup">Documentation</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Microsoft. (2026). ****Connect to Dynamics 365 and run discovery (preview)****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/dynamics-365-activate/migrate-salesforce-to-dynamics-365-connect-dynamics">Documentation</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>Microsoft. (2024). ****Integration strategy and governance checklist****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/integrate-other-solutions-checklist">Documentation</a><a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>Microsoft. (2024). ****Saga pattern with Dataverse or Dynamics 365****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/reference-architectures/saga-pattern-dataverse">Reference architecture</a><a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn16"><p>Microsoft. (2025). ****Dataverse as a master data system****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/reference-architectures/dataverse-master-data-system">Reference architecture</a><a href="#fnref16" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn17"><p>Microsoft. (2024). ****Integrate Dynamics 365 apps with other systems****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/integrate-other-solutions-guidance-product">Documentation</a><a href="#fnref17" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn18"><p>Microsoft. (2024). ****Plan your environment strategy for Dynamics 365****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/environment-strategy-overview">Documentation</a><a href="#fnref18" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn19"><p>Microsoft. (2025). ****Secure your Dynamics 365 project from day one****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/security-strategy-day-one-priority">Documentation</a><a href="#fnref19" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn20"><p>Microsoft. (2024). ****Secure your Dynamics 365 data and apps****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/security">Documentation</a><a href="#fnref20" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn21"><p>Microsoft. (2025). ****Service protection API limits****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/power-apps/developer/data-platform/api-limits">Technical documentation</a><a href="#fnref21" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn22"><p>Salesforce. (2026). ****Salesforce delivers record first quarter fiscal 2027 results****. <strong>Salesforce News</strong>. <a href="https://www.salesforce.com/news/press-releases/2026/05/27/fy27-q1-earnings/">Earnings release</a><a href="#fnref22" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn23"><p>Microsoft. (2026). ****FY26 Q4 investor metrics****. <strong>Microsoft Investor Relations</strong>. <a href="https://www.microsoft.com/en-us/investor/earnings/fy-2026-q4/metrics">Investor relations</a><a href="#fnref23" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn24"><p>Salesforce. (2026). ****Agentforce 360 Platform: Agentic capabilities****. <strong>Salesforce</strong>. <a href="https://www.salesforce.com/platform/agentforce-platform">Product page</a><a href="#fnref24" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn25"><p>Salesforce. (2025). ****Salesforce completes acquisition of Informatica****. <strong>Salesforce News</strong>. <a href="https://www.salesforce.com/news/press-releases/2025/11/18/salesforce-completes-acquisition-of-informatica/">Press release</a><a href="#fnref25" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn26"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref26" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn27"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref27" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn28"><p>Microsoft. (2025). ****Guidance for user acceptance test after data migration in solutions with Dynamics 365****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/resources/data-migration-user-acceptance-tests">Documentation</a><a href="#fnref28" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn29"><p>Microsoft. (2024). ****Use the go-live checklist to make sure your solution is ready****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/implementation-guide/prepare-go-live-checklist">Documentation</a><a href="#fnref29" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn30"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref30" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn31"><p>Microsoft. (2026). ****Dynamics 365 Implementation Portal in 2026 release wave 1****. <strong>Microsoft Learn</strong>. <a href="https://learn.microsoft.com/en-us/power-platform/release-plan/2026wave1/dynamics365-implementation-portal">Release plan</a><a href="#fnref31" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn32"><p>Teper, J. (2026). ****Accelerate your move to agentic business applications with Dynamics 365 Activate****. <strong>Microsoft Dynamics 365 Blog</strong>, 9 September 2026. <a href="https://www.microsoft.com/en-us/dynamics-365/blog/business-leader/2026/09/09/accelerate-your-move-to-agentic-business-applications-with-dynamics-365-activate/">Official announcement</a><a href="#fnref32" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/antomon\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<script src="https://utteranc.es/client.js" repo="antomon/antomon-utterances" issue-term="pathname" theme="github-light" crossorigin="anonymous" async="">
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Antonio Montano’s Personal Website</p>
+</div>   
+    <div class="nav-footer-center">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../../about.html">
+<p>About</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="../../contents/services.html">
+<p>Services</p>
+</a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/montano/">
+      <i class="bi bi-linkedin" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/antomon">
+      <i class="bi bi-twitter" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/antomon">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+</ul>
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ © Antonio Montano, 2016-2026
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
