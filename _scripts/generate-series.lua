@@ -291,7 +291,9 @@ local function generate_individual_pages(project_root, series)
     local rendered = template
     rendered = replace_literal(rendered, "{{SERIES_TITLE}}", yaml_quote(group.title))
     rendered = replace_literal(rendered, "{{SERIES_CONTENTS}}", listing_contents(group.articles, "../../"))
-    rendered = GENERATED_MARKER .. "\n" .. rendered
+    -- YAML front matter must begin on the first line. Keep the generated-file
+    -- marker after the document so Quarto/Pandoc still recognizes metadata.
+    rendered = rendered .. "\n" .. GENERATED_MARKER .. "\n"
 
     write_file(join_fs(directory, "index.qmd"), rendered)
   end
@@ -331,7 +333,6 @@ end
 
 local function generate_series_index(project_root, series)
   local lines = {
-    GENERATED_MARKER,
     "---",
     "title: \"Series\"",
     "subtitle: \"Article sequences that follow a subject as it develops over time.\"",
@@ -348,6 +349,8 @@ local function generate_series_index(project_root, series)
   end
 
   table.insert(lines, "---")
+  table.insert(lines, "")
+  table.insert(lines, GENERATED_MARKER)
   table.insert(lines, "")
 
   if #series == 0 then
