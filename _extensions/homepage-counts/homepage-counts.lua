@@ -92,6 +92,25 @@ local function normalize_category(value)
   return value:gsub("%s+", " ")
 end
 
+-- Editorial-form categories are a subset of all categories.
+-- They are used both for their individual counts and to define the
+-- synthetic "Others" bucket on the homepage.
+local editorial_form_categories = {
+  ["essay"] = true,
+  ["position paper"] = true,
+  ["review"] = true,
+  ["tutorial"] = true,
+}
+
+local function has_editorial_form(categories)
+  for category, _ in pairs(categories or {}) do
+    if editorial_form_categories[category] then
+      return true
+    end
+  end
+  return false
+end
+
 local function extract_yaml(content)
   if not content then
     return nil
@@ -226,6 +245,7 @@ local function scan_collection(project_root, collection)
   local statistics = {
     total = 0,
     categories = {},
+    editorial_other = 0,
   }
 
   local collection_root = join_fs(project_root, collection)
@@ -237,6 +257,10 @@ local function scan_collection(project_root, collection)
 
       for category, _ in pairs(metadata.categories) do
         statistics.categories[category] = (statistics.categories[category] or 0) + 1
+      end
+
+      if not has_editorial_form(metadata.categories) then
+        statistics.editorial_other = statistics.editorial_other + 1
       end
     end
   end
@@ -250,6 +274,9 @@ local function build_counts(project_root)
   local counts = {
     ["total|longforms"] = longforms.total,
     ["total|posts"] = posts.total,
+    ["editorial-other|longforms"] = longforms.editorial_other,
+    ["editorial-other|posts"] = posts.editorial_other,
+    ["editorial-other|all"] = longforms.editorial_other + posts.editorial_other,
   }
 
   local all_categories = {}

@@ -65,14 +65,25 @@ local function normalize_category(s)
   return s
 end
 
+-- Editorial-form categories are kept distinct from the other categories
+-- excluded from similarity matching. This makes the same four-value
+-- editorial taxonomy reusable by homepage logic without treating language
+-- markers as editorial forms.
+local editorial_form_categories = {
+  ["essay"] = true,
+  ["position paper"] = true,
+  ["review"] = true,
+  ["tutorial"] = true,
+}
+
 local excluded_categories = {
   ["🇬🇧"] = true,
   ["🇮🇹"] = true,
-  ["essay"] = true,
-  ["position paper"] = true,
-  ["tutorial"] = true,
-  ["review"] = true,
 }
+
+for category, _ in pairs(editorial_form_categories) do
+  excluded_categories[category] = true
+end
 
 local function is_excluded_category(s)
   s = normalize_category(s or "")
