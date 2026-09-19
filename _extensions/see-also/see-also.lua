@@ -314,7 +314,7 @@ local function slugify_series(title)
   return slug
 end
 
-local function render_series_title_meta(series_title)
+local function render_series_title_meta(series_title, placement_heading)
   local slug = slugify_series(series_title)
   if slug == "" then
     return nil
@@ -326,6 +326,7 @@ local function render_series_title_meta(series_title)
 <div id="article-series-meta-source"
      data-series-title="]] .. html_escape(series_title) .. [["
      data-series-href="]] .. html_escape(href) .. [["
+     data-series-after="]] .. html_escape(placement_heading or "") .. [["
      hidden></div>
 <script>
 (function () {
@@ -366,16 +367,20 @@ local function render_series_title_meta(series_title)
   item.appendChild(heading);
   item.appendChild(contents);
 
-  // Put Series immediately after Reading Time when that field exists.
-  const readingHeading = headings.find(
-    (el) => el.textContent.trim().toLowerCase() === "reading time"
+  // Placement differs between posts and longforms.
+  // Posts: after READING TIME.
+  // Longforms: after KEYWORDS.
+  const targetLabel = (source.dataset.seriesAfter || "").trim().toLowerCase();
+  const targetHeading = headings.find(
+    (el) => el.textContent.trim().toLowerCase() === targetLabel
   );
-  const readingItem = readingHeading ? readingHeading.parentElement : null;
+  const targetItem = targetHeading ? targetHeading.parentElement : null;
 
-  if (readingItem && readingItem.parentElement === meta) {
-    readingItem.insertAdjacentElement("afterend", item);
+  if (targetItem && targetItem.parentElement === meta) {
+    targetItem.insertAdjacentElement("afterend", item);
   } else {
-    // Fallback for title-block variants without an explicit Reading Time cell.
+    // Defensive fallback if a title-block variant does not expose the
+    // expected metadata heading.
     meta.appendChild(item);
   }
 
@@ -656,7 +661,15 @@ function Pandoc(doc)
   -- If present, render it in the Quarto title metadata immediately after
   -- Reading Time. Articles without a series keep the existing title block.
   if current_meta.series and trim(current_meta.series) ~= "" then
-    local series_meta_html = render_series_title_meta(current_meta.series)
+    local placement_heading = "Reading Time"
+    if current_key:match("^longforms/") then
+      placement_heading = "Keywords"
+    end
+
+    local series_meta_html = render_series_title_meta(
+      current_meta.series,
+      placement_heading
+    )
     if series_meta_html then
       table.insert(doc.blocks, pandoc.RawBlock("html", series_meta_html))
     end
