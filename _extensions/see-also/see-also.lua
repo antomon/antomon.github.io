@@ -132,6 +132,7 @@ local function parse_yaml_front_matter(content)
     date = nil,
     date_modified = nil,
     image = nil,
+    series = nil,
     categories = {},
     category_labels = {}
   }
@@ -154,6 +155,11 @@ local function parse_yaml_front_matter(content)
         meta.date_modified = strip_quotes(value)
       elseif key == "image" then
         meta.image = strip_quotes(value)
+      elseif key == "series" then
+        meta.series = strip_quotes(value)
+        if trim(meta.series) == "" then
+          meta.series = nil
+        end
       elseif key == "categories" then
         if value ~= "" then
           local inline = value:match("^%[(.*)%]$")
@@ -297,6 +303,86 @@ local function html_escape(s)
   s = s:gsub(">", "&gt;")
   s = s:gsub('"', "&quot;")
   return s
+end
+
+local function slugify_series(title)
+  local slug = pandoc.text.lower(trim(title or ""))
+  slug = slug:gsub("['’]", "")
+  slug = slug:gsub("[^a-z0-9]+", "-")
+  slug = slug:gsub("%-+", "-")
+  slug = slug:gsub("^%-", ""):gsub("%-$", "")
+  return slug
+end
+
+local function render_series_title_meta(series_title)
+  local slug = slugify_series(series_title)
+  if slug == "" then
+    return nil
+  end
+
+  local href = "/series/" .. slug .. "/"
+
+  return [[
+<div id="article-series-meta-source"
+     data-series-title="]] .. html_escape(series_title) .. [["
+     data-series-href="]] .. html_escape(href) .. [["
+     hidden></div>
+<script>
+(function () {
+  const source = document.getElementById("article-series-meta-source");
+  const meta = document.querySelector("#title-block-header .quarto-title-meta");
+
+  if (!source || !meta) {
+    if (source) source.remove();
+    return;
+  }
+
+  const headings = Array.from(meta.querySelectorAll(".quarto-title-meta-heading"));
+
+  // Defensive: do not add a duplicate if another template/filter already did.
+  if (headings.some((el) => el.textContent.trim().toLowerCase() === "series")) {
+    source.remove();
+    return;
+  }
+
+  const item = document.createElement("div");
+
+  const heading = document.createElement("div");
+  heading.className = "quarto-title-meta-heading";
+  heading.textContent = "Series";
+
+  const contents = document.createElement("div");
+  contents.className = "quarto-title-meta-contents";
+
+  const paragraph = document.createElement("p");
+  paragraph.className = "series";
+
+  const link = document.createElement("a");
+  link.href = source.dataset.seriesHref;
+  link.textContent = source.dataset.seriesTitle;
+
+  paragraph.appendChild(link);
+  contents.appendChild(paragraph);
+  item.appendChild(heading);
+  item.appendChild(contents);
+
+  // Put Series immediately after Reading Time when that field exists.
+  const readingHeading = headings.find(
+    (el) => el.textContent.trim().toLowerCase() === "reading time"
+  );
+  const readingItem = readingHeading ? readingHeading.parentElement : null;
+
+  if (readingItem && readingItem.parentElement === meta) {
+    readingItem.insertAdjacentElement("afterend", item);
+  } else {
+    // Fallback for title-block variants without an explicit Reading Time cell.
+    meta.appendChild(item);
+  }
+
+  source.remove();
+})();
+</script>
+]]
 end
 
 local function url_encode_component(s)
@@ -562,7 +648,21 @@ function Pandoc(doc)
   end
 
   local current_meta = parse_yaml_front_matter(current_content)
-  if not current_meta or not current_meta.categories or #current_meta.categories == 0 then
+  if not current_meta then
+    return doc
+  end
+
+  -- Series is independent of category-based "See also" logic.
+  -- If present, render it in the Quarto title metadata immediately after
+  -- Reading Time. Articles without a series keep the existing title block.
+  if current_meta.series and trim(current_meta.series) ~= "" then
+    local series_meta_html = render_series_title_meta(current_meta.series)
+    if series_meta_html then
+      table.insert(doc.blocks, pandoc.RawBlock("html", series_meta_html))
+    end
+  end
+
+  if not current_meta.categories or #current_meta.categories == 0 then
     return doc
   end
 
