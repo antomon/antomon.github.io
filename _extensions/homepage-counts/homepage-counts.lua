@@ -391,6 +391,12 @@ local function render_recent_series(recent)
         .. '</span></a>'
     )
   end
+
+  table.insert(
+    html,
+    '<a class="btn btn-outline-primary btn-sm" href="/series.html">All series</a>'
+  )
+
   table.insert(html, '</div>')
   return table.concat(html, "\n")
 end
