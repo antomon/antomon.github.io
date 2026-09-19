@@ -1,4 +1,4 @@
--- Build-time article counters for the homepage taxonomy buttons.
+-- Build-time article counters and recent-series links for the homepage.
 --
 -- The filter scans longforms/**/index.qmd and posts/**/index.qmd,
 -- reads their YAML categories, and replaces markers such as
@@ -126,7 +126,25 @@ local function metadata_from_file(path)
   local metadata = parsed.meta or {}
   local draft = normalize_category(pandoc.utils.stringify(metadata.draft or ""))
   if draft == "true" or draft == "yes" or draft == "1" then
-    return { draft = true, categories = {} }
+    return { draft = true, categories = {}, series = nil, date_modified = nil }
+  end
+
+  local series = nil
+  if metadata.series ~= nil then
+    local series_type = pandoc.utils.type(metadata.series)
+    if series_type ~= "MetaList" and series_type ~= "List" and series_type ~= "MetaMap" then
+      series = trim(pandoc.utils.stringify(metadata.series))
+      if series == "" then
+        series = nil
+      end
+    end
+  end
+
+  local date_modified = trim(pandoc.utils.stringify(metadata["date-modified"] or ""))
+  if date_modified ~= "" then
+    date_modified = pandoc.utils.normalize_date(date_modified) or date_modified
+  else
+    date_modified = nil
   end
 
   local categories = {}
@@ -161,7 +179,7 @@ local function metadata_from_file(path)
     end
   end
 
-  return { draft = false, categories = categories }
+  return { draft = false, categories = categories, series = series, date_modified = date_modified }
 end
 
 local skipped_directories = {
@@ -253,6 +271,101 @@ local function build_counts(project_root)
   end
 
   return counts
+end
+
+local function slugify_series(title)
+  local slug = pandoc.text.lower(trim(title or ""))
+  slug = slug:gsub("['’]", "")
+  slug = slug:gsub("[^a-z0-9]+", "-")
+  slug = slug:gsub("%-+", "-")
+  slug = slug:gsub("^%-", ""):gsub("%-$", "")
+  return slug
+end
+
+local function build_recent_series(project_root)
+  local groups = {}
+
+  for _, collection in ipairs({ "longforms", "posts" }) do
+    local collection_root = join_fs(project_root, collection)
+    for _, path in ipairs(collect_article_files(collection_root)) do
+      local metadata = metadata_from_file(path)
+      if metadata and not metadata.draft and metadata.series and metadata.date_modified then
+        local group = groups[metadata.series]
+        if not group then
+          group = {
+            title = metadata.series,
+            latest = metadata.date_modified,
+            count = 0,
+            slug = slugify_series(metadata.series),
+          }
+          groups[metadata.series] = group
+        end
+
+        group.count = group.count + 1
+        if metadata.date_modified > group.latest then
+          group.latest = metadata.date_modified
+        end
+      end
+    end
+  end
+
+  local recent = {}
+  for _, group in pairs(groups) do
+    if group.slug ~= "" then
+      table.insert(recent, group)
+    end
+  end
+
+  table.sort(recent, function(a, b)
+    if a.latest ~= b.latest then
+      return a.latest > b.latest
+    end
+    return a.title < b.title
+  end)
+
+  while #recent > 3 do
+    table.remove(recent)
+  end
+
+  return recent
+end
+
+local function html_escape(value)
+  value = tostring(value or "")
+  value = value:gsub("&", "&amp;")
+  value = value:gsub("<", "&lt;")
+  value = value:gsub(">", "&gt;")
+  value = value:gsub('"', "&quot;")
+  return value
+end
+
+local function render_recent_series(recent)
+  if not recent or #recent == 0 then
+    return '<span class="text-muted">No series published yet.</span>'
+  end
+
+  local html = { '<div class="homepage-topic-links">' }
+  for _, group in ipairs(recent) do
+    local noun = group.count == 1 and "article" or "articles"
+    table.insert(
+      html,
+      '<a class="btn btn-outline-secondary btn-sm" href="/series/'
+        .. html_escape(group.slug)
+        .. '/" title="Last updated '
+        .. html_escape(group.latest)
+        .. '">'
+        .. html_escape(group.title)
+        .. '<span class="homepage-count-badge" aria-hidden="true">'
+        .. tostring(group.count)
+        .. '</span><span class="visually-hidden">, '
+        .. tostring(group.count)
+        .. ' '
+        .. noun
+        .. '</span></a>'
+    )
+  end
+  table.insert(html, '</div>')
+  return table.concat(html, "\n")
 end
 
 local function normalize_count_key(key)
@@ -355,8 +468,16 @@ function Pandoc(document)
   end
 
   local counts = build_counts(project_root)
+  local recent_series = build_recent_series(project_root)
 
   return document:walk({
+    Div = function(element)
+      local marker = element.attributes and element.attributes["data-recent-series"]
+      if marker ~= nil then
+        return pandoc.RawBlock("html", render_recent_series(recent_series))
+      end
+      return element
+    end,
     Span = function(element)
       local key = element.attributes and element.attributes["data-article-count"]
       if key and key ~= "" then
@@ -367,6 +488,10 @@ function Pandoc(document)
     RawBlock = function(element)
       if element.format == "html" then
         element.text = replace_count_markers(element.text, counts)
+        element.text = element.text:gsub(
+          '<div%s+data%-recent%-series%s*></div>',
+          function() return render_recent_series(recent_series) end
+        )
       end
       return element
     end,

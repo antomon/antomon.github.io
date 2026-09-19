@@ -71,6 +71,7 @@ local excluded_categories = {
   ["essay"] = true,
   ["position paper"] = true,
   ["tutorial"] = true,
+  ["review"] = true,
 }
 
 local function is_excluded_category(s)
