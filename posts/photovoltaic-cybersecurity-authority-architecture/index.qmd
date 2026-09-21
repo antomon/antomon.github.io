@@ -1,0 +1,651 @@
+---
+title: "Photovoltaic Cybersecurity Is an Authority-Architecture Problem"
+subtitle: "What the 2026 NTC findings imply for procurement, IEC 62443 design, hardening, and commissioning"
+description: "An evidence-based analysis of the Swiss National Test Institute for Cybersecurity's 2026 photovoltaic assessment, extending its findings into procurement, IEC 62443 architecture, technology-specific hardening, commissioning, and lifecycle assurance."
+abstract: |
+    In September 2026, the Swiss National Test Institute for Cybersecurity (NTC) published a year-long assessment of seven photovoltaic inverters and four energy management systems from eight manufacturers. The public report records more than fifty vulnerabilities, including seven rated critical and six high, root-level compromise of four products, weaknesses in manufacturer clouds, insecure maintenance paths, and local control interfaces that could modify grid-relevant parameters without authentication. Only six disclosed findings were classified as directly scalable through a central entity, however, which exposes a distinction more important than vulnerability count alone: cyber-physical risk depends on the authority obtained through a compromise and on how many installations that authority can reach.
+
+    Part I reconstructs the NTC assessment within its evidentiary limits. The sample was market-informed rather than statistically representative; deep testing of third-party production clouds was legally constrained; product identities and exploit details remain intentionally limited because coordinated disclosure was still active. Within those boundaries, the report supports a clear conclusion. Ordinary web, firmware, authentication, maintenance, and industrial-protocol weaknesses become systemically consequential when they sit behind fleet-scale control, update, or aggregation mechanisms. Conversely, severe local compromise does not by itself establish grid-scale consequence. Grid impact depends on controlled active and reactive power, timing, geographic distribution, operating state, protection, reserves, and the dynamics of the electrical system.
+
+    Part II derives a remediation model that begins before purchase. Product capabilities that determine cloud independence, remote-maintenance authority, firmware governance, local-interface security, support lifetime, vulnerability evidence, and recovery must be made contractually testable before equipment is selected. During construction, IEC 62443 provides the system-level structure for risk-derived zones, conduits, target requirements, and lifecycle responsibilities; NIST IR 8498 supplies smart-inverter-specific guidance; CIS Benchmarks provide detailed configuration baselines where conventional supporting technologies are actually covered. Commissioning must then demonstrate not only that authorized functions work, but that prohibited authority paths fail. The resulting production security baseline has to remain governable through firmware changes, supplier transitions, newly disclosed vulnerabilities, recovery exercises, and eventual end of support. The central thesis is that secure photovoltaic expansion depends on constraining the topology of digital authority, not merely on reducing the number of vulnerabilities.
+date: "2026-09-20"
+date-modified: "2026-09-21"
+categories: [cybersecurity, energy, operational technology, photovoltaics, critical infrastructure]
+audiences: analyst, executive, practitioner, researcher, subject-matter-expert, technical specialist
+difficulty: introductory
+imagee: "pv-cybersec.png"
+---
+
+## The security problem is concentrated control, not solar generation
+
+By the end of 2025, Switzerland had approximately 338,000 grid-connected photovoltaic installations with about 9.5 GW of peak capacity. The National Test Institute for Cybersecurity (NTC)[^photovoltaic-cybersecurity-authority-architecture-ntc-institution] reports annual photovoltaic production just below 8 TWh, equivalent to 13.7 percent of final electricity consumption, while instantaneous photovoltaic production on sunny days can represent a much larger fraction of contemporaneous load.[^photovoltaic-cybersecurity-authority-architecture-ntc-report] Those figures matter for cybersecurity because the installed base is simultaneously distributed in physical location and increasingly concentrated in digital control. A rooftop inverter may be electrically insignificant by itself, yet the same model family, manufacturer cloud, update infrastructure, installer platform, energy management system, or aggregator can connect many such installations to a common authority domain.
+
+The **NTC's September 2026 assessment** makes this distinction unusually concrete. Across seven inverters and four energy management systems, the researchers recorded more than **fifty vulnerabilities**, including seven critical and six high-severity findings; five of the eleven tested products contained at least one high or critical issue, and root-level control was achieved on four.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] Those numbers justify ordinary product-security concern, but the report's more consequential observation is that only six findings were classified as directly scalable through a central entity, five of them at externally reachable manufacturer-cloud interfaces. Severity and reach are therefore different variables.
+
+This article uses *reach* to mean the number and operational significance of installations or functions that can be influenced through a common vulnerability, credential, service, control plane, update path, or other dependency. *Operational authority* is the effective capability of an identity, component, service, or composed access path to perform a state-changing operation: altering configuration, active or reactive power, firmware, protection-related settings, security state, or another property that affects future physical behaviour. *Consequence concentration* occurs when many high-consequence authority paths share one dependency. These concepts extend an authority-centred model already developed for broader operational technology and for PLC programming, where network reachability, authentication, and permission to change industrial state are treated as distinct security properties.[^photovoltaic-cybersecurity-authority-architecture-ot-authority-architecture] [^photovoltaic-cybersecurity-authority-architecture-plc-authority]
+
+This framing avoids two opposite errors. The first is to infer systemic danger directly from a CVSS score: a critical memory-corruption vulnerability reachable only from one isolated local network may remain a single-installation problem. The second is to treat a medium-severity weakness in a fleet service as correspondingly moderate when that service can legitimately address thousands of physical generators. Conventional vulnerability severity remains useful, but cyber-physical consequence additionally depends on the operation obtained, the scope over which that operation can be exercised, and the electrical conditions under which devices respond.
+
+The same distinction changes remediation. The NTC found implementation defects that can be patched, but it also identifies risks that persist when software behaves exactly as designed: manufacturer clouds with legitimate fleet control, privileged maintenance mechanisms, unauthenticated local industrial protocols, concentrated supplier ecosystems, and external dependencies whose effective control cannot be inferred from the location of a data centre.[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks] Secure photovoltaic engineering must therefore address both *product vulnerability* and *authority architecture*.
+
+IEC 62443 is useful for the second problem because its system-level parts structure risk assessment around a defined system under consideration, security zones, conduits, target requirements, and lifecycle responsibilities rather than reducing cybersecurity to an endpoint feature list.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-system] It does not, however, supply every operating-system, firewall, database, or switch setting needed to implement those boundaries. CIS Benchmarks are more prescriptive where a benchmark exists for the exact supporting technology, while NIST IR 8498 addresses smart-inverter security at the residential and light-commercial scale.[^photovoltaic-cybersecurity-authority-architecture-cis-benchmarks] [^photovoltaic-cybersecurity-authority-architecture-nist-ir-8498] These sources answer different questions and should not be collapsed into a generic claim of _compliance_.
+
+The resulting assurance chain begins before a purchase order is signed. Procurement has to expose cloud dependencies, local write authority, maintenance access, update behaviour, support periods, vulnerability evidence, and recovery requirements; architecture has to constrain those capabilities; construction has to implement the constraints; FAT and SAT have to demonstrate them; and handover has to preserve enough evidence for operations to govern later changes. This extends the requirements-to-evidence model developed for software-dependent energy projects: documentation is necessary, but system assurance comes from traceable correspondence among requirements, implementation, tests, configuration state, and accepted evidence.[^photovoltaic-cybersecurity-authority-architecture-system-assurance]
+
+## Part I — what the NTC tested, and what the assessment can establish
+
+### The sample represents market relevance, not a statistical census
+
+The NTC spent approximately 1,300 working hours over roughly one year assessing seven inverters from six manufacturers and four energy management systems, giving eleven products from eight manufacturers in total. Its stated selection principles were market relevance, independence, and scalability. Inverters were selected with reference to their prevalence in the Swiss market, while comparable market-share data for energy management systems were less complete and selection relied more heavily on expert discussions.[^photovoltaic-cybersecurity-authority-architecture-ntc-methodology]
+
+The products were obtained through partners or ordinary customer procurement rather than supplied as specially prepared manufacturer samples, and manufacturers were not involved in the testing before coordinated disclosure. The assessed configuration therefore approximated what an ordinary customer could receive, but it should not be confused with a statistically representative random sample of the Swiss installed base. The public report itself does not support a prevalence estimate such as _a given percentage of Swiss inverters is critically vulnerable_. What it establishes is that the documented vulnerability classes and compromise mechanisms existed in the specific products tested.
+
+The scope was deliberately focused on residential and small-commercial inverters and EMS products because these systems sit between Internet-connected management services and grid-relevant control. Photovoltaic modules, smart meters, batteries, EV charging systems, and balcony photovoltaic systems were outside the laboratory scope. Some of those adjacent technologies appear later in the report as part of the system context, but findings about the tested inverter and EMS population cannot be silently generalized to them.[^photovoltaic-cybersecurity-authority-architecture-ntc-methodology]
+
+### Laboratory realism has explicit limits
+
+The laboratory replaced photovoltaic modules with a controllable DC source and examined firmware, interfaces, configuration, local communications, and cloud relationships under reproducible conditions. This allowed the researchers to investigate software and control behaviour without requiring a complete rooftop installation. The report acknowledges the corresponding limitation: equipment could theoretically behave differently on a test bench, although ordinary procurement and realistic setup were intended to reduce that risk.[^photovoltaic-cybersecurity-authority-architecture-ntc-methodology]
+
+Cloud assessment had a more consequential boundary. Manufacturer clouds are third-party production systems, and the NTC states that Swiss criminal law constrained intrusive testing without authorization. Obtaining manufacturer permission before testing would, in the institute's assessment, have conflicted with its independence requirement, so most cloud work was restricted to externally permissible testing. One implication follows directly: failure to discover a cloud weakness is not evidence of exhaustive cloud security. The report's cloud results are findings within a deliberately limited test envelope.
+
+The NTC also prioritized scalable vulnerabilities rather than attempting a complete certification exercise. Local weaknesses remained relevant when they granted root or grid-control authority, but research effort was concentrated on paths that could affect multiple installations through a central service or repeatable dependency. Physical tampering and permanent hardware damage were not comprehensively tested. Coordinated disclosure further limits what the public document reveals: affected products are generally anonymized, technical exploitation detail is reduced, and some disclosure processes were still continuing when the report was published.[^photovoltaic-cybersecurity-authority-architecture-ntc-methodology]
+
+These constraints define the strongest defensible interpretation of the evidence. The report establishes concrete vulnerabilities in the tested products, recurring classes of weakness, six directly scalable findings, several structural control dependencies, and technical mechanisms through which compromised authority could affect grid-relevant functions. It does not establish vulnerability prevalence across the complete Swiss fleet, exhaustive security of the tested clouds, malicious intent by any manufacturer, or the outcome of a real coordinated grid attack. Those distinctions are necessary if the subsequent architecture is to be derived from evidence rather than from worst-case rhetoric.
+
+## Part I — technical findings and the paths from local compromise to fleet-scale control
+
+### Severity is an incomplete map of consequence
+
+The public quantitative result is severe but more informative when decomposed. The NTC records more than fifty vulnerabilities, of which seven were rated critical and six high; five of the eleven products contained at least one finding at one of those two levels. Root-level control was obtained on four products. One product contained three critical remote-code-execution vulnerabilities, while three products could be fully compromised through inadequately protected manufacturer maintenance access.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]
+
+Only six findings were categorized as scalable through a central entity. Their conventional severities were two critical, one high, and three medium; five were located at externally reachable manufacturer-cloud interfaces. The public report does not enumerate every one of those six findings by product and exploitation chain, so doing so would require speculation. What it does establish is that conventional severity and systemic reach do not align automatically.
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-disclosed-findings therefore summarizes only vulnerability classes and boundaries that the NTC discloses publicly; it is not a reconstruction of the withheld device-level register.
+
+| Disclosed class or result                     | What the NTC reports                                                                                                                 | Immediate authority or effect                            | Scaling condition                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Manufacturer-cloud vulnerabilities            | Multiple cloud weaknesses, including SQL-injection and cross-site-scripting classes                                                  | Access to centrally managed application functions        | Directly scalable where the affected cloud can address many installations            |
+| Authentication and session weaknesses         | Missing session expiry, missing or unchanged default credentials, and related access-control failures                                | User, installer, or administrative access                | Scales when accounts, credentials, or management services are shared                 |
+| Privileged maintenance access                 | Inadequately protected manufacturer maintenance paths, including SSH-related mechanisms                                              | Full device or root-level control in affected cases      | Potentially broad where a common maintenance mechanism reaches a fleet               |
+| Weak or absent local communication protection | Local interfaces with inadequate authentication or encryption                                                                        | Network-local observation or state-changing access       | Repeated compromise requires access to many local networks                           |
+| Unnecessary or persistent interfaces          | Examples include production Wi-Fi or debug capability that could not be eliminated adequately                                        | Enlarged local attack surface                            | Repetition across a common product population                                        |
+| Pre-authentication code execution             | A privileged debug service contained a remotely triggerable buffer overflow from the local network                                   | Arbitrary code execution and root privileges             | Local unless combined with another mechanism that supplies network presence at scale |
+| Local grid-relevant control                   | Nearly all assessed inverters exposed local control capable of changing grid-relevant settings, often through unauthenticated Modbus | Active/reactive-power or related configuration authority | Becomes scalable if many local networks or an upstream controller are compromised    |
+| Permanent physical damage                     | Not tested by the NTC                                                                                                                | Not established for the four rooted products             | No inference to fleet damage is justified from the NTC test alone                    |
+| Deliberate backdoors                          | No evidence found in the tested sample                                                                                               | None established                                         | The negative result cannot be generalized to products not tested                     |
+
+: Publicly disclosed technical findings and evidentiary limits of the NTC assessment. {#tbl-photovoltaic-cybersecurity-authority-architecture-disclosed-findings}
+
+### Manufacturer clouds convert application flaws into control-plane exposure
+
+The cloud findings demonstrate how an otherwise familiar web vulnerability can acquire cyber-physical significance. The NTC found vulnerabilities in several manufacturer clouds, including SQL-injection and cross-site-scripting classes, and reports that affected vendors remediated disclosed weaknesses.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] The vulnerability class itself is not novel; the consequential difference is the object behind the application. If the cloud is authorized to manage device configuration, firmware, or operating setpoints, compromising that service can bypass the need to attack individual installations separately.
+
+The report names one energy-management provider, Solar Manager, with the company's consent. A critical weakness could have permitted a remote attacker to access individual customer systems and then proceed to additional installations. The manufacturer fixed the issue within hours and subsequently authorized deeper cloud testing. The NTC estimates the platform's deployment at approximately 50,000 installations, principally in the DACH region; that figure is an NTC estimate, not a population count independently established here.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]
+
+This case clarifies why _not directly exposed to the Internet_ is insufficient as a system-level statement. An inverter can reject unsolicited inbound Internet traffic while maintaining an authenticated outbound relationship to a cloud that can send commands back through an established session. Internet exposure and remote operational authority are different properties. A secure architecture has to identify both.
+
+### Local compromise exposed several independent routes to root
+
+On-device weaknesses included missing or ineffective authentication, inadequate session management, default or unchanged credentials, weak protection of local communications, interfaces that could not be disabled, and manufacturer maintenance mechanisms that exposed privileged access. In some cases the same maintenance credentials were usable across multiple devices, converting what might appear to be a local service account into a common dependency.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]
+
+One representative chain shows why individually plausible controls can fail when composed. On an assessed device, the installer password could be reset through the device's Wi-Fi access point without prior authentication. Administrative access then allowed SSH/root capability to be enabled. A default root password was nominally subject to replacement on first use, but normal operation did not require a legitimate user to invoke that account first; an attacker could therefore become the first user. _Disabled by default_, _change on first login_, and _administrative access requires credentials_ were each insufficient because another reachable function invalidated their assumptions.
+
+A second product exposed a different mechanism. Firmware analysis found an unnecessary production debug service running with high privilege and processing network input before authentication. A request parameter was copied without adequate bounds checking into a fixed-size buffer, enabling arbitrary code execution from the local network and yielding root authority.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] The lesson is architectural as much as implementation-specific: unnecessary privileged code, pre-authentication reachability, lack of privilege separation, and unsafe input handling combined to produce the compromise.
+
+### Local control was often a trust assumption rather than an authorization decision
+
+The NTC gives particular attention to local inverter-control interfaces because exploitation is not always required. Nearly all assessed inverters allowed grid-relevant settings to be changed through local interfaces, often via Modbus without authentication.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] SunSpec models can standardize register semantics, but a register model is not an identity or authorization mechanism. Several manufacturers ship local control disabled and require it to be enabled when an EMS is integrated; after enablement, another device with the necessary local network reach may be able to issue writes without an inverter-specific login.
+
+This is a design condition rather than necessarily a conventional software vulnerability. From an authority perspective, however, the distinction is secondary. If network presence is sufficient to cause a state-changing operation, reachability becomes part of the authorization model. The analytical extension from PLC programming is direct: secure transport, authenticated access to an upstream EMS, and permission to alter an inverter are separate properties, and the final enforcement point for a high-consequence operation must be identified explicitly.[^photovoltaic-cybersecurity-authority-architecture-plc-authority]
+
+### Local does not necessarily mean unscalable
+
+A local weakness ordinarily limits immediate consequence to one installation. The NTC nevertheless points out that an attacker who already controls large numbers of home or small-business networks—through compromised routers, IoT devices, botnets, or comparable footholds—could repeatedly exercise an otherwise local inverter-control weakness.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] Neither component of the attack path is globally scalable by itself: the botnet supplies network presence, while the inverter interface supplies operational authority. Together they can compose into broader reach.
+
+This distinction matters particularly for an EMS. The EMS is intentionally placed where it can communicate with the inverter and may also coordinate batteries, EV chargers, heat pumps, or other controllable resources. Compromise of that intermediary can therefore cross a boundary that the inverter's local protocol assumes has already been secured. Where an EMS provider also operates a central cloud, centralized external reach and local downstream authority can coexist in the same architecture.
+
+### Root access did not establish permanent physical damage
+
+The NTC obtained root privileges on four products but explicitly did not test whether those devices could be driven into states that permanently damage power electronics. Root control establishes broad software authority; it does not prove that all independent electronic or hardware protections can be bypassed. The report cites external research on another microinverter product to show that destructive firmware behaviour is possible in at least one context, but that external example does not establish equivalent damage mechanisms in the four NTC-compromised products.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]
+
+That boundary is important because cyber-physical analysis is especially vulnerable to inference inflation. _Root_ is a strong statement about software privilege. _Can permanently destroy the inverter_ is a different empirical claim that requires evidence about hardware, firmware, protection, and physical response. The NTC does not provide that evidence for its four rooted products.
+
+### The investigation found no evidence of deliberately implanted backdoors
+
+The report is equally explicit about a negative result: it found no evidence in the tested sample of deliberately installed backdoors or hidden undocumented communications components.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] One device contained a microphone, but investigation found that it supported a documented knock-based interaction function rather than a covert capability. The NTC still regarded the component as avoidable attack surface because it can acquire richer input than that function requires and software could theoretically change its use.
+
+The correct conclusion is therefore neither that the products contained a hidden microphone backdoor nor that the tested sample proves an absence of backdoors across the market. The narrower result is sufficient: the NTC's systemic argument does not depend on a hypothesis of intentionally malicious hardware. Ordinary vulnerabilities and legitimate remote authority already produce the relevant risk mechanisms.
+
+## Part I — from inverter authority to grid consequence
+
+Cyber compromise and grid consequence are not the same proposition. The first establishes an attacker's capability to change device state; the second depends on what that state change does to the electrical system. The NTC therefore moves from vulnerability analysis to power-system mechanisms involving controlled active power, reactive power, timing, geographic distribution, protection settings, available reserves, system inertia, and the response of other generation and network controls.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]
+
+The Continental European synchronous system operates close to 50 Hz because generation and consumption have to remain balanced continuously. The NTC describes primary reserves on the order of 3 GW acting within seconds, followed by slower balancing mechanisms, and notes the 49 Hz under-frequency load-shedding threshold in its discussion.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact] These figures are not universal cyberattack thresholds. System response depends on the grid state at the moment of disturbance, the available inertia and reserves, the location and rate of the power change, and the behaviour of protection and control systems.
+
+### The Iberian blackout illustrates interacting grid mechanisms, not a cyberattack
+
+The 28 April 2025 blackout in continental Spain and Portugal provides evidence about grid dynamics, not about malicious photovoltaic control. ENTSO-E's final expert-panel account identifies interacting oscillations, shortcomings and differences in voltage and reactive-power control, rapid changes in generation, generator disconnections, and uneven stabilization capabilities in the chain of events.[^photovoltaic-cybersecurity-authority-architecture-entsoe-iberian-blackout] It does not support the simplified claim that the event occurred merely because the system contained a high share of renewable generation, nor was the event a cyberattack.
+
+The relevance to the NTC analysis is correspondingly limited but real. A large-scale outage can emerge from interactions among voltage behaviour, reactive-power control, generator response, and cascading disconnection. That physical observation does not establish that compromised residential inverters could reproduce the same event; a cyber scenario additionally requires sufficient access, coherent command authority, appropriate timing, and conditions in which protection and operator action fail to contain the disturbance.
+
+A historical German example makes the synchronization problem clearer. The NTC recounts the earlier 50.2 Hz rule under which many photovoltaic generators would disconnect at the same threshold. As the installed base grew, homogeneous protective behaviour itself became a systemic concern, and Germany required a large retrofit program to diversify the response.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact] The lesson is independent of malicious intent: an individually defensible control rule can become collectively unsafe when a sufficiently large fleet shares the same trigger.
+
+### Three attack families exercise different kinds of authority
+
+The NTC adopts a three-part cyber-physical classification drawn from prior inverter-security research. Type A manipulates active power and therefore the generation–consumption balance: coordinated disconnection, reconnection, curtailment, or changes to ride-through behaviour can produce frequency disturbances. Timing matters because repeated or phased power changes can interact with grid dynamics differently from a single static loss.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]
+
+Type B targets reactive power and voltage behaviour. If an attacker can alter reactive-power setpoints or characteristic curves, an inverter that should oppose a voltage deviation could instead reinforce it. The NTC treats this as potentially important at local or regional scale, where voltage constraints and protection responses are strongly dependent on network topology. It should not be interpreted as a universal claim that a fixed amount of compromised capacity will produce an outage; effectiveness is contingent on operating conditions and the location of controlled assets.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]
+
+Type C concerns converter-driven instability and the excitation of oscillatory modes. This is technically more complex because success depends on dynamic interaction among converter control loops, network impedance, other generators, and the mode being targeted. The NTC's assessment is correspondingly cautious: coordinated exploitation through heterogeneous residential inverters is substantially less established than active- or reactive-power manipulation.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]
+
+| Attack family | Authority exercised                                                                     | Principal electrical variable      | Characteristic scope                                                                       | Major uncertainty                                                                              |
+| ------------- | --------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Type A        | Active-power commands, disconnect/reconnect behaviour, ride-through or related settings | Frequency and active-power balance | Potentially wide-area when sufficient capacity is coordinated                              | Required controllable power depends on grid state, reserves, inertia, timing, and distribution |
+| Type B        | Reactive-power setpoints or voltage-control characteristics                             | Voltage and reactive power         | Often local or regional, with possible propagation through protection and network response | Strongly dependent on topology, location, and existing voltage regulation                      |
+| Type C        | Dynamic converter-control behaviour                                                     | Converter or system oscillations   | Potentially wider-area if an appropriate mode can be excited                               | Coordinated exploitation through heterogeneous small inverters remains comparatively uncertain |
+
+: Cyber-physical inverter attack families discussed by the NTC differ in both the authority required and the physical mechanism through which consequence develops. {#tbl-photovoltaic-cybersecurity-authority-architecture-grid-attack-types}
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-grid-attack-types shows why remote shutdown is an incomplete security model. Authority over active-power limits, reactive-power curves, ride-through parameters, reconnect behaviour, and related grid settings can matter even when a remote party cannot simply switch every inverter off. The protected object is the inverter's *behaviour under electrical conditions*, not a binary run/stop state.
+
+### Grid-scale estimates are model results, not predictions
+
+The NTC cites published modeling to illustrate the order of magnitude at which coordinated load or generation manipulation can become relevant to the interconnected European system. It reports, from earlier simulation work, attacker-favourable cases in which approximately 4.5 GW of temporally modulated power could drive modeled frequency below 49 Hz, while a one-off change required around 6 GW under the same modeling assumptions.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact] The report is explicit that these are illustrative estimates rather than a Swiss blackout calculation or a deterministic threshold.
+
+That qualification is essential. Nameplate photovoltaic capacity is not identical to controllable instantaneous output; irradiance, actual dispatch, device distribution, grid state, reserves, protection, and network conditions all matter. A threshold derived from one model cannot be converted into a statement that controlling a fixed number of Swiss inverters would cause a blackout. What the cited work supports, through the NTC's synthesis, is a narrower proposition: gigawatt-scale coordinated power changes can become system-relevant under plausible modeled conditions, so fleet-control concentration cannot be treated as negligible merely because each endpoint is small.
+
+### The Polish incident demonstrates destructive renewable-energy OT access, not a blackout
+
+CERT Polska's analysis of the coordinated attacks of 29 December 2025 provides a different category of evidence. More than thirty wind and photovoltaic facilities were affected alongside other industrial and energy targets. At renewable sites, attackers reached control infrastructure associated with grid connection, damaged or disrupted industrial devices and communications, and used destructive techniques; communication and remote control from distribution-system operators were impaired, while electricity production at the affected renewable installations continued.[^photovoltaic-cybersecurity-authority-architecture-cert-poland]
+
+This incident therefore demonstrates that attackers can obtain destructive access to renewable-energy OT across multiple sites. It does not demonstrate that the attackers nearly caused a European grid collapse. Keeping those propositions separate strengthens rather than weakens the systemic argument: the real incident establishes access and destructive capability, while modeled work explores the conditions under which coordinated control could produce larger electrical effects.
+
+### Grid resilience reduces consequence but does not remove concentrated authority
+
+Power systems contain reserves, protection, operating procedures, and heterogeneous equipment, and many disturbances are contained. Device diversity can make one cross-vendor exploit substantially harder to scale. Those mitigating facts matter because a technically possible device compromise is not synonymous with an inevitable cascade.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]
+
+Heterogeneity protects less effectively, however, when a legitimate central platform already normalizes control across endpoints. A manufacturer cloud or aggregator does not need a universal exploit if its normal function is to coordinate enrolled devices. Endpoint diversity and common control-plane diversity are therefore different resilience properties.
+
+The resulting security objective is not to make every digital intrusion physically irrelevant; equipment whose purpose is to control electrical power will always possess consequential functions. The practical objective is to prevent one compromised principal or common dependency from obtaining enough coherent authority to turn many individually tolerable devices into one adversarial actuator.
+
+## Part I — structural risks that remain after individual vulnerabilities are patched
+
+The NTC separates ordinary vulnerabilities from five structural risks that do not disappear when the currently known defects are fixed: dependence on manufacturer clouds, privileged remote-maintenance access, insecure local control protocols, concentration of the installed base among relatively few suppliers, and false assurance derived from cloud-hosting location or nominal manufacturer origin.[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks] These are architecture and governance properties, not simply bugs.
+
+The report also distinguishes two threat perspectives. In the first, a third party exploits a technical vulnerability; secure development, independent testing, vulnerability handling, and patching directly reduce that risk. In the second, legitimate manufacturer or supply-chain capabilities become the attack mechanism after compromise of the supplier, abuse by an insider, coercion, or another event that transfers use of legitimate authority. The NTC presents these as threat scenarios, not as evidence that any tested manufacturer acted maliciously.[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks]
+
+### Cloud dependence is fleet authority even without a vulnerability
+
+A manufacturer cloud may legitimately provide telemetry, applications, diagnostics, firmware distribution, configuration, and remote control. If the same service manages a large fleet, it already possesses an authenticated path that an attacker would otherwise have to build installation by installation. Strong encryption protects the path from some outsiders, but it does not eliminate the consequence of compromise at the authorized endpoint.
+
+Firmware authority is particularly consequential because it can change the implementation of every other control. A runtime setpoint modifies current behaviour; firmware can alter communications, privilege handling, exposed services, update rules, security controls, and the logic governing later operation. A remote software-distribution service therefore belongs in the authority model even if it never sends ordinary dispatch commands.
+
+### Maintenance is a standing privilege unless the architecture says otherwise
+
+Privileged manufacturer or installer access is operationally useful for diagnosis and recovery, yet a strongly authenticated maintenance mechanism can still be a concentration of authority. Replacing a fleet-wide password with modern cryptography solves a credential weakness; it does not answer whether one backend identity should be able to alter thousands of installations.
+
+The same issue extends beyond manufacturers. Installers, maintenance companies, managed-service providers, aggregators, and virtual power plants can become common authority domains because their business function is to manage many otherwise independent installations. Security requirements should therefore follow effective controllable capacity and operation class rather than organizational labels.
+
+### Local industrial protocols preserve assumptions from an older topology
+
+The NTC treats unauthenticated local inverter control as a structural device-category problem because protocols originally used on physically constrained serial links increasingly appear over Ethernet and Wi-Fi. A physically bounded RS485 link and a general-purpose local network do not provide equivalent assurance merely because both carry the same register model.[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks]
+
+This migration explains why securing the cloud path cannot secure the complete system. An EMS can authenticate to its cloud with modern cryptography and still issue unauthenticated local writes to the inverter. Once the EMS is compromised, the secure external session terminates at an intermediary that inherits downstream authority from network position alone.
+
+### Market concentration becomes cyber-physical concentration
+
+A physically distributed fleet can remain digitally homogeneous. Devices from the same supplier may share cloud services, firmware-signing infrastructure, update pipelines, maintenance mechanisms, software components, protocol implementations, and administrative processes. Geographic distribution and independent asset ownership therefore do not imply cyber independence.
+
+The relevant concentration metric is not simply vendor market share. It is the amount of consequential authority that can be derived from a common dependency. Two manufacturers with similar shipment shares can have very different systemic risk if one permits local autonomous operation and technically partitions remote authority while the other centralizes control and updates behind one administrative plane.
+
+### Hosting location is not control provenance
+
+The NTC reports observing communications to European endpoints but explicitly warns that endpoint location does not prove that data or administrative control remain exclusively within Europe.[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks] Server geography does not identify who develops deployed software, owns signing keys, controls administrative identities, operates maintenance systems, or supplies upstream dependencies.
+
+Manufacturer nationality is likewise an incomplete proxy for product provenance. Components, firmware, software libraries, manufacturing, cloud operations, and support functions may cross several jurisdictions regardless of the brand's headquarters. An origin-based procurement rule can therefore miss the technically useful question: which external principals can change the product after commissioning, through what mechanisms, and with what operator control?
+
+These five risks converge on a *common authority domain*: the population of installations whose relevant behaviour can be changed through one cloud, maintenance mechanism, update system, service provider, aggregator, credential system, or equivalent dependency. A common authority domain can exist in a fully patched fleet. That is why remediation has to begin at procurement rather than after penetration testing.
+
+## Part II — before purchase: make cybersecurity properties contractually testable
+
+The most expensive security requirement is often the one discovered after the selected product cannot implement it. If cloud connectivity is mandatory, remote maintenance cannot be revoked, the local control protocol cannot authenticate a writer, grid-relevant functions cannot be separated from ordinary management, or restoration requires an unavailable manufacturer service, network architecture can only compensate around those constraints. Procurement is therefore part of cybersecurity design.
+
+The NTC's recommendations support this upstream treatment. It calls for cloud-independent operation where feasible, protected local interfaces, defined update support, signed firmware, rollback protection, device-specific maintenance credentials, time-limited and revocable privileged access, security logging, secure cloud APIs, configuration recovery, coordinated vulnerability disclosure, and safe behaviour at end of support.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] The report also argues for limiting the fleet-wide reach of legitimate manufacturer access rather than assuming that strong authentication alone resolves the problem.
+
+### Specify operational authority rather than generic remote access
+
+An electrical specification describes rated power, efficiency, DC ranges, grid-code behaviour, environmental conditions, and protection. A cybersecurity specification should describe the same product in terms of state-changing authority. At minimum, the project needs to distinguish telemetry, active-power control, reactive-power control, modification of grid or protection parameters, firmware installation, security administration, account management, credential or certificate management, backup and restore, factory reset, and privileged maintenance.
+
+Calling all of these functions _remote access_ destroys useful distinctions. A cloud authorized to read telemetry need not be able to change a volt-var curve. An installer who commissions the device need not retain permanent maintenance authority. An update service need not inherit ordinary dispatch privileges. Applying the reachability–authentication–authority distinction used for PLC engineering, the procurement question becomes: *which principal can perform which operation, through which final enforcement point, in which operating state?*[^photovoltaic-cybersecurity-authority-architecture-plc-authority]
+
+The bidder should therefore provide an authority matrix and interface register before award. For every state-changing path, it should identify the source identity, protocol or service, authorization mechanism, whether the function is continuously enabled, whether the owner can disable it, the largest scope one operation can affect, and the evidence available to reconstruct its use.
+
+### _Cloud optional_ has to be a testable property
+
+A supplier statement that the product can operate without the cloud is too imprecise for acceptance. The project needs to know what happens when all manufacturer-controlled services are blocked: whether generation continues; whether commissioned grid settings remain unchanged; whether local control remains available; whether alarms and local telemetry survive; whether certificate refresh, licensing, time, or entitlement checks cause delayed degradation; and how the system behaves when connectivity returns.
+
+Cloud independence does not require permanent offline operation. Remote monitoring, updates, diagnostics, and optimization may be valuable. The requirement is that any dependency affecting safe local operation be explicit. If loss of an external service eventually disables generation or makes recovery impossible, the project has purchased an availability and control dependency that must be governed as such.
+
+### Maintenance should be procured as an exceptional authority state
+
+A support contract should not translate automatically into a permanent vendor path. Named identities, strong authentication, target scoping, local approval where appropriate, duration limits, revocation, and audit evidence should be specified before award. A particularly important question is the maximum scope one supplier identity or backend can affect. A platform can satisfy MFA, encryption, and logging while still allowing one privileged principal to alter an entire fleet.
+
+The NTC does not establish a universal megawatt limit for a common control domain, and neither does the public IEC material used here. Procurement should therefore require disclosure and partitioning capability rather than inventing a numerical threshold without an electrical risk basis.
+
+### Local interfaces need a function-level security description
+
+A procurement schedule that says only _Modbus supported_ omits the property that matters. The supplier should identify which registers or API operations are readable or writable, which alter active power, reactive power, protection, firmware, or security configuration, which identities can invoke them, whether communications can be protected, and whether write capability can be disabled independently of telemetry.
+
+Where authenticated local control is unavailable, the deficiency should remain explicit. The project can decide to reject the product or design a compensating boundary around it, but it should not discover during commissioning that any device on the EMS network can change grid-relevant parameters.
+
+### Firmware signing does not answer plant-level authorization
+
+Cryptographic signing establishes that an update is associated with a trusted signing authority and has not been modified after signing; it does not establish that the release is appropriate for a particular installation or should be deployed to an entire fleet simultaneously. Procurement should consequently require signature verification, an anti-rollback or controlled-downgrade model, unambiguous version identity, release information describing security and grid-behaviour changes, staging capability where justified, and a defined recovery path.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations]
+
+The distinction mirrors the broader authority model. *Authentic software* and *authorized deployment of that software to this plant at this time* are related but different propositions.
+
+### IEC 62443 evidence must be scoped to what it actually covers
+
+IEC's public description of IEC 62443-4-1 states that it addresses the secure product-development lifecycle, including security requirements, secure design and implementation, verification and validation, defect management, patch management, and product end of life. IEC 62443-4-2 addresses technical security requirements for IACS components and organizes them around the seven foundational-requirement families.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-product]
+
+These documents answer different assurance questions. Evidence concerning 62443-4-1 can support an assessment of a supplier's product-development process; evidence concerning 62443-4-2 can support an assessment of a component's security capabilities within a defined scope. Neither, by itself, establishes that an integrated photovoltaic plant implements the required zones, conduits, target requirements, or operational governance.
+
+The same separation applies to project organizations. IEC's public descriptions of 62443-2-4 and 62443-2-1 place security processes for integration and maintenance on the service-provider side and the operational security program on the asset-owner side, respectively.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-operations] A technically capable inverter does not compensate for an uncontrolled integration process, and a well-governed owner cannot manufacture security capabilities that the product lacks.
+
+### Use the Cyber Resilience Act as a product baseline, not as system acceptance
+
+Regulation (EU) 2024/2847 establishes horizontal cybersecurity requirements for products with digital elements made available on the Union market. Its general application date is 11 December 2027, while the Article 14 vulnerability and incident reporting obligations apply from 11 September 2026.[^photovoltaic-cybersecurity-authority-architecture-cra] For a Swiss project, direct legal applicability cannot be assumed merely because the product is an inverter; applicability depends on the relevant market activity and legal circumstances. The Regulation is nonetheless useful as a procurement baseline where products are placed on the EU market.
+
+The CRA requires a product cybersecurity risk assessment, security properties under Annex I, vulnerability handling, and an explicit support period. Article 13 ties the support period to expected product use and generally sets a five-year floor unless expected use is shorter; the Regulation also recognizes that industrial products can have much longer expected use.[^photovoltaic-cybersecurity-authority-architecture-cra] A photovoltaic asset with a long physical lifetime should therefore not treat a minimal product-support period as automatically sufficient for project assurance.
+
+The Regulation's treatment of remote data processing also requires precision. A qualifying remote data-processing solution can form part of the product when the manufacturer-developed or manufacturer-controlled remote processing is necessary for product functionality; that does not make every external cloud service part of the regulated product boundary.[^photovoltaic-cybersecurity-authority-architecture-cra] Procurement still has to enumerate the actual cloud services, identity providers, update infrastructure, APIs, and maintenance systems on which the plant depends.
+
+### SBOM and VEX answer different questions
+
+The CRA requires manufacturers to identify and document software components and vulnerabilities, including through a machine-readable software bill of materials covering at least top-level dependencies. The Regulation does not create an unconditional general right for every customer to receive the manufacturer's complete SBOM; its user-information provisions address access where the manufacturer makes the SBOM available.[^photovoltaic-cybersecurity-authority-architecture-cra] An asset owner that requires the SBOM for operational vulnerability management should therefore make delivery, scope, refresh, and product-version correspondence contractual.
+
+An SBOM establishes composition. It does not establish that every vulnerability associated with a listed component affects the finished product. VEX addresses the second problem by communicating a scoped product-specific vulnerability disposition, which depends on exact product identity, configuration, evidence, provenance, and time.[^photovoltaic-cybersecurity-authority-architecture-vex-first-principles] Procurement should therefore require a defensible vulnerability-assessment process rather than assuming that either an SBOM match or a supplier `not affected` statement is self-proving.
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-procurement-baseline converts these principles into evidence-bearing procurement properties.
+
+| Procurement property            | Pre-award evidence                                                      | Acceptance principle                                                                                |
+| ------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Cloud-independent operation     | Functional architecture and documented offline dependencies             | Blocking manufacturer services must preserve the approved safe local operating state                |
+| Remote grid control             | Authority matrix and enforcement-point description                      | Telemetry must not silently imply write authority                                                   |
+| Local interfaces                | Port/protocol/API/register and read/write register                      | Every enabled write path must be declared and either protected or explicitly compensated            |
+| Credentials and maintenance     | Identity, credential-generation, scoping, revocation, and logging model | No shared fleet credential; privileged access must be attributable and controllable                 |
+| Fleet-wide authority            | Administrative and control-domain architecture                          | Maximum legitimate reach must be known and technically partitionable where risk requires            |
+| Firmware integrity              | Signing, verification, version, and downgrade design                    | Device must reject unauthorized software; deployment governance remains a separate project decision |
+| Update process                  | Release, staging, advisory, and recovery procedure                      | Security updates must be deployable without uncontrolled fleet-wide change                          |
+| Secure development              | Precisely scoped IEC 62443-4-1 or equivalent evidence                   | Process evidence must correspond to the supplier and product lifecycle actually used                |
+| Component capability            | Precisely scoped IEC 62443-4-2 or equivalent evidence                   | Component evidence must be mapped to project-required security functions                            |
+| Logging and recovery            | Event catalogue, configuration export, restoration procedure            | Security-relevant change and recovery must remain reconstructible                                   |
+| Support lifetime                | Explicit support start/end and supported-version policy                 | Support duration must be compatible with asset strategy or have an approved replacement plan        |
+| SBOM and vulnerability evidence | Sample machine-readable SBOM and supplier vulnerability process         | Evidence must identify the contracted product and firmware state                                    |
+| End of support                  | Documented post-support local operating and recovery state              | Supplier withdrawal must not create an undocumented remote lockout or unrecoverable dependency      |
+
+: A procurement baseline should bind cybersecurity properties to evidence and acceptance conditions before supplier selection. {#tbl-photovoltaic-cybersecurity-authority-architecture-procurement-baseline}
+
+The purpose of @tbl-photovoltaic-cybersecurity-authority-architecture-procurement-baseline is not to produce a larger tender questionnaire. It is to expose product properties that cannot be recovered cheaply after award. Unknown ports, undocumented write authority, unclear cloud dependencies, unrevocable maintenance paths, uncertain support periods, and unavailable recovery artefacts should remain explicit open items rather than becoming implicitly accepted through equipment delivery.
+
+## Part II — during construction: design IEC 62443 zones, conduits, and authority boundaries
+
+Procurement establishes what the equipment can support; construction determines whether those capabilities compose into a defensible system. The NTC's own recommendations for larger installations include inventorying remote access and interfaces, preventing direct Internet exposure, separating photovoltaic and energy-management networks, and separating local inverter control from Internet-facing functions.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] These recommendations become more systematic when expressed through IEC 62443-3-2.
+
+IEC's public description of IEC 62443-3-2 requires the system under consideration to be defined, partitioned into zones and conduits, assessed for risk at those boundaries, assigned target security levels, and documented with resulting security requirements.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-system] In this article, a *zone* is consequently used as an engineering grouping of assets with sufficiently similar risk and security requirements to be governed together, while a *conduit* is the controlled communication relationship between such groups. A VLAN can implement part of a zone boundary, and a firewall rule can implement part of a conduit, but neither should substitute for the risk and authority reasoning that justifies the boundary.
+
+### Define the system around consequence and dependency
+
+For a commercial or industrial photovoltaic plant, the system under consideration can include inverters, an EMS or power-plant controller, SCADA/HMI functions, engineering systems, firewalls and switches, remote-access infrastructure, logging, time and identity services, and any other component whose compromise can alter plant behaviour or security state. Manufacturer clouds, service providers, aggregators, utility interfaces, and enterprise IT remain outside the owner's physical boundary in many projects but still have to appear in the architecture when local equipment trusts their commands.
+
+The boundary therefore follows dependency rather than commercial ownership. If a cloud identity can install firmware, it belongs in the authority model. If an enterprise identity provider can admit an engineer to the OT environment, failure of that service is relevant to OT security. If a battery or EV-charging controller shares an EMS with photovoltaics, it matters to consequence analysis even though the NTC did not test the battery or charger itself.
+
+### Terminate external connectivity before it reaches inverter control
+
+The reference architecture in @fig-photovoltaic-cybersecurity-authority-architecture-zones-conduits does not prescribe one universal topology. It illustrates the security property to preserve: external relationships should terminate at intermediary enforcement points, and no authenticated external session should inherit unrestricted transitive authority over the inverter network.
+
+```{mermaid}
+%%| label: fig-photovoltaic-cybersecurity-authority-architecture-zones-conduits
+%%| fig-cap: "Reference authority architecture for a larger photovoltaic installation. External services terminate at explicit mediation points before commands or administration can reach local control."
+%%| fig-alt: "Flowchart with manufacturer, service provider, aggregator, utility, and enterprise systems outside the plant. External paths terminate in an OT DMZ containing remote-access, control-validation, telemetry-update, and logging functions. Engineering access continues through an engineering zone; validated operational commands reach an EMS zone; the EMS communicates with a separate inverter-control zone and separate flexible-resource zones."
+%%| fig-align: center
+%%{init: {"theme": "neutral", "layout": "elk"}}%%
+flowchart TD
+
+    subgraph EXT["External organizations and services"]
+        OEM[Manufacturer cloud]
+        SUP[Manufacturer or service provider]
+        AGG[Aggregator or virtual power plant]
+        GRID[DSO or TSO]
+        ENT[Enterprise IT]
+    end
+
+    subgraph DMZ["Zone: OT DMZ and external-service termination"]
+        RAG[Remote-access gateway]
+        ECG[External-control gateway]
+        TUG[Telemetry and update gateway]
+        LOG[(Security event store)]
+    end
+
+    subgraph ENG["Zone: OT engineering and administration"]
+        JUMP[Engineering jump host]
+        EWS[Engineering workstation]
+    end
+
+    subgraph CTRL["Zone: EMS or plant control"]
+        EMS[EMS or plant controller]
+    end
+
+    subgraph PV["Zone: inverter control"]
+        INV[Photovoltaic inverters]
+    end
+
+    subgraph FLEX["Separate controllable-resource zones"]
+        BESS[Battery controller]
+        EV[EV charging controller]
+    end
+
+    SUP -->|approved remote session| RAG
+    ENT -->|authorized administrative session| RAG
+    RAG -->|brokered session| JUMP
+    JUMP -->|authorized engineering access| EWS
+    EWS -->|approved configuration action| EMS
+
+    AGG -->|dispatch request| ECG
+    GRID -->|grid-control request| ECG
+    ECG -->|validated control request| EMS
+
+    OEM -->|telemetry service or signed update| TUG
+    EMS -->|operating telemetry| TUG
+    TUG -->|verified service interaction| EMS
+
+    EMS -->|local operational setpoints| INV
+    INV -->|operating telemetry| EMS
+
+    EMS -->|authorized coordination| BESS
+    BESS -->|operating telemetry| EMS
+    EMS -->|authorized coordination| EV
+    EV -->|operating telemetry| EMS
+
+    RAG -->|session events| LOG
+    ECG -->|control events| LOG
+    TUG -->|service events| LOG
+    EMS -->|control-change events| LOG
+```
+
+The important property in @fig-photovoltaic-cybersecurity-authority-architecture-zones-conduits is not the number of firewalls. It is the absence of implicit transitive entitlement. A manufacturer relationship used for telemetry or software distribution does not automatically permit grid-control writes; an aggregator authorized to request active-power flexibility does not automatically gain firmware or protection-setting authority; and a remote maintenance engineer reaches the required target through a controlled management path rather than by obtaining general layer-3 adjacency to the field network.
+
+### The inverter-control zone should contain as little general-purpose functionality as possible
+
+Where the inverter's local protocol cannot authenticate individual writers, its zone boundary becomes a compensating authorization mechanism. Only the designated EMS or plant controller should be able to reach the write-capable interface, and the conduit should expose only the services required for that function. General-purpose user devices, enterprise administration, arbitrary cloud sessions, and unrelated field systems should not share direct access merely because they are physically close.
+
+NIST IR 8498 independently reinforces the minimization principle at smaller scale: unnecessary remote-access interfaces and unused wireless communications should be disabled, guest or anonymous capability should be constrained, and communications should be protected according to the deployment.[^photovoltaic-cybersecurity-authority-architecture-nist-ir-8498] The implementation may be far simpler in a residential installation than in @fig-photovoltaic-cybersecurity-authority-architecture-zones-conduits, but the principle is identical: local-control authority should not inherit the trust assumptions of a general-purpose household or business network.
+
+### The EMS is an authority concentrator, not merely a gateway
+
+An EMS or plant controller often has legitimate authority over multiple inverters and may also coordinate storage and controllable load. Compromise of that component can therefore have a larger consequence than compromise of one field device. Its security requirements should follow its *downstream authority*, not its physical size or operating-system category.
+
+External commands should terminate at a point that can validate source, operation class, target, range, timing, and current operating state before they become local device commands. An aggregator contracted to request active-power flexibility should receive a different authorization envelope from a utility interface or an OEM maintenance function. The plant controller may technically be able to access hundreds of inverter registers, but ordinary dispatch should expose only the subset required for operations.
+
+### Separate controllable generation from controllable load where consequence justifies it
+
+A shared EMS can increase the range of net power change available to a compromised controller by coordinating photovoltaics, batteries, EV chargers, and other flexible loads. Those device classes should therefore not be collapsed automatically into one unrestricted security zone merely because one application manages them. Separate zones and explicit conduits allow the project to control which operations the EMS can invoke downstream and to prevent unnecessary lateral communication among resource types.
+
+The correct degree of physical versus logical separation is risk-dependent. IEC 62443-3-2 does not prescribe a universal photovoltaic topology. The important requirement is that the chosen enforcement mechanism can implement and verify the approved restricted data flow.
+
+### Maintenance, telemetry, updates, aggregation, and utility control need distinct conduits
+
+Remote support is different from dispatch because maintenance can alter software, identities, diagnostics, and persistent configuration. It should therefore traverse a controlled management path rather than share an unrestricted operational conduit. Temporary construction access—cellular routers, vendor VPNs, direct engineering sessions, installer Wi-Fi, broad firewall rules—can be legitimate during controlled work, but it should be modeled as a temporary system state rather than allowed to become production architecture by inertia.
+
+Manufacturer telemetry and software distribution should likewise be separated conceptually from real-time control. A signed update is a privileged object but not the same operation as a reactive-power setpoint. A DSO or TSO interface and an aggregator interface should be distinguishable so that compromise of one can be isolated without necessarily disabling the other or sacrificing local autonomous operation.
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-zone-authority makes the authority distinction explicit.
+
+| Zone or conduit          | Main consequence of compromise                                | Authority that may be required                                            | Authority normally absent unless explicitly justified                         |
+| ------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Inverter-control zone    | Direct alteration of inverter behaviour                       | Local setpoints and required telemetry                                    | Direct Internet, enterprise administration, unrestricted manufacturer control |
+| EMS/PPC zone             | Coordinated control of multiple electrical assets             | Plant control and approved coordination                                   | General Internet sessions and unnecessary user services                       |
+| Flexible-resource zones  | Manipulation of charging, discharging, or controllable demand | Defined EMS coordination                                                  | Unrestricted lateral administration from PV or unrelated resource zones       |
+| OT engineering zone      | Persistent configuration and software change                  | Time-bounded engineering through controlled identities                    | Routine user Internet access and standing vendor tunnels                      |
+| OT DMZ                   | Mediation of external services                                | Session brokering, telemetry, update staging, external-command validation | Direct ownership of inverter protection or unrestricted local write authority |
+| Manufacturer conduit     | Supplier-derived remote authority                             | Explicit telemetry, approved updates, approved maintenance when enabled   | Standing grid-control authority unless the operating model requires it        |
+| Utility conduit          | Misuse or loss of grid-service control                        | Defined utility operations and telemetry                                  | Firmware and general device administration                                    |
+| Aggregator conduit       | Coordinated manipulation of enrolled flexibility              | Contractually defined dispatch                                            | Security administration, firmware, or protection-setting authority            |
+| Enterprise-to-OT conduit | Lateral movement from business systems                        | Explicit monitoring or administration through mediation                   | Direct routing to inverter or field-control interfaces                        |
+
+: Zones and conduits become meaningful when they encode differences in consequence and permitted authority rather than merely reproducing subnet boundaries. {#tbl-photovoltaic-cybersecurity-authority-architecture-zone-authority}
+
+### Target security levels have to follow risk
+
+Assigning one statement such as _the plant shall be SL 2_ before the system has been decomposed reverses the public logic described for IEC 62443-3-2. Target security requirements are established for the relevant zones and conduits after risk assessment.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-system] An Internet-facing remote-access conduit, a physically constrained inverter bus, an engineering workstation, and a read-only telemetry service have different exposures and consequences.
+
+IEC 62443-3-3 organizes system security requirements around seven foundational-requirement families: identification and authentication control, use control, system integrity, data confidentiality, restricted data flow, timely response to events, and resource availability.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-system] For photovoltaic architecture, their combined value is precisely that no single security property dominates. Strong authentication without restricted data flow can leave broad lateral reach; encryption without use control can protect a command that the authenticated principal should not be allowed to issue; aggressive security controls that disregard availability can undermine the electrical mission.
+
+The authority-centred OT model extends this analysis by asking whether compromise of one component allows a high-consequence capability to be *derived* through the remaining trust relationships.[^photovoltaic-cybersecurity-authority-architecture-ot-authority-architecture] A telemetry gateway should not become a generic route to Modbus; compromise of an aggregator credential should not expose engineering; compromise of one flexible-resource controller should not provide lateral administration of another zone. Segmentation is strongest when it limits the consequences of a component that has already failed, not only traffic from nominally untrusted networks.
+
+## Part II — harden the supporting stack and constrain local control
+
+Architecture identifies where authority should terminate; hardening determines whether the implementing components preserve those boundaries. A correct network diagram can still be defeated by a default administrator account, unnecessary service, broad firewall rule, exposed management interface, persistent installer access point, or an EMS host that is both Internet-facing and implicitly trusted to issue unauthenticated inverter writes.
+
+The NTC's implementation recommendations are correspondingly concrete: replace default and shared credentials, avoid direct Internet exposure and port forwarding, disable unnecessary local and wireless interfaces, separate photovoltaic and management networks, monitor larger installations centrally, manage firmware deliberately, protect remote maintenance, use signed and rollback-protected software, and preserve recovery capability.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations]
+
+### Apply CIS Benchmarks only where a benchmark actually matches the technology
+
+CIS describes its Benchmarks as consensus-developed secure-configuration guidance for specific technologies and maintains more than one hundred benchmarks across more than twenty-five vendor product families.[^photovoltaic-cybersecurity-authority-architecture-cis-benchmarks] This makes them useful for conventional infrastructure surrounding the photovoltaic control system: supported operating systems, network appliances, databases, virtualization, cloud services, and other technologies for which an applicable benchmark exists.
+
+A project should record the exact benchmark and version used. _CIS hardened_ is not a reproducible configuration state because benchmark content changes with product versions and technology lifecycles. CIS also distinguishes Level 1 from more defense-in-depth Level 2 profiles and explicitly recommends testing recommendations before production deployment.[^photovoltaic-cybersecurity-authority-architecture-cis-benchmarks] A blanket requirement to apply Level 2 to every OT component would therefore be technically weak; settings have to be reconciled with vendor support, control-system reliability, and the plant's functional requirements.
+
+CIS guidance should not be stretched into a proprietary inverter benchmark where none exists. For an embedded inverter or EMS, hardening must follow the product capabilities that actually exist and the photovoltaic-specific guidance available from the NTC and NIST.
+
+### Treat the management plane as part of the control system
+
+Firewalls, switches, remote-access gateways, jump hosts, virtualization systems, EMS servers, and engineering workstations can change or bypass the enforcement architecture. Their management interfaces should therefore be reachable only from designated administrative paths and should expose only necessary management services. Broad rules such as _EMS subnet to inverter subnet: any_ recreate the authority collapse the zoning exercise was intended to prevent.
+
+Egress control also matters. A device that rejects inbound Internet traffic can remain controllable through an outbound cloud session. Where operationally and technically feasible, Internet-bound communications should therefore be constrained to documented functions and destinations rather than treated as trustworthy simply because the device initiated the session.
+
+### Identities are plant security state
+
+Default passwords are dangerous, but fleet-shared credentials are more than a password-quality problem: they create a common authority domain. Human administrative identities should be attributable where product capability permits, service identities should be separated from human users, and credentials used only for installation should not survive automatically into production.
+
+NIST IR 8498 recommends changing default credentials, using role-based access control, using stronger authentication for consequential capabilities, protecting system-to-system identity, enabling security logging, updating software, maintaining backup capability, and disabling unused interfaces and features.[^photovoltaic-cybersecurity-authority-architecture-nist-ir-8498] Those recommendations align closely with the NTC's observed failure modes while remaining particularly relevant to residential and light-commercial installations where elaborate external security infrastructure is unlikely.
+
+The objective is not to make a small inverter depend on enterprise identity infrastructure that its availability model cannot support. Where centralized identity is unsuitable, device- or installation-specific credentials with controlled ownership and rotation are preferable to a universal vendor or installer secret.
+
+### Minimize the inverter's enabled capability
+
+Wi-Fi access points, local web interfaces, Bluetooth, discovery protocols, diagnostic services, APIs, serial ports, and remote-control functions should remain enabled only where the production operating model needs them. The NTC's findings demonstrate why this matters: unnecessary production debug capability and persistent interfaces directly increased exploitable surface.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]
+
+Grid-relevant configuration deserves a stronger control boundary than ordinary monitoring. Active-power limits, reactive-power characteristics, voltage and frequency response, ride-through settings, reconnect behaviour, and similar parameters determine how an inverter interacts with the electrical system. The NTC's proposed control-lock concept seeks to preserve telemetry and protected software updating while restricting remote modification of such parameters after commissioning.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] Whether implemented inside the inverter or through compensating architecture, the objective is operation-specific authority rather than a generic authenticated session.
+
+### Where Modbus cannot authenticate, constrain who can reach it and what the intermediary can do
+
+For a local protocol that treats network reachability as sufficient permission to write, network enforcement becomes part of effective authorization. The strongest practical measure is to remove reachability from every principal that does not need the protocol. An inverter-facing EMS interface should not route arbitrary traffic from an Internet-facing or enterprise-facing interface, and a field network should not be reachable from general-purpose endpoints merely because the addresses are private.
+
+An IP allowlist remains weaker than application-level identity: a compromised EMS legitimately using the approved source address can still issue whatever operations the inverter accepts. Compensating security therefore requires the EMS itself to be treated as trusted computing infrastructure, with minimal services, restricted administration, controlled external connectivity, and visibility into state-changing operations.
+
+Where an authenticated and integrity-protected local protocol is supported end to end, it is preferable to an unauthenticated one; even then, transport security does not decide whether the authenticated controller should be able to rewrite a protection parameter. Endpoint identity and operation authorization remain distinct.
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-hardening-stack summarizes the division of labour among the main frameworks used here.
+
+| Layer                                        | Primary reference                               | Appropriate use                                                                                                                  | What it does not establish                              |
+| -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| System architecture                          | IEC 62443-3-2 and 3-3                           | Risk-derived zones, conduits, target requirements, restricted data flow, use control, integrity, response, availability          | Exact host or appliance settings                        |
+| Smart inverter                               | NIST IR 8498 and NTC recommendations            | Credentials, roles, logging, updates, backup, interface minimization, communication protection                                   | Security of the complete integrated plant               |
+| Conventional computing stack                 | Applicable CIS Benchmark                        | Secure configuration of covered operating systems, network devices, databases, virtualization, cloud, and related infrastructure | Correct plant-level operational authority               |
+| Product development and component capability | IEC 62443-4-1 and 4-2 evidence                  | Supplier development process and component security capabilities within their defined scope                                      | Integrated-system assurance                             |
+| Operational authority                        | Project authority matrix and enforcement design | Which principal may perform which consequential operation, when, and through which enforcement point                             | A universal vendor-independent implementation mechanism |
+
+: IEC 62443, NIST inverter guidance, CIS Benchmarks, and project-specific authority controls address different layers of the same assurance problem. {#tbl-photovoltaic-cybersecurity-authority-architecture-hardening-stack}
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-hardening-stack also explains why _IEC 62443 plus CIS_ is not a complete design. The standards and benchmarks can structure requirements and harden components, but the project still has to decide whether an aggregator may alter reactive-power settings, whether a manufacturer can push firmware to the whole fleet, and whether an EMS compromise derives unrestricted local write authority.
+
+## Part II — commissioning must prove the production security state
+
+A photovoltaic plant is not cybersecure because its design package contains the correct zones or because a firewall has been installed. Acceptance requires evidence that the constructed system implements the intended restrictions. This matters particularly because commissioning is the stage at which default credentials are changed or retained, local interfaces are enabled, vendor access is opened, firewall rules are widened for troubleshooting, and temporary routes can become permanent by accident.
+
+The system-assurance model developed for BESS projects transfers directly to this problem: FAT and SAT should be traceable verification and validation stages; positive tests demonstrate that intended functions work, while negative tests demonstrate that prohibited commands, bypass paths, and unintended authority fail.[^photovoltaic-cybersecurity-authority-architecture-system-assurance] The transfer is an engineering inference of this article, not a claim that the NTC prescribes this exact FAT/SAT methodology.
+
+### FAT should establish a reference state before site integration
+
+Where representative equipment can be assembled before shipment, FAT should identify exact firmware and software versions, confirm enabled interfaces, test credential and logging behaviour, exercise configuration backup and software update processes, and validate the inverter–EMS control relationship. A successful Modbus read/write test is insufficient: the test should determine which operations are writable, who can issue them, how persistent they are, whether inappropriate values are rejected, and which evidence records their use.
+
+Manufacturer access should be tested against the intended production authority model wherever feasible. If the accepted design allows supplier telemetry and signed software updates but prohibits ordinary grid-control writes, that distinction should be demonstrated through the actual product interfaces rather than inferred from a diagram.
+
+FAT exit should preserve enough evidence to create a comparison point for site acceptance: firmware/software inventories, configuration exports, relevant firewall and switch configurations, account and certificate states, test results, logs, known deviations, and the identity of the artefacts actually tested. A conditional result should remain an explicit open item or accepted residual risk rather than disappearing into the delivery schedule.[^photovoltaic-cybersecurity-authority-architecture-system-assurance]
+
+### SAT should compare the installed plant with the approved architecture
+
+Site integration changes addresses, routes, certificates, communications services, and often software versions. SAT should therefore begin by comparing the as-built plant against the approved design and FAT baseline. Each material difference should be classified as an approved site change, documented correction, controlled substitution, temporary commissioning arrangement, or unresolved defect.
+
+End-to-end functional testing should then demonstrate not only that an authorized active- or reactive-power command reaches the correct inverter, but that the source is identifiable, the command remains within its authorized envelope, the action is logged, and the physical response corresponds to the requested operation. The same principle applies to maintenance, updates, aggregator dispatch, and utility control.
+
+### Negative testing makes the authority boundary observable
+
+A statement that a vendor _cannot change grid settings_ is weaker than a controlled attempt that is demonstrably rejected. Negative testing should therefore derive directly from the authority matrix and conduit design. Representative cases are shown in @tbl-photovoltaic-cybersecurity-authority-architecture-commissioning-tests.
+
+| Assurance object                    | Positive case                                              | Negative case                                                                | Evidence                                                        |
+| ----------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Inverter operational control        | Approved EMS/PPC issues required active/reactive commands  | Unapproved host cannot issue equivalent writes                               | Command trace, network evidence, device logs, physical response |
+| Manufacturer service                | Approved telemetry or update process operates              | Supplier path cannot perform prohibited grid-control action                  | API/service response, local logs, configuration comparison      |
+| Aggregator                          | Contracted dispatch envelope is accepted                   | Aggregator cannot administer devices, install firmware, or exceed its scope  | Command records and explicit rejection evidence                 |
+| Remote maintenance                  | Named user obtains approved, time-limited target access    | Revoked, expired, or out-of-scope access fails                               | Identity and session records                                    |
+| Telemetry conduit                   | Approved measurements reach the expected destination       | Telemetry-only path cannot carry a state-changing operation                  | Packet or gateway evidence and rejection record                 |
+| Engineering access                  | Authorized engineer performs approved configuration change | Engineer cannot reach unrelated zones or targets                             | Session, target, and denied-flow evidence                       |
+| Local control protocol              | Approved controller reaches required function set          | Other zones cannot reach the local write interface                           | Rule-base, route, and protocol evidence                         |
+| Credentials                         | Production identities work as designed                     | Default, shared commissioning, retired, and revoked credentials fail         | Account inventory and authentication logs                       |
+| Wireless/local installer interfaces | Required retained function works                           | Disabled commissioning access point cannot be used                           | Device configuration and controlled connection test             |
+| Firmware                            | Approved signed release is accepted                        | Unauthorized or invalid image is rejected where product capability permits   | Update log and resulting version state                          |
+| Cloud isolation                     | Plant preserves approved local operation                   | Cloud loss does not trigger uncontrolled shutdown or broader fallback access | Plant telemetry, logs, configuration comparison                 |
+| Recovery                            | Approved configuration can be restored                     | Restored state does not reintroduce retired access or insecure defaults      | Restore record and post-restore baseline comparison             |
+
+: Commissioning should demonstrate both permitted behaviour and rejection of prohibited authority in the as-built production state. {#tbl-photovoltaic-cybersecurity-authority-architecture-commissioning-tests}
+
+@tbl-photovoltaic-cybersecurity-authority-architecture-commissioning-tests intentionally goes beyond generic penetration testing. The purpose is not to find arbitrary flaws at the end of the project; it is to verify the security claims on which the accepted operating model depends. A firewall deny record, failed authentication event, rejected API request, configuration export, route inspection, or packet trace can all serve as evidence when matched to the right requirement.
+
+### Commissioning authority is not production authority
+
+Temporary vendor VPNs, cellular routers, Wi-Fi access points, direct engineering connections, shared accounts, broad firewall rules, disabled certificate validation, and incomplete monitoring can be legitimate tools while the plant is being constructed. They should be treated as a separate *commissioning authority state* with an owner, purpose, duration, and removal condition.
+
+Removing them after successful functional tests is not enough. Once the final restrictive configuration is applied, the relevant tests have to be repeated because the system under test has changed. A control function demonstrated through a broad temporary rule has not yet been demonstrated through the production conduit.
+
+The desired transition is therefore a reduction of authority: final named identities and certificates replace temporary credentials; vendor paths are removed or placed behind the approved mediation layer; unnecessary local interfaces are disabled; final firewall policy is installed; manufacturer and aggregator privileges are placed in their accepted state; and the plant is retested after the restriction.
+
+### Recovery must restore security state, not just functionality
+
+The NTC recommends recoverability of configuration and grid-relevant settings, while the system-assurance model requires representative restoration rather than treating a successful backup job as proof of recovery.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] [^photovoltaic-cybersecurity-authority-architecture-system-assurance] A meaningful recovery set therefore includes EMS/PPC configuration, inverter settings, firewall and switch configuration, relevant certificates and keys under appropriate protection, account and role definitions, firmware/software versions, remote-access configuration, and enough engineering information to reconstruct the approved control relationships.
+
+A restored plant must be compared against the accepted security state. Restoring an older firewall configuration that reopens a retired supplier route may recover service while reintroducing the original risk. Recovery success is therefore defined by return to trustworthy operation, not merely by process restart.
+
+### Acceptance belongs to the final baseline, not to energization
+
+First synchronization, first export, or grid acceptance demonstrates important electrical properties; none establishes that temporary remote access is gone, that final credentials are active, that cloud authority is correctly restricted, or that recovery and logging work as intended.
+
+Cybersecurity acceptance should leave a reproducible production baseline containing the firmware, software, configuration, accounts, certificates, routing and firewall policy, enabled interfaces, external dependencies, remote authorities, logging destinations, and recovery artefacts whose relevant behaviour has actually been tested. That baseline is the object transferred to operations.
+
+## Part II — handover must preserve lifecycle assurance
+
+A photovoltaic plant can remain physically installed for decades while its digital environment changes continuously. Firmware is updated, certificates expire, new vulnerabilities appear, maintainers change, aggregators are added or removed, network equipment is replaced, clouds migrate, and manufacturers eventually end support. Handover therefore transfers more than documents and passwords: it transfers responsibility for preserving the authority architecture.
+
+The NTC recommends that even smaller operators establish who is responsible for future updates and incidents, while larger installations should maintain inventories of inverters, EMS components, interfaces, remote-access paths, firmware state, monitoring, and incident contacts.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] IEC's public descriptions of 62443-2-1 and 2-4 place continuing operational security governance with the asset owner while treating integration and maintenance security processes as service-provider responsibilities.[^photovoltaic-cybersecurity-authority-architecture-iec-62443-operations]
+
+### Handover needs an authority register
+
+The owner should be able to identify every organization, human role, machine identity, cloud service, update system, utility interface, aggregator, and maintenance path that can perform a state-changing operation. For each, the operational record should show what can be changed, the enforcement point, whether access is standing or activated, who approves it, how it is revoked, and where the action is logged.
+
+This is not a password inventory. A firmware signer can hold consequential authority without an interactive account; an aggregator can operate through an API identity; and a local inverter may trust an EMS because of network position rather than a credential. The relevant record is the effective capability.
+
+### Every material change is a delta from the accepted baseline
+
+Operations cannot freeze the system indefinitely, nor should it try. The stronger model is to assess *assurance impact*: which accepted security claims become uncertain when a component, configuration, supplier, interface, or piece of software changes?
+
+An EMS firmware upgrade may alter ports, APIs, authentication, logging, or inverter semantics. Replacing a firewall can invalidate conduit enforcement. Adding an aggregator changes external authority. Enabling a battery behind the same controller changes cyber-physical consequence. A new manufacturer-maintenance method changes the trust model even if no local hardware changes.
+
+The response should be proportional. A presentation-only change may require little security re-verification; a change to firmware, control semantics, routing, privileged access, or protection-related configuration should reopen the affected tests and evidence. This differential approach preserves assurance without pretending that the full FAT must be repeated after every minor update.
+
+### SBOM and VEX evidence has to remain tied to the deployed product state
+
+An SBOM for one firmware release does not describe a later release automatically. Likewise, a VEX statement that a vulnerability is `not affected` is meaningful only for the product, version, configuration, and assumptions within its scope.[^photovoltaic-cybersecurity-authority-architecture-vex-first-principles] Operational vulnerability management should therefore maintain correspondence among asset identity, firmware/software state, composition evidence, supplier advisories, and product-specific vulnerability dispositions.
+
+A VEX conclusion should be reopened when the assumptions supporting it change. Enabling a previously unused feature, altering a dependency, changing network reachability, or deploying a new build can invalidate a previously defensible conclusion. This is why software composition, exploitability assessment, VEX communication, and remediation decisions should remain distinct but traceably connected.
+
+### Patch urgency depends on exposure, consequence, and change risk
+
+The NTC recommends systematic review of security-relevant firmware and prompt deployment after risk assessment.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] In OT, that qualification is necessary. A vulnerability may be severe yet unreachable behind a disabled interface and several compensating controls; another lower-scored weakness may affect a cloud with fleet-scale reach. Conversely, an update can alter communications, grid behaviour, or compatibility and can itself become a common-mode event if deployed simultaneously everywhere.
+
+A defensible update decision therefore considers at least three variables: cyber exposure of the vulnerable condition, physical or operational consequence if exploited, and consequence of the proposed change. Segmentation, service disablement, or temporary isolation can sometimes reduce exposure while validation proceeds, but compensating controls should not become a rationale for permanent neglect.
+
+### Remote authority should be recertified and revocable
+
+Operational access tends to accumulate. Former installers remain in cloud tenants, old supplier VPNs survive contract changes, API tokens remain active, and emergency routes are forgotten. Periodic review should therefore ask not only whether an account still exists but whether the underlying authority is still required.
+
+Revocation is strongest when demonstrated. A removed contractor identity should fail; an expired maintenance window should close; an ended aggregator contract should no longer allow dispatch; an emergency path should not survive incident closure. The same principle applies to certificates and service identities whose lifecycle is often longer than the human contract that originally justified them.
+
+### Incident response should isolate the suspect authority path without unnecessarily losing generation
+
+The NTC recommends advance definition of incident roles and an ability to disconnect an affected control channel in an orderly way.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] The architecture makes this possible only if external functions are separable. A suspect manufacturer cloud can be isolated while local control remains; a compromised aggregator can be disconnected without removing utility control; a compromised engineering workstation can lose maintenance access without stopping real-time generation.
+
+This is a cyber-resilience requirement rather than merely an incident-response procedure. During an active compromise is a poor time to discover that local operation depends on cloud authentication, that the supplier owns the only administrative credential, or that one VPN carries both maintenance and grid-control traffic.
+
+### Recovery and end-of-support planning are part of continuing assurance
+
+A restoration test performed at SAT ages as software, infrastructure, credentials, and personnel change. Representative recovery should therefore be repeated at risk-appropriate intervals, verifying not only that applications restart but that the accepted authority state is reconstructed.
+
+The same logic applies to supplier transition and end of support. An outgoing service provider should lose its accounts, certificates, API tokens, tunnels, and cloud relationships; an incoming provider should receive only the authority its role requires. When a product approaches end of support, the owner needs enough lead time to choose among replacement, isolation, compensating controls, migration, or explicit residual-risk acceptance.
+
+For the already-installed fleet, the NTC argues that one-time product testing is insufficient and that significant firmware changes may justify renewed security assessment. It also proposes using existing Swiss installation-inspection touchpoints to check simple cybersecurity conditions rather than assuming every small owner can operate an industrial security program.[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations] That proposal is especially relevant to distributed photovoltaics because the smallest installations have the least capacity to compensate for weak product defaults with external infrastructure.
+
+Lifecycle assurance is therefore repeated evidence rather than permanent compliance. The commissioning baseline remains useful only while the assumptions behind it remain true.
+
+## What secure expansion of photovoltaics requires
+
+The NTC's results support a more precise conclusion than the claim that photovoltaic inverters are simply _insecure._ The institute found serious vulnerabilities in specific products and obtained root access in four, but it also states that the general device-security level was not obviously worse than comparable connected products and reports no evidence of deliberately implanted backdoors in the tested sample.[^photovoltaic-cybersecurity-authority-architecture-ntc-findings] What changes the risk is the physical and architectural context in which otherwise familiar weaknesses operate.
+
+A web vulnerability becomes more consequential when the application behind it can control thousands of generators. A maintenance credential matters differently when it reaches an entire product fleet. An unauthenticated local protocol becomes more consequential when an Internet-connected EMS or compromised residential network can inherit its write authority. A signed firmware service remains high consequence even when no vulnerability exists because the service is intentionally trusted to change the implementation of future device behaviour.
+
+This distinction separates two security problems that should not be confused. Product security reduces the probability that authority will be stolen: secure development, strong identities, protected communications, signed updates, vulnerability handling, and timely remediation all matter. Authority architecture limits the consequence when a trusted component nevertheless fails: zones, conduits, operation-specific authorization, partitioned fleet reach, revocable maintenance, local fallback, and tested recovery prevent one compromise from deriving a larger capability than the system can tolerate.
+
+Connectivity is therefore not the adversary. Manufacturer services, remote maintenance, aggregation, utility control, and automated updates can all provide legitimate operational value. The engineering problem is allowing each relationship to possess only the authority its function requires. Telemetry should not imply control. Update authority should not imply ordinary administration. Aggregator dispatch should not imply protection-setting access. Commissioning privileges should not become permanent production privileges.
+
+That objective begins at procurement because many decisive properties cannot be retrofitted cheaply. It becomes system architecture through IEC 62443 because products have to be placed inside risk-derived zones and purpose-specific conduits. It becomes implementation through product-specific controls and CIS-based hardening of the conventional technology stack. It becomes evidence through FAT, SAT, negative authorization testing, isolation testing, and recovery exercises. It becomes an operating property only when handover preserves the accepted baseline and makes future changes traceable.
+
+One important quantity remains unresolved. Neither the NTC report nor the public IEC material establishes a universal maximum amount of photovoltaic capacity that may safely sit behind one manufacturer cloud, aggregator, update domain, or remote-management platform. Grid-impact modeling cited by the NTC is conditional on electrical state, timing, distribution, and protection behaviour; converting those model results into one universal megawatt limit would exceed the evidence.[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact] Projects and grid authorities therefore need risk-derived limits on common-mode reach rather than a threshold invented from a generic cyber score.
+
+Photovoltaics will continue to become more software-defined, remotely operated, aggregated, and operationally important. Those developments do not inherently make solar generation unsafe. They make digital authority part of power-system engineering. The durable security boundary is consequently not the inverter enclosure, the firewall, the cloud region, or the supplier's nationality. It is the complete set of technical and organizational mechanisms that determine **who can change the physical process, through which path, for which operation, for how long, and at what scale**.
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-institution]: The **National Test Institute for Cybersecurity (NTC)** is an independent, non-profit association under Swiss law, based in Zug; it is **not a Swiss federal authority**. Its public-interest mission is to identify critical vulnerabilities in digital products, systems, connected infrastructures, and emerging technologies and to support their remediation. The NTC conducts independent cybersecurity testing for critical-infrastructure operators and public authorities, including police and armed forces, and also initiates its own investigations where products or applications are insufficiently tested because of limited regulatory requirements or economic incentives. According to the NTC, its activities are financed through public-sector funding, foundations and donors, and revenue from testing mandates. [Official about page](https://en.ntc.swiss/about-us/) [Official FAQ](https://www.ntc.swiss/faq)
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-report]: Castagna, T., Gloor, S., Leisibach, A., Many, D., Reischuk, R. M., Sohrmann, L., & Zuber, F. (2026). **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, version 1.0, 17 September 2026. National Test Institute for Cybersecurity NTC. The report is the primary source for the Swiss installed-base context and the assessment reconstructed in this article. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf) [Publication page](https://en.ntc.swiss/news/cybersecurity-of-photovoltaic-systems)
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-methodology]: Castagna et al. (2026), **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, Chapter 4. The report documents approximately 1,300 working hours, eleven assessed products from eight manufacturers, market-relevance/independence/scalability selection principles, ordinary procurement, laboratory setup, explicit exclusions, legal limits on cloud testing, coordinated disclosure, and the prioritization of scalable weaknesses. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf)
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-findings]: Castagna et al. (2026), **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, Chapter 5. This is the primary source for the aggregate vulnerability counts, root compromise, scalable findings, cloud weaknesses, Solar Manager case, local authentication and maintenance problems, pre-authentication code execution, unauthenticated local control, local-to-scalable composition, the untested permanent-damage boundary, and the negative finding concerning deliberate backdoors. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf)
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-grid-impact]: Castagna et al. (2026), **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, Chapter 6. The report distinguishes cyber compromise from electrical consequence; describes active-power/frequency, reactive-power/voltage, and converter-dynamics scenarios; discusses reserves and protective mechanisms; reports model-dependent order-of-magnitude estimates from cited research; and explicitly avoids presenting them as a standalone Swiss blackout calculation. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf) 
+
+[^photovoltaic-cybersecurity-authority-architecture-entsoe-iberian-blackout]: European Network of Transmission System Operators for Electricity (ENTSO-E). **28 April 2025 Iberian blackout — final expert-panel investigation**. The official investigation describes interacting oscillations, voltage and reactive-power-control problems, rapid generation changes and disconnections, and uneven stabilization behaviour; the event was not a cyberattack. [Official investigation page](https://www.entsoe.eu/publications/blackout/28-april-2025-iberian-blackout/) 
+
+[^photovoltaic-cybersecurity-authority-architecture-cert-poland]: CERT Polska. (2026). **Energy Sector Incident Report — 29 December 2025**. The technical report documents coordinated destructive operations against more than thirty wind and photovoltaic facilities and other targets, including damage to industrial-control infrastructure and loss of DSO communication while renewable electricity production continued. [Incident report](https://cert.pl/en/posts/2026/01/incident-report-energy-sector-2025/) 
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-structural-risks]: Castagna et al. (2026), **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, §§5.2 and 5.4. The NTC distinguishes third-party exploitation from misuse of legitimate supplier/supply-chain capability and identifies manufacturer-cloud dependency, privileged remote maintenance, insecure local control protocols, market concentration, and misleading inferences from hosting location or nominal product origin as structural risks. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf) 
+
+[^photovoltaic-cybersecurity-authority-architecture-ntc-recommendations]: Castagna et al. (2026), **Cybersecurity of Photovoltaic Systems: Findings and Recommendations**, Chapter 8. The recommendations cover operators, installers, manufacturers, control locks, cloud-independent operation, unique credentials, remote-access constraints, segmentation, logging, signed and rollback-protected firmware, recovery, limits on fleet-wide reach, incident preparation, lifecycle testing, and treatment of the installed base. [Official report](https://en.ntc.swiss/hubfs/20260917-ntc-summary-report-photovoltaics.pdf) 
+
+[^photovoltaic-cybersecurity-authority-architecture-ot-authority-architecture]: Montano, A. (2026). **Operational Technology in the Crosshairs: What the 2025–2026 Attacks Reveal About Industrial Cyber Risk**. The article develops the authority-architecture and consequence-concentration framework used here to extend the NTC findings from individual vulnerabilities to composed cyber-physical capability. [Longform article](https://4m4.it/longforms/operational-technology-crosshairs-2025-2026-industrial-cyber-risk/index.html) 
+
+[^photovoltaic-cybersecurity-authority-architecture-plc-authority]: Montano, A. (2026). **Programming Authority Is the Real PLC Security Boundary**. The article distinguishes network reachability, authentication, and operation-specific authority and develops negative authorization testing and restrictive production states. The present article transfers that analytical distinction to inverter and EMS functions; that transfer is an inference, not an NTC claim. [Technical article](https://4m4.it/posts/programming-authority-is-the-real-plc-security-boundary/index.html) 
+
+[^photovoltaic-cybersecurity-authority-architecture-system-assurance]: Montano, A. (2026). **From EPC Documentation to System Assurance: Why BESS Projects Need a New Design and Commissioning Model**. The source develops a requirements-to-evidence delivery model with explicit interface ownership, controlled baselines, FAT/SAT traceability, positive and negative testing, removal of temporary commissioning arrangements, recovery validation, and continuing assurance. This article transfers those assurance principles to photovoltaic systems while keeping the NTC findings as the empirical basis for the PV-specific requirements. [Longform article](https://4m4.it/longforms/from-epc-documentation-to-system-assurance-why-bess-projects-need-a-new-design-and-commissioning-model/index.html) 
+
+[^photovoltaic-cybersecurity-authority-architecture-vex-first-principles]: Montano, A. (2022; modified 2026). **VEX Standards from First Principles**. The article distinguishes SBOM composition evidence from product-specific vulnerability assessment and treats VEX conclusions as scoped, identity-dependent, evidence-backed, provenance-sensitive, and subject to reassessment when their assumptions change. [Longform article](https://4m4.it/longforms/vex-standards-from-first-principles/index.html) 
+
+[^photovoltaic-cybersecurity-authority-architecture-cra]: European Parliament and Council of the European Union. (2024). **Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements (Cyber Resilience Act)**. The official text establishes the product-security and vulnerability-handling baseline, support-period requirements, SBOM obligations, relevant application dates, and the conditions under which a remote data-processing solution forms part of a product with digital elements. The regulatory interpretation in this article is also cross-checked against a detailed technical reconstruction of the Regulation.[Official text](https://eur-lex.europa.eu/eli/reg/2024/2847/oj/eng) [Longform regulatory analysis](https://4m4.it/longforms/cyber-resilience-act-the-new-product-security-baseline/index.html) 
+
+[^photovoltaic-cybersecurity-authority-architecture-iec-62443-system]: International Electrotechnical Commission. **IEC 62443-3-2:2020, Security risk assessment for system design** and **IEC 62443-3-3:2013, System security requirements and security levels**. The public IEC descriptions establish the scope claims used here: 62443-3-2 covers definition of the system under consideration, zones and conduits, risk assessment, target security levels, and documented requirements; 62443-3-3 defines system security requirements associated with the foundational requirements. No unverified clause-level claim from the paywalled standards is relied upon. [IEC 62443-3-2 standard page](https://webstore.iec.ch/en/publication/30727) [IEC 62443-3-3 standard page](https://webstore.iec.ch/en/publication/7033) 
+
+[^photovoltaic-cybersecurity-authority-architecture-iec-62443-product]: International Electrotechnical Commission. **IEC 62443-4-1:2018, Secure product development lifecycle requirements** and **IEC 62443-4-2:2019, Technical security requirements for IACS components**. The public IEC descriptions support the scope statements used here: 62443-4-1 addresses secure product-development lifecycle processes, while 62443-4-2 addresses technical component requirements organized around seven foundational-requirement families and component capability security levels. [IEC 62443-4-1 standard page](https://webstore.iec.ch/en/publication/33615) [IEC 62443-4-2 standard page](https://webstore.iec.ch/en/publication/34421) 
+
+[^photovoltaic-cybersecurity-authority-architecture-iec-62443-operations]: International Electrotechnical Commission. **IEC 62443-2-1:2024, Security program requirements for IACS asset owners** and **IEC 62443-2-4:2023, Security program requirements for IACS service providers**. The public IEC descriptions support the role distinction used here between asset-owner operational security programs and security-related integration/maintenance processes supplied by service providers. [IEC 62443-2-1 standard page](https://webstore.iec.ch/en/publication/62883) [IEC 62443-2-4 standard page](https://webstore.iec.ch/en/publication/67631) 
+
+[^photovoltaic-cybersecurity-authority-architecture-nist-ir-8498]: McCarthy, J., Marron, J., Faatz, D., Rebori-Carretero, D., Wiltberger, J., & Urlaub, N. (2024). **Cybersecurity for Smart Inverters: Guidelines for Residential and Light Commercial Solar Energy Systems**, NIST IR 8498. The report addresses smart-inverter cybersecurity for residential and light-commercial systems; its guidance includes changing default credentials, role-based access control, security logging, software updating, backup and restore, disabling unnecessary features and communications, and protecting communications connections. It also recommends stronger authentication for consequential capabilities and lifecycle maintenance of SBOM information. [Official publication](https://doi.org/10.6028/NIST.IR.8498) 
+
+[^photovoltaic-cybersecurity-authority-architecture-cis-benchmarks]: Center for Internet Security. **CIS Benchmarks**. CIS describes the Benchmarks as consensus-developed secure-configuration guidance for specific technologies and publishes more than one hundred benchmarks across more than twenty-five vendor product families. Its public guidance distinguishes Level 1 and Level 2 profiles, notes that benchmark versions follow technology lifecycles, and recommends testing settings before production deployment. [Official benchmark catalogue](https://www.cisecurity.org/cis-benchmarks) [Official FAQ](https://www.cisecurity.org/cis-benchmarks/cis-benchmarks-faq) 

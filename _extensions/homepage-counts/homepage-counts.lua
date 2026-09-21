@@ -3,7 +3,7 @@
 -- The filter scans longforms/**/index.qmd and posts/**/index.qmd,
 -- reads their YAML categories, and replaces markers such as
 --
---   <span data-article-count="longforms|essay"></span>
+--   <span data-article-count="all|report"></span>
 --
 -- with an accessible numeric badge. It runs only while rendering the
 -- project-root index.qmd, despite being registered as a project filter.
@@ -92,23 +92,26 @@ local function normalize_category(value)
   return value:gsub("%s+", " ")
 end
 
--- Editorial-form categories are a subset of all categories.
--- They are used both for their individual counts and to define the
--- synthetic "Others" bucket on the homepage.
-local editorial_form_categories = {
+-- Editorial-form labels remain ordinary Quarto categories.
+--
+-- "Report" is the default form: an article is counted as a report when it
+-- does not carry one of the explicit non-default editorial-form categories.
+-- "position paper" is retained as a legacy non-default form while existing
+-- content is migrated.
+local non_report_editorial_forms = {
   ["essay"] = true,
-  ["position paper"] = true,
-  ["review"] = true,
   ["tutorial"] = true,
+  ["review"] = true,
+  ["position paper"] = true,
 }
 
-local function has_editorial_form(categories)
+local function is_default_report(categories)
   for category, _ in pairs(categories or {}) do
-    if editorial_form_categories[category] then
-      return true
+    if non_report_editorial_forms[category] then
+      return false
     end
   end
-  return false
+  return true
 end
 
 local function extract_yaml(content)
@@ -245,7 +248,7 @@ local function scan_collection(project_root, collection)
   local statistics = {
     total = 0,
     categories = {},
-    editorial_other = 0,
+    editorial_report = 0,
   }
 
   local collection_root = join_fs(project_root, collection)
@@ -259,8 +262,8 @@ local function scan_collection(project_root, collection)
         statistics.categories[category] = (statistics.categories[category] or 0) + 1
       end
 
-      if not has_editorial_form(metadata.categories) then
-        statistics.editorial_other = statistics.editorial_other + 1
+      if is_default_report(metadata.categories) then
+        statistics.editorial_report = statistics.editorial_report + 1
       end
     end
   end
@@ -274,9 +277,6 @@ local function build_counts(project_root)
   local counts = {
     ["total|longforms"] = longforms.total,
     ["total|posts"] = posts.total,
-    ["editorial-other|longforms"] = longforms.editorial_other,
-    ["editorial-other|posts"] = posts.editorial_other,
-    ["editorial-other|all"] = longforms.editorial_other + posts.editorial_other,
   }
 
   local all_categories = {}
@@ -296,6 +296,12 @@ local function build_counts(project_root)
       (longforms.categories[category] or 0) +
       (posts.categories[category] or 0)
   end
+
+  -- Report is the effective default editorial form, not merely the number of
+  -- articles explicitly carrying a `report` category.
+  counts["longforms|report"] = longforms.editorial_report
+  counts["posts|report"] = posts.editorial_report
+  counts["all|report"] = longforms.editorial_report + posts.editorial_report
 
   return counts
 end

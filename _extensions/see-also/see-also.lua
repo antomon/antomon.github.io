@@ -65,15 +65,16 @@ local function normalize_category(s)
   return s
 end
 
--- Editorial-form categories are kept distinct from the other categories
--- excluded from similarity matching. This makes the same four-value
--- editorial taxonomy reusable by homepage logic without treating language
--- markers as editorial forms.
+-- Editorial-form labels are ordinary Quarto categories, but they are not
+-- topical categories and therefore must not affect related-content/topic
+-- similarity. Report is the default form; position paper is retained here as
+-- a legacy editorial label during migration.
 local editorial_form_categories = {
   ["essay"] = true,
-  ["position paper"] = true,
-  ["review"] = true,
   ["tutorial"] = true,
+  ["review"] = true,
+  ["report"] = true,
+  ["position paper"] = true,
 }
 
 local excluded_categories = {
