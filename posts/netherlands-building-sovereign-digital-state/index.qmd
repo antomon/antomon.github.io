@@ -1,0 +1,436 @@
+---
+title: "The Netherlands Is Building a Sovereign Digital State"
+subtitle: "A dependency-architecture analysis of DAWO, MijnBureau, sovereign cloud, sourcing, and the emerging European public software stack"
+description: "The Dutch move toward Linux government workplaces is one element of a broader attempt to make critical public digital capabilities substitutable, inspectable, portable, and governable. This article analyses DAWO, MijnBureau, the sovereign government cloud, Haven, virtualisation, sourcing, DigiD, code.overheid.nl, and the European digital-commons ecosystem as an integrated dependency architecture."
+slug: "netherlands-building-sovereign-digital-state"
+date: "2026-09-26"
+categories:
+  - EU digital sovereignty
+  - cybersecurity
+  - cloud computing
+  - open source
+  - digital government
+keywords:
+  - Netherlands
+  - digital sovereignty
+  - digital autonomy
+  - DAWO
+  - MijnBureau
+  - NDS
+  - sovereign cloud
+  - Haven
+  - NixOS
+  - open source
+  - code.overheid.nl
+  - STACKIT
+  - DigiD
+  - Solvinity
+  - Digital Commons EDIC
+  - La Suite
+  - openDesk
+  - Sovereign Tech Agency
+  - public procurement
+---
+
+## The unit of analysis is the dependency graph
+
+The Dutch government's experiments with Linux workstations are technically relevant, but the operating system is the wrong unit of analysis. The Nederlandse Digitaliseringsstrategie (NDS) now treats cloud, digital resilience and autonomy, digital skills, shared building blocks, IT sourcing and purchasing power as parts of one government-wide programme rather than independent procurement domains.[^netherlands-building-sovereign-digital-state-nds] The April 2026 municipal pilot of DAWO and MijnBureau therefore matters only insofar as it exposes and changes a deeper dependency structure involving source repositories, build pipelines, endpoint management, identity, collaboration software, cloud platforms, virtualisation, suppliers, contractual rights and government engineering capacity.[^netherlands-building-sovereign-digital-state-dawo-pilot]
+
+This interpretation is consistent with the Dutch government's own terminology. Its 2025 vision distinguishes digital autonomy—the ability to choose, change and act—from digital sovereignty, understood more narrowly in terms of legal and administrative control over infrastructure, data and systems; it also explicitly rejects complete technological independence as a realistic objective.[^netherlands-building-sovereign-digital-state-vision] That distinction is more useful than the broad political use of *sovereignty*, because it permits an engineering treatment of dependency without implying autarky. A system can remain internationally dependent while retaining sufficient freedom to change supplier, implementation or operating model.
+
+This article therefore extends the dependency-centred approach used in my previous analyses of government code forges, European workstation policy, public investment in open-source infrastructure and the CVE namespace.[^netherlands-building-sovereign-digital-state-prior-work] The common question is not whether a component is European, open source or publicly hosted, but whether a strategically important function remains subject to a low-cardinality set of dependencies that another actor can unilaterally change. In the CVE case the control surface was a global coordination namespace; in the forge case it was source and release infrastructure; here the object is the much larger execution stack of public administration.
+
+A useful abstraction is a directed dependency graph \(G_c=(V_c,E_c)\) for a critical capability \(c\). A node may represent software, infrastructure, an operator, an identity authority, a build service, a contractual right or another resource whose availability is required to satisfy the capability's service objective; an edge \(u\rightarrow v\) means that \(u\) cannot deliver its required function without \(v\). The most important structures are not foreign nodes per se, but small cut sets whose loss disconnects every feasible implementation of the capability from the resources needed to operate it.
+
+Let \(\mathcal{P}_c\) denote the feasible implementation paths for capability \(c\), let \(\tau_d\) be the time needed to replace dependency \(d\), and let \(T_c\) be the maximum tolerable disruption of the capability. A dependency deserves strategic treatment when it is unavoidable across the feasible paths and cannot be replaced within the tolerated interruption:
+
+$$
+d \in \bigcap_{p\in\mathcal{P}_c}p
+\qquad\text{and}\qquad
+\tau_d > T_c .
+$$ {#eq-strategic-dependency}
+
+This formulation avoids two recurrent errors in sovereignty policy. The first is to classify dependency by nationality even when the foreign component is replaceable, open, well understood and supported by several operators. The second is to ignore a domestic or European dependency merely because its corporate domicile is politically reassuring, even though the component has no practical substitute, no executable exit and no independent operating knowledge.
+
+The Dutch programme is technically interesting because several initiatives can be mapped onto this graph as attempts to alter different classes of edge. DAWO addresses endpoint and management dependence; MijnBureau addresses collaboration applications; code.overheid.nl addresses development infrastructure; Haven addresses some platform interfaces; the sovereign-cloud project addresses infrastructure operation; virtualisation work addresses the layer below cloud abstractions; procurement and cloud policy address contractual and jurisdictional edges; and NDS digital-skills policy addresses knowledge dependence. The result is more coherent than a desktop migration, but coherence of intent is not evidence that the resulting system is yet substitutable.
+
+```{mermaid}
+%%| label: fig-dutch-dependency-architecture
+%%| fig-cap: "The Dutch autonomy programme operates across several dependency layers. Control of the workstation is only useful if source, build, identity, application, platform, infrastructure, supplier and knowledge dependencies are addressed as well."
+%%| fig-alt: "Layered architecture from government source and build infrastructure through collaboration and endpoints, identity, platform and cloud, virtualisation and physical infrastructure. Procurement, exit, security and internal skills apply across all layers, while European digital commons supply reusable upstream software."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    EU["European digital commons<br/>La Suite · openDesk · upstream OSS · DC-EDIC"]
+    SRC["Source and release infrastructure<br/>code.overheid.nl · repositories · CI/CD · provenance"]
+    APP["Applications and collaboration<br/>MijnBureau · office · chat · video · files"]
+    END["Endpoint control<br/>DAWO-NixOS · Sextant · update policy"]
+    IAM["Identity and trust<br/>IAM · OIDC · credentials · keys"]
+    PAA["Application platform<br/>Haven · Kubernetes · Haven+"]
+    IAA["Infrastructure service<br/>sovereign government cloud · European providers"]
+    VIR["Virtualisation and storage<br/>hypervisors · storage · backup"]
+    PHY["Physical and external dependencies<br/>datacentres · networks · hardware · firmware"]
+
+    EU --> SRC
+    SRC --> APP
+    SRC --> END
+    APP --> IAM
+    END --> IAM
+    IAM --> PAA
+    APP --> PAA
+    PAA --> IAA
+    IAA --> VIR
+    VIR --> PHY
+
+    CTRL["Cross-cutting controls<br/>sourcing · procurement · security · exit · internal capability"]
+    CTRL -.-> SRC
+    CTRL -.-> APP
+    CTRL -.-> END
+    CTRL -.-> IAM
+    CTRL -.-> PAA
+    CTRL -.-> IAA
+    CTRL -.-> VIR
+```
+
+The analytical consequence is straightforward: changing the desktop operating system is valuable only if it removes or weakens a strategically relevant cut set. If Linux merely becomes a new client for the same proprietary identity, collaboration, management and cloud control planes, the visible software changes while much of the dependency graph remains intact.
+
+## Sovereignty requires evidence, not proxies
+
+Most policy proxies for digital sovereignty measure only one property of a system. Data residency indicates where data is stored but not who controls the keys, administrative plane or corporate owner. Open source provides legal and technical rights but not engineers, production operations or an alternative operator. Kubernetes normalises part of the orchestration interface but does not standardise databases, object stores, KMS semantics, IAM claims, backup formats or incident operations. A supplier incorporated in the EU reduces some jurisdictional exposure but can still create severe concentration and exit risk.
+
+For engineering purposes, the properties in @tbl-sovereignty-evidence are more discriminating. They are intentionally phrased as tests that can fail, because a sovereignty programme that cannot be falsified is difficult to distinguish from an industrial-policy label.
+
+| Property | Evidence that would support the claim | Common false positive |
+|---|---|---|
+| Jurisdictional control | Applicable law and access obligations are understood; change-of-control triggers reassessment; relevant contractual rights survive restructuring | “The datacentre is in the EU” |
+| Cryptographic control | Key generation, HSM administration, revocation and re-keying can be performed without an unwanted external administrator | “The service encrypts data” |
+| Source and build control | Source, dependency locks, build definitions and signing process allow independent artefact production and verification | “The repository is public” |
+| Operational control | Government or a replaceable operator can administer, monitor, patch and recover the service without an indispensable external control plane | “It is self-hosted” |
+| Workload portability | A representative workload, including state, secrets, identity, logging and backups, has actually been moved between independent environments | “It runs in Kubernetes” |
+| Supplier substitutability | A second qualified operator can assume service using existing artefacts and documentation within a defined transition period | “There are several framework contracts” |
+| Executable exit | Data, service and operational responsibility have been restored or migrated elsewhere within the required continuity objective | “The contract contains an exit clause” |
+| Knowledge autonomy | Internal staff can diagnose architecture-level failures, challenge suppliers and commission a replacement | “Government owns the servers” |
+
+: Engineering evidence for claims of digital sovereignty. {#tbl-sovereignty-evidence}
+
+The most demanding integrated test is executable exit. A real exit simultaneously exercises data portability, rights, credentials, infrastructure definitions, documentation, knowledge, supplier availability and recovery procedures. It also exposes dependencies that procurement documents routinely miss: proprietary export formats, undocumented control-plane assumptions, hidden DNS or certificate dependencies, cloud-native services embedded in application logic, and expertise held only by the incumbent contractor.
+
+The NDS is moving in this direction conceptually. Its resilience and autonomy priority explicitly identifies insufficient visibility into critical IT services, legacy systems and strategic digital dependencies, while the government-wide IT-sourcing strategy identifies lock-in, critical supplier failure, poor supplier visibility, duplicated contracts and fragmented expertise as structural problems.[^netherlands-building-sovereign-digital-state-nds-autonomy][^netherlands-building-sovereign-digital-state-sourcing] The revised July 2026 central-government cloud policy further requires a cloud strategy and an exit plan for important public-cloud services, while tightening treatment of geopolitical and single-supplier risk.[^netherlands-building-sovereign-digital-state-cloud-policy]
+
+An exit plan, however, remains documentary evidence until it has been executed. A technically mature implementation of the Dutch policy would eventually treat exit tests in much the same way that mature operators treat backup restoration or disaster recovery: the capability is not credited merely because the procedure exists.
+
+## DAWO is primarily an endpoint-control project
+
+The current public DAWO repositories are considerably more informative than the generic description “Linux for government.” The umbrella project exposes separate work around NixOS, fleet management, IAM, cloud and collaboration, which indicates that the programme recognises the control plane surrounding the workstation as part of the problem.[^netherlands-building-sovereign-digital-state-dawo-repository] DAWO-NixOS uses layered Nix flake definitions in which the upstream core, organisation-specific overlay and host configuration are composed explicitly; the documented deployment model supports both operator-initiated deployment and Git-driven pull updates.[^netherlands-building-sovereign-digital-state-dawo-nixos]
+
+That architecture has useful security and autonomy properties. Declarative state makes configuration drift more observable than an endpoint fleet managed predominantly through imperative actions, while pinned inputs improve the ability to reconstruct the intended software closure. The pull model used by Sextant also reduces the need for a central management server to open remote administrative sessions into every device: endpoints fetch approved state and converge toward it instead.[^netherlands-building-sovereign-digital-state-sextant]
+
+Nix should nevertheless not be treated as a reproducibility oracle. A pinned flake can identify a dependency graph much more precisely than a conventional package inventory, but deterministic configuration does not by itself prove that binaries are bit-for-bit reproducible, that build substitutes are trustworthy, that upstream source remains available, or that the signing and bootstrap chain can be reconstructed after a repository outage. Sovereignty of the endpoint therefore still depends on control of binary caches, signing keys, build workers, dependency mirrors, secure-boot material, update approval and recovery procedures.
+
+The Sextant repository is especially useful because it exposes real engineering limitations rather than only programme messaging. As of September 2026 it labels the fleet manager Beta and describes it as feature-complete for its first production use but still being proven against that deployment; the project also documents supply-chain work that derives SBOMs and vulnerability reports from complete NixOS closures.[^netherlands-building-sovereign-digital-state-sextant] One recent change records a concrete tooling mismatch: the deployed endpoint-security product's vulnerability inventory mechanism does not naturally understand the NixOS closure, so it can incorrectly present a clean fleet; the project added Nix-aware inventory and vulnerability reporting rather than assuming an enterprise security agent would work unchanged.
+
+That is precisely the type of problem a serious workstation migration must uncover. The difficult work is not booting Linux or opening a browser; it is recreating the operational properties accumulated around the incumbent platform—fleet state, device enrolment, secure boot, disk-key recovery, policy enforcement, software inventory, vulnerability intelligence, EDR telemetry, remote recovery and incident investigation—without introducing opaque substitutes. DAWO's public engineering work is encouraging because these issues are visible, but the same evidence makes it premature to infer production maturity from the existence of the architecture.
+
+The municipal pilot has an appropriately narrower scope. Amsterdam, Ede, 's-Hertogenbosch and Zaanstad, together with VNG, are testing DAWO and MijnBureau on a small scale through the end of 2026, specifically to collect user experience, integration problems and evidence about which employee groups could move first into production.[^netherlands-building-sovereign-digital-state-dawo-pilot] That can establish technical and organisational feasibility for the sampled workflows; it cannot establish estate-wide substitutability for a heterogeneous public administration containing specialist applications, smart-card middleware, accessibility tooling, document macros, local peripherals and long-lived line-of-business integrations.
+
+### The forge is part of the workstation trust chain
+
+DAWO also creates an important connection with the Dutch government code platform that I examined earlier in *Code Sovereignty Starts with the Forge*.[^netherlands-building-sovereign-digital-state-prior-forge] `code.overheid.nl` is hosted on Dutch government infrastructure and supplies repositories, pull requests, issues and code review for public organisations.[^netherlands-building-sovereign-digital-state-code-platform] That materially improves control over source collaboration, but source hosting is only the first part of the release chain.
+
+The platform's own public issue tracker makes the current boundary visible. In September 2026, its maintainers were still discussing what CI/CD capability should be supported centrally and what should instead run on organisation-specific Forgejo infrastructure, while experiments were under way in Digilab.[^netherlands-building-sovereign-digital-state-code-cicd] This is not an argument against the platform; it is evidence that the earlier article's distinction between repository sovereignty and software-delivery sovereignty remains operationally important.
+
+A sovereign forge without a sufficiently controlled build and release path can still depend on external runners, package registries, container registries, signing services or SaaS security scanners. For systems such as DAWO, the relevant trust chain is therefore source commit → review → build inputs → build worker → artefact or Nix closure → signature → staged rollout → device verification. A public repository proves only the first part of that chain.
+
+## MijnBureau shifts lock-in from products to integration
+
+MijnBureau attacks a different dependency. Its public infrastructure repository describes a self-hostable collaboration suite containing collaborative documents, spreadsheets and presentations, file sharing, chat, video conferencing, project management, identity integration and self-hosted AI; email, an administrative portal and a password manager were still listed as planned additions in the current repository documentation.[^netherlands-building-sovereign-digital-state-mijnbureau] A separate government report stated in April 2026 that roughly 200 employees were already using the environment and that technical feasibility had been demonstrated, while identifying user adaptation, support and interoperability with other organisations as significant remaining issues.[^netherlands-building-sovereign-digital-state-mijnbureau-practice]
+
+The architecture avoids one form of suite lock-in but creates an integration problem that should not be understated. Microsoft 365 is difficult to replace not because a spreadsheet editor or chat client is technically unique, but because identity, document co-authoring, mail, calendars, search, retention, e-discovery, DLP, endpoint policy, mobile clients, conferencing, directory data and administrative telemetry are integrated into one lifecycle. Replacing that bundle with multiple open-source components makes individual components more contestable, but somebody must now own schema migrations, OIDC integration, release compatibility, backup consistency, global search, cross-application permissions and incident coordination.
+
+The new concentration point can therefore become the distribution and its integrator. If only one team can safely upgrade the particular combination of Nextcloud, office components, messaging, videoconferencing, identity and portal code, legal forkability does not translate into operational substitutability. The appropriate architectural requirement is not merely that each component be open source, but that integration contracts remain documented and stable enough for another operator to reproduce the service.
+
+The Dutch programme is explicitly European at this layer. Government sources describe MijnBureau as incorporating or learning from components associated with France's La Suite, Germany's openDesk and Nextcloud, while SSC-ICT, DICTU and DUO-ICT were tasked in August 2026 with a broader sovereign-workplace programme that includes interdepartmental file collaboration, an alternative sovereign mail service and more standardised workplace services.[^netherlands-building-sovereign-digital-state-dawo-pilot][^netherlands-building-sovereign-digital-state-sovereign-workplace] That expansion is architecturally necessary: a Linux endpoint that still requires the incumbent for mail, document workflows or cross-government collaboration has changed the client but not the critical capability.
+
+Interoperability is likely to be harder than source-code substitution. Public-sector documents carry tracked changes, embedded objects, templates, signatures, accessibility semantics, macros and records-management metadata; meeting and messaging systems introduce federation, presence, retention and mobile-notification dependencies. A migration programme should therefore maintain representative workflow corpora and executable interoperability tests rather than report progress primarily as numbers of Linux desktops.
+
+## Cloud sovereignty begins where Kubernetes stops
+
+The Dutch sovereign-cloud programme is technically more ambitious than DAWO because it attempts to create a common infrastructure execution layer. The design published on 31 August 2026 describes a government-wide sovereign IaaS service based substantially on open source, hosted in a government datacentre and initially aimed at a middle category of applications; it also uses a container platform compliant with the Haven standard.[^netherlands-building-sovereign-digital-state-cloud-design] A proof of concept already exists, but the same official publication is unusually clear that the current design concentrates on technology and defers governance, financing and procurement to a later phase.
+
+That caveat is fundamental rather than administrative. Governance determines who can change the platform; financing determines whether the state can retain engineers and maintain the stack; procurement determines whether one systems integrator becomes indispensable. A technically open IaaS operated by a single contractor with exclusive knowledge can reproduce the same dependency at a different organisational layer.
+
+Haven itself is well designed as a portability boundary, but its official documentation also provides the best argument against exaggerating what it proves. Haven standardises aspects of Kubernetes hosting and provides cluster conformance checking, yet the documentation explicitly states that Haven compliance does not imply complete sovereignty; a compliant cluster can still use an Azure-backed `StorageClass` or AWS S3, and there is currently no application validator proving that an application satisfies the conditions needed to run portably on a Haven cluster.[^netherlands-building-sovereign-digital-state-haven] Haven+ attempts to fill part of this gap with common monitoring, authentication, database, certificate and secret-management services, but that extends rather than eliminates the conformance problem.
+
+The portability boundary can therefore be represented more accurately as follows:
+
+```{mermaid}
+%%| label: fig-haven-portability-boundary
+%%| fig-cap: "Haven standardises part of the Kubernetes execution environment, not the complete workload. Persistent state, identity, keys, observability, backup, network semantics and external managed services remain migration dependencies unless they are separately constrained and tested."
+%%| fig-alt: "A workload sits above a Haven-compliant Kubernetes layer. Several dependencies cross the portability boundary: databases and object storage, identity, key management, logging and tracing, backup and restore, networking and external managed services. Beneath Haven are several possible cloud or datacentre providers."
+%%| fig-align: center
+%%{init: {"theme": "neo", "look": "handDrawn", "layout": "elk"}}%%
+flowchart TB
+    W["Government workload"]
+    DATA["Persistent data<br/>DB · object storage · queues"]
+    ID["Identity and authorization"]
+    KEY["Secrets · KMS · certificates"]
+    OBS["Logs · metrics · traces"]
+    BAK["Backup · restore · retention"]
+    NET["DNS · ingress · load balancing · network policy"]
+
+    HAV["Haven-compliant Kubernetes boundary"]
+
+    A["Government sovereign cloud"]
+    B["European provider"]
+    C["Other compliant infrastructure"]
+
+    W --> DATA
+    W --> ID
+    W --> KEY
+    W --> OBS
+    W --> BAK
+    W --> NET
+
+    W --> HAV
+    DATA -.-> HAV
+    ID -.-> HAV
+    KEY -.-> HAV
+    OBS -.-> HAV
+    BAK -.-> HAV
+    NET -.-> HAV
+
+    HAV --> A
+    HAV --> B
+    HAV --> C
+```
+
+The only convincing evidence of workload portability is migration of a representative stateful service between independently operated environments. Such a test has to include data, IAM mappings, secrets, certificates, network policies, observability history, backup restoration and external integrations; moving a stateless container image proves very little about exit. Haven is valuable because it creates an interface against which such tests can be designed, not because Kubernetes has solved supplier substitution.
+
+### The lower layers remain strategically relevant
+
+Cloud abstraction does not eliminate dependence below the control plane. The Dutch report *Op weg naar Weerbare Virtualisatie* was commissioned precisely because virtualisation had become a strategic concern beneath higher-level workloads.[^netherlands-building-sovereign-digital-state-virtualisation] The Broadcom–VMware case provides a concrete mechanism: after Broadcom acquired VMware, product, licensing and support arrangements changed sufficiently that Rijkswaterstaat went to court and obtained interim continuation of support.[^netherlands-building-sovereign-digital-state-broadcom]
+
+No exploit or datacentre outage was required for the dependency to become operationally significant. The technology continued to function while the commercial control plane around it changed. This is a useful correction to cybersecurity-centric models of resilience: strategic dependency can be triggered by licence aggregation, support withdrawal, acquisition, product discontinuation or incompatible roadmap changes even when confidentiality, integrity and availability are initially unaffected.
+
+The same reasoning applies below virtualisation to storage controllers, firmware, CPU architecture and hardware supply, and above it to proprietary databases and managed services. The EU's June 2026 technological-sovereignty package explicitly recognises this vertical structure, covering semiconductors, infrastructure, software, cloud and AI rather than defining sovereignty as a cloud-location issue.[^netherlands-building-sovereign-digital-state-eu-tech-package] The proposed Chips Act 2.0 simultaneously acknowledges continuing European dependence on third countries for advanced manufacturing and semiconductor design, while the 2026 Digital Decade report puts the EU at roughly 9% of the global semiconductor market.[^netherlands-building-sovereign-digital-state-chips][^netherlands-building-sovereign-digital-state-digital-decade]
+
+These dependencies cannot be removed by the Dutch programme, nor would recreating every global technology domestically be an economically coherent objective. Their relevance is that public architectures should avoid turning an unavoidable external dependency into an avoidable single point of operational failure.
+
+## Procurement is part of the runtime architecture
+
+The revised Dutch sourcing and cloud policies are important because supplier governance is not external to architecture. Contracts determine access to telemetry and documentation, audit rights, data export, key custody, subcontractor visibility, termination assistance and what happens after a change of ownership. A technically portable system can remain commercially non-portable if the organisation lacks the rights, artefacts or transition support required to move it.
+
+The April 2026 STACKIT framework agreement illustrates a more explicit contractual treatment of these questions. Dutch central-government organisations may consume the European provider without minimum-spend commitments; the agreement specifies EEA data location, government audit rights and termination conditions associated with acquisition by a non-EEA party.[^netherlands-building-sovereign-digital-state-stackit] These are useful controls, but they should not be conflated with infrastructure portability. They reduce particular jurisdictional and contractual risks while leaving ordinary technical dependencies on APIs, software, hardware, operational processes and provider competence.
+
+The Belastingdienst provides a different example. In its VAT-system modernisation, the tax authority decided to take infrastructure hosting and management into its own datacentres and to bring the supplier's software-update channel under government control, while also arranging legal access to source code.[^netherlands-building-sovereign-digital-state-tax] This is a much stronger intervention than an EU-residency clause because it changes the production authority path. It also has an explicit cost: the deployment schedule was delayed, demonstrating that additional control consumes time and engineering capacity.
+
+### Solvinity shows why ownership must be modelled as state
+
+The Solvinity case makes the supplier-control problem unusually concrete. Kyndryl proposed acquiring the Dutch cloud provider in 2025; in May 2026 the transaction was prohibited following advice from the Dutch Bureau Toetsing Investeringen, and the government subsequently announced that procurement of the future platform on which Logius and DigiD run would proceed under the Defence and Security Procurement Act.[^netherlands-building-sovereign-digital-state-solvinity] The current agreement with Solvinity was extended only until August 2028 while the replacement procurement proceeds.
+
+The point is not that foreign ownership automatically makes a service insecure, nor that Dutch ownership automatically makes it safe. The important fact is that corporate control is mutable during the life of an architecture. A supplier that satisfies jurisdictional, security and policy assumptions when selected can enter a different control regime through acquisition without any change to the service API or datacentre rack.
+
+Change of control should consequently be treated as an architectural state transition. It should trigger reassessment of jurisdiction, privileged personnel, subcontractors, auditability, source and update paths, support continuity and executable exit. The STACKIT acquisition clause and the Solvinity response are two different mechanisms for dealing with the same underlying variable.
+
+The case also illustrates why identity infrastructure deserves stricter treatment than ordinary workloads. Solvinity does not “own DigiD”; Logius operates DigiD, while the supplier provides the current platform on which the relevant Logius services run.[^netherlands-building-sovereign-digital-state-solvinity] Nevertheless, dependency at an identity layer has a large blast radius because many otherwise independent public services inherit its availability and trust assumptions.
+
+## Europe is converging on reusable components, not one stack
+
+The Dutch programme is better understood when compared with other European approaches, but the useful comparison is institutional mechanism rather than national ranking. France increasingly acts as a public digital-product builder through La Suite; Germany combines workplace integration through openDesk with upstream maintenance funding through the Sovereign Tech Agency; Switzerland has created a statutory publication requirement for software developed or commissioned by federal authorities; Italy has long required comparative acquisition analysis and open publication of public software under its reuse framework; Schleswig-Holstein is executing a brownfield workplace transition; and the Netherlands is attempting to connect workplace, cloud, sourcing and infrastructure policy in one programme.
+
+France demonstrates both the value and the limit of public open-source development. La Suite's repositories provide self-hostable products such as Docs and Meet, and the programme explicitly collaborates with Dutch and German counterparts.[^netherlands-building-sovereign-digital-state-lasuite] Yet Meet is built around LiveKit, and its own repository states that much of the heavy engineering is performed by the LiveKit team.[^netherlands-building-sovereign-digital-state-lasuite-meet] This is not a defect: it is normal software composition. It does, however, demonstrate why public ownership of the application repository cannot be equated with control over every important upstream.
+
+Germany addresses a different part of the stack. openDesk is a Kubernetes-based distribution integrating Matrix/Element, OpenProject, Jitsi, Collabora and other components, but its public deployment repository recommends the Enterprise Edition for production use and explicitly assumes Kubernetes and DevOps competence.[^netherlands-building-sovereign-digital-state-opendesk] Its value lies in integration and lifecycle work rather than in inventing a new office suite. The Sovereign Tech Agency attacks the upstream-maintenance problem instead: by September 2026 it reported €41.1 million invested across 118 supported technologies, including globally important infrastructure such as Python and KDE.[^netherlands-building-sovereign-digital-state-sovereign-tech]
+
+That distinction matters. Funding Python or another non-European/global project can increase European autonomy if it improves the reliability of a dependency that Europe has the legal and technical capacity to operate independently. This is the same structural argument developed in my earlier analysis of the Sovereign Tech Fund and KDE: sovereignty is sometimes increased more efficiently by making a global upstream durable than by creating a nominally European fork.[^netherlands-building-sovereign-digital-state-prior-stf]
+
+Sovereign Cloud Stack adds another useful model. Rather than defining sovereignty as one European cloud operator, SCS standardises components, versions, configuration, deployment behaviour and conformance mechanisms so that compatible providers can reproduce a common operating contract.[^netherlands-building-sovereign-digital-state-scs] That is a better scaling model for many infrastructure layers because it standardises boundaries while preserving multiple operators.
+
+### Legal forkability is not operational substitutability
+
+Switzerland and Italy illustrate the same distinction from the legal side. Swiss federal authorities are required under Article 9 EMOTA/EMBAG to publish source code for software they develop or commission for official tasks, subject to applicable exceptions; Swiss guidance explicitly distinguishes creating software from consuming it and states that existing open-source and proprietary software are treated equally in procurement when merely consumed.[^netherlands-building-sovereign-digital-state-switzerland] The rule therefore creates strong rights around publicly financed bespoke development without pretending that all federal software consumption has become open source.
+
+Switzerland has also moved beyond publication policy. In September 2026 the Federal Chancellery announced a programme for a digitally sovereign workplace after a feasibility study concluded that core office functions could in principle be provided through open-source software; the target is about 3,000 employees from the end of 2027.[^netherlands-building-sovereign-digital-state-switzerland-workplace] This remains a programme target rather than proof of migration at scale, but it adds another implementation path against which the Dutch and German designs can eventually be compared.
+
+Italy's AgID guidelines implement Articles 68 and 69 of the Digital Administration Code through comparative technical-economic evaluation, preference for reuse and open-source solutions, and publication of public-administration-developed software under open licences in public repositories.[^netherlands-building-sovereign-digital-state-italy] This framework predates much of the current sovereignty vocabulary. Its limitation is equally instructive: publication rights can make software legally reusable while public administrations remain operationally dependent on proprietary identity, cloud, database or integration layers.
+
+Schleswig-Holstein provides the strongest brownfield counterpoint. As of August 2026 the Land reported migration of office software to LibreOffice, mail to Open-Xchange, collaboration to Nextcloud and directory services to Nubus; the operating-system move to Linux had begun, and a new open-source telephony architecture had been awarded.[^netherlands-building-sovereign-digital-state-schleswig] This is more mature operational evidence than an isolated workstation pilot, but the Land's own strategy continues to identify Windows-dependent specialist applications as a major constraint.[^netherlands-building-sovereign-digital-state-schleswig-strategy] Brownfield sovereignty is therefore dominated by application compatibility and workflow retirement rather than desktop installation.
+
+These cases reinforce a conclusion from the earlier analysis of France's Linux direction: the kernel is rarely the binding constraint in a government migration.[^netherlands-building-sovereign-digital-state-prior-france] Identity, document semantics, specialist applications, endpoint security, organisational support and lifecycle engineering are usually harder to replace.
+
+## Digital Commons EDIC can reduce duplication, but it can also centralise dependency
+
+The European Digital Infrastructure Consortium for Digital Commons provides a possible institutional layer above these national programmes. Commission Implementing Decision (EU) 2025/2170 established the DC-EDIC in October 2025 after applications from France, Italy, Germany and the Netherlands, giving the consortium legal personality and a statutory seat in Paris.[^netherlands-building-sovereign-digital-state-edic-decision] The Commission's current EDIC page continues to identify those four states as the founding members, with Belgium, Luxembourg, Slovenia and Poland participating as observers.[^netherlands-building-sovereign-digital-state-edic]
+
+This point requires some source hygiene because a March 2026 Dutch government page describes Luxembourg as a founder, which conflicts with both the binding Implementing Decision and the Commission's current membership page. The legally authoritative source is the Commission decision; where programme communications diverge from it, the legal instrument should control the description of founding membership.[^netherlands-building-sovereign-digital-state-edic-projects]
+
+The EDIC's more important function is not membership but coordination. Its mandate is to pool resources around digital commons and support development, maintenance, scaling and adoption, while Commission material identifies a European digital workplace as one possible joint project.[^netherlands-building-sovereign-digital-state-edic] Dutch reporting in March 2026 additionally describes a 100-day challenge for independent open-source components and a pilot exploring a European Sovereign Tech Fund with the German Sovereign Tech Agency.[^netherlands-building-sovereign-digital-state-edic-projects] The latter should be described as an exploratory pilot at that date, not as an already established permanent European fund.
+
+The desirable architecture is common upstream development with independent operation. France, Germany and the Netherlands can share source, libraries, protocols, design systems, vulnerability fixes and conformance tests while retaining separate production environments, identity authorities, trust anchors and security operations. That arrangement captures much of the engineering scale of a common platform without creating one continental failure domain.
+
+The failure mode is equally clear. If DC-EDIC becomes the only organisation capable of building or integrating the “sovereign” applications, source openness will coexist with institutional concentration. Digital commons require multiple capable maintainers and operators, reproducible release processes, portable security evidence, documented interfaces and governance that makes upstream contribution easier than permanent national forks.
+
+Europe should therefore avoid defining success as convergence onto one public stack. The technically stronger objective is convergence of protocols, component interfaces, software supply-chain evidence and reusable upstreams while maintaining plural implementations where independent failure domains and market competition are valuable.
+
+## The remaining risks are operational, not rhetorical
+
+The Dutch programme has a coherent dependency logic, but several of its most important elements remain immature. DAWO-Sextant is still being prepared for first production use. The municipal endpoint pilot runs through the end of 2026. MijnBureau remains a developing integration distribution with important functions still on its roadmap. The sovereign government cloud has a proof of concept, while governance, financing and procurement—the mechanisms that decide who actually controls the platform—remain explicitly deferred.[^netherlands-building-sovereign-digital-state-sextant][^netherlands-building-sovereign-digital-state-mijnbureau][^netherlands-building-sovereign-digital-state-cloud-design]
+
+Those facts should constrain claims about the programme. The Netherlands has produced credible architectural work and unusually inspectable public engineering artefacts; it has not yet demonstrated that the complete system can support representative government workloads at scale with competitive security, service levels and cost. A proof of concept establishes feasibility under specified conditions, not an operating model.
+
+### Security and sovereignty are orthogonal properties
+
+Reducing supplier dependency can improve resilience against some geopolitical, contractual and lifecycle risks while degrading cybersecurity if the replacement lacks mature patching, telemetry, identity protection or incident response. Large commercial platforms benefit from highly automated release pipelines, large security teams and deeply integrated telemetry; a government-operated alternative has to reproduce the security outcomes it actually needs rather than assume that local control compensates for weaker operations.
+
+The reverse problem also exists. A highly secure platform can impose an unacceptable strategic dependency if the government cannot export its data, reproduce its service, retain minimum operation after a supplier loss or understand the privileged control path. The optimisation target is therefore not sovereignty at the expense of security, or security at the expense of autonomy, but a risk-based choice of the minimum control required for the criticality of the capability.
+
+The Belastingdienst's public position is notable because it explicitly acknowledges this trade-off: greater autonomy is being pursued, but complete autonomy is considered unrealistic and interventions should not compromise security or continuity.[^netherlands-building-sovereign-digital-state-tax] This is a more technically defensible position than assuming that open source or domestic hosting inherently improves cybersecurity.
+
+### Modularity can move rather than remove complexity
+
+The same caution applies to modularity. Decomposing a vertically integrated suite creates replaceable components, but also produces more version interactions, schema migrations, authentication boundaries, monitoring integrations and incident ownership questions. If those interfaces are not standardised and independently operable, the organisation pays the operational cost of modularity without obtaining its substitution benefit.
+
+This is where Europe risks replacing vendor lock-in with integrator lock-in. Government organisations may own the source and infrastructure while remaining dependent on a small number of consultants who understand how the pieces fit together. The NDS priority on digital craftsmanship is therefore not ancillary workforce policy; sufficient internal architectural competence is part of the control plane.[^netherlands-building-sovereign-digital-state-nds]
+
+An internal team does not need to replace every supplier engineer. It does need enough knowledge to diagnose architecture-level failures, verify security claims, understand the build and deployment path, specify remediation and transition a service to another operator without the incumbent being the only entity capable of explaining the system.
+
+### European origin does not eliminate upstream dependency
+
+The 2026 EU Open Source Strategy correctly treats open source as a mechanism for reducing dependencies across the stack, but open ecosystems remain globally interdependent.[^netherlands-building-sovereign-digital-state-eu-oss] Linux, Kubernetes, PostgreSQL, OpenSSL, language runtimes and package ecosystems are not made sovereign by relabelling them European; neither would Europe benefit from forking each of them solely to change origin.
+
+The relevant distinction is between dependency and unilateral dependency. A globally governed open-source component with public source, reproducible artefacts, several maintainers, multiple operators and credible fork capability may be structurally safer than a European proprietary component controlled by one supplier. The policy implication follows the argument developed in my analysis of the CVE ecosystem: sovereignty in a shared technical system is often achieved through effective participation, redundancy and influence over governance rather than isolation from the system.[^netherlands-building-sovereign-digital-state-prior-cve]
+
+The Commission's technological-sovereignty package implicitly accepts this reality. Its proposed Chips Act 2.0 aims to reduce strategic dependencies while maintaining Europe as an indispensable participant in an international semiconductor chain, and the Open Source Strategy focuses on strengthening open ecosystems rather than replacing them with EU-only forks.[^netherlands-building-sovereign-digital-state-eu-tech-package][^netherlands-building-sovereign-digital-state-eu-oss] That is controlled interdependence rather than technological autarky.
+
+## What would count as proof
+
+The Dutch programme will become strategically significant if it can replace policy assertions with failure-oriented tests. The unit of evaluation should be a critical capability and its dependency graph, not an individual product. @tbl-dutch-proof identifies tests that would materially strengthen the evidence.
+
+| Claim | Useful test | Evidence of failure |
+|---|---|---|
+| DAWO is a viable government workplace | Execute representative workflows across ordinary and specialist user cohorts without incumbent fallback | Persistent dependence on Windows-only applications, unmanaged exceptions or shadow SaaS |
+| Endpoint control is autonomous | Rebuild and enrol devices after loss of the normal management infrastructure; verify signing, recovery and staged rollback | Bootstrap, binary cache, signing or recovery depends on an unavailable external service |
+| MijnBureau is substitutable | Re-deploy from source and operational documentation using a different qualified operator | Only the current integration team can upgrade or recover the platform |
+| Source sovereignty is meaningful | Independently reproduce release artefacts from controlled source and dependency inputs | Repository exists but build, signing or registry path is externally indispensable |
+| Haven provides useful portability | Move a stateful workload between two independently operated compliant environments | Database, IAM, KMS, object storage, backup or observability assumptions require application redesign |
+| Cloud exit is executable | Restore or migrate a representative important service within its continuity objective | Exit depends on incumbent cooperation or proprietary export mechanisms |
+| Supplier diversity is real | Transfer operational responsibility to a second supplier | Multiple contracts ultimately depend on the same operator or undocumented knowledge |
+| Government retains architectural authority | Have an internal team diagnose, reconstruct and commission replacement of a critical subsystem | Architecture is understandable only to the incumbent contractor |
+| European reuse reduces dependency | Measure whether Dutch modifications can be contributed upstream and reused elsewhere | Long-lived national forks accumulate faster than upstream convergence |
+| Security remains adequate | Compare patch latency, privileged-access control, detection visibility, recovery and forensic completeness with required baselines | Sovereignty migration produces blind spots or materially weaker recovery |
+
+: Falsifiable tests for the Dutch digital-autonomy programme. {#tbl-dutch-proof}
+
+The most informative tests are deliberately destructive. A cloud portability claim is stronger after a service has actually been moved. A backup claim is stronger after restoration. An open-source claim is stronger after an independent team has built the release. A supplier-substitution claim is stronger after responsibility has changed hands. These exercises convert sovereignty from a procurement attribute into a resilience property.
+
+Workflow coverage should also be weighted by criticality rather than desktop count. Migrating 20,000 users while retaining a proprietary estate for the small number of applications that control payroll, identity, crisis coordination or statutory decision-making may produce an impressive adoption figure while leaving the most consequential cut sets untouched. The correct question is which critical capabilities can continue after removal of the dependency being targeted.
+
+Similarly, successful user adoption is not a cosmetic criterion. If employees respond to poor document fidelity, conferencing, mobile integration or external collaboration by retaining unofficial incumbent tools, the dependency remains operational despite formal migration. Shadow IT is evidence that the replacement has not yet captured the complete capability.
+
+Economic evaluation also needs a steady-state horizon. Open-source licensing can reduce direct licence expenditure while increasing integration and internal engineering cost; hyperscaler or suite dependence can look cheap while accumulating future migration cost and reducing bargaining power. A defensible comparison should therefore include migration, operating staff, security operations, support, duplicate transition infrastructure, upstream contribution and maintained exit capability on one side, and licence, switching, concentration and strategic-exposure costs on the other.
+
+There is no reason to assume that the sovereign option will always win that comparison. For low-criticality workloads, a commercial service with strong contractual controls and a straightforward export path may be the rational design. For national identity, authoritative registers, security-sensitive communications or critical administrative capabilities, significantly more expensive control can be justified by the consequences of losing the dependency.
+
+## Conclusion
+
+The Netherlands is not demonstrating that a modern state can become technologically independent. It is attempting something more technically plausible: redesigning public digital infrastructure so that dependencies are visible, classified and, where their criticality justifies the cost, substitutable.
+
+The programme is stronger than the Linux headline suggests because it spans source infrastructure, endpoint configuration, collaboration software, cloud architecture, virtualisation, procurement, corporate-control risk and internal technical capability. It is also substantially less mature than the language of “sovereign workplace” or “sovereign cloud” can imply. Several of the decisive components remain pilots, Beta software, technical designs or policy requirements whose operational consequences have not yet been demonstrated.
+
+The most credible elements are those that expose their own limits. Haven explicitly states that cluster compliance does not imply complete sovereignty. The sovereign-cloud design acknowledges that governance, financing and procurement remain unresolved. Sextant exposes concrete supply-chain and security-tooling mismatches in public. The sourcing strategy admits that government does not yet have sufficient visibility over important supplier dependencies. Those are signs of an engineering programme rather than a finished product.
+
+The central risk is that dependency merely migrates. Microsoft dependence can become integrator dependence; hyperscaler dependence can become reliance on one European cloud provider; a proprietary collaboration suite can be replaced by an open distribution that only one team can operate; a foreign code forge can be replaced by a government forge whose build and release path still relies on external infrastructure. Each transformation is useful only if it decreases the cardinality or impact of strategic cut sets in the capability graph.
+
+The same test applies at European scale. France, Germany, the Netherlands, Switzerland, Italy and Schleswig-Holstein are creating useful but different mechanisms: public software products, integrated workplace distributions, upstream maintenance funding, statutory source publication, reuse rules and brownfield migration. DC-EDIC can make those investments cumulative if it supports common upstreams and conformance without centralising production authority. The technically preferable target is not one European software monoculture, but shared components and standards that several administrations and suppliers can independently build and operate.
+
+This is also why open source matters without being sufficient. It changes the legal and technical geometry of dependency by permitting inspection, independent builds, contribution, fork and multi-operator markets. Whether those rights become actual autonomy depends on build infrastructure, security engineering, integration discipline, internal competence and exercised exits.
+
+The Dutch experiment should therefore be judged by a narrow and demanding criterion: after removing an important supplier, service, control plane or implementation, can the affected public capability be restored through an alternative path within its tolerated disruption, using rights, artefacts and knowledge already under public control? If the answer is demonstrably yes, the programme has created autonomy. If the answer depends on the cooperation of the dependency that has just been removed, sovereignty remains mostly documentary.
+
+Linux is relevant because it forces that test at the workstation. It is not the test itself.
+
+[^netherlands-building-sovereign-digital-state-nds]: The Nederlandse Digitaliseringsstrategie is the first joint digital strategy spanning Dutch government layers. It is organised around six priorities—cloud, data, AI, citizen/business services, digital resilience and autonomy, and digital craftsmanship—plus interventions covering shared standards/building blocks, IT sourcing and purchasing power, and legislation. [Official NDS page](https://www.digitaleoverheid.nl/nederlandse-digitaliseringsstrategie-nds/).
+
+[^netherlands-building-sovereign-digital-state-dawo-pilot]: The municipal pilot involves Amsterdam, Ede, 's-Hertogenbosch and Zaanstad together with VNG. It combines a Linux-based DAWO laptop with MijnBureau and is scheduled to run through the end of 2026, with explicit attention to user experience, integration and identification of suitable production user groups. [Official Dutch Digital Government announcement](https://www.digitaleoverheid.nl/nieuws-nds/gemeenten-verkennen-autonome-digitale-werkomgeving/).
+
+[^netherlands-building-sovereign-digital-state-vision]: The Dutch government vision defines autonomy in terms of freedom to choose and act and sovereignty in terms of legal and administrative control over infrastructure, data and systems. Government communications explicitly state that complete independence is neither realistic nor the objective. [Official government announcement](https://www.rijksoverheid.nl/actueel/nieuws/2025/12/12/nieuwe-visie-legt-fundament-voor-een-autonome-en-soevereine-digitale-overheid). [Official vision](https://www.rijksoverheid.nl/documenten/2025/12/18/bijlage-2-visie-digitale-autonomie-en-soevereiniteit-van-de-overheid).
+
+[^netherlands-building-sovereign-digital-state-prior-work]: See the related analyses *Code Sovereignty Starts with the Forge*, *France's Linux Desktop Turn and the European Logic of Digital Sovereignty*, *KDE, the Sovereign Tech Fund, and Europe's Search for Digital Sovereignty*, and *Reclaiming the Namespace: EU Digital Sovereignty in the CVE Ecosystem?* [Earlier forge analysis](https://4m4.it/posts/code-sovereignty-starts-with-the-forge/). [Earlier workstation analysis](https://4m4.it/posts/frances-linux-desktop-turn-and-the-european-logic-of-digital-sovereignty/). [Earlier open-source infrastructure analysis](https://4m4.it/posts/kde-sovereign-tech-fund-and-europes-search-for-digital-sovereignty/). [Earlier coordination-infrastructure analysis](https://4m4.it/longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/).
+
+[^netherlands-building-sovereign-digital-state-nds-autonomy]: NDS Priority 5 explicitly identifies fragmentation of security operations, insufficient insight into critical IT services and legacy systems, duplicate development and the absence of a uniform approach to strategic digital dependencies. [Official NDS priority](https://www.digitaleoverheid.nl/nederlandse-digitaliseringsstrategie-nds/6-prioriteiten-voor-een-overheid/prioriteit-5-versterken-digitale-weerbaarheid-en-autonomie-van-de-overheid/).
+
+[^netherlands-building-sovereign-digital-state-sourcing]: The February 2026 government-wide IT-sourcing strategy identifies critical-service failure, vendor lock-in, poor visibility into strategically important suppliers, overlapping contracts and fragmented governance and knowledge as current risks. [Official sourcing-strategy page](https://www.digitaleoverheid.nl/document/rijksbrede-strategie-it-sourcing/).
+
+[^netherlands-building-sovereign-digital-state-cloud-policy]: The revised central-government cloud policy announced on 3 July 2026 requires cloud strategies and exit plans for important public-cloud services, calls for assessment of supplier concentration and geopolitical risk, discourages public-cloud email and document services, and prohibits source data from basic registers from being managed in public cloud. [Official cloud-policy announcement](https://www.rijksoverheid.nl/actueel/nieuws/2026/07/03/strengere-regels-voor-het-gebruik-van-clouddiensten-door-de-rijksoverheid).
+
+[^netherlands-building-sovereign-digital-state-dawo-repository]: The public DAWO umbrella repository exposes separate work on NixOS, Sextant fleet management, IAM, cloud, AI and MijnBureau rather than treating the project as a Linux distribution alone. [Public DAWO repository](https://code.overheid.nl/MinBZK/DAWO).
+
+[^netherlands-building-sovereign-digital-state-dawo-nixos]: DAWO-NixOS documents a three-layer configuration model—common core, organisation overlay and concrete host—and supports both `deploy-rs` operator deployment and Git-driven `comin` pull updates. [Public deployment documentation](https://code.overheid.nl/MinBZK/DAWO-NixOS/wiki/Deploy-strategy).
+
+[^netherlands-building-sovereign-digital-state-sextant]: The current Sextant repository describes a declarative NixOS fleet control plane in Beta, being prepared for its first production use. It also documents Nix-closure-derived SBOM and CVE reporting and concrete compatibility limitations with conventional endpoint vulnerability inventory. [Public Sextant repository](https://code.overheid.nl/minbzk/dawo-sextant).
+
+[^netherlands-building-sovereign-digital-state-prior-forge]: The earlier article analysed government source-code infrastructure as a control point for identity, review, software provenance and automation rather than merely as Git hosting. [Earlier analysis](https://4m4.it/posts/code-sovereignty-starts-with-the-forge/).
+
+[^netherlands-building-sovereign-digital-state-code-platform]: `code.overheid.nl` describes itself as the government-wide Dutch source-code platform, hosted on Dutch government infrastructure and providing repositories, pull requests, issue tracking and code review. [Official code platform](https://code.overheid.nl/). [Public meta-repository](https://code.overheid.nl/code/docs).
+
+[^netherlands-building-sovereign-digital-state-code-cicd]: Issue 46 in the platform's own documentation repository records continuing September 2026 discussion over centrally supported CI/CD versus organisation-local Forgejo runners, with Digilab experiments intended to inform the architecture. [Public issue tracker](https://code.overheid.nl/code/docs/issues/46).
+
+[^netherlands-building-sovereign-digital-state-mijnbureau]: The MijnBureau infrastructure repository describes a self-hosted collaboration suite and lists collaborative office functions, file sharing, chat, video, project management, IAM and self-hosted AI as current capabilities; email, password management and an administrative portal remain listed as planned additions. The repository is licensed under EUPL-1.2. [Public MijnBureau repository](https://code.overheid.nl/MinBZK/mijn-bureau-infra).
+
+[^netherlands-building-sovereign-digital-state-mijnbureau-practice]: In April 2026, Dutch Digital Government reported approximately 200 MijnBureau users and described the open-source workplace as technically feasible while identifying organisational support and information exchange with other platforms and document formats as continuing challenges. [Official practice report](https://www.digitaleoverheid.nl/nieuws/praktijkvoorbeeld-autonome-werkplek/).
+
+[^netherlands-building-sovereign-digital-state-sovereign-workplace]: In August 2026 SSC-ICT, DICTU and DUO-ICT announced joint work on a broader sovereign digital workplace building on DAWO and MijnBureau, including collaboration and workplace services. [Official SSC-ICT announcement](https://www.ssc-ict.nl/actueel/nieuws/2026/8/6/ssc-ict-dictu-en-duo-ict-samen-aan-de-slag-voor-een-soevereine-digitale-werkomgeving).
+
+[^netherlands-building-sovereign-digital-state-cloud-design]: The 31 August 2026 design publication states that the sovereign-cloud PoC has been realised, describes an open-source government-wide IaaS service in a government datacentre with Haven-compliant container infrastructure, and explicitly says that governance, financing and procurement will be addressed later. [Official design announcement](https://www.digitaleoverheid.nl/nieuws-nds/nds-cloud-mijlpaal-publicatie-van-het-ontwerp/).
+
+[^netherlands-building-sovereign-digital-state-haven]: The official Haven documentation describes the Kubernetes standard as a mechanism for platform-independent hosting and procurement conformance but explicitly warns that Haven compliance is not complete sovereignty. It permits provider-specific storage implementations and states that no application-level validator currently proves that a workload itself meets Haven portability requirements. [Official Haven documentation](https://developer.overheid.nl/kennisbank/devops/standaarden/haven).
+
+[^netherlands-building-sovereign-digital-state-virtualisation]: The June 2026 *Op weg naar Weerbare Virtualisatie* report addresses future central-government treatment of server virtualisation within the digital-autonomy and sovereignty programme. [Official report page](https://www.digitaleoverheid.nl/nederlandse-digitaliseringsstrategie-nds/dossier-documenten/rapport-op-weg-naar-weerbare-virtualisatie/).
+
+[^netherlands-building-sovereign-digital-state-broadcom]: Rijkswaterstaat describes substantial licensing, portfolio and support changes following Broadcom's acquisition of VMware and reports winning interim legal action concerning continuation of support. [Official Rijkswaterstaat account](https://www.rijkswaterstaat.nl/nieuws/archief/2025/07/rijkswaterstaat-wint-kort-geding-tegen-broadcom-over-voortzetting-van-support).
+
+[^netherlands-building-sovereign-digital-state-eu-tech-package]: The Commission's June 2026 European Technological Sovereignty communication spans chips, infrastructure, software, cloud and AI and packages the proposed Chips Act 2.0, proposed Cloud and AI Development Act and EU Open Source Strategy. [European Commission communication](https://digital-strategy.ec.europa.eu/en/library/communication-european-tech-sovereignty-accompanied-eu-open-source-strategy).
+
+[^netherlands-building-sovereign-digital-state-chips]: The Chips Act 2.0 remains a Commission proposal as of the date of this article. The Commission explicitly identifies continued EU dependence on third countries for advanced semiconductor manufacturing and design. [European Commission proposal page](https://digital-strategy.ec.europa.eu/en/library/proposal-chips-act-20).
+
+[^netherlands-building-sovereign-digital-state-digital-decade]: The 2026 State of the Digital Decade reports an EU share of approximately 9% of the global semiconductor market and continuing significant non-EU dependencies in cloud, cybersecurity and other strategic technologies. [European Commission Digital Decade package](https://digital-strategy.ec.europa.eu/en/policies/2026-state-digital-decade-package).
+
+[^netherlands-building-sovereign-digital-state-stackit]: The April 2026 STACKIT framework agreement specifies EEA data location, Dutch-government audit rights and termination provisions associated with acquisition by a party outside the EEA; government organisations have no minimum-spend or mandatory-consumption commitment under the agreement. [Official government announcement](https://www.rijksoverheid.nl/actueel/nieuws/2026/04/23/rijksoverheid-sluit-deal-met-europees-cloudplatform-stackit).
+
+[^netherlands-building-sovereign-digital-state-tax]: In June 2026 the Belastingdienst described measures including taking VAT-system infrastructure hosting and management into its own datacentres, bringing the supplier update channel under its control and establishing legal access to source code. The same announcement states that complete digital autonomy is unrealistic and that security and continuity must remain central. [Official government announcement](https://www.rijksoverheid.nl/actueel/nieuws/2026/06/11/digitale-autonomie-prioriteit-voor-belastingdienst).
+
+[^netherlands-building-sovereign-digital-state-solvinity]: The Dutch government announced on 4 June 2026 that the proposed Kyndryl acquisition of Solvinity had been prohibited following advice from the Bureau Toetsing Investeringen. The existing Solvinity agreement for the platform used by Logius runs no later than August 2028, while the replacement platform procurement will use the Defence and Security Procurement Act. [Official government announcement](https://www.rijksoverheid.nl/actueel/nieuws/2026/06/04/nieuwe-aanbesteding-platform-digid-via-aanbestedingswet-defensie).
+
+[^netherlands-building-sovereign-digital-state-lasuite]: La Suite is operated by French public bodies DINUM and ANCT; its public organisation hosts the source for several collaboration products and states that some have been developed in close cooperation with Dutch and German governments. [Public La Suite organisation](https://github.com/suitenumerique).
+
+[^netherlands-building-sovereign-digital-state-lasuite-meet]: La Suite Meet is self-hostable and MIT-licensed, but the project explicitly identifies LiveKit as its real-time communications foundation and states that much of the heavy engineering is performed by the LiveKit team. [Public Meet repository](https://github.com/suitenumerique/meet).
+
+[^netherlands-building-sovereign-digital-state-opendesk]: openDesk's public deployment repository describes a Kubernetes-based open-source workplace integrating numerous independent components and recommends its Enterprise Edition for production use. [Public openDesk deployment repository](https://gitlab.opencode.de/bmi/opendesk/deployment/opendesk).
+
+[^netherlands-building-sovereign-digital-state-sovereign-tech]: The German Sovereign Tech Agency reported, at the time checked for this article, 195 technologies identified as worthy of investment, 118 supported and €41.1 million invested in commissioned work since October 2022. [Official project portfolio](https://www.sovereign.tech/tech).
+
+[^netherlands-building-sovereign-digital-state-prior-stf]: See the earlier analysis of the Sovereign Tech Fund/Agency model and KDE as an example of state financing of foundational open-source infrastructure. [Earlier analysis](https://4m4.it/posts/kde-sovereign-tech-fund-and-europes-search-for-digital-sovereignty/).
+
+[^netherlands-building-sovereign-digital-state-scs]: Sovereign Cloud Stack defines standards for open-source cloud components, versions, configuration and deployment and includes conformance/certification mechanisms intended to reproduce specified behaviour across implementations. [Official SCS standards documentation](https://docs.scs.community/standards/standards/overview/).
+
+[^netherlands-building-sovereign-digital-state-switzerland]: Swiss Federal Chancellery guidance states that federal authorities must publish source code of software they develop or commission for official tasks under Article 9 EMOTA/EMBAG. The same guidance distinguishes software consumption from creation and states that open-source and proprietary software are treated equally in procurement when consuming existing software. [Official Federal Chancellery guidance](https://www.bk.admin.ch/en/open-source-software-oss-2).
+
+[^netherlands-building-sovereign-digital-state-switzerland-workplace]: On 2 September 2026 the Swiss Federal Chancellery announced a programme for a digitally sovereign workplace following a positive feasibility study, with a target of approximately 3,000 employees using sovereign workplace software with core office functions from the end of 2027. [Official Federal Chancellery announcement](https://www.bk.admin.ch/de/newnsb/EgX1XHIfGtUN).
+
+[^netherlands-building-sovereign-digital-state-italy]: AgID's guidelines implement Articles 68 and 69 of the Italian Digital Administration Code through comparative software acquisition analysis, preference for open-source/reuse where appropriate, and publication of PA-developed software under open licences in publicly accessible repositories. [Official AgID guidelines](https://www.agid.gov.it/it/design-servizi/riuso-open-source/linee-guida-acquisizione-riuso-software-pa).
+
+[^netherlands-building-sovereign-digital-state-schleswig]: Schleswig-Holstein reported in August 2026 that its administration had moved office software to LibreOffice, mail to Open-Xchange, collaboration to Nextcloud and directory services to Nubus, while the Linux operating-system migration had begun and a new open-source telephony platform had been procured. [Official Schleswig-Holstein announcement](https://www.schleswig-holstein.de/DE/landesregierung/ministerien-behoerden/I/Presse/PI/2026/cds/260811_viakom_cds).
+
+[^netherlands-building-sovereign-digital-state-schleswig-strategy]: Schleswig-Holstein's strategy page explicitly identifies the usability of specialist applications, many currently Windows-dependent, as a material issue in the sovereign-workplace programme. [Official strategy page](https://www.schleswig-holstein.de/DE/landesregierung/themen/digitalisierung/linux-plus1/einleitung).
+
+[^netherlands-building-sovereign-digital-state-prior-france]: The earlier France analysis argues that public-sector Linux migration is principally a systems and operating-model problem involving identity, applications, formats, endpoint management and support rather than a kernel-selection problem. [Earlier analysis](https://4m4.it/posts/frances-linux-desktop-turn-and-the-european-logic-of-digital-sovereignty/).
+
+[^netherlands-building-sovereign-digital-state-edic-decision]: Commission Implementing Decision (EU) 2025/2170 established DC-EDIC after an application from France, Italy, Germany and the Netherlands, gave it legal personality and established its statutory seat in Paris. [EUR-Lex legal text](https://eur-lex.europa.eu/eli/dec_impl/2025/2170/oj/eng).
+
+[^netherlands-building-sovereign-digital-state-edic]: The Commission's current EDIC page identifies France, Germany, the Netherlands and Italy as founding DC-EDIC members and Belgium, Luxembourg, Slovenia and Poland as observers. It describes the consortium as a mechanism to support, fund and scale digital commons, including possible European digital-workplace projects. [European Commission EDIC page](https://digital-strategy.ec.europa.eu/en/policies/edic).
+
+[^netherlands-building-sovereign-digital-state-edic-projects]: A Dutch government page published on 30 March 2026 describes a 100-day open-source challenge and a pilot exploring a European Sovereign Tech Fund with the German Sovereign Tech Agency. That page also describes Luxembourg as a founder, whereas the binding Implementing Decision and the Commission's current EDIC page identify the four founding applicants as France, Italy, Germany and the Netherlands; this article follows the legal instrument on founding membership. [Official Dutch project update](https://www.digitaleoverheid.nl/nieuws/edic-digital-commons-start-eerste-projecten/).
+
+[^netherlands-building-sovereign-digital-state-eu-oss]: The EU Open Source Strategy published in June 2026 explicitly frames open source as an instrument for reducing dependencies across the technology stack and links it with standardisation, public procurement and ecosystem sustainability. [European Commission strategy page](https://digital-strategy.ec.europa.eu/en/policies/open-source-strategy).
+
+[^netherlands-building-sovereign-digital-state-prior-cve]: The earlier CVE analysis develops the same non-autarkic concept at the level of vulnerability coordination: strategic autonomy can derive from participation and influence in an interoperable shared system while avoiding unilateral control by another actor. [Earlier analysis](https://4m4.it/longforms/reclaiming-namespace-eu-digital-sovereignty-cve-ecosystem/).
