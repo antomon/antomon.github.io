@@ -92,27 +92,10 @@ local function normalize_category(value)
   return value:gsub("%s+", " ")
 end
 
--- Editorial-form labels remain ordinary Quarto categories.
---
--- "Report" is the default form: an article is counted as a report when it
--- does not carry one of the explicit non-default editorial-form categories.
--- "position paper" is retained as a legacy non-default form while existing
--- content is migrated.
-local non_report_editorial_forms = {
-  ["essay"] = true,
-  ["tutorial"] = true,
-  ["review"] = true,
-  ["position paper"] = true,
-}
-
-local function is_default_report(categories)
-  for category, _ in pairs(categories or {}) do
-    if non_report_editorial_forms[category] then
-      return false
-    end
-  end
-  return true
-end
+-- Editorial-form labels are ordinary Quarto categories.
+-- The homepage counts them exactly as they appear in article metadata.
+-- In particular, `report` is now a real category populated by the migration
+-- script rather than a synthetic fallback classification.
 
 local function extract_yaml(content)
   if not content then
@@ -248,7 +231,6 @@ local function scan_collection(project_root, collection)
   local statistics = {
     total = 0,
     categories = {},
-    editorial_report = 0,
   }
 
   local collection_root = join_fs(project_root, collection)
@@ -260,10 +242,6 @@ local function scan_collection(project_root, collection)
 
       for category, _ in pairs(metadata.categories) do
         statistics.categories[category] = (statistics.categories[category] or 0) + 1
-      end
-
-      if is_default_report(metadata.categories) then
-        statistics.editorial_report = statistics.editorial_report + 1
       end
     end
   end
@@ -296,13 +274,6 @@ local function build_counts(project_root)
       (longforms.categories[category] or 0) +
       (posts.categories[category] or 0)
   end
-
-  -- Report is the effective default editorial form, not merely the number of
-  -- articles explicitly carrying a `report` category.
-  counts["longforms|report"] = longforms.editorial_report
-  counts["posts|report"] = posts.editorial_report
-  counts["all|report"] = longforms.editorial_report + posts.editorial_report
-
   return counts
 end
 
