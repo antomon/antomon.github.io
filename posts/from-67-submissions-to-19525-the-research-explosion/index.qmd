@@ -15,6 +15,10 @@ audiences: analyst, practitioner, researcher, subject-matter expert, technical s
 difficulty: intermediate
 series: "AI and the transformation of mathematics"
 image: "research-explosion.png"
+format:
+  html:
+    fig-format: svg
+    fig-responsive: true
 ---
 
 ## When producing a paper becomes cheaper than evaluating one
@@ -42,18 +46,21 @@ The early official record reports 67 conference-track submissions in 2013, 87 in
 #| fig-cap: "Reported ICLR submission volume, 2013–2026. The series rises from 67 conference-track submissions in 2013 to 19,525 valid, format-compliant submissions in 2026. Historical counting conventions are not perfectly uniform; the 2016 point is plotted at 265 although the contemporary source reports more than 265."
 #| fig-alt: "Line chart showing reported ICLR submission volume increasing from 67 in 2013 to 19,525 in 2026, with especially rapid absolute growth after 2022."
 #| fig-align: center
-#| fig-format: svg
 #| echo: false
 #| warning: false
 
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
+import seaborn as sns
 
-# ------------------------------------------------------------------
-# Data
-# ------------------------------------------------------------------
+from matplotlib.ticker import FuncFormatter
+from matplotlib_inline.backend_inline import set_matplotlib_formats
+
+# Force vector output from the Jupyter inline backend
+set_matplotlib_formats("svg")
+
+# Embed glyphs as vector paths in the SVG
+plt.rcParams["svg.fonttype"] = "path"
 
 df = pd.DataFrame({
     "year": [
@@ -78,53 +85,42 @@ df = pd.DataFrame({
     ]
 })
 
-# ------------------------------------------------------------------
-# Editorial style
-# ------------------------------------------------------------------
-
 sns.set_theme(
     context="paper",
     style="white",
-    font="DejaVu Sans",
     rc={
-        "font.family": "DejaVu Sans",
-        "figure.dpi": 150,
-        "savefig.dpi": 300,
-        "axes.linewidth": 0.8,
+        "font.size": 10,
         "axes.labelsize": 10,
         "xtick.labelsize": 9,
         "ytick.labelsize": 9,
-        "font.size": 10
+        "axes.linewidth": 0.8
     }
 )
 
-neutral = "#A8A8A8"
-accent = "#2563A6"
-text = "#252525"
-grid = "#E6E6E6"
+neutral = "#A6A6A6"
+accent = "#2767A8"
+text = "#222222"
+muted = "#666666"
+grid = "#E3E3E3"
 
-fig, ax = plt.subplots(figsize=(7.2, 4.2))
+fig, ax = plt.subplots(figsize=(10, 5.4))
 
-# ------------------------------------------------------------------
-# Historical trajectory
-# ------------------------------------------------------------------
+# Historical trajectory through 2022
+historical = df[df["year"] <= 2022]
 
 sns.lineplot(
-    data=df,
+    data=historical,
     x="year",
     y="submissions",
     color=neutral,
-    linewidth=2.0,
+    linewidth=2.2,
     marker="o",
-    markersize=4.5,
+    markersize=5,
     ax=ax,
     zorder=2
 )
 
-# ------------------------------------------------------------------
-# Highlight recent acceleration
-# ------------------------------------------------------------------
-
+# Recent acceleration, beginning from the shared 2022 observation
 recent = df[df["year"] >= 2022]
 
 sns.lineplot(
@@ -136,23 +132,18 @@ sns.lineplot(
     marker="o",
     markersize=6,
     ax=ax,
-    zorder=4
+    zorder=3
 )
 
-# ------------------------------------------------------------------
-# Selective data labels
-# ------------------------------------------------------------------
-
-labels = {
-    2013: ("67", 0, 11, "center"),
-    2019: ("1,591", 0, 11, "center"),
-    2022: ("3,391", -5, 13, "right"),
-    2024: ("7,262", 0, 12, "center"),
-    2025: ("11,603", -5, 12, "right"),
+# Only analytically useful labels
+point_labels = {
+    2013: ("67", -2, 12, "center"),
+    2019: ("1,591", 0, 12, "center"),
+    2022: ("3,391", -8, 12, "right"),
     2026: ("19,525", -2, 13, "right"),
 }
 
-for year, (label, dx, dy, ha) in labels.items():
+for year, (label, dx, dy, ha) in point_labels.items():
     value = df.loc[df["year"] == year, "submissions"].iloc[0]
 
     ax.annotate(
@@ -162,29 +153,29 @@ for year, (label, dx, dy, ha) in labels.items():
         textcoords="offset points",
         ha=ha,
         va="bottom",
-        fontsize=9,
+        fontsize=9.5,
         fontweight="semibold",
         color=text
     )
 
-# ------------------------------------------------------------------
-# Editorial annotation
-# ------------------------------------------------------------------
-
+# Editorial callout in unused space, positioned in axes coordinates
 ax.text(
-    2022.15,
-    14800,
+    0.66,
+    0.72,
     "5.8×",
+    transform=ax.transAxes,
     fontsize=22,
     fontweight="bold",
     color=accent,
-    ha="left"
+    ha="left",
+    va="bottom"
 )
 
 ax.text(
-    2022.15,
-    13500,
+    0.66,
+    0.66,
     "increase in submissions\nfrom 2022 to 2026",
+    transform=ax.transAxes,
     fontsize=9.5,
     color=text,
     ha="left",
@@ -192,10 +183,7 @@ ax.text(
     linespacing=1.35
 )
 
-# ------------------------------------------------------------------
 # Axes
-# ------------------------------------------------------------------
-
 ax.set_xlim(2012.7, 2026.5)
 ax.set_ylim(0, 21500)
 
@@ -204,13 +192,12 @@ ax.set_xticks([
 ])
 
 ax.set_xlabel("")
-ax.set_ylabel("Reported submissions", color=text, labelpad=12)
+ax.set_ylabel("Reported submissions", labelpad=12)
 
 ax.yaxis.set_major_formatter(
     FuncFormatter(lambda x, _: f"{int(x):,}")
 )
 
-# Horizontal guides only
 ax.yaxis.grid(
     True,
     color=grid,
@@ -219,7 +206,6 @@ ax.yaxis.grid(
 
 ax.xaxis.grid(False)
 
-# Remove conventional plotting frame
 sns.despine(
     ax=ax,
     top=True,
@@ -231,25 +217,20 @@ sns.despine(
 ax.tick_params(
     axis="both",
     length=0,
-    colors="#666666"
+    colors=muted
 )
 
-# Baseline
 ax.axhline(
     0,
-    color="#BDBDBD",
+    color="#BBBBBB",
     linewidth=0.8
 )
-
-# ------------------------------------------------------------------
-# Final composition
-# ------------------------------------------------------------------
 
 fig.subplots_adjust(
     left=0.10,
     right=0.97,
-    top=0.95,
-    bottom=0.11
+    top=0.94,
+    bottom=0.12
 )
 
 plt.show()
@@ -313,7 +294,6 @@ The narrower category in which AI is credited with a contribution at approximate
 #| fig-cap: "Mathematics preprints examined by Epoch AI and disclosed AI participation, January 2025–August 2026. Monthly preprint volume increased during the period, but disclosed AI participation accelerated much more sharply in 2026. By August 2026, 25.25% of examined preprints acknowledged some AI use and 5.86% acknowledged AI use classified as substantial research. These are disclosure statistics, not estimates of total latent AI use."
 #| fig-alt: "Two-panel editorial chart. The upper panel shows monthly mathematics preprints examined by Epoch AI increasing from about 3,100 in January 2025 to 5,754 in August 2026. The lower panel shows the share acknowledging any AI use rising sharply to 25.25 percent, while substantial-research acknowledgments rise to 5.86 percent."
 #| fig-align: center
-#| fig-format: svg
 #| echo: false
 #| warning: false
 
