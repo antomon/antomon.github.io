@@ -1,13 +1,17 @@
 ---
 title: "How Sovereign Is Kolibri?"
-subtitle: "What Aleph Alpha actually built, what it chose to disclose, and where the European dependency chain still leaves the EU exposed"
-description: "A source-grounded technical assessment of Aleph Alpha's Kolibri, focusing on the Model Factory, data and training pipeline, architecture, post-training, transparency, open-weight release, infrastructure dependencies, and what the project demonstrates about European AI sovereignty."
+subtitle: "Aleph Alpha's German foundation model is strongly sovereign in production and deployment, but not across the full technological stack"
+description: "Kolibri demonstrates substantial European sovereignty over the production and deployment of a foundation model, but not full-stack technological autonomy. Aleph Alpha controls the architecture, training pipeline, post-training, evaluation and release process, while customers can retain and self-host the weights; critical dependencies remain in NVIDIA accelerators and the semiconductor stack, external teacher models, incomplete public reproducibility and future corporate governance. The article tests that conclusion against Kolibri's Model Factory, its distance from the global capability frontier, Mistral Large 4, and the provenance of its synthetic training data."
 abstract: |
-  Kolibri is best understood not as a single model checkpoint but as the visible output of a larger engineering system. Aleph Alpha's 2026 technical report and engineering publications describe a model-production pipeline that spans raw-data ingestion, filtering and deduplication, tokenizer design, architecture search, proxy-model ablations, distributed pre-training, mid-training, long-context extension, supervised fine-tuning, reinforcement learning, evaluation, checkpoint lineage, serving, and deployment. The central implementation, Savanna, expresses these stages as version-controlled code, binds immutable artefacts to commits and evaluations, runs continuous integration on the training pipeline, and abstracts over multiple GPU clusters. Kolibri itself is a 78.1-billion-parameter sparse Mixture-of-Experts model with 3.46 billion active parameters per token, trained through nearly 24 trillion token presentations and released as downloadable FP8 and BF16 weights.
+  **How sovereign is Kolibri? Substantially sovereign at the model-production and deployment layers, but not across the complete technological stack.** Aleph Alpha controls the architecture, tokenizer, data-transformation pipeline, training recipe, post-training, evaluation and release process that produced Kolibri, while the resulting FP8 and BF16 weights can be retained and self-hosted without dependence on an Aleph Alpha inference service. The strongest sovereignty claim supported by the evidence is therefore not autarky, but control over the intellectual and operational system that turns data, compute and research decisions into a deployable foundation model.
 
-  This makes Kolibri a substantial European technological achievement, but the sovereignty claim requires careful scoping. Aleph Alpha controls much of the intellectual and operational model-production process, while the final weights can be self-hosted without a mandatory Aleph Alpha inference service. At the same time, production depends on NVIDIA B200 and B300 accelerators, an international semiconductor supply chain, globally developed open-source software, and external foundation models used to generate and judge portions of the synthetic training data. The release is open-weight rather than a complete open-source reproduction package: Apache 2.0 applies to the published weights and configuration files, while Aleph Alpha explicitly excludes its underlying code, architecture rights, parameter settings and training methods from that grant.
+  That system is unusually well documented. Aleph Alpha's Savanna Model Factory represents model development as version-controlled software, links datasets, configurations, checkpoints and evaluations through persistent lineage, automates experiments and recovery across large GPU clusters, and supports repeated model generations rather than a single training run. Kolibri itself is a 78.1-billion-parameter sparse Mixture-of-Experts model with 3.46 billion active parameters per token, trained through nearly 24 trillion base-model token presentations and followed by large-scale supervised fine-tuning and reinforcement learning. This constitutes strong evidence of European **producer sovereignty** and, because the weights are downloadable, substantial **deployment sovereignty**.
 
-  The evidence therefore supports a precise conclusion. Kolibri demonstrates strong European model-production and deployment sovereignty, not full-stack technological autonomy. Its deeper significance for Europe is that it documents an industrial capability to repeatedly turn data, compute and research decisions into new foundation-model generations. What remains unresolved is whether that capability can be reproduced independently of non-European accelerator supply, external teacher models, closed internal production code and future transatlantic corporate governance.
+  The limits are equally concrete. Kolibri's demonstrated production system depends on NVIDIA B200 and B300 accelerators, high-bandwidth memory, networking and an international semiconductor and software ecosystem for which no equivalent European substitute is demonstrated. Its training-information supply chain is also not exclusively European: Aleph Alpha documents the use of GLM, Qwen, Gemma, Mistral and other external models to generate, regenerate, score or judge parts of the training data. The release is open-weight rather than a complete publicly reproducible production stack, and the announced Cohere transaction leaves future organizational control partly unresolved. Kolibri therefore does not establish full-stack or fully independent reproductive sovereignty.
+
+  The appendices sharpen that conclusion in two directions. A cross-benchmark calibration against Artificial Analysis places Kolibri heuristically in roughly the **20–26 Intelligence Index tier**, well below the current global frontier overall, although the gap is much smaller on some mathematical, coding and long-context evaluations and much larger on broad knowledge reliability and long-horizon agentic execution. The October 2026 release of **Mistral Large 4**, independently scored at 38 and trained on 3,800 NVIDIA Grace Blackwell GPUs in Mistral-owned European datacentres, shows that European model-development and infrastructure capability can move substantially closer to the frontier. At the same time, Kolibri's disclosed dependence on external teacher models shows that sovereignty must include training-information provenance and substitutability as well as compute location and ownership.
+
+  The resulting judgment is therefore layered rather than binary: **Kolibri demonstrates strong European model-production sovereignty and strong deployment sovereignty; partial reproductive and infrastructure sovereignty; and weak sovereignty at the accelerator and semiconductor layers.** Europe has demonstrated that it can build, operate and retain serious foundation-model capability. It has not yet demonstrated that the entire chain required to reproduce the next generation can survive the loss of critical non-European technology, upstream models or organizational dependencies.
 date: "2026-10-05"
 date-modified: "2026-10-07"
 categories: [EU digital sovereignty, machine learning, report, 🇬🇧]
@@ -651,7 +655,7 @@ A separate Aleph Alpha engineering study gives unusually concrete detail on how 
 
 The study starts at 8–16 B200 GPUs, where the team sweeps combinations of FSDP degree, data-parallel degree, activation checkpointing and local batch size. The small-scale sweep is used to eliminate configurations before scaling. PyTorch profiles then identify the boundary between compute-bound and communication-bound execution.
 
-At 128 GPUs, selective activation checkpointing with FSDP128 reached 26.7k tokens/s/GPU and 35.3% model-FLOPS utilization. The final 512-GPU configuration used FSDP128, DP4, selective activation checkpointing and local batch size 22, reaching 26.7k TPS and 35.3% MFU with 94% HBM usage. Per-GPU efficiency fell by only about 6% between the 16-GPU optimum and the 512-GPU result.[^how-sovereign-is-kolibri-scaling]
+At 128 GPUs, selective activation checkpointing with FSDP128 reached 28.0k tokens/s/GPU, 37.0% model-FLOPS utilization and 93% HBM usage. The final 512-GPU configuration used FSDP128, DP4, selective activation checkpointing and local batch size 22, reaching 26.7k tokens/s/GPU and 35.3% MFU with 94% HBM usage. Per-GPU efficiency fell by only about 6% between the 16-GPU optimum and the 512-GPU result.[^how-sovereign-is-kolibri-scaling]
 
 This is a meaningful achievement, but it should not be overstated. Aleph Alpha explicitly declines to compare the 35.3% MFU number directly with unrelated published MoE runs because architecture, precision and recipe differences make such comparisons unreliable. The documented result is the near-linear scaling of this particular training setup, not proof that it is the industry's most efficient MoE implementation.[^how-sovereign-is-kolibri-scaling]
 
@@ -667,7 +671,7 @@ Those numbers describe different levels of the data pipeline and should not be c
 
 The Common Crawl pipeline is similarly explicit. The report says Aleph Alpha extracts more than 308 billion documents, performs exact deduplication to obtain approximately 21.16 billion distinct documents, then applies fuzzy MinHash/LSH deduplication that removes a further 25.9% of near-duplicate documents. Substring deduplication removes repeated blocks such as navigation and templated page chrome, eliminating 21.3% of text bytes from the remaining corpus.[^how-sovereign-is-kolibri-technical-report]
 
-The data pipeline also performs quality scoring, URL and content filtering, decontamination against evaluation sets and PII remediation. The model card states that high-syntax-constraint identifiers such as email and IP addresses are replaced with special tokens and that documents are dropped when more than 15% of their bytes are replaced during redaction.[^how-sovereign-is-kolibri-model-card]
+The pre-training data pipeline also performs quality scoring, URL and content filtering and PII remediation. Benchmark decontamination is applied explicitly to later-stage training pools rather than to the complete pre-training pool. The model card states that high-syntax-constraint identifiers such as email and IP addresses are replaced with special tokens and that documents are dropped when more than 15% of their bytes are replaced during redaction.[^how-sovereign-is-kolibri-model-card][^how-sovereign-is-kolibri-technical-report]
 
 About 24% of the final pre-training token presentations are synthetic in origin, including rephrases and translations.[^how-sovereign-is-kolibri-technical-report] This is important for the sovereignty assessment because Aleph Alpha controls the generation and filtering process while not originating every upstream model used to create that material.
 
@@ -828,7 +832,7 @@ This is why training location should not be equated with hardware sovereignty. A
 
 The hardware boundary is not the only foreign dependency. The SFT pipeline uses GLM-5.2, GLM-5.3 and Qwen3.8-27B as principal generators or regenerators of fine-tuning material.[^how-sovereign-is-kolibri-technical-report] The broader pre-training pipeline also uses external model families for rephrasing, translation and judging tasks.
 
-This dependency has a different failure mode from an API dependency at runtime. Once synthetic data have been generated, filtered and retained, the external teacher cannot revoke the already incorporated training examples. But the dependency matters for **reproductive sovereignty**: the public evidence does not establish that Aleph Alpha could regenerate a functionally equivalent synthetic corpus tomorrow if all non-European teacher models became unavailable.
+This dependency has a different failure mode from an API dependency at runtime. Losing access to an external teacher would not by itself remove information already incorporated into an existing checkpoint or synthetic datasets that Aleph Alpha is entitled to retain. The dependency nevertheless matters for **reproductive sovereignty**: the public evidence does not establish that Aleph Alpha could regenerate a functionally equivalent synthetic corpus if all non-European teacher models became unavailable.
 
 The technical report's transparency on this point is important because it prevents a misleading interpretation of _we own the entire pipeline._ The evidence supports ownership of the **orchestration, curation and training process**. It does not support exclusive European provenance of every model that contributed information to that process.
 
@@ -863,7 +867,7 @@ The evidence supports a strong but bounded sovereignty assessment.
 | External reproducibility | extensive report, model card and content summary | no complete public Model Factory or training corpus | partial |
 | Corporate control | German company at release | pending Cohere combination | future structure transatlantic |
 
-: Evidence-based sovereignty assessment for Kolibri as of 5 October 2026. {#tbl-how-sovereign-is-kolibri-assessment}
+: Evidence-based sovereignty assessment for Kolibri as of 7 October 2026. {#tbl-how-sovereign-is-kolibri-assessment}
 
 This table explains why both extreme readings are wrong:
 
@@ -911,7 +915,7 @@ The Model Factory behind that process is the most sovereignty-relevant part of t
 
 Aleph Alpha's transparency choice is substantial but deliberately incomplete. The weights and configuration are released under Apache 2.0, accompanied by a long technical report, detailed model card and training-content summary. The complete production code, model factory, training corpus and associated IP are not transferred under that license. Kolibri is therefore open-weight and highly documented, not a fully open-source reproduction package.
 
-The same precision is needed for the sovereignty claim. Aleph Alpha controls most of the intellectual and operational model-development pipeline and gives customers strong deployment autonomy. But the demonstrated system still depends on NVIDIA accelerators, an international semiconductor and software ecosystem, external teacher models for some synthetic data, and a corporate structure that is in the process of becoming transatlantic.
+The same precision is needed for the sovereignty claim. Aleph Alpha controls most of the intellectual and operational model-development pipeline and gives customers strong deployment autonomy. But the demonstrated system still depends on NVIDIA accelerators, an international semiconductor and software ecosystem, external teacher models for some synthetic data, and a corporate structure subject to a pending transatlantic business-combination agreement.
 
 The evidence therefore supports a bounded conclusion:
 
@@ -971,6 +975,7 @@ Table @tbl-how-sovereign-is-kolibri-frontier gives the reference points used in 
 |---|---|---|---:|---:|---:|---|
 | **Kolibri** | Germany / Aleph Alpha | open weights, Apache 2.0 | 78.1B / 3.46B | 256k trained; up to 1M evaluated | **≈20–26** | **cross-benchmark inference; not independently scored** |
 | Mistral Medium 3.5 | France / Mistral AI | open weights | 128B / not disclosed | 256k | 14 | Artificial Analysis result |
+| **Mistral Large 4 Preview** | France / Mistral AI | API preview; open-weight release announced for end of October | 1.05T / 49B | 1M documented; 524k in the evaluated API endpoint | **38** | Artificial Analysis result |
 | GPT-OSS 120B | United States / OpenAI | open weights | 117B / 5.1B | 128k | 12 | Artificial Analysis result |
 | Qwen3.8 27B (xhigh) | China / Alibaba | open weights, Apache 2.0 | 27B / 27B | 256k | 34 | Artificial Analysis result |
 | **GLM-5.3 Max** | China / Z.ai | open weights, GLM-5.3 License | 753B / 40B | 1M | **45** | Artificial Analysis result |
@@ -980,7 +985,7 @@ Table @tbl-how-sovereign-is-kolibri-frontier gives the reference points used in 
 
 : Reference capability levels used to estimate Kolibri's position. Artificial Analysis values are a time-stamped 7 October 2026 snapshot; Kolibri's value is an inferred interval, not an Artificial Analysis score. {#tbl-how-sovereign-is-kolibri-frontier}
 
-Artificial Analysis currently places GLM-5.3 Max at 45, Kimi K3 Max at 44 and Qwen3.8 27B in its xhigh configuration at 34. The strongest currently listed Mistral Medium 3.5 result is 14.[^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi][^how-sovereign-is-kolibri-frontier-qwen38][^how-sovereign-is-kolibri-frontier-mistral] At the proprietary frontier, GPT-6 Astra (Max) scores 53 and Claude Opus 5.5 (Max) scores 58.[^how-sovereign-is-kolibri-frontier-astra][^how-sovereign-is-kolibri-frontier-claude]
+Artificial Analysis currently places GLM-5.3 Max at 45, Kimi K3 Max at 44 and Qwen3.8 27B in its xhigh configuration at 34. Mistral Large 4 Preview, released on 6 October, scores **38**, materially changing the European comparison even though its public weights are not yet available.[^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi][^how-sovereign-is-kolibri-frontier-qwen38][^how-sovereign-is-kolibri-app-mistral4][^how-sovereign-is-kolibri-app-mistral4-aa] At the proprietary frontier, GPT-6 Astra (Max) scores 53 and Claude Opus 5.5 (Max) scores 58.[^how-sovereign-is-kolibri-frontier-astra][^how-sovereign-is-kolibri-frontier-claude]
 
 These numerical distances must not be interpreted as percentage differences in intelligence. The Artificial Analysis Intelligence Index is a composite benchmark score, not a ratio scale: a model scoring 50 is not meaningfully "twice as intelligent" as one scoring 25.
 
@@ -1139,7 +1144,7 @@ If the only comparison were between Kolibri and proprietary systems such as Clau
 
 The Chinese comparison is more demanding because GLM-5.3 and Kimi K3 are themselves downloadable open-weight systems. Their licenses are not identical to Apache 2.0—GLM-5.3 uses its own license and Kimi K3 has commercial conditions for some large-scale uses—but their model weights can be operated outside the provider's hosted API.[^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi]
 
-Artificial Analysis currently places GLM-5.3 Max at 45 and Kimi K3 Max at 44, far above the independently measured European models currently listed by the same index.[^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi][^how-sovereign-is-kolibri-frontier-mistral]
+Artificial Analysis currently places GLM-5.3 Max at 45 and Kimi K3 Max at 44. Mistral Large 4 Preview now scores 38, narrowing the measured European gap substantially, although its announced open weights had not yet been released as of 7 October 2026.[^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi][^how-sovereign-is-kolibri-app-mistral4][^how-sovereign-is-kolibri-app-mistral4-aa]
 
 The strategic comparison is therefore not simply
 
@@ -1180,7 +1185,7 @@ Using the deliberately broad 20–26 cross-benchmark envelope gives the followin
 
 The broad conclusion is robust to the uncertainty in the calibration. Even at the upper end of the envelope, the Chinese open-weight frontier would remain roughly twenty Intelligence Index points higher, while the strongest U.S. proprietary systems would remain more than thirty points higher.
 
-Conversely, the bridge estimate would place Kolibri materially above the currently listed Mistral systems on the same composite scale: Mistral Medium 3.5 is currently at 14, Mistral Small 4 at 11 and Mistral Large 3 at 9.[^how-sovereign-is-kolibri-frontier-mistral] That is still an inference about Kolibri, not a European leaderboard result.
+The Mistral Large 4 release changes the European comparison. Kolibri's inferred 20–26 range remains above earlier Mistral releases such as Medium 3.5, Small 4 and Large 3, but it is clearly below the independently measured **38** of Mistral Large 4 Preview.[^how-sovereign-is-kolibri-frontier-mistral][^how-sovereign-is-kolibri-app-mistral4-aa] Kolibri's position remains an inference rather than an independent leaderboard result.
 
 ### Arena provides an independent qualitative cross-check
 
@@ -1212,7 +1217,7 @@ Kolibri therefore occupies an engineering point involving at least:
 
 GLM-5.3 and Kimi K3 operate at dramatically larger active model scales. Claude Opus 5.5 and GPT-6 Astra expose no downloadable weights.
 
-The appropriate conclusion is therefore not that Kolibri simply "loses" because its aggregate capability is lower. It is that **European sovereignty currently appears to carry a measurable general-capability opportunity cost**, especially for difficult autonomous and agentic work.
+The appropriate conclusion is therefore not that Kolibri simply "loses" because its aggregate capability is lower. It is that **Kolibri's particular combination of small active footprint, self-hostability and sovereignty currently carries a measurable general-capability opportunity cost**, especially for difficult autonomous and agentic work. Mistral Large 4 shows that this trade-off should not be generalized to European model development as a whole.
 
 ### The capability gap is not uniform
 
@@ -1262,7 +1267,7 @@ Qwen3.8 27B is the most useful bridge model in the comparison. It is a dense 27B
 
 Qwen3.8 is also **not the current Chinese frontier**. Artificial Analysis places the 27B xhigh configuration at 34, while the much larger Qwen3.8 2.4T-A95B release reaches about 40; GLM-5.3 and Kimi K3 reach 45 and 44.[^how-sovereign-is-kolibri-frontier-qwen38][^how-sovereign-is-kolibri-frontier-qwen38-large][^how-sovereign-is-kolibri-frontier-glm][^how-sovereign-is-kolibri-frontier-kimi]
 
-![Selected post-training benchmarks across agentic tasks, industry, mathematics/code and general knowledge. Source: Artificial Analysis (retrieved 10/07/26).](artificial-analysis-intelligence-index-ow-20261007.png){#fig-how-sovereign-is-kolibri-capabilities}
+![Artificial Analysis Intelligence Index for selected open-weight and frontier models. Source: Artificial Analysis, retrieved 7 October 2026.](artificial-analysis-intelligence-index-ow-20261007.png){#fig-how-sovereign-is-kolibri-aa-frontier}
 
 The current capability ladder can therefore be represented approximately as follows:
 
@@ -1323,7 +1328,7 @@ The direct and near-direct benchmark evidence helps explain where the gap comes 
 
 This refines the sovereignty judgment of the main article:
 
-> **Europe has demonstrated that it can independently build a serious modern foundation model and much of the production machinery behind it. It has not yet demonstrated that its best sovereign model is capability-equivalent to either the Chinese open-weight frontier or the U.S. proprietary frontier.**
+> **Europe has demonstrated both a serious sovereign model-production stack through Kolibri and, with Mistral Large 4 Preview, a European model much closer to the global capability frontier. It has not yet demonstrated a publicly deployable European open-weight model at parity with the leading Chinese open-weight systems or the strongest U.S. proprietary models.**
 
 Kolibri therefore answers the question *Can Europe build its own modern foundation model?* increasingly convincingly.
 
@@ -1353,7 +1358,7 @@ As of 7 October 2026, the evidence says **not yet**. The gap is nevertheless mea
 
 [^how-sovereign-is-kolibri-frontier-qwen38-large]: Artificial Analysis. (2026). **Qwen3.8 27B versus Qwen3.8 2.4T-A95B.** The larger Qwen release scores approximately 40 on the Intelligence Index and has 2.4T total / 95B active parameters. Accessed 7 October 2026. [Comparison](https://artificialanalysis.ai/models/comparisons/qwen3-8-27b-vs-qwen3-8-2-4t-a95b)
 
-[^how-sovereign-is-kolibri-frontier-mistral]: Artificial Analysis. (2026). **Mistral model evaluations.** As accessed 7 October 2026, Mistral Medium 3.5 scores 14, Mistral Small 4 scores 11 and Mistral Large 3 scores 9 on the current Intelligence Index. These values are time-sensitive because Artificial Analysis updates model evaluations and index versions. [Mistral models](https://artificialanalysis.ai/models/creators/mistral)
+[^how-sovereign-is-kolibri-frontier-mistral]: Artificial Analysis. (2026). **Mistral model evaluations.** As accessed 7 October 2026, Mistral Large 4 Preview scores 38, Mistral Medium 3.5 scores 14, Mistral Small 4 scores 11 and Mistral Large 3 scores 9 on the current Intelligence Index. Mistral Large 4 was still an API preview at that date; its public weight release was announced for later in October. These values are time-sensitive because Artificial Analysis updates model evaluations and index versions. [Mistral models](https://artificialanalysis.ai/models/creators/mistral)
 
 [^how-sovereign-is-kolibri-frontier-omniscience]: Artificial Analysis. (2026). **AA-Omniscience.** Evaluation rewarding correct answers, penalizing incorrect answers and assigning no penalty to abstention; the index ranges from −100 to +100. Accessed 7 October 2026. [Artificial Analysis](https://artificialanalysis.ai/)
 
@@ -1380,8 +1385,8 @@ The most relevant comparators are summarized in @tbl-how-sovereign-is-kolibri-ap
 | Model or programme | Developer / institutional base | Main technical characteristics | Training compute and location | Openness and deployment | Principal sovereignty limitation |
 |---|---|---|---|---|---|
 | **Mistral Large 4 Preview** | Mistral AI, France | 1.05T total / 49B active MoE; 52B active including embeddings/output layers; 1.6B vision encoder; natively multimodal; 1M documented context; 160+ languages | trained from scratch on 3,800 NVIDIA Grace Blackwell GPUs in **Mistral-owned European datacentres**; preview API served on the same infrastructure | Mistral announces an open-weight release by end of October; as of 7 Oct the public weights are not yet available and Artificial Analysis classifies the preview as proprietary | NVIDIA/semiconductor dependence; public weight release and license still pending; complete architecture/post-training details not yet published |
-| **Kolibri** | Aleph Alpha, Germany | 78.1B total / 3.46B active MoE; German and English; 20T pre-training tokens plus mid-training and long-context stages; 256k trained context, evaluated up to 1M | 768 NVIDIA B200 GPUs for pre-training; development in Germany; training infrastructure in Germany and Finland | FP8/BF16 weights already downloadable; self-hosting supported; detailed 189-page report and model card | NVIDIA stack; external synthetic-data generators; incomplete public reproduction of Model Factory; prospective Cohere governance |
-| **Apertus** | ETH Zurich, EPFL, CSCS, Switzerland | 8B and 70B multilingual models; 70B trained on approximately 15T tokens | 4,096 NVIDIA GH200 accelerators on CSCS Alps | unusually extensive release of weights, training code, reconstruction tooling, recipes and intermediate checkpoints | Switzerland is European but outside the EU; accelerator technology remains non-European |
+| **Kolibri** | Aleph Alpha, Germany | 78.1B total / 3.46B active MoE; German and English; 20T pre-training tokens plus mid-training and long-context stages; 256k trained context, evaluated up to 1M | 768 NVIDIA B200 GPUs for pre-training; development in Germany; training infrastructure in Germany and Finland | FP8/BF16 weights already downloadable; self-hosting supported; detailed technical report and model card | NVIDIA stack; external synthetic-data generators; incomplete public reproduction of Model Factory; prospective Cohere governance |
+| **Apertus** | ETH Zurich, EPFL, CSCS, Switzerland | 8B and 70B multilingual models; 70B trained on approximately 15T tokens | 4,096 NVIDIA GH200 accelerators on CSCS Alps | unusually extensive release of weights, training code, reconstruction tooling, recipes and intermediate checkpoints | Switzerland is European but outside the EU; accelerator technology remains non-European.[^how-sovereign-is-kolibri-app-apertus] |
 | **EuroLLM-22B** | European research consortium | 22B dense model; 35 languages including all 24 official EU languages; approximately 4T pre-training tokens | approximately 400 NVIDIA H100 GPUs on MareNostrum 5 through EuroHPC | open research-oriented release with supporting assets | much smaller capability/scale than ML4; NVIDIA dependence |
 | **Salamandra / ALIA** | Barcelona Supercomputing Center, Spain | 2B, 7B and 40B decoder-only models; 35 European languages; 12.875T-token pre-training corpus documented for the family | European public research infrastructure | Apache 2.0; weights, training scripts and configurations published | public multilingual capability, but not frontier-scale industrial autonomy |
 | **Teuken-7B** | OpenGPT-X / Fraunhofer-led consortium, Germany | 7B multilingual decoder model; all 24 official EU languages; current v0.6 base model reports 6T pre-training tokens | European research programme | downloadable model variants and detailed training documentation; licensing varies by release | moderate scale; not a frontier-capability substitute |

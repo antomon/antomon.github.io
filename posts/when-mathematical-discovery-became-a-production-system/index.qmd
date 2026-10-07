@@ -1,0 +1,2213 @@
+---
+title: "When Mathematics Became a Repository"
+subtitle: "OpenAI’s 372 result families and the epistemology of proof abundance"
+author: "Antonio Montano"
+date: "2026-10-07"
+date-modified: "2026-10-07"
+description: "OpenAI’s October 2026 release of 722 mathematical manuscripts across 372 result families marks a transition from proof abundance to repository-scale mathematics, in which claims, proofs, formalizations, provenance, revisions, and verification artifacts increasingly behave as maintained mathematical infrastructure."
+abstract: |
+  On 6 October 2026, OpenAI released 722 mathematical manuscripts organized into 372 result families spanning seventeen areas of mathematics and theoretical computer science. The collection was produced largely by an unreleased internal frontier model after approximately 4,000 research problems had been posed to it, and it combines natural-language papers with Lean formalizations for many results, Comparator challenges, computational artifacts, ten abridged reasoning summaries, manuscript-specific citation instructions, provenance information, and an explicit versioning policy. The scientific importance of the release lies partly in the individual claims: among them are a fixed zero-free half-plane for the Riemann zeta and related \(L\)-functions, the rational Hodge conjecture for complex CM abelian varieties, the Unique Games Conjecture, an upper bound \(\omega(\mathbb C)\le 9/4\) for matrix multiplication, and the isomorphism of the nonabelian free group factors.
+
+  This article argues that the larger transition is epistemological and institutional. Frontier mathematical discovery is becoming a repeatable output of a computational research process, while verification, conceptual understanding, method extraction, scholarly attention, and ultimately mathematical agency become relatively scarcer. The conventional paper consequently ceases to be the obvious sole unit in which such work can be published, corrected, certified, linked, and assimilated. OpenAI’s use of a GitHub repository should therefore be read not as evidence that mathematics has become software, nor as a replacement for journals, but as an early manifestation of repository mathematics: a regime in which mathematical knowledge is represented as a versioned set of claims, proofs, formal artifacts, dependencies, provenance records, and evolving epistemic states. The article examines the release, its strongest examples, its verification architecture, its production function, the resulting governance problem, and the infrastructure that would be required if machine-generated mathematics continues to scale.
+categories:
+  - machine learning
+  - mathematics
+  - report
+  - research
+  - "🇬🇧"
+series: "AI and the transformation of mathematics"
+keywords:
+  - AI-assisted mathematics
+  - proof abundance
+  - formalization abundance
+  - mathematical discovery
+  - Lean
+  - OpenAI
+  - scientific publishing
+  - epistemology
+  - mathematical verification
+  - research infrastructure
+audiences:
+  - practitioner
+  - researcher
+  - subject-matter expert
+  - technical specialist
+difficulty: advanced
+slug: when-mathematics-became-a-repository
+format:
+  html:
+    toc: true
+    number-sections: false
+---
+
+## From proof abundance to repository mathematics
+
+On 6 October 2026, OpenAI released a body of mathematical work whose scale makes it difficult to interpret as a conventional sequence of research papers. The public collection contains **722 manuscripts organized into 372 result families**, spanning seventeen areas of mathematics and theoretical computer science. OpenAI says that the collection emerged after approximately 4,000 research problems had been posed to an unreleased internal frontier model; the overwhelming majority of the released results were produced by that model under a common research procedure, although the company identifies exceptions, including the work on zero-free regions for \(L\)-functions and the CM Hodge conjecture.[^when-mathematics-became-a-repository-openai-release]
+
+The most obvious way to evaluate such a release is theorem by theorem. Are the arguments correct? Which conjectures have actually been resolved? Which results are new? Which have independent human confirmation? Those questions are indispensable, particularly because OpenAI explicitly says that the collection contains results at heterogeneous stages of verification and that some work without formal proofs may still contain errors.[^when-mathematics-became-a-repository-openai-repository] Yet theorem-by-theorem evaluation is no longer enough to characterize what happened. The event is also evidence about a **research production system** capable of generating a portfolio of frontier mathematical claims across fields that ordinarily have little methodological overlap.
+
+That distinction matters because the economics of mathematical work changes when the production rate changes. In the earlier stages of AI-assisted mathematics, the striking event was that a model could contribute to one difficult proof, discover one lemma, suggest one construction, or formalize one substantial argument. The scarce object was still the breakthrough itself. The October corpus presents a different possibility: sufficiently capable systems can be run repeatedly over a large research portfolio, so that the relevant question becomes not only whether a machine can prove an important theorem but what happens when new mathematical results begin arriving as a **population** rather than as isolated demonstrations.
+
+The transition can be described as one from *proof abundance* to *repository mathematics*. Proof abundance means that candidate arguments—and increasingly successful arguments—can be produced at a rate that changes the relative scarcity of checking and interpretation. Repository mathematics is the institutional consequence: once results, proof artifacts, formalizations, revisions, dependencies, and verification states no longer evolve synchronously, the mathematical object can no longer be represented adequately by a static paper alone.
+
+OpenAI's release makes that separation visible. Alongside natural-language manuscripts, the repository includes formalization metadata, a shared Lean library, Comparator challenges for selected results, computational artifacts, ten abridged reasoning summaries, source files, citation guidance, and an explicit policy under which corrections and revisions are issued as new versions while older versions remain available.[^when-mathematics-became-a-repository-openai-repository] The repository is therefore not simply a folder containing PDFs. It is already an incomplete representation of the **state** of a mathematical corpus.
+
+This does not mean that all 372 result families have the same epistemic status. They do not. It also does not imply a 372-in-4,000 success rate for arbitrary mathematical research problems; the problem set was not a documented random sample, the released families are post-selected, some families contain multiple manuscripts, and the production procedures are not completely homogeneous. Nor does the release establish an autonomous artificial mathematician that independently decides what deserves to be studied. The problems were drawn from a mathematical frontier already constructed largely by human researchers.
+
+The stronger claims are unnecessary. A narrower conclusion is already consequential: **frontier mathematical discovery has become a repeatable output of a computational research process**. “Repeatable” here does not mean statistically calibrated over an arbitrary problem distribution. It means that the same general technological system has produced multiple research-level outputs across many fields rather than one accidental or hand-crafted success.
+
+Once that happens, the epistemological problem changes. Correctness remains essential, but it becomes one coordinate among several. A machine-generated result may be true without being independently checked, formalized without being conceptually understood, understood without having yielded a reusable method, or important without yet having been assimilated into the dependency structure of its field. The traditional paper often concealed these distinctions because, in human-scale mathematics, they tended to evolve close enough together for one document to serve simultaneously as proof, explanation, priority record, citation unit, and archival object.
+
+The October release begins to pull those functions apart. That is why the repository is scientifically interesting even before the community has finished deciding the ultimate status of every theorem it contains.
+
+## What OpenAI actually released
+
+The unit OpenAI calls a **result family** is not the same as a paper. The 372 families contain 722 manuscripts, so a family can include several papers addressing a common theorem, companion result, application, alternative proof, or related extension. The official catalogue groups these families across seventeen subject areas, from number theory, algebraic geometry, analysis, combinatorics, and theoretical computer science to operator algebras, topology, differential geometry, mathematical physics, probability, and partial differential equations.[^when-mathematics-became-a-repository-openai-catalogue] The complete catalogue is reproduced in Appendix A because its breadth is itself part of the evidence: the release is not a benchmark concentrated in one formal domain.
+
+OpenAI reports that approximately 4,000 research problems were posed to the model during the programme. Under what the company describes as the dominant procedure, the average compute used for a released result was roughly equivalent to three hours of ChatGPT Pro “thinking” time, although that aggregate should not be confused with a controlled cost distribution over all attempted problems. Different results required different trajectories, some work used exceptional procedures, and the public release does not provide enough information to reconstruct a calibrated relationship among problem difficulty, compute, failure rate, and final selection.[^when-mathematics-became-a-repository-openai-release]
+
+Two exceptions are particularly important because they prevent the corpus from being described as the output of one perfectly uniform pipeline. The family containing the quasi-Riemann zero-free result used a different procedure, and the CM Hodge work was also produced outside the dominant fixed workflow. OpenAI further notes that most of the eleven-twelfths zero-free-region manuscript was human-edited for readability. These qualifications are not incidental; they make the production system more heterogeneous than a simple claim that one model was run 4,000 times under identical conditions.
+
+The release also contains **ten abridged reasoning summaries**. They accompany families concerning two-point correlations of multiplicative functions, the irrationality exponent of \(\pi\), Mahler-type conjectures, Unique Games, arithmetic progressions, direct finiteness of group rings in characteristic two, the Mézard--Parisi formula, spontaneous magnetization in the quantum Heisenberg ferromagnet, free group factors, and the relativistic Vlasov--Maxwell system. These summaries are useful evidence about the internal research trajectory, but they are not proofs and should not be described as verification artifacts. They perform a different epistemic function: they expose a compressed reconstruction of how the system says it approached the problem.
+
+Formalization is similarly heterogeneous. OpenAI's `formalization.yaml` describes itself as a catalogue of papers whose **main result** has been formalized, while dedicated Lean documentation and Comparator targets exist for a broader and evolving set of artifacts.[^when-mathematics-became-a-repository-openai-formalization] A result can therefore have a formal proof even when some repository metadata has not yet converged on a single representation of that fact. Family 287, discussed below, is a concrete example: dedicated Lean documentation and a Comparator target are present, although the headline paper was not located in the corresponding `formalization.yaml` source catalogue during the 7 October snapshot. That discrepancy is small in a corpus of this size, but conceptually revealing. The state of the mathematics and the metadata describing the state of the mathematics are already separate objects.
+
+The repository also makes revision explicit. OpenAI says that corrections will be published as new versions and that earlier versions will remain available. That is a familiar software-repository practice but an unusual default for mathematical publication, where the stable journal article traditionally acts as the canonical object and corrections arrive through errata, revised preprints, or later papers. Here, preservation of the change history is part of the publication architecture from the beginning.
+
+Finally, OpenAI says GitHub is the platform for the current release while it explores community-hosted alternatives. That qualification matters because the argument of this article is not that GitHub is the future of mathematical publishing. The relevant fact is that a software repository supplied several primitives—version history, heterogeneous artifacts, machine-readable metadata, executable code, links among files—that became useful when the mathematical output ceased to look like a homogeneous set of finished papers.
+
+## Four results that show what changed
+
+The collection is too large to understand through headline counting, but a few examples show why both the mathematical claims and their evidential packaging matter. Four are particularly revealing: the quasi-Riemann result, the rational Hodge conjecture for CM abelian varieties, the Unique Games Conjecture, and the free group factor isomorphism problem. Matrix multiplication deserves a separate treatment because it exposes a different issue: the distance between a theorem and a usable computational method.
+
+### A fixed zero-free half-plane
+
+Family 003 claims that the Riemann zeta function has no zeros in the fixed half-plane
+
+\[
+\operatorname{Re}(s)>\frac{7}{8},
+\]
+
+and establishes corresponding statements for every Dirichlet \(L\)-function and for finite-order Hecke \(L\)-functions over \(\mathbb Q(\sqrt{-3})\). The family also contains a separate eleven-twelfths result leading to a uniform prime-number-theorem error term in arithmetic progressions of the form
+
+\[
+O\!\left(x^{11/12}\log x\right)
+\]
+
+under the conditions stated in the manuscript.[^when-mathematics-became-a-repository-family-003]
+
+This is not the Riemann hypothesis. RH would place every nontrivial zero of \(\zeta(s)\) on the line \(\operatorname{Re}(s)=1/2\), whereas a \(7/8\) zero-free region excludes zeros only to the right of a fixed line considerably further from the critical line. Nor is it the Generalized Riemann Hypothesis for the associated \(L\)-functions.
+
+The qualitative novelty lies elsewhere. Classical unconditional zero-free regions near \(\operatorname{Re}(s)=1\) generally have a boundary that moves with the imaginary part or conductor. A fixed half-plane of the form \(\operatorname{Re}(s)>\sigma_0<1\) is structurally different. The release therefore claims a substantial advance without coming close to resolving RH itself.
+
+The family is also an example in which the release's evidence stack is unusually rich. Dedicated Lean documentation describes formalizations of the \(7/8\) zero-free statement for \(\zeta\), the corresponding Dirichlet and Hecke \(L\)-function results, and an additional real-zero gap; Comparator targets exist for selected statements.[^when-mathematics-became-a-repository-family-003] The formalization does not automatically certify every application in every associated manuscript, and the documentation explicitly delimits its scope. That is precisely the level of specificity that the word *formalized* needs.
+
+### The rational Hodge conjecture for CM abelian varieties
+
+Family 032 occupies a very different evidential state. Its headline manuscript claims the rational Hodge conjecture for every complex CM abelian variety, in every dimension and codimension. In the paper's formulation, for a complex CM abelian variety \(A\) and every \(p\ge 0\), the rational Betti cycle-class map
+
+\[
+\operatorname{cl}_B:
+\operatorname{CH}^{p}(A)_{\mathbb Q}
+\longrightarrow
+H^{2p}(A,\mathbb Q)\cap H^{p,p}(A)
+\]
+
+is surjective.[^when-mathematics-became-a-repository-family-032]
+
+The scope needs to be stated carefully. This is not a proof of the general Hodge conjecture for arbitrary smooth projective complex varieties. It is a major special case: CM abelian varieties form a highly structured but mathematically central class. The importance of the result is amplified by downstream theorems of Milne: if the claimed CM Hodge result is upheld in the form required, it has consequences for the Tate conjecture for abelian varieties over finite fields and for the Hodge standard conjecture in the relevant setting, as described in OpenAI's catalogue.[^when-mathematics-became-a-repository-family-032]
+
+The evidential packaging differs sharply from family 003. As of the 7 October snapshot used for this article, the headline CM Hodge theorem was not located in the repository's principal catalogue of formalized main results, nor was a dedicated Lean documentation page for family 032 identified. The result is therefore a useful reminder that absence of a formal proof does not mean absence of mathematical evidence; it means that a larger portion of the assurance burden remains on the natural-language argument and specialist scrutiny.
+
+The epistemic state should consequently be described as a major public mathematical claim with a released manuscript, not collapsed into either *unverified* or *machine-verified*. Those labels are too coarse.
+
+### Unique Games and approximation hardness
+
+Family 102 claims a proof of the Unique Games Conjecture through a reduction from 3SAT to explicit unweighted simple bipartite Unique Games instances over alphabets of the form \(\mathbb F_2^s\), with arbitrarily high completeness and arbitrarily low soundness in the appropriate parameter regime. The family also develops direct hardness consequences for Max-Cut, Vertex Cover, Min-UnCut, and directed feedback vertex set.[^when-mathematics-became-a-repository-family-102]
+
+The significance is easiest to misunderstand if it is summarized as “computers cannot approximate these problems well.” The actual statement is conditional on standard complexity assumptions, especially \(P\ne NP\), and concerns sharp approximation thresholds. For Max-Cut, for example, the classical Goemans--Williamson semidefinite algorithm achieves the celebrated approximation ratio of roughly \(0.878567\); Khot and collaborators showed that, assuming Unique Games, the threshold is essentially optimal. A proof of UGC would therefore convert a large body of conditional optimality results into consequences of the underlying complexity assumptions used in the reductions.
+
+Here again the evidential package matters. The family has dedicated Lean documentation and Comparator-facing statements not only for the central Unique Games reduction but also for several downstream approximation-hardness results. It is also one of the ten cases for which OpenAI released an abridged reasoning summary.[^when-mathematics-became-a-repository-family-102] This combination—natural-language proof, formal target, formal derivation, Comparator checking, and a reasoning reconstruction—is close to the richest form of proof-carrying mathematics visible in the collection.
+
+### The free group factors
+
+Family 287 addresses a problem originating in the early theory of von Neumann algebras: whether the free group factors \(L(\mathbb F_n)\) are mutually isomorphic for different \(n\ge2\). The released work claims
+
+\[
+L(\mathbb F_2)\cong L(\mathbb F_3),
+\]
+
+and, through the interpolated free group factor framework and amplification relations, concludes that the nonabelian interpolated free group factors \(L(\mathbb F_r)\), \(1<r\le\infty\), are mutually isomorphic, with fundamental group \(\mathbb R_{>0}\).[^when-mathematics-became-a-repository-family-287]
+
+This case requires one correction to an easy first reading of the repository. The headline manuscript was not located in the version of `formalization.yaml` consulted during the initial analysis, which could suggest that the main result lacked a Lean formalization. Direct inspection of the repository shows otherwise: `lean/docs/287.md` describes a formalization of the isomorphism statement for arbitrary parameters \(r,s>1\), including the infinite parameter, and links it to a Comparator target.[^when-mathematics-became-a-repository-family-287] The accurate status is therefore not *unformalized*. It is **formal artifact present, with catalogue metadata that was not completely aligned in the 7 October snapshot**.
+
+That discrepancy is not merely clerical. At small scale, a reader can inspect several directories and reconstruct the state manually. At repository scale, downstream agents and researchers will increasingly query metadata rather than browse every artifact by hand. Metadata about verification therefore becomes part of the reliability of the knowledge system, even though it is not itself part of the proof.
+
+Taken together, these four examples already show why a binary taxonomy fails. One result has a broad formal package and tightly delimited scope; another makes an extraordinary natural-language claim without a corresponding headline Lean artifact in the inspected snapshot; a third combines formal proof, Comparator targets, and an explanatory reasoning trace; a fourth exposes a mismatch between the existence of a formal artifact and the catalogue intended to describe such artifacts. The mathematics may be the primary object, but the **state of the evidence** has become inseparable from responsible publication.
+
+## From isolated breakthroughs to portfolio-scale mathematical production
+
+The most important number in the release is therefore not attached to any one theorem. It is **372**.
+
+A single AI-generated proof can be interpreted as a capability demonstration. A few such proofs can still be understood as exceptional successes produced by intense human curation. Hundreds of result families across unrelated mathematical fields force a different unit of analysis. The object to evaluate is increasingly the **production function** that transforms a portfolio of mathematical questions, model capability, inference compute, tooling, formal verification, and human selection into a stream of candidate research outputs.
+
+This shift resembles what happens in other scientific domains when a technique moves from demonstration to instrumentation. The first successful observation shows that something is possible. Repeated observations change research practice because the instrument can now be allocated across a programme. In AI mathematics, the corresponding resource is not only computation in the narrow sense but **machine mathematical cognition**: the capacity to spend inference on conjectures, proof search, counterexample search, formalization, and synthesis.
+
+The October corpus also shows early signs of recursive use. OpenAI notes that some machine-generated results build on earlier machine-generated results. That fact matters more than its current frequency. Once one generated theorem can become an input to another generated research trajectory, the system begins to operate not merely on the inherited human literature but on a partially machine-extended mathematical environment.
+
+The implications depend heavily on the dependency structure of mathematics. A theorem is not valuable merely because it increments a paper count. Some results lie at highly connected bottlenecks. If theorem \(T\) is a premise for a large collection of conditional consequences, then establishing \(T\) can change the status of many downstream statements simultaneously. The meaningful quantity is therefore not raw output but the **epistemic delta** induced in the mathematical dependency network.
+
+This is why a portfolio containing Unique Games, a strong CM Hodge result, a major free group factor claim, substantial zero-free regions, and a new matrix-multiplication exponent cannot be evaluated only by counting how many manuscripts survive scrutiny. Their positions in the surrounding mathematical graph differ by orders of magnitude. One high-leverage result may matter more than dozens of technically independent papers.
+
+The same reasoning introduces a danger. A production system optimized for visible theorem closure could preferentially target famous conjectures, benchmark-like open problems, or questions with clear pass/fail conditions. That would create a high apparent rate of progress without necessarily producing the definitions, methods, conceptual frameworks, and unexpected questions from which new fields emerge. Portfolio-scale mathematical production therefore intensifies the distinction between **closing the existing frontier** and **constructing the next frontier**.
+
+That distinction will become central later in the article. Before reaching it, however, matrix multiplication provides a concrete example of why even a spectacular formal result can leave the most economically or scientifically useful artifact still to be extracted.
+
+## Matrix multiplication: a result without the tool
+
+Family 107 claims that the exponent of matrix multiplication over the complex numbers satisfies
+
+$$
+\omega(\mathbb C)\le \frac{9}{4}.
+$$ {#eq-when-mathematics-became-a-repository-matrix-exponent}
+
+Here \(\omega(\mathbb C)\) denotes the infimum of exponents \(\tau\) such that \(n\times n\) matrices over \(\mathbb C\) can be multiplied using \(O(n^{\tau+\varepsilon})\) arithmetic operations for every \(\varepsilon>0\), in the division-free arithmetic model formalized by the associated Lean development.[^when-mathematics-became-a-repository-family-107] The informal shorthand “\(O(n^{2.25})\)” is therefore slightly too strong if read literally; the precise exponent statement is \(\omega\le 9/4\).
+
+The numerical jump is remarkable. The best published upper bounds had spent decades close to \(2.37\); the comparison used around the time of the release placed the previous record at roughly \(2.371177\). Moving to \(2.25\) improves the exponent by about \(0.121\), vastly larger than the accumulated numerical improvement since the Coppersmith--Winograd era around 1990. The point is not that matrix multiplication suddenly becomes fast in ordinary software. It is that an asymptotic quantity that had resisted major movement for decades is claimed to have shifted substantially in one step.
+
+The formal evidence is strong. OpenAI's Lean documentation includes the theorem
+
+```text
+complex_omega_le_nine_quarters :
+  Arithmetic.omega ℂ ≤ (9 : ℝ) / 4
+```
+
+and documents additional bounds for rectangular matrix multiplication, the dual exponent, and an all-field exponent below \(2.371054886006746\). It also explicitly states the complexity model and warns that the formalized exponent bounds do not determine bit complexity or practical crossover sizes.[^when-mathematics-became-a-repository-family-107]
+
+That last qualification is essential. An upper bound on \(\omega\) establishes the existence of asymptotically efficient arithmetic programs in the relevant formal model. It does **not** by itself supply a competitive finite-size implementation that engineers can insert into BLAS, GPUs, or transformer training stacks. The theorem is a result about asymptotic arithmetic complexity, not a benchmark showing that present-day matrix products become faster at useful dimensions.
+
+The distinction is sometimes described loosely by calling the result “nonconstructive.” That language needs care. An exponent upper bound of this kind is not devoid of constructive mathematical content: it entails families of arithmetic algorithms or constructions from which the asymptotic bound follows. The practical gap is that the released result does not automatically provide a simple, implementable multiplication routine with constants and crossover regimes that make it useful on contemporary hardware. The scarcity is therefore not truth but **method extraction and engineering translation**.
+
+This produces a hierarchy that is easy to collapse in discussions of AI-generated mathematics. Establishing that a theorem is true is one achievement. Understanding why the proof works is another. Extracting a reusable technique is another. Turning that technique into an explicit finite construction is another. Deploying it economically is another still. A formal proof can settle the first without automatically solving the rest.
+
+Matrix multiplication makes the distinction unusually visible because its downstream computational relevance is obvious. If the proof eventually yields a practical family of algorithms, then one can imagine a recursive technological loop: AI research improves matrix-multiplication theory; improved algorithms reduce the cost of numerical computation; cheaper computation contributes to future AI training or inference; stronger AI systems conduct more research. But no such direct loop follows merely from the inequality in @eq-when-mathematics-became-a-repository-matrix-exponent. It is a contingent engineering path, not a theorem.
+
+The example therefore supports a broader criticism of theorem-centric evaluations of automated mathematics. A system may become exceptional at **closing** difficult mathematical statements before it becomes equally good at identifying the portable mechanism worth retaining. If theorem generation scales faster than method extraction, the next scarcity will not be proofs. It will be the ability to compress proofs into reusable mathematical ideas.
+
+## Why GitHub is epistemologically significant
+
+Against this background, OpenAI's use of GitHub stops looking like a superficial publication choice. A conventional repository provides several properties that become valuable once mathematical output acquires heterogeneous and evolving state: immutable commits, explicit versions, multiple artifact types, machine-readable metadata, executable source files, dependency structures, and a public history of corrections.
+
+None of those properties establishes mathematical truth. A Git commit can preserve an incorrect proof perfectly. Version control can record a sequence of false statements as faithfully as a sequence of correct ones. The significance lies elsewhere: the system separates **identity and history of the artifact** from the current confidence placed in its contents.
+
+Traditional mathematical publishing often treats the paper as a convergence point. By the time the canonical article appears, its theorem statement, proof, attribution, exposition, and citation identity are expected to have stabilized sufficiently that a single document can represent them. Repository mathematics assumes more divergence. The informal paper may be revised after a formal proof exists; a formalization can arrive later; independent reviewers can alter the confidence state without changing the theorem text; a simpler proof can replace the original; a metadata error can be corrected; a downstream dependency can be added months after publication.
+
+A repository is naturally good at representing this asynchronous evolution. The object being versioned is not mathematical truth itself. What changes is the available **evidence, representation, formalization, provenance, and understanding** surrounding a proposition.
+
+This is why the release should not be summarized as “mathematics has become software.” Mathematical truth is not created by a build system, and mathematical meaning is not reducible to source code. Nor is GitHub an adequate permanent scholarly institution: it is a commercial platform designed for software collaboration, not a theorem-level archive, priority registry, or independent certifying body. OpenAI itself says it is exploring community-hosted alternatives for future releases.[^when-mathematics-became-a-repository-openai-repository]
+
+The more defensible claim is that **frontier AI mathematics has begun to require repository semantics**. The platform is contingent; the need to preserve versions, artifacts, provenance, and changing epistemic state is structural.
+
+That distinction sets up the next question. A repository can preserve and expose evidence, but it cannot determine which mathematical results deserve canonical acceptance. Versionability is not peer review, public availability is not independent verification, and a formal certificate is not a novelty assessment. If repository mathematics is to become a durable research regime, the functions historically bundled into the journal will have to be separated rather than simply discarded.
+
+[^when-mathematics-became-a-repository-openai-release]: OpenAI. (2026). **Sharing AI progress in mathematics**. _OpenAI_, 6 October 2026. [Official announcement](https://openai.com/index/sharing-ai-progress-in-mathematics/).
+
+[^when-mathematics-became-a-repository-openai-repository]: OpenAI. (2026). **Math research repository**. _GitHub_. The repository documents the 372 result families, 722 manuscripts, heterogeneous verification states, versioning approach, and the use of GitHub while community-hosted alternatives are explored. [Repository](https://github.com/openai/math).
+
+[^when-mathematics-became-a-repository-openai-catalogue]: OpenAI. (2026). **OpenAI Research Catalog**. _OpenAI Math repository_. The catalogue groups the released result families by mathematical subject and gives the claim summaries used throughout this article. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex).
+
+[^when-mathematics-became-a-repository-openai-formalization]: OpenAI. (2026). **Formalization catalogue**, version 0.4 in the 7 October 2026 repository snapshot. _OpenAI Math repository_. The file describes itself as a catalogue of papers with a formalized main result. [Formalization catalogue](https://github.com/openai/math/blob/main/lean/formalization.yaml).
+
+[^when-mathematics-became-a-repository-family-003]: OpenAI. (2026). **Family 003: zero-free regions for the Riemann zeta function and \(L\)-functions**. _OpenAI Math repository_. The family catalogue and Lean notes describe the \(7/8\) fixed half-plane, associated Dirichlet and Hecke \(L\)-function statements, and the scope of the formalization. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex). [Formalization notes](https://github.com/openai/math/blob/main/lean/docs/003.md).
+
+[^when-mathematics-became-a-repository-family-032]: OpenAI. (2026). **Family 032: the rational Hodge conjecture for CM abelian varieties**. _OpenAI Math repository_. The catalogue describes the rational Hodge claim and its stated consequences; the principal manuscript states surjectivity of the rational Betti cycle-class map for complex CM abelian varieties. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex). [Manuscript source](https://github.com/openai/math/blob/main/preprints/The-rational-Hodge-conjecture-for-CM-abelian-varieties-September-30-2026/build/sections/01-introduction.tex).
+
+[^when-mathematics-became-a-repository-family-102]: OpenAI. (2026). **Family 102: the Unique Games Conjecture and optimal approximation thresholds**. _OpenAI Math repository_. The catalogue and Lean notes describe the central reduction, several direct hardness consequences, and their formalization targets. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex). [Formalization notes](https://github.com/openai/math/blob/main/lean/docs/102.md).
+
+[^when-mathematics-became-a-repository-family-287]: OpenAI. (2026). **Family 287: isomorphism of the free group factors**. _OpenAI Math repository_. Dedicated Lean documentation describes the formalized isomorphism of interpolated free group factors for arbitrary parameters \(r,s>1\), including the infinite parameter, and links the result to a Comparator target. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex). [Formalization notes](https://github.com/openai/math/blob/main/lean/docs/287.md).
+
+[^when-mathematics-became-a-repository-family-107]: OpenAI. (2026). **Family 107: matrix multiplication with exponent at most \(9/4\)**. _OpenAI Math repository_. The Lean notes formalize \(\omega(\mathbb C)\le9/4\), related rectangular bounds, and an all-field exponent bound, while explicitly distinguishing arithmetic complexity from bit complexity and practical crossover behaviour. [Research catalogue](https://github.com/openai/math/blob/main/overview.tex). [Formalization notes](https://github.com/openai/math/blob/main/lean/docs/107.md).
+
+## A repository is not a journal
+
+The previous section explains why a repository is a natural container for mathematical work whose artifacts evolve asynchronously. It does not follow that a repository can replace the institutions that traditionally determine which mathematical claims deserve durable scholarly status.
+
+A software repository is optimized for preservation, modification, executable artifacts, collaboration, and change history. A journal historically performs a different set of epistemic functions: it organizes peer scrutiny, evaluates novelty, filters significance, establishes a stable citation object, records responsibility, and participates in the long-term canonicalization of the result. These functions overlap, but they are not interchangeable.
+
+A public repository can establish that a manuscript existed at a particular time. It can preserve every revision and associate formal source files with a paper. It can make computational certificates reproducible. It can expose changes that a conventional publication workflow might hide behind replacement PDFs. None of this determines whether a theorem is new, important, correctly attributed, or adequately understood.
+
+Conversely, traditional journal publication was never a perfect correctness oracle. Referees can miss errors, peer review can be slow, and the published article normally contains no machine-executable certificate from which logical validity can be reconstructed mechanically. The point is therefore not to oppose an infallible journal to an unreliable repository. The two infrastructures provide different kinds of assurance.
+
+Machine-generated mathematics makes those assurances separable enough that they should probably be represented explicitly. A future mathematical object might independently acquire certifications corresponding to formal correctness, semantic correspondence between the formal and informal statements, novelty, attribution, adequacy of exposition, and mathematical significance. One institution need not certify all of them, and they need not mature simultaneously.
+
+This decomposition helps explain why the OpenAI release should be interpreted neither as ordinary preprint publication nor as a substitute for peer review. The repository publishes the evidence package early and makes its evolution observable. The mathematical community must still determine what the package ultimately means.
+
+That distinction is particularly important when hundreds of results arrive at once. Under paper-scale publication, verification effort is largely internalized by authors, collaborators, referees, seminar audiences, and specialists who choose to engage with a particular result. Under result abundance, a laboratory can release a corpus whose aggregate checking cost is much larger than the cost borne by any one outside reader. Open publication is valuable, but it does not by itself solve the allocation problem created when the producer can generate candidate mathematics faster than the external community can review it.
+
+The resulting scholarly system will therefore require both **versionable research objects** and institutions capable of certifying their different epistemic dimensions. Repository semantics solve the first problem. They make the second more visible.
+
+## Versioned evidence, not versioned truth
+
+The most important conceptual distinction in repository mathematics is between the theorem and the changing state of evidence surrounding it.
+
+Let \(T\) denote a mathematical proposition. Its truth value does not change because a repository receives a new commit. What can change at time \(t\) is the dossier through which the mathematical community relates to \(T\). A useful conceptual representation is
+
+$$
+D_t(T)=
+\bigl(
+S_t,
+P_t,
+F_t,
+C_t,
+N_t,
+R_t,
+U_t
+\bigr),
+$$ {#eq-when-mathematics-became-a-repository-epistemic-dossier}
+
+where \(S_t\) is the current statement of the claim, \(P_t\) the available informal proof material, \(F_t\) the formalization state, \(C_t\) the computational or formal certificates, \(N_t\) the evidence concerning novelty and attribution, \(R_t\) the state of independent review, and \(U_t\) the available human understanding or explanatory reconstruction. The tuple is not intended as a numerical metric. It is a reminder that the epistemic object has several coordinates.
+
+A revision can alter one coordinate without altering the others. Correcting a citation may change \(N_t\) while leaving the proof untouched. Adding a Lean proof can change \(F_t\) and \(C_t\) without changing the natural-language statement. A specialist may later discover a simpler explanation, changing \(U_t\) even though neither the theorem nor its formal certificate changes. A formalization may expose an unstated hypothesis, requiring a revision of \(S_t\) while the formal derivation remains perfectly valid for the proposition it actually encodes.
+
+This is why the phrase *versioned mathematics* is potentially misleading. Mathematical truth is not versioned. **Evidence, representation, provenance, and understanding are.**
+
+The distinction also blocks an inappropriate linear model of verification. It is tempting to imagine a simple progression from unverified manuscript to human-checked theorem to formal proof to established fact. In practice, the states form something closer to a partial order. A classical theorem may be deeply understood and universally accepted without any formal proof. A newly generated theorem may have an impeccable kernel-checked derivation but almost no conceptual exposition. A result can be formally valid yet fail a novelty review. Another can be unquestionably novel while its proof remains under scrutiny.
+
+Repository mathematics therefore requires the state itself to remain inspectable. A single Boolean such as
+
+```yaml id="7npyqv"
+verified: true
+```
+
+throws away exactly the distinctions that become important under machine-scale publication.
+
+The same applies to corrections. A revision that repairs exposition is different from one that weakens the theorem, adds a hypothesis, changes an attribution, or replaces a failed proof. Ordinary version control records textual difference. Mathematical infrastructure should eventually be able to represent the **semantic type of the revision**.
+
+This is not bureaucratic decoration. Downstream consequences depend on it. If a proof changes while the theorem remains identical, dependent work may need no reassessment. If the theorem itself weakens, every consequence that relied on the stronger statement may have to be revisited. Version history becomes mathematically useful only when the system knows what kind of state changed.
+
+## Lean, Comparator, and the executable layer of the release
+
+Formal proof is the strongest technical mechanism in the OpenAI release for separating proof generation from proof checking. In a system such as Lean, an untrusted producer can generate a large proof object while the trusted kernel checks whether that object establishes the encoded theorem from the accepted definitions and axioms. This changes the verification economics because the computational cost of checking can be dramatically smaller and more reliable than reconstructing the entire argument manually.
+
+But formal verification solves only a precisely delimited problem.
+
+Suppose the informal theorem intended by the paper is \(T_I\), while the proposition encoded in Lean is \(T_F\). A successful formal proof establishes derivability of \(T_F\) in the formal environment. It does not, by itself, establish that
+
+\[
+T_I
+\]
+
+and
+
+\[
+T_F
+\]
+
+express the same mathematical claim. The correspondence between the human theorem and the formal theorem is therefore a separate trust boundary.
+
+This is the **semantic specification problem**. It becomes particularly important when the proof itself is machine-generated, because a system could in principle prove a subtly weakened or altered proposition while the accompanying prose encourages readers to interpret it as the original problem. The danger need not involve intentional gaming; ordinary mistakes in formalization are sufficient.
+
+OpenAI's Comparator mechanism addresses one part of this problem by separating the trusted challenge statement from the untrusted solution. Rather than allowing the solution artifact to define freely what counts as success, Comparator checks that the theorem exposed by the solution matches a separately supplied target and that the result satisfies the permitted formal environment.[^when-mathematics-became-a-repository-comparator] The architecture therefore reduces the amount of the generator that must be trusted.
+
+It does not eliminate the final semantic question. Someone still has to determine whether the trusted target itself faithfully represents the theorem mathematicians care about. The complete chain is closer to
+
+\[
+T_I
+\longleftrightarrow
+T_F
+\longrightarrow
+\text{formal proof}
+\longrightarrow
+\text{kernel acceptance},
+\]
+
+where the first relation requires mathematical interpretation and the latter relations admit increasingly mechanical checking.
+
+This distinction clarifies what formal verification changes. It does not abolish error; it **moves the error surface**. When kernel checking is strong, residual risk shifts toward theorem specification, definitions, axiom policy, provenance, novelty, and interpretation.
+
+That is already visible in the release. Family 003 carefully specifies which zero-free statements are included in the Lean development and which later applications are outside scope. Family 102 exposes several separate hardness statements rather than one vague “UGC formalized” flag. Family 107 explicitly states the arithmetic complexity model formalized by Lean. Family 287 shows that even when the proof artifact exists, metadata describing the formalization can temporarily lag behind it.
+
+Formal proof also clarifies the dual function of mathematical proof itself. A proof is both a **certificate** and an **explanation**. The certificate function answers whether the conclusion follows from the assumptions. The explanatory function identifies the mechanism worth understanding, teaches the reader why the theorem is true, and exposes ideas that may transfer to other problems.
+
+Proof assistants are exceptionally well suited to the first function. They do not automatically supply the second.
+
+This suggests that machine-generated mathematics will increasingly be published as what might be called **proof-carrying mathematics**: a human-readable statement accompanied by a formal statement, one or more proof artifacts, verification configuration, and provenance metadata. The natural-language paper remains necessary because the certificate does not tell the reader which conceptual move matters.
+
+The long-term significance is larger than individual formalizations. Once formal statements, dependencies, and proof objects become machine-readable, a research system can operate over the literature as an executable environment. The loop can become recursive: a model proposes a theorem, another process formalizes it, the kernel verifies it, the result becomes available to later machine reasoning, and new research builds on the now-certified object. Formalization is then no longer an archival afterthought. It is part of the computational substrate of future discovery.
+
+## The production function: from roughly 4,000 problems to 372 result families
+
+The release invites a simple calculation:
+
+\[
+\frac{372}{4000}\approx 9.3\%.
+\]
+
+It would be tempting to interpret this as a model success rate on frontier mathematics. That interpretation would be unjustified.
+
+The numerator is not a count of independently sampled successes under a fixed protocol. It is the number of released **result families**, some containing several manuscripts and some connected to broader research trajectories. The denominator is approximately 4,000 posed research problems, but the public material does not establish that those problems form a representative sample of a well-defined population. Their difficulty distribution, field distribution, selection mechanism, stopping rules, and degree of overlap are not sufficiently specified for the ratio to estimate a general mathematical capability probability.
+
+Selection after the research runs creates an additional problem. The released corpus is, by definition, the subset judged worth publishing. Failures, partial results, rediscoveries, uninteresting proofs, weak claims, and abandoned trajectories are not represented symmetrically. Any direct success-rate estimate would therefore suffer from severe selection bias.
+
+Nor is the compute allocation homogeneous. OpenAI reports an average roughly equivalent to three hours of ChatGPT Pro thinking per released result under the dominant procedure, but averages over selected successes do not reveal how compute was distributed across all attempts. A few expensive trajectories could coexist with many short ones. Some problems may have been retried. Some results were produced outside the dominant fixed procedure. Without the full denominator-level telemetry, a meaningful cost-to-discovery curve cannot be reconstructed.
+
+The right conclusion is therefore not probabilistic but organizational. OpenAI has demonstrated a **research production function** capable of taking a large portfolio of problems as input and emitting hundreds of release-worthy mathematical outputs.
+
+Conceptually, the production system depends on several variables:
+
+\[
+R = f(M,C,O,Q,V,H),
+\]
+
+where \(M\) denotes model capability, \(C\) available compute, \(O\) the surrounding orchestration and tooling, \(Q\) problem selection, \(V\) verification infrastructure, and \(H\) human intervention or curation. This is not an empirically estimated production equation; it is a decomposition of the factors that have to be separated before any general capability claim can be made.
+
+The important change from earlier demonstrations is that performance is now being expressed at the **portfolio level**. The relevant scientific questions become: which classes of problem benefit most; how discovery probability changes with inference compute; whether formalization alters the selection process; how many results share a common technique; how often failures are recognizable internally; and whether a research system can learn from its own previously generated mathematics.
+
+OpenAI's programme also illustrates a broader shift in AI evaluation. When conventional mathematical benchmarks saturate, evaluation moves toward unsolved research problems. But once a model succeeds on such a problem, the benchmark item ceases to be open. Evaluation itself begins to **consume the frontier**.
+
+That makes open problems an unusual benchmark resource. They are not infinitely reusable test cases. They are pieces of scientific uncertainty that can disappear when solved. As model capability rises, the boundary between evaluation and research therefore dissolves: measuring the system can itself produce new mathematics.
+
+## Selection effects, base rates, and what the release does not establish
+
+The production-function view makes several negative conclusions just as important as the positive ones.
+
+First, the corpus does not tell us how a frontier model performs on a randomly selected unsolved problem. Mathematics has no obvious probability distribution over “all open problems,” and even within one discipline, problem formulations differ radically in maturity, available literature, tractability, and evidential structure. Any global success percentage would conceal more than it revealed.
+
+Second, the release does not establish that the model can autonomously recognize the most important unsolved questions. The problem portfolio was assembled from a human mathematical world in which researchers had already identified conjectures, developed terminology, produced partial results, and estimated significance. The model received highly compressed objects representing decades of human mathematical judgment.
+
+Third, publication is itself a filter. A generated argument that merely reproves known mathematics can be mathematically correct without contributing a new result. A surprising theorem may be excluded if its proof remains too uncertain. A family with several related outputs can contribute one catalogue entry while a single manuscript elsewhere contributes another. Result-family count is therefore neither theorem count nor independent-trial count.
+
+Fourth, the release says little by itself about the relative importance of failures. A system could fail on almost every arbitrary research question while still be scientifically transformative if the minority it solves includes highly consequential bottlenecks. Conversely, a high nominal success rate concentrated on technically accessible but conceptually marginal problems would be less significant than the percentage suggests.
+
+The correct unit is therefore **epistemic throughput**, not raw hit rate. A research system creates value when generated results are valid, genuinely new, mathematically significant, and sufficiently interpretable or formalized to become usable by future research.
+
+Those dimensions are multiplicative in the practical sense that severe failure on any one can destroy most of the value of the output. An invalid theorem has little mathematical value no matter how surprising it is. A correct rediscovery contributes less than a genuinely new result. A correct and novel theorem may remain operationally weak if nobody can understand or reuse it. A major theorem that never becomes visible outside an inaccessible proprietary system contributes little to the shared mathematical corpus.
+
+This is why the October release should be neither dismissed because not every result is independently assimilated nor treated as 372 equally confirmed breakthroughs. It is a heterogeneous corpus produced by a new research mechanism. The scientific task is to characterize the mechanism without erasing the heterogeneity.
+
+## From proof abundance to result abundance
+
+The earlier concept of **proof abundance** described a world in which generating candidate proofs becomes substantially cheaper. The October release suggests a more consequential threshold: **result abundance**, where the rate of apparently significant new mathematical results begins to rise enough that the research community must manage them as a stream.
+
+The distinction matters because proofs and results are not equivalent. A proof settles a proposition. A result becomes part of mathematics only after questions of statement, correctness, novelty, importance, attribution, explanation, and relation to surrounding theory have been sufficiently resolved.
+
+A high-throughput system can therefore create a large amount of *mathematical work* without immediately creating an equal amount of *mathematical knowledge*. The gap between those quantities is the central epistemological problem of result abundance.
+
+Let \(G(t)\) denote the cumulative stock of sufficiently significant generated results by time \(t\), and let \(A(t)\) denote the subset that has been sufficiently assimilated for mathematicians to use them as stable components of further reasoning. Define the conceptual backlog
+
+$$
+B(t)=G(t)-A(t).
+$$ {#eq-when-mathematics-became-a-repository-epistemic-backlog}
+
+This is not intended as a directly measurable quantity without further operational definitions. Its purpose is to identify a possible regime change. If the rate of significant result generation persistently exceeds the rate of assimilation, then \(B(t)\) grows.
+
+Mathematics has always contained an assimilation lag. Major proofs can take years to simplify and understand. Large classification projects, difficult geometric arguments, and computer-assisted proofs have all required substantial post-publication digestion. The novelty would be **scale**. One notoriously difficult theorem can mobilize a specialist community. Hundreds of difficult results arriving together create an allocation problem.
+
+The emerging object is therefore neither a false theorem nor an unknown theorem. It is an **unmetabolized theorem**: a result with enough evidence to deserve serious attention but whose mechanism, relation to existing theory, consequences, or canonical formulation have not yet been fully absorbed.
+
+This state is not a defect. It is a natural consequence of asynchronous epistemic production. But if it becomes common, mathematics needs institutions designed to reduce the backlog.
+
+## The new bottleneck: mathematical digestion at corpus scale
+
+The operation required after result generation can be called **mathematical digestion**. It includes several distinct activities that conventional research often performs informally and in parallel: triaging which claims deserve urgent attention; validating proofs and formal statements; determining novelty; locating the result inside the existing dependency network; extracting the central idea; identifying reusable methods; deriving downstream consequences; and eventually deciding which formulation deserves to become canonical.
+
+These operations are conceptually different enough that they should not be collapsed into “review.”
+
+A referee can determine that a proof is correct without discovering its most reusable idea. A formalizer can certify the logical structure without establishing whether the argument is historically new. A specialist can understand the proof but fail to see an unexpected application in another field. A survey author can perform the conceptual compression that makes the theorem accessible years after its original publication.
+
+Conceptual compression is particularly important. Let \(P\) denote a complete proof. The mathematical culture rarely retains \(P\) in all of its original detail. It searches for a more compact mechanism \(C(P)\): the smallest intelligible conceptual structure from which the essential proof can be reconstructed by a competent reader. This is not ordinary text summarization. A shorter description can omit the very move that makes the theorem reusable. Good compression preserves the mechanism.
+
+The same applies at corpus scale. Hundreds of manuscripts may contain only a much smaller number of genuinely new methods. If ten results rely on variants of one underlying construction, then treating them as ten unrelated successes obscures the scientifically important fact. Mathematical digestion should therefore include **conceptual deduplication**: identifying when apparently distinct outputs share the same reusable idea.
+
+The dependency network adds another dimension. A new theorem can convert previously conditional statements into unconditional ones, eliminate hypotheses, provide new lemmas for unrelated fields, or invalidate a research direction based on an assumed obstruction. The effect of a theorem is therefore not fully captured by its own statement. It is the change induced in the graph of mathematical consequences.
+
+A mature digestion pipeline would consequently ask not only:
+
+> Is this result correct?
+
+but also:
+
+> What does this result make newly possible?
+
+That question can expose an **epistemic delta** much larger than the original paper.
+
+Canonicalization is the final stage. Mathematics survives partly by forgetting. Fields cannot retain every proof detail, historical detour, computational trace, or failed approach at equal prominence. They compress the durable contribution into named theorems, standard definitions, reusable lemmas, canonical constructions, and textbook arguments.
+
+Result abundance therefore makes canonicalization more, not less, important. Storage is cheap. Human conceptual memory is scarce.
+
+The situation also changes what an “AI mathematician” should mean. A single model that generates proofs is only one component of the research system. At scale, a more realistic architecture resembles an **AI mathematical organization** composed of distinct functions: discoverer, critic, formalizer, literature analyst, verifier, expositor, method extractor, and curator. Humans may participate at every stage.
+
+The decisive criterion of digestion is not that somebody has read the original manuscript. A result has been genuinely assimilated when future mathematical reasoning can exploit it without repeatedly reconstructing the entire original proof. At that point, the theorem has become part of the working substrate of the discipline.
+
+## Authorship, responsibility, and mathematics without a human knower
+
+Result abundance also breaks apart assumptions that the traditional author line usually keeps bundled.
+
+In conventional mathematical work, authorship often implies several things simultaneously. The authors contributed substantially to the result, understand the proof, stand behind its correctness, chose how it should be presented, and accept scholarly responsibility for the publication. These functions are not philosophically identical, but ordinary research practice lets one name perform them all.
+
+Machine-generated mathematics separates them.
+
+An AI system can generate a proof that no individual human could reproduce immediately. A formal verifier can provide strong logical assurance without possessing human understanding at all. A researcher can later write the explanation that makes the result comprehensible while having contributed nothing to the original discovery. An institution can decide to release the work and assume responsibility for the publication even though no named employee authored the inferential steps in the conventional sense.
+
+OpenAI's repository already reflects this partially through institutional authorship and explicit computational provenance. The relevant questions therefore become more granular:
+
+\[
+Q:\text{Who formulated or selected the question?}
+\]
+
+\[
+G:\text{Who or what generated the result?}
+\]
+
+\[
+V:\text{Who or what verified it?}
+\]
+
+\[
+E:\text{Who produced the exposition?}
+\]
+
+\[
+R:\text{Who accepts responsibility for releasing it?}
+\]
+
+These roles may be occupied by different humans, models, tools, and institutions.
+
+The distinction matters because **causal contribution is not the same as epistemic responsibility**. A proof assistant can contribute decisive assurance to the correctness of a formal derivation, but it cannot assume responsibility for an overstated press claim. A model can generate the central argument, but it cannot resolve a priority dispute through scholarly judgment. An institution can decide to publish a corpus even when no individual within it has reconstructed every proof.
+
+This makes provenance necessary but insufficient. A complete provenance chain might record the problem source, prompt or task construction, model and version, inference procedure, intermediate reasoning artifacts where retained, manuscript generation, formal statement, formal proof, human edits, and independent reviews. Such a chain tells us how the result came to exist. It does not itself tell us who should answer if the release misstates novelty, omits prior work, or presents an uncertain result as established.
+
+Responsibility therefore has to remain attached to persons or institutions capable of exercising judgment.
+
+Credit is likely to fragment in parallel. Future mathematical priority disputes may distinguish **problem priority**, **method priority**, **proof priority**, **formalization priority**, and **expository priority**. This is not entirely new; mathematics already distinguishes conjecturers, solvers, simplifiers, and generalizers. AI makes the decomposition harder to avoid because generation and understanding can occur in different places and at different times.
+
+Prior literature attribution becomes particularly important. A model can rediscover a result or technique without direct access during the inference episode to the exact paper in which the idea first appeared. Independent rediscovery may be intellectually real while still failing to constitute novelty. Automated generation therefore increases rather than decreases the need for careful literature comparison.
+
+The deepest change concerns the relation between authorship and understanding. A theorem may become institutionally possessed before it is individually possessed: the laboratory can hold a manuscript, a formal certificate, computational artifacts, and provenance sufficient to justify release even though no single human can yet explain the whole argument in the way expected of a traditional author.
+
+That possibility motivates the distinction between **generator** and **epistemic guarantor**. A future human author or responsible editor may not have originated every inferential step but may be expected to reconstruct the theorem sufficiently to defend its statement, explain the essential mechanism, validate the correspondence between formal and informal versions, and accept responsibility for its scholarly presentation.
+
+Such a role would preserve a meaningful human responsibility layer without pretending that humans generated mathematics they did not generate.
+
+The point is not to reserve authorship for humans by definition, nor to deny that future systems may acquire increasingly sophisticated mathematical agency. It is to avoid the opposite mistake: treating automation of mathematical contribution as automation of scholarly accountability.
+
+The October release therefore forces an uncomfortable but productive separation. A mathematical statement can be generated by a machine, formally certified by another computational process, released under an institution's name, and only later become fully understood by individual mathematicians. Once those events are temporally and organizationally distinct, authorship can no longer function as the sole summary of how mathematical knowledge came to exist.
+
+[^when-mathematics-became-a-repository-comparator]: OpenAI. (2026). **Math research repository: formal verification and Comparator artifacts**. _GitHub_. The repository includes Comparator challenge material used to separate trusted target statements from untrusted generated solutions for selected formalized results. [Repository](https://github.com/openai/math).
+
+## The AGMAI intervention and the governance of machine-generated mathematics
+
+The release did not occur in an institutional vacuum. By late September 2026, a group of senior mathematicians had formed the Advisory Group on Mathematics and Artificial Intelligence (AGMAI) after OpenAI had approached some of them about a possible external advisory body. AGMAI chose to organize independently, with no decision-making authority inside the company and no claim to represent it. Its membership included François Charles, Camillo De Lellis, Timothy Gowers, Martin Hairer, Nikhil Srivastava, Ulrike Tillmann, Ravi Vakil, Edward Witten, and Melanie Matchett Wood.[^when-mathematics-became-a-repository-agmai-formation]
+
+AGMAI's 29 September recommendations were based on more than 600 community responses and articulated three principles that are directly relevant to the October release. First, significant AI-generated mathematical results should be released responsibly and promptly. Second, laboratories releasing substantial mathematical output that is not yet fully understood by humans should support—financially as well as technically—the subsequent development of human understanding. Third, the direction of that understanding should remain organically determined by the mathematical community rather than by the laboratory that produced the results.[^when-mathematics-became-a-repository-agmai-recommendations]
+
+The recommendations also went further upstream. AGMAI asked laboratories to stop testing advanced mathematical problems on proprietary models that were unavailable to the broader scientific community. The concern was not merely that researchers might learn about results late. It was that a two-tier research system could emerge in which a small number of organizations control models and compute capable of attacking public mathematical problems before the community itself has comparable access.
+
+That concern is structurally different from ordinary disputes over publication timing. Open mathematical problems are non-rival intellectual objects: one mathematician's knowledge of a conjecture does not prevent another from working on it. Frontier inference, by contrast, is scarce and allocatable. If only a few institutions possess enough model capability and compute to pursue thousands of open problems at once, equal formal permission to work on mathematics no longer implies equal effective opportunity to do so.
+
+The resulting asymmetry can be described as a transfer from a public commons to a privately controlled research layer. The literature is public, the conjectures are public, and the historical partial results are public; the frontier model and the compute budget may not be. Publishing the final theorem restores access to the output but does not restore equality of opportunity in the discovery process.
+
+This is why downstream publication rules, although necessary, cannot by themselves solve the governance problem. The most consequential decisions may occur earlier: which models are accessible, who receives inference budgets, which problems are selected, how much compute each receives, which successes are amplified, and which generated results receive follow-up formalization or exposition.
+
+In practice, governance spans several layers. Model training determines what capability exists. Access rules determine who can use it. Problem selection determines where capability is deployed. Compute allocation determines how intensively each direction is pursued. Release policy determines what enters the public record. Formalization and exposition determine which outputs become easy to trust and understand. Funding for subsequent mathematical digestion determines which results receive sustained attention.
+
+The farther upstream the decision, the less ordinary publication reform can compensate for it later.
+
+This makes AGMAI's recommendation to stop frontier testing on inaccessible proprietary models more significant than a generic call for openness. It asserts that responsible release after the fact is insufficient if the research opportunity itself was distributed inequitably.
+
+There is a legitimate counterargument. If a private laboratory possesses a model capable of resolving an important open problem, refusing to use that capability until equal access exists may delay knowledge that could otherwise become public. The governance problem therefore contains a real trade-off among scientific knowledge production, equity of access, preservation of human research agency, and the norms through which priority and understanding are created. None can simply be maximized without affecting the others.
+
+The dispute became concrete in public reporting around the October release. Wired reported that OpenAI had convened roughly forty mathematicians in August to discuss how mathematical research should be handled if AI systems began to outrun ordinary human research throughput. According to the report, participants including Bryna Kra urged the company not to release results primarily through tweets, blog posts, or undigested mass publication, but to provide papers that mathematicians could understand and build upon. Some attendees believed that OpenAI had indicated it would not release everything simultaneously; OpenAI said it was unaware of having made that commitment.[^when-mathematics-became-a-repository-wired-mathematicians]
+
+The final October release partly reflects those concerns. It includes full manuscripts, formalization work, provenance, version history, reasoning summaries for selected cases, and an explicit commitment to support workshops, conferences, and programmes aimed at understanding major AI-generated results. At the same time, it remains a mass release outside the conventional publication process, and the generating model itself was not publicly available at the time of publication.
+
+The same Wired report discussed a separate and contested dispute involving Tristan Buckmaster and collaborators' Navier--Stokes work. Buckmaster alleged that OpenAI devoted substantial resources to a nearby problem after learning that his group was making progress, and he raised concerns about priority, authorship, and interactions he interpreted as coercive. OpenAI and Sébastien Bubeck disputed material parts of that characterization. Buckmaster also publicly stated that he did not know whether OpenAI had used his group's data and was not accusing the company of doing so.[^when-mathematics-became-a-repository-wired-mathematicians] The episode should therefore not be treated as established misconduct. Its relevance here is institutional: once frontier-scale AI research can be rapidly redirected toward a problem, compute asymmetry can affect priority even before any theorem is published.
+
+NYU's Courant Institute separately described the smooth-forcing blow-up work by Buckmaster and collaborators as a significant advance toward the Navier--Stokes problem, developed from earlier work by Diego Córdoba and Luis Martínez-Zoroa and involving both language-model assistance and Lean verification.[^when-mathematics-became-a-repository-nyu-navier-stokes] The combination of human research, AI assistance, formal verification, and priority sensitivity illustrates why governance debates are likely to intensify as machine research becomes more capable.
+
+AGMAI's 6 October statement therefore described the OpenAI release not as the completion of a mathematical process but as its beginning. Participation by individual mathematicians in discussions with laboratories, it stressed, should not be interpreted as endorsement of every subsequent release decision. More substantively, the statement argued that mathematicians must retain the capacity to formulate their own questions, pursue their own approaches, and explore directions not selected by AI laboratories; equitable access to powerful tools and sufficient compute was presented as a condition of that freedom.[^when-mathematics-became-a-repository-agmai-october]
+
+The governance problem can consequently be expressed as a question of **epistemic separation of powers**. The institution that generates frontier mathematics should not automatically be the sole archive, verifier, interpreter, allocator of attention, funder of understanding, and arbiter of significance. Even when every individual function is competently performed, concentrating all of them in one actor creates correlated incentives and correlated failure modes.
+
+The appropriate response is not to deny private laboratories a role. They may remain the organizations best able to build the strongest research systems. The problem is whether mathematical knowledge and mathematical agency can remain plural once those systems become major producers of the frontier.
+
+## When the scarce resource becomes mathematical agency
+
+The previous sections traced several migrations of scarcity. As candidate proofs become cheaper, verification becomes relatively more valuable. As formal verification scales, conceptual understanding becomes relatively scarcer. As significant results arrive in portfolios, method extraction, attention, and canonicalization become harder.
+
+The more fundamental transition occurs further upstream. Once computational research capacity becomes abundant enough, the scarce resource is not merely the ability to attack a problem. It is **the authority and capacity to decide which problems are attacked**.
+
+That is mathematical agency.
+
+In this article, *mathematical agency* means the capacity to choose, formulate, and pursue a research direction rather than merely to solve a supplied theorem. The distinction matters because mathematical research begins before proof search. Someone must decide what is worth asking.
+
+An established open problem is already a compressed product of mathematical judgment. Before a conjecture becomes a recognized target, researchers have normally determined that the observed pattern is nontrivial, that the formulation captures something important, that the hypotheses are meaningful, that the problem interacts productively with surrounding theory, and that enough partial evidence exists to justify sustained effort.
+
+A model evaluated on famous open problems therefore receives much of this upstream work for free. The frontier has already been mapped.
+
+This suggests a distinction between **frontier solving** and **frontier construction**. Frontier solving asks whether a system can make decisive progress on an important unresolved question. Frontier construction asks whether the system can identify which unresolved questions should become important in the first place.
+
+The latter requires more than search. It includes noticing phenomena that deserve explanation, inventing useful definitions, recognizing connections between fields, deciding which assumptions should be weakened, detecting anomalies that deserve to become conjectures, and judging whether a technically accessible problem is mathematically fertile.
+
+These activities are often grouped under the elusive term *mathematical taste*.
+
+The October programme provides unusually strong evidence about machine discovery on human-selected problems. It provides much less evidence about autonomous question formation and question selection. Yet as proof generation becomes more capable, those upstream functions become more valuable rather than less.
+
+The resource-allocation problem makes the point concrete. Suppose a research system can investigate only a finite subset of a much larger space of plausible mathematical questions. Then every allocation of inference to one problem rather than another expresses a judgment about expected value, tractability, prestige, scientific importance, strategic relevance, or demonstration value. At low throughput this may resemble ordinary experimental design. At high throughput it becomes agenda setting.
+
+AI compute therefore begins to resemble research funding, but with a more direct effect. A funding body allocates money to researchers, who retain substantial autonomy over how they pursue the work. A laboratory operating a mathematical AI system can allocate machine cognition directly to a problem, expand successful trajectories, terminate unproductive ones, or redirect thousands of inference runs rapidly. The research agenda becomes partially programmable.
+
+This is why better theorem generation increases the value of mathematical taste. If solution capability is weak, problem selection matters but many selected questions will remain unresolved. If solution capability becomes strong across a broad portfolio, then a marginal improvement in deciding what deserves attention can have multiplicative effects.
+
+A system that proves famous conjectures is therefore not automatically equivalent to one that can create mathematics of comparable long-run depth. Famous conjectures have already passed through decades of human selection. A deeper test would ask whether the system can identify tomorrow's important conjectures before mathematicians have named them.
+
+Definitions provide an even stronger test. Many of the most consequential episodes in mathematical history were not simply proofs of difficult pre-existing propositions. They introduced concepts that changed which questions could be asked at all. A powerful definition can reorganize several fields simultaneously by revealing that apparently different phenomena instantiate the same structure.
+
+Advanced mathematical agency must therefore include the ability to generate not only proofs but useful questions, definitions, invariants, methods, and theories.
+
+The governance implications follow directly. If frontier systems merely accelerated calculations requested by mathematicians, unequal access would resemble an infrastructure problem familiar from other sciences. If they can resolve substantial parts of the open frontier and eventually help determine which questions populate the next frontier, access becomes a question of **agenda-setting power**.
+
+The critical inequality is then not merely unequal tool access. It is unequal capacity to determine what receives frontier-scale mathematical cognition.
+
+This can occur even without philosophically autonomous AI. The immediate agent may be the institution. A laboratory has goals, budgets, product incentives, evaluation targets, compute-allocation policies, and release strategies. The model itself need not possess an independent agenda for the laboratory to exercise substantial mathematical agency through it.
+
+This distinction avoids an unproductive reduction of the debate to whether AI systems “really want” anything. Institutional agency is already sufficient to shape the frontier.
+
+The possible future is not necessarily zero-sum. Widely accessible research systems could substantially increase individual human agency. A mathematician might explore ten speculative ideas where today only one is affordable; a graduate student could test conjectures before investing years in them; researchers at small institutions could summon literature search, formalization, proof exploration, and computational assistance previously available only through large collaborations.
+
+In that architecture, AI becomes an agency multiplier.
+
+The opposite architecture is also possible: a few laboratories select the major questions, allocate the strongest systems, publish the resulting frontier, and leave the wider community primarily to verify, explain, and metabolize the output. Human mathematicians remain intellectually active, but agenda sovereignty moves upstream into the organizations controlling machine cognition.
+
+These are different institutional futures built from the same underlying technology.
+
+A useful hierarchy therefore distinguishes at least four forms of agency. The weakest is choosing among supplied problems. A stronger form is formulating new questions within an existing theory. Stronger again is inventing concepts and methods that create new problem spaces. The broadest is shaping the priorities of a mathematical community.
+
+The October release primarily demonstrates what can happen when powerful systems are deployed on the first of these levels at substantial scale. The harder scientific questions concern the second and third. The governance debate concerns the fourth.
+
+The central scarcity in a mature high-throughput regime may therefore become the right to decide **what is worth knowing before the answer exists**.
+
+## Who controls the frontier?
+
+Once mathematical agency becomes an allocatable computational resource, the institutional question can no longer be reduced to whether model weights are open.
+
+Effective research capability depends on a stack: model capability, inference compute, research orchestration, formal and computational tools, access rules, and governance of the research programme. Open weights without sufficient compute may decentralize little. Public compute without access to sufficiently capable models may do the same. A proprietary model with broad, affordable research access could in some circumstances distribute more effective agency than nominally open weights that only a handful of institutions can run at frontier scale.
+
+The relevant object is therefore the **research infrastructure**, not the license alone.
+
+Several institutional architectures are already visible. The first is the private frontier laboratory: the same organization controls the model, compute, problem selection, research workflow, and release process. Its advantage is speed. The organization can modify the research stack quickly, allocate large amounts of inference without interinstitutional negotiation, and integrate model development with experimentation. The October corpus demonstrates how productive such an arrangement can be.
+
+Its weakness is the concentration of capability and agenda. Researchers outside the laboratory observe selected outputs more readily than the full distribution of attempted questions, compute allocation, negative results, and internal selection decisions. The architecture is optimized for throughput, not necessarily for distributed mathematical agency.
+
+A second architecture retains private model ownership while expanding researcher access. OpenAI's *ChatGPT for Academic Researchers* programme, announced in July 2026, stated an ambition to provide free frontier-model access to 100,000 scientists, mathematicians, and engineers through 2027. OpenAI said that its initial programme had been planned for 10,000 researchers and that, after receiving more than 13,000 applications representing as many as 65,000 requested seats, eligible first-wave applicants would be selected by lottery.[^when-mathematics-became-a-repository-openai-academic-access]
+
+This changes the agency equation substantially because the researcher, rather than the laboratory, can select the problem. But provider-mediated access is not identical to infrastructure control. The provider still determines which models are exposed, usage limits, tool access, policy constraints, continuity, and eligibility. Access to generally available frontier models should also not be conflated with access to the exact internal model that generated the October mathematics corpus. OpenAI's mathematics announcement separately said that the company was working toward a responsible release of that model.[^when-mathematics-became-a-repository-openai-release]
+
+A third architecture treats AI capability as public scientific infrastructure. The U.S. National Artificial Intelligence Research Resource (NAIRR) is an early example. NSF describes it as national infrastructure connecting researchers to compute, models, data, software, and expertise; by October 2026, NSF reported support for more than 600 research projects and 6,000 students.[^when-mathematics-became-a-repository-nairr] NSF also announced a $100 million State and Regional AI Infrastructure Hubs programme intended to broaden access to AI compute and resources.[^when-mathematics-became-a-repository-nairr-hubs]
+
+The institutional significance is that access governance becomes at least partially separable from ownership of any one model. The infrastructure can allocate resources according to scientific criteria rather than exclusively according to the commercial provider's product strategy.
+
+Europe is pursuing a related strategy at larger sovereign-compute scale. By April 2026, the European Commission reported nineteen AI Factories deployed across European supercomputing infrastructure, with further regional access points, while the AI Gigafactory initiative aimed to expand capacity and explicitly included academic access among its objectives.[^when-mathematics-became-a-repository-eu-ai-infrastructure] These programmes are not mathematics-specific, but if high-end inference becomes a scientific instrument, they provide a plausible institutional basis for allocating machine cognition as shared research infrastructure.
+
+The analogy with telescopes and particle accelerators is useful but incomplete. Astronomers compete for observation time; physicists share expensive experimental facilities. AI research systems differ because the instrument increasingly overlaps with the intellectual role of the researcher. It does not merely observe a phenomenon. It can propose lemmas, select approaches, generate proofs, formalize them, and perhaps eventually choose subsequent questions.
+
+That makes governance of the instrument unusually consequential.
+
+@tbl-when-mathematics-became-a-repository-control-architectures summarizes the principal trade-offs without pretending that any one model dominates every criterion.
+
+| Architecture | Capability concentration | Researcher agenda control | Reproducibility | Speed | Agenda plurality |
+|---|---:|---:|---:|---:|---:|
+| Proprietary laboratory research | Very high | Low outside the laboratory | Low at generator level | Very high | Potentially low |
+| Vendor-subsidized academic access | High | Substantially higher | Partial | High | Higher |
+| Public-private research resource | Medium | High | Potentially high | Medium | High |
+| Public or sovereign compute commons | Lower institutional concentration | High | Potentially high | Potentially lower | Potentially very high |
+
+: Qualitative comparison of institutional architectures for frontier mathematical AI. No architecture simultaneously maximizes capability, decentralization, speed, and reproducibility. {#tbl-when-mathematics-became-a-repository-control-architectures}
+
+The comparison also shows why open weights alone are insufficient. If reproducing the strongest research behaviour requires large inference budgets, then model access can be public while effective frontier cognition remains concentrated. This is why AGMAI's October statement explicitly coupled access to powerful AI tools with access to the computational resources needed to use them effectively.[^when-mathematics-became-a-repository-agmai-october]
+
+The reverse is equally important. Public compute without sufficiently capable models or the surrounding orchestration stack does not reproduce the research system either. Effective capability depends on the model, the available compute, and the research harness around them: retrieval, proof assistants, agentic workflows, search procedures, formal environments, and evaluation infrastructure.
+
+Allocation rules therefore matter as much as nominal access. Even a public compute commons must decide which researchers receive resources. Peer-reviewed merit, lotteries among qualified proposals, disciplinary quotas, support for early-career researchers, dedicated high-risk allocations, and reproducibility grants would all produce different mathematical frontiers.
+
+No allocation rule is neutral because every rule embodies a value function.
+
+A mathematically healthy infrastructure may therefore need to reserve part of its resources for exploration rather than optimizing entirely for near-term theorem yield. Famous open problems are attractive because success is legible. Eccentric definitions, speculative analogies, and low-probability research programmes are harder to evaluate but historically indispensable. Distributed access has epistemic value precisely because different mathematicians spend research capacity according to different tastes.
+
+The same principle applies to verification and archival custody. Ideally, the institution allocating frontier machine cognition should not also be the sole verifier and permanent archive of its outputs. Generation, verification, and custody can be institutionally separated. A laboratory can generate the result, an independent formal system or mathematical organization can verify specific claims, and an independent scholarly repository can preserve the version history.
+
+This is the organizational analogue of Comparator. Reliability does not require the generator to become universally trusted. It requires reducing how much must be trusted in any one actor.
+
+Repository independence therefore matters for more than preservation. If the producing laboratory hosts the only authoritative copy of the mathematics, it controls the visible revision history, metadata, citation target, and presentation of corrections. An independent archive creates durable custody of what was claimed, when, and with which evidence.
+
+The long-run target should consequently not be one universally trusted mathematical AI. It should be **plural infrastructure**: multiple capable models, multiple compute providers, independent proof checkers, independent archives, portable formal artifacts, and communities with different mathematical tastes.
+
+The objective is not decentralization as an end in itself. It is reduction of correlated epistemic failure.
+
+Interoperability may ultimately matter more than ownership. A conjecture formulated with one system should be inspectable by another. A proof generated by one laboratory should be independently checkable elsewhere. A theorem's dependency graph should not exist only inside one proprietary service. The mathematical object should retain identity when moved between repositories.
+
+The production process can remain partly proprietary while the resulting mathematics remains epistemically portable.
+
+That requirement also changes what mathematical institutions themselves must provide. Universities, institutes, societies, and funding agencies cannot demand distributed agency without building alternative infrastructure for model access, compute allocation, formal verification, archival preservation, young-researcher access, and priority resolution.
+
+Agency requires institutions capable of exercising it.
+
+Pure mathematics may therefore become more infrastructure-intensive than it has historically been. A future mathematics institute may need not only offices, libraries, and seminar rooms but guaranteed inference allocations, shared research agents, proof-assistant infrastructure, permanent repositories, and specialists in mathematical knowledge engineering.
+
+The robust architecture is not one sovereign machine intelligence. It is a **federated epistemic system** in which different institutions control the functions for which they have legitimate competence.
+
+## From papers to mathematical infrastructure
+
+The argument can now return to the apparently mundane fact that initiated it: OpenAI released the corpus as a repository.
+
+The reason this matters is not that mathematics should migrate from journals to GitHub. It is that the object being published had already acquired properties for which the paper is an incomplete container.
+
+The conventional mathematical paper is an extraordinarily successful compression format. It states the theorem, establishes priority, contains the proof, cites dependencies, explains significance, records authorship, and provides a citable object. For most of mathematical history, these components changed slowly enough that one document could represent them together.
+
+Machine-generated mathematics weakens that coincidence. The informal exposition may be revised after the proof is formalized. A Lean artifact may arrive after the paper. Independent review may strengthen or weaken confidence without altering the text. A later proof may be simpler. Dependencies may be discovered subsequently. Human understanding may mature years after the initial release.
+
+The theorem should therefore acquire an identity independent of any one manuscript.
+
+A more robust infrastructure would assign a persistent identifier to a mathematical claim and attach multiple artifacts to it: the informal statement, formal statement, proof objects, manuscripts, verification records, dependency information, expositions, revision history, and known consequences.
+
+The paper would no longer be the sole scholarly object. It would become one representation of a richer one.
+
+This also implies **semantic versioning for claims**. A textual diff can tell us that two source files differ. Mathematical infrastructure should additionally know whether a revision strengthened the conclusion, added a hypothesis, repaired a proof without changing the statement, corrected an attribution, or modified exposition only.
+
+These are different epistemic events because their downstream consequences differ.
+
+Formal statements provide a natural machine-readable anchor. If several papers, proofs, and explanations refer to the same formal theorem, the formal object can help establish theorem identity independently of textual similarity. This makes new queries possible: which papers prove exactly this statement; which results depend on it; which formal proofs invoke a given axiom; which manuscript makes a stronger natural-language claim than its associated formal theorem?
+
+But the semantic bridge between the informal theorem and the formal statement must itself be represented. A Boolean such as `formalized: true` is inadequate. The repository should distinguish the existence of a formal statement, existence of a proof, kernel acceptance, permitted axioms, Comparator or equivalent target checking, and the status of independent review of the informal/formal correspondence.
+
+Provenance should become a graph rather than an author field. The relevant lineage may include the original conjecture, earlier literature, problem selection, model invocation, candidate proof, formalization, computational certificate, human edits, independent review, and later exposition. These are different relations and should be typed accordingly.
+
+The same applies to citations. A paper may cite another because it depends on a theorem, borrows terminology, gives historical credit, compares approaches, or generalizes an idea. Machine reasoning over the literature requires typed edges rather than generic bibliographic links.
+
+Once these relations are machine-readable, continuous integration has a mathematical analogue. A change to an upstream theorem or definition can trigger formal rebuilds, dependency checks, axiom audits, and impact analysis. For formal mathematics, this is not metaphorical. If a dependency changes, downstream proofs can be rerun automatically.
+
+The literature then begins to behave less like a shelf and more like a maintained system.
+
+Dependency information can also inform research itself. A theorem supporting many conditional consequences may have unusually high downstream leverage. That should never become a universal measure of importance—high centrality can reflect fashion, and low-centrality questions can create entirely new fields—but it is one machine-readable signal that can contribute to research triage.
+
+Explanations also need multiple resolutions. A theorem may need a one-paragraph conceptual summary, a specialist proof sketch, a detailed human-readable paper, and a complete formal derivation. These are not redundant versions of the same object. They optimize for different epistemic functions: conceptual compression, expert reconstruction, contextual argument, and logical assurance.
+
+Methods deserve persistent identity as well. If several theorems use the same new construction, the durable contribution may be the method rather than the individual proof. A method object could record its conceptual description, minimal hypotheses, canonical examples, formal lemmas, applications, and known limitations.
+
+Open problems should likewise become first-class objects. Their state could include the canonical statement, equivalent formulations, origin and attribution, partial results, failed approaches, conditional consequences, candidate solutions, formalization state, and current review status. This becomes particularly useful once several AI systems can attack the same frontier simultaneously.
+
+The result is a mathematical literature with an API in the epistemic rather than merely software sense. Research agents could query exact statements, dependencies, proof status, versions, explanations, and methods instead of treating papers only as opaque text documents.
+
+The paper remains indispensable in this architecture. Its role changes.
+
+Rather than being the sole container of evidence, it becomes the principal human explanatory layer: the place where the reader learns why the theorem matters, where the obstruction lay, what idea resolved it, and what should be remembered. Result abundance makes such narrative more valuable because conceptual compression becomes scarcer.
+
+Scholarly publication may likewise evolve from certifying one frozen document toward certifying properties of a living mathematical object. Formal correctness, semantic fidelity, novelty, attribution, exposition, and significance need not be judged by the same actor or at the same time.
+
+Persistent identity then becomes crucial. Repository paths change, commercial platforms disappear, and titles evolve. A mathematical claim should remain citable across migrations. AGMAI's recommendation for independent scholarly repositories with persistent identifiers and preserved histories is therefore more than archival hygiene; it is a requirement for maintaining scholarly identity under versioned publication.[^when-mathematics-became-a-repository-agmai-recommendations]
+
+Custody and computation should remain separable as well. The laboratory supplying the strongest model need not also be the permanent custodian of the theorem. Independent archives and independent verification systems allow the mathematical object to survive changes in commercial strategy, model generation, or institutional power.
+
+The repository then becomes an external memory system for research agents. Model weights are poor custodians of exact, evolving scholarly state. A maintained repository can record which theorem version is current, which proof is checked, which assumptions are active, which downstream results depend on it, and which explanations have appeared.
+
+This creates a recursive research architecture: machine-readable literature informs AI research; AI research generates new candidate results; formal and human verification update their status; the repository changes; the revised corpus becomes the input to the next research cycle.
+
+That is much stronger than using a language model to answer isolated mathematical questions.
+
+It also introduces new failure modes. Incorrect metadata can propagate automatically. A mistaken mapping between informal and formal statements can contaminate downstream dependencies. Significance scores can create self-reinforcing fashions. Repository schemas may privilege mathematics that formalizes cleanly. Central APIs can become new control points.
+
+The knowledge graph must therefore not be confused with mathematics itself.
+
+Research taste, analogy, heuristic reasoning, geometric intuition, and tacit understanding will remain difficult to encode completely. The infrastructure should extend mathematical culture, not attempt to replace it with nodes and edges.
+
+The likely future is hybrid: formal proof objects, machine-readable metadata, versioned repositories, human-readable papers, seminars, workshops, interactive explanations, surveys, and textbooks. Each medium serves a different epistemic function.
+
+GitHub is therefore evidence, not the endpoint. Its significance lies in supplying enough repository primitives to expose the inadequacy of a static PDF archive for this new kind of output. A mature infrastructure will need properties GitHub does not natively provide: theorem-level persistent identity, typed epistemic state, formal/informal correspondence records, mathematical dependency graphs, independent certification, priority records, durable archival governance, and machine-readable method objects.
+
+The durable transition is not from journals to GitHub.
+
+It is from **the paper as the sole primary epistemic object to a maintained mathematical knowledge object**.
+
+## Conclusion: after the paper
+
+On 6 October 2026, OpenAI released 722 manuscripts organized into 372 result families spanning seventeen areas of mathematics and theoretical computer science. The collection emerged from approximately 4,000 posed research problems and included not only natural-language papers but formalizations, Comparator artifacts, reasoning summaries, computational material, provenance, citation guidance, and explicit version history.[^when-mathematics-became-a-repository-openai-release]
+
+The conspicuous fact was the mathematics.
+
+The more revealing fact may have been the form of publication.
+
+The event belongs to a broader sequence. Proof generation becomes cheaper, so verification becomes relatively more valuable. Formal proof systems make parts of verification scalable. Repeated research-level successes produce result abundance. Result abundance creates an epistemic backlog between what has been generated and what has been understood. Mathematical digestion—validation, conceptual compression, method extraction, contextualization, and canonicalization—becomes a research activity in its own right. When thousands of problems can receive machine effort, attention and eventually mathematical agency become scarce.
+
+The most important new category is therefore not false mathematics but **unmetabolized mathematics**: results that may be correct, formally certified, and important while remaining incompletely understood or integrated into the working structure of a field.
+
+This distinction also explains why the October corpus remains significant even after aggressive qualification. The release does not demonstrate a 9.3 percent success rate on arbitrary open problems. It does not establish that all 372 families are correct. It does not show that an autonomous AI mathematician independently selected the research programme. Those stronger claims are unsupported by the public evidence.
+
+A narrower statement is sufficient: **frontier mathematical discovery has become a repeatable output of a computational research process**.
+
+The significance of that statement grows because mathematics is a dependency network. A high-leverage theorem can alter the status of many downstream results. The scientific value of a machine research system is therefore not captured by paper count. It depends on where its results sit in the mathematical graph, whether the proofs survive scrutiny, whether novel methods emerge, and whether the community can assimilate them.
+
+The final scarcity consequently moves upstream. If powerful models can attack many important questions in parallel, then choosing which questions deserve that capability becomes an allocation decision with scientific consequences. Mathematical agency becomes part of the infrastructure problem.
+
+That is why the governance debate is inseparable from the mathematics. Control of frontier models, compute, and problem selection can determine where machine cognition is deployed before any paper is written. Public release restores access to the result, but not necessarily equality of opportunity in discovery.
+
+The appropriate long-run architecture is therefore unlikely to be either one proprietary mathematical laboratory or one universally open model. A more resilient system would combine capable private and public research systems, broad researcher access, shared compute, independent verification, independent archives, portable formal artifacts, and plural agenda setting.
+
+Authorship will evolve for the same reason. Contribution, understanding, verification, exposition, and responsibility can now belong to different actors. Provenance needs to become richer, while accountability must remain attached to humans and institutions capable of exercising judgment.
+
+The paper survives this transformation. Indeed, it becomes more important as result abundance increases, because human readers need explanation and conceptual compression more than ever. What changes is the paper's job.
+
+A future mathematical result will increasingly be represented by a larger package: a human-readable theorem, a formal counterpart where available, one or more proofs, machine-checkable certificates, dependency and provenance information, explanatory layers, and an explicit version and review state. The paper is the layer optimized for understanding; the repository preserves the state required for reliable cumulative use.
+
+The strongest interpretation of the October release is therefore not that mathematics has become software, that GitHub should replace journals, or that repository commits confer truth.
+
+It is that the scholarly object is becoming **maintained rather than merely published**.
+
+The proof may change. The exposition may improve. A formalization may arrive later. Dependencies may be added. Verification may strengthen. Attribution may be corrected. Human understanding may deepen.
+
+The theorem's truth is not versioned. The epistemic object surrounding it is.
+
+That is what *repository mathematics* means: a regime in which mathematical knowledge must be continuously represented, verified, linked, interpreted, and governed because its machine-generated production rate has begun to rise.
+
+The repository is therefore not merely where the mathematics is stored. It becomes part of the machinery by which mathematics continues.
+
+The decisive question after proof abundance is no longer simply whether an AI can prove a theorem.
+
+It is what happens when AI systems can continuously produce part of the mathematical frontier, while humans, machines, and institutions jointly decide which results become knowledge.
+
+[^when-mathematics-became-a-repository-agmai-formation]: Advisory Group on Mathematics and Artificial Intelligence. (2026). **About AGMAI**. _AGMAI_. The group describes its formation, independence from AI companies, membership, and advisory purpose. [Official website](https://agmai.org/).
+
+[^when-mathematics-became-a-repository-agmai-recommendations]: Advisory Group on Mathematics and Artificial Intelligence. (2026). **General recommendations, 29 September 2026**. _AGMAI_. The recommendations address responsible release, support for human understanding, independent repositories, disclosure of provenance, avoidance of marketing-driven mathematical publication, and access to frontier mathematical AI. [Official statement](https://agmai.org/general-sep29/).
+
+[^when-mathematics-became-a-repository-wired-mathematicians]: _Wired_. (2026). **OpenAI Is Pissing Off a Bunch of Mathematicians Again**. The report describes OpenAI's August meeting with mathematicians, community concerns about release practices, and the contested Buckmaster/OpenAI dispute. The allegations discussed in the article should be treated as disputed claims rather than established misconduct. [News report](https://www.wired.com/story/openai-is-pissing-off-a-bunch-of-mathematicians-again/).
+
+[^when-mathematics-became-a-repository-nyu-navier-stokes]: New York University Courant Institute of Mathematical Sciences. (2026). **Research news on the Navier--Stokes smooth-forcing blow-up work**, 14 September 2026. _NYU Courant_. The institute describes the work by Tristan Buckmaster and collaborators, its relationship to earlier research, and the use of LLM assistance and Lean verification. [Institutional report](https://cims.nyu.edu/dynamic/news/1528/).
+
+[^when-mathematics-became-a-repository-agmai-october]: Advisory Group on Mathematics and Artificial Intelligence. (2026). **On OpenAI's release of mathematical results**, 6 October 2026. _AGMAI_. The statement describes the release as the beginning rather than completion of human understanding and emphasizes mathematicians' ability to formulate their own questions and obtain equitable access to powerful tools and compute. [Official statement](https://agmai.org/statement-oct6/).
+
+[^when-mathematics-became-a-repository-openai-academic-access]: OpenAI. (2026). **Accelerating scientific discovery with ChatGPT for Academic Researchers**. _OpenAI_, 29 July 2026, updated 10 August 2026. OpenAI states an ambition to provide free frontier-model access to 100,000 scientists, mathematicians, and engineers through 2027 and describes the initial application process. [Official announcement](https://openai.com/index/chatgpt-for-academic-researchers/).
+
+[^when-mathematics-became-a-repository-nairr]: National Science Foundation. (2026). **National Artificial Intelligence Research Resource**. _NSF_. NSF describes NAIRR as national infrastructure connecting researchers to compute, models, data, software, and expertise. [Official programme page](https://www.nsf.gov/focus-areas/si/nairr).
+
+[^when-mathematics-became-a-repository-nairr-hubs]: National Science Foundation. (2026). **New NSF State and Regional AI Infrastructure Hubs will power AI research and education**. _NSF_. The programme announced $100 million in intended support for infrastructure intended to broaden access to AI resources. [Official announcement](https://www.nsf.gov/news/new-nsf-state-regional-ai-infrastructure-hubs-will-power-ai).
+
+[^when-mathematics-became-a-repository-eu-ai-infrastructure]: European Commission. (2026). **AI Continent Action Plan delivers major milestones** and **EU launches AI Gigafactories call**. _European Commission_. The Commission describes the rollout of AI Factories across European supercomputing infrastructure and the Gigafactory initiative, including access objectives for academia. [Official update](https://digital-strategy.ec.europa.eu/en/news/ai-continent-action-plan-delivers-major-milestones). [Official announcement](https://digital-strategy.ec.europa.eu/en/news/eu-launches-ai-gigafactories-call-boost-europes-computing-capacity-and-unlock-more-eu30-billion).
+
+## Appendix A: complete catalogue of the OpenAI result families
+
+This appendix records the complete OpenAI catalogue as represented in the repository snapshot used for this article on **7 October 2026**. The collection contains **372 result families**, but the identifiers run from **001 through 377** because five identifiers—**045, 061, 070, 123, and 163**—are unused. They are intentionally absent below and should not be read as omissions.[^when-mathematics-became-a-repository-openai-catalogue]
+
+The table uses the official family titles in compact form rather than reproducing the full claim summaries. A ★ marks the five cases examined most closely in the main text. Formalization status is treated separately in Appendix B because the repository's formal artifacts and its formalization metadata do not always coincide perfectly.
+
+### Number theory
+
+| ID | Result family |
+|---:|---|
+| 001 | Milne's rationality conjecture |
+| 002 | The full Birch--Swinnerton-Dyer formula in Selmer coranks zero and one |
+| ★ 003 | The quasi-Riemann hypothesis |
+| 004 | Hilbert's tenth problem over \(\mathbb Q\) |
+| 005 | Irrationality of Catalan's constant |
+| 006 | Goldfeld's conjecture |
+| 007 | Two-point Chowla and the corrected binary Elliott conjecture |
+| 008 | The Deligne--Drinfeld conjecture |
+| 009 | Bogomolov--Pop and Milnor \(K\)-theoretic reconstruction |
+| 010 | Fontaine--Mazur modularity at the prime \(2\) and \(2\)-adic pro-modularity |
+| 011 | The Ford--Konyagin--Luca conjecture on prime predecessors |
+| 012 | Independent largest prime factors of consecutive integers |
+| 013 | Ostmann's inverse Goldbach conjecture |
+| 014 | Restricted geometric Langlands, generic Ramanujan and Arthur parameters |
+| 015 | Torus-packet equidistribution in prime, quartic, and sextic degrees |
+| 016 | Zilber--Pink in abelian varieties and the Siegel threefold |
+| 017 | The irrationality exponent of \(\pi\) is \(2\) |
+| 018 | The Margulis--Platonov conjecture over global fields |
+| 019 | The \(p\)-adic section conjecture |
+| 020 | Squarefree quartics and power-free polynomial values |
+| 021 | A quadratic bound for Jacobsthal's function |
+| 022 | The weak inhomogeneous Duffin--Schaeffer conjecture |
+| 023 | Patterson's first moment for cubic Gauss sums |
+| 024 | An asymptotic formula for the number of totients |
+| 025 | Erdős's short Egyptian-fraction conjecture |
+| 026 | Positive lower density of large prime gaps |
+| 027 | Integral density on curve character varieties |
+| 028 | The Gaussian moat conjecture |
+| 029 | Artin's primitive root conjecture: infinitude for every base |
+| 030 | Modularity over imaginary quadratic fields |
+| 031 | Uchida's conjecture for open Galois homomorphisms |
+
+### Algebraic and complex geometry
+
+| ID | Result family |
+|---:|---|
+| ★ 032 | The rational Hodge conjecture for CM abelian varieties and products of K3 surfaces |
+| 033 | Campana's orbifold Iitaka conjecture and logarithmic subadditivity |
+| 034 | Log abundance and effective Iitaka fibrations |
+| 035 | Threefold log abundance in numerical dimension one in characteristic \(p>3\) |
+| 036 | Numerical semiampleness and generalized minimal models |
+| 037 | The sharp ordinary-double-point volume gap |
+| 038 | Fujita's freeness conjecture |
+| 039 | Nagata's conjecture and maximal Seshadri constants |
+| 040 | Bloch's conjecture for complex surfaces |
+| 041 | Hyperkähler SYZ and projective-space bases |
+| 042 | Oka classification for K3 surfaces and other compact complex surfaces |
+| 043 | \(P=W\) for fixed-determinant moduli spaces |
+| 044 | The equivariant cohomological Hikita conjecture for quivers |
+| 046 | Counterexamples to Shafarevich holomorphic convexity |
+| 047 | Complex counterexamples to cancellation and affine fibrations |
+| 048 | A characteristic-zero counterexample to Lipman--Zariski |
+| 049 | A stable-coordinate counterexample in four variables |
+| 050 | A counterexample to Griffiths' positivity conjecture |
+| 051 | Kobayashi's canonical-ampleness conjecture |
+| 052 | Tangent-bundle splittings and universal covers |
+| 053 | A counterexample to Pixton's original completeness conjecture |
+| 054 | Counterexamples to Kuznetsov's rationality conjecture |
+| 055 | Toda's Gepner conjecture and large-volume stability |
+| 056 | Termination of fourfold minimal model programs |
+| 057 | Campana's abelianity conjecture and special varieties |
+| 058 | The Kollár--Pardon universal-cover conjecture |
+| 059 | Counterexamples to Zariski's multiplicity conjecture |
+| 060 | The Global Spherical Shell conjecture |
+| 062 | The LeBrun--Salamon conjecture and projective contact classification |
+| 063 | The generalized Mukai conjecture |
+| 064 | The \(\mu\)-constant problem for surface singularities |
+| 065 | Virasoro constraints for complete intersections and projective bundles |
+| 066 | Bounded klt complements for Fano contractions |
+| 067 | The Campana--Peternell conjecture in dimension six |
+| 068 | Anticanonical nonvanishing under smooth semipositivity |
+| 069 | Quantum geometric Langlands at irrational level |
+
+### Real and complex analysis
+
+| ID | Result family |
+|---:|---|
+| 071 | Koebe's circle-domain conjecture and circle-domain rigidity |
+| 072 | Brennan's conjecture and a counterexample to Kraetzer's prediction |
+| 073 | The Falconer distance conjecture |
+| 074 | Kakeya in three and four dimensions |
+| 075 | The \(L\log L\) Fourier-convergence conjecture |
+| 076 | Ultraflat real Littlewood polynomials |
+| 077 | Fourier restriction for positively curved surfaces |
+| 078 | The three-dimensional Bochner--Riesz conjecture |
+| 079 | Sogge's local smoothing conjecture in dimension three |
+| 080 | The Sobolev endpoint in Carleson's Schrödinger convergence problem |
+| 081 | The David--Semmes Riesz-transform problem in higher codimension |
+| 082 | Maximal and variational bounds for the triangular Hilbert transform |
+| 083 | Stein's conjecture for Hilbert transforms along Lipschitz directions |
+| 084 | The geometric case of the Erdős similarity conjecture |
+| 085 | Endpoint regularity of the planar centered maximal function |
+| 086 | An \(L^3\) bound for the trilinear Hilbert transform |
+
+### Convex and metric geometry
+
+| ID | Result family |
+|---:|---|
+| 087 | The Mahler conjectures and symplectic width |
+| 088 | Petty's projection-volume conjecture and simplex counterexamples |
+| 089 | Bounded-distortion \(L_1\) embeddings of planar and bounded-treewidth graphs |
+| 090 | Universal optimality of the triangular lattice |
+| 091 | The logarithmic Brunn--Minkowski conjecture |
+| 092 | The optimal order of convex-body covering density |
+| 093 | Dimension-free logarithmic Sobolev inequality for subgaussian log-concave measures |
+| 094 | Subpolynomial dimension reduction in \(L_p\) |
+| 095 | Hyperbolicity cones without semidefinite lifts |
+| 096 | The Gaussian propeller conjecture |
+| 097 | The Euclidean Steinitz--Bergström conjecture |
+| 098 | A negative answer to the Lang--Plaut problem |
+| 099 | The sharp distortion of edit distance into \(\ell_1\) |
+| 100 | A counterexample to Bang's cylinder-covering bound |
+| 101 | The sharp simplex conjecture for isotropic constants |
+
+### Theoretical computer science
+
+| ID | Result family |
+|---:|---|
+| ★ 102 | The Unique Games Conjecture and optimal approximation thresholds |
+| 103 | Derandomization of logarithmic space: \(L=RL=BPL\) |
+| 104 | Quasipolynomial algorithms for mean-payoff, stochastic and parity games |
+| 105 | The 2-to-1 Games Conjecture with perfect completeness |
+| 106 | Hardness of coloring three-colorable graphs |
+| ★ 107 | Matrix multiplication with exponent at most \(9/4\) |
+| 108 | A cubic permanent--determinant lower bound |
+| 109 | Integer multiplication below \(n\log n\) |
+| 110 | Optimal-order randomized \(k\)-server on arbitrary metrics |
+| 111 | One-sample matroid prophet inequalities against an almighty adversary |
+| 112 | Beyond the square-root exponent for depth-three circuits |
+| 113 | Approximate counting and the perfect-matching entropy conjecture |
+| 114 | Approximate counting of common integer polymatroid bases |
+| 115 | Sampling and counting contingency tables with arbitrary margins |
+| 116 | Uniform identity testing for noncommutative formulas |
+| 117 | Uniform sparsest cut: hardness and semidefinite gaps |
+| 118 | Unbounded bin-packing gaps and the modified integer round-up conjecture |
+| 119 | The Courtade--Kumar and Hellinger conjectures |
+| 120 | Almost-linear-time exact matching in general graphs |
+| 121 | Almost-linear expected-time approximation of edit distance |
+| 122 | Superpolynomial lower bounds and quasipolynomial reconstruction from deletion traces |
+| 124 | Polynomial-time scheduling on three identical machines |
+| 125 | The approximation threshold for metric \(k\)-median |
+| 126 | Exponential semidefinite complexity of perfect matching |
+| 127 | The asymptotic Gotsman--Linial conjecture |
+| 128 | A factor-two approximation for shortest common superstring |
+| 129 | Exponential state costs for two-way automata |
+| 130 | Fourier transforms below \(n\log n\) |
+| 131 | Polynomial mixing of graph switches with prescribed degrees |
+| 132 | A counterexample to the quadratic sensitivity conjecture |
+| 133 | The complexity of Weisfeiler--Leman refinement |
+| 134 | Generalized star height at most three |
+| 135 | Sharp homogeneous depth-five complexity of matrix products |
+| 136 | The quasilinear PCP-for-PPAD conjecture |
+| 137 | One-tape time simulation in two-fifths-power space |
+| 138 | Subset Sum in \(O(2^{0.49n})\) time |
+| 139 | Subpolynomial queries for log-concave sampling |
+| 140 | Memory--sample lower bounds for noiseless Gaussian regression |
+| 141 | The existential theory of the reals and existential--universal sentences in the counting hierarchy |
+| 142 | Deterministic polynomial factorization over prime fields |
+
+### Dynamical systems and ergodic theory
+
+| ID | Result family |
+|---:|---|
+| 143 | Uniform limit-cycle bounds in Hilbert's sixteenth problem |
+| 144 | Banach's simple Lebesgue-spectrum problem |
+| 145 | Rokhlin's multiple-mixing problem |
+| 146 | Sinai's positive-entropy conjecture for the standard map |
+| 147 | The near-boundary Birkhoff conjecture |
+| 148 | The dimension formula for self-similar measures on the line |
+| 149 | Permanence for weakly reversible reaction networks |
+| 150 | Weak mixing of irrational triangular billiards |
+| 151 | A \(C^1\) counterexample to Shub's entropy conjecture |
+| 152 | Zero entropy does not guarantee a smooth positive-volume model |
+| 153 | Arithmetic classification of Bernoulli convolutions |
+| 154 | Pointwise multiple ergodic averages for mixing transformations |
+
+### Combinatorics
+
+| ID | Result family |
+|---:|---|
+| 155 | A counterexample to periodic tiling in dimension three |
+| 156 | Borsuk's conjecture fails in dimension nine |
+| 157 | Counterexamples to the Hadwiger and Colin de Verdière conjectures |
+| 158 | The Euclidean plane cannot be colored with five colors |
+| 159 | Erdős's reciprocal-sum conjecture and quasipolynomial Szemerédi bounds |
+| 160 | Superexponential van der Waerden numbers |
+| 161 | Counterexamples to Sidorenko's conjecture and the forcing conjecture |
+| 162 | Counterexamples to Ryser's covering and Gyárfás's tree-cover conjectures |
+| 164 | Hindman's finite sums and products conjecture |
+| 165 | Exact crossing numbers of complete and complete bipartite graphs |
+| 166 | The higher-dimensional Erdős distinct-distances conjecture |
+| 167 | Pinned distances and a power saving for planar unit distances |
+| 168 | Combinatorial invariance of Kazhdan--Lusztig polynomials |
+| 169 | The Shareshian--Wachs \(e\)-positivity conjecture |
+| 170 | Sharp logarithmic exponents for off-diagonal Ramsey numbers |
+| 171 | The hypercube Ramsey conjecture |
+| 172 | Classification of finite Euclidean Ramsey configurations |
+| 173 | Seymour's second-neighborhood conjecture |
+| 174 | Deterministic construction of strong thin spanning trees |
+| 175 | Talagrand's conjectures and graph decompositions at expectation thresholds |
+| 176 | The second Kahn--Kalai conjecture |
+| 177 | Bounded-degree coboundary expanders in every dimension |
+| 178 | Deterministic nonbipartite Ramanujan graphs in every fixed degree |
+| 179 | The circulant Hadamard conjecture |
+| 180 | Barnette's Hamiltonian-cycle conjecture |
+| 181 | The Erdős--Gallai cycle-decomposition conjecture |
+| 182 | Power savings for polynomial-difference-free sets |
+| 183 | Power savings for planar halving lines and \(k\)-sets |
+| 184 | Coloring and independence in graphs with forbidden subgraphs |
+| 185 | Counterexamples to infinite matroid intersection and packing/covering |
+| 186 | The Friedgut--Kalai graph and hypergraph threshold conjectures |
+| 187 | Snaky in 21 Maker moves |
+| 188 | The sharp constant in random triangle removal |
+| 189 | Exact cycle--clique Ramsey numbers |
+| 190 | Polynomial removal fails for ordered binary matrices |
+| 191 | A power improvement in the Heilbronn triangle problem |
+| 192 | A counterexample to the Gopalan--Servedio conjecture |
+
+### Algebra
+
+| ID | Result family |
+|---:|---|
+| 193 | Serre's intersection-multiplicity conjecture |
+| 194 | Lech's multiplicity conjecture |
+| 195 | A counterexample to the small Cohen--Macaulay module conjecture |
+| 196 | A counterexample to Kaplansky's zero-divisor conjecture |
+| 197 | Nonsofic groups and group-ring counterexamples |
+| 198 | A counterexample to the little finitistic-dimension conjecture |
+| 199 | Counterexamples to conjectures of Auslander--Reiten, Tachikawa, and Nakayama |
+| 200 | Eisenbud--Green--Harris and lex-plus-powers in characteristic zero |
+| 201 | A counterexample to Kurosh's division-ring problem |
+| 202 | The blockwise Alperin weight conjecture |
+| 203 | Donovan's conjecture over fields and discrete valuation rings |
+| 204 | Tensor saturation for even spin groups |
+| 205 | Saxl's conjecture and universal tensor squares |
+| 206 | Finite lattice representation: counterexamples and undecidability |
+| 207 | The \(\ell^1\)-Bass and complex Bass trace conjectures |
+| 208 | The finite Benson--Etingof--Ostrik conjecture |
+| 209 | Integral counterexamples to Gersten's conjecture |
+| 210 | Foulkes' conjecture for sixth powers and quadratic stabilization |
+
+### Probability and statistical mechanics
+
+| ID | Result family |
+|---:|---|
+| 211 | Geometry, diffusion, and spectra of random planar maps |
+| 212 | No bigeodesics and smooth limit shapes in planar first-passage percolation |
+| 213 | No infinite critical clusters on quasi-transitive graphs |
+| 214 | The Benjamini--Schramm nonuniqueness conjecture |
+| 215 | Massive continuum limits and exact mass asymptotics for planar \(O(n)\) models |
+| 216 | Critical logarithmic corrections and BKT scaling for the planar XY model |
+| 217 | The low-temperature Sherrington--Kirkpatrick fluctuation law |
+| 218 | Conformal universality for weakly interacting and disordered Ising models |
+| 219 | GOE universality for random regular graphs with weak disorder |
+| 220 | Directional zero--one laws and ballisticity in random environments |
+| 221 | The Mézard--Parisi formula for diluted spin glasses |
+| 222 | Perceptron free energies and microscopic jamming |
+| 223 | Conformal limits of square-lattice random-cluster interfaces |
+| 224 | Critical and near-critical universality for Voronoi percolation |
+| 225 | Gaussian free field limits for the balanced six-vertex model |
+| 226 | The double-dimer \(\mathrm{CLE}_4\) conjecture in the half-plane |
+| 227 | The dynamical phase transition in the Sherrington--Kirkpatrick model |
+| 228 | Continuum phase transitions for radial pair potentials |
+| 229 | Sharp three- and four-state reconstruction thresholds |
+| 230 | Exact Hausdorff measure for SLE |
+| 231 | The free uniform spanning forest is a factor of IID |
+| 232 | Gaussian fields and SLE interfaces for Lipschitz heights |
+| 233 | The joint critical Ashkin--Teller scaling limit |
+| 234 | All-temperature pressure for orthogonally invariant Ising spin glasses |
+| 235 | Random-SAT thresholds, sharp variance and computability |
+| 236 | The factor-of-IID threshold for free Ising states on trees |
+| 237 | The three-quarter diameter exponent for honeycomb walks |
+| 238 | Optimal logarithmic mixing of the Thorp shuffle |
+| 239 | Sharp singularity rates for symmetric sign matrices |
+
+### Mathematical logic
+
+| ID | Result family |
+|---:|---|
+| 240 | Shelah's eventual categoricity conjecture |
+| 241 | Rigidity of the Turing degrees |
+| 242 | Single-fold Diophantine representations |
+| 243 | Choiceless counting does not capture polynomial time |
+| 244 | The partition principle does not imply choice |
+| 245 | The \(\beta\)-Barendregt--Geuvers--Klop conjecture |
+
+### Group theory
+
+| ID | Result family |
+|---:|---|
+| 246 | Cannon's conjecture |
+| 247 | An infinite finitely presented residually finite \(2\)-group |
+| 248 | Thompson's group \(F\) is nonamenable |
+| 249 | A finitely generated counterexample to Eilenberg--Ganea |
+| 250 | The Boone--Higman conjecture and higher finiteness |
+| 251 | Amenability, unitarizability, and Ulam stability |
+| 252 | A non-residually-finite torsion-free hyperbolic group |
+| 253 | An infinite finitely presented simple amenable group |
+| 254 | Classifying spaces and geometric obstructions for Artin groups |
+| 255 | Quasi-isometric rigidity of virtually polycyclic groups |
+| 256 | Howie's conjecture on equations over groups |
+| 257 | A hyperbolic group with no geometric CAT(0) action |
+| 258 | Gersten's conjecture for one-relator groups |
+| 259 | A group without fixed price |
+
+### Mathematical physics
+
+| ID | Result family |
+|---:|---|
+| 260 | Spacetime Penrose inequalities and rigidity |
+| 261 | Localization and delocalization in the Anderson model |
+| 262 | Sharp one-dimensional Lieb--Thirring inequalities |
+| 263 | The ionization and generalized ionization conjectures |
+| 264 | Strong cosmic censorship near two-ended Kerr data |
+| 265 | The two-dimensional gapped area law |
+| 266 | Exactly three mutually unbiased bases in dimension six |
+| 267 | Positive-temperature Bose--Einstein condensation and quantum depletion |
+| 268 | The spin-one Haldane gap |
+| 269 | The Laughlin gap and stability under scalar disorder |
+| 270 | Threshold and positive-energy bound states of the BFSS model |
+| 271 | Bloch's law and spontaneous ferromagnetic order |
+| 272 | Entanglement without secret key and the PPT-square conjecture |
+| 273 | The entropy photon-number inequality |
+| 274 | Moore's parity conjecture for \(QAC^0\) |
+| 275 | QMA-hardness of continuum Coulomb energy |
+| 276 | The classical capacity of generalized amplitude damping |
+| 277 | Threshold repetition for entangled games |
+| 278 | Failure of Kohn--Sham ensemble representation |
+| 279 | Exact quantum factoring over a fixed finite gate set |
+| 280 | Strong locality for strongly rational unitary vertex operator algebras |
+| 281 | QAOA optimality for the SK model |
+| 282 | Scale-to-conformal enhancement in four-dimensional QFT |
+| 283 | Polynomial-time, constant-error unitary synthesis from a Boolean oracle |
+| 284 | The optimal randomized--quantum query exponent |
+
+### Operator algebras
+
+| ID | Result family |
+|---:|---|
+| 285 | Counterexamples to Baum--Connes and Kadison--Kaplansky |
+| 286 | Arithmetic rigidity of lattice von Neumann algebras |
+| ★ 287 | All nonabelian free group factors are isomorphic |
+| 288 | Kadison's similarity conjecture |
+| 289 | The strong Kadison--Kastler conjecture |
+| 290 | Connes' bicentralizer conjecture and relative bicentralizers |
+| 291 | Toms--Winter and equivariant Jiang--Su stability |
+| 292 | A counterexample to Kirchberg's norm-ultrapower embedding problem |
+| 293 | A counterexample to the hyperinvariant-subspace problem |
+| 294 | A counterexample to Kaplansky's quasitrace conjecture |
+| 295 | The Kadison--Ringrose cohomology conjecture |
+| 296 | The generator problem for finite factors |
+| 297 | A ZFC counterexample to Naimark's problem |
+| 298 | A counterexample to Voiculescu's free-entropy equality conjecture |
+| 299 | The Kirchberg--Rørdam character criterion |
+| 300 | The Popa--Vaes quadratic strong-operator paving conjecture |
+| 301 | Classification by trace cones after Razak--Jacelon stabilization |
+| 302 | The Phillips--Toms formula for minimal integer actions |
+| 303 | From ordinary to strong pure infiniteness |
+
+### Topology
+
+| ID | Result family |
+|---:|---|
+| 304 | The Hilbert--Smith conjecture in every dimension |
+| 305 | Counterexamples to disk embedding and Wall's manifold conjecture |
+| 306 | The purely cosmetic surgery conjecture for knots in \(S^3\) |
+| 307 | Failure of rational injectivity for maximal coarse assembly |
+| 308 | Smith--Toda complexes at every height with varying primes |
+| 309 | The Kervaire invariant problem at the prime three |
+| 310 | Quillen's conjecture in rational homology |
+| 311 | Chai's invariant-ideal conjecture |
+| 312 | The Grothendieck homotopy hypothesis |
+| 313 | Finite generation for the \(K(n)\)-local sphere |
+| 314 | The chromatic Smith fixed-point problem for finite \(p\)-groups |
+| 315 | The four-dimensional Singer conjecture |
+| 316 | Curtis's conjecture |
+| 317 | Thomason model structures in every strict higher dimension |
+| 318 | Chromatic splitting: counterexamples and filtrations |
+| 319 | Counterexamples to the Hahn--Wilson conjecture at height two |
+| 320 | A four-dimensional counterexample to Borel rigidity |
+| 321 | A counterexample to Wall's finite \(D(2)\) conjecture |
+
+### Functional analysis
+
+| ID | Result family |
+|---:|---|
+| 322 | Tingley's sphere-isometry problem |
+| 323 | Relative independence of the separable quotient problem |
+| 324 | Lipschitz equivalence without linear isomorphism |
+| 325 | The complete Crouzeix conjecture |
+| 326 | The cotype--cotype conjecture under the approximation property |
+| 327 | Markov type characterizes superreflexivity |
+| 328 | Fixed points of nonexpansive maps in reflexive Banach spaces |
+| 329 | A counterexample to Pietsch's metric-entropy duality conjecture |
+| 330 | A negative answer to Kalton's Lipschitz-free approximation question |
+| 331 | Asymptotic midpoint uniform convexity without asymptotically uniformly convex renorming |
+| 332 | Metric Markov cotype two for \(\ell_1\) |
+
+### Differential geometry
+
+| ID | Result family |
+|---:|---|
+| 333 | Smooth isometric immersions of surfaces into \(\mathbb R^4\) |
+| 334 | A smooth surface metric with no local immersion in \(\mathbb R^3\) |
+| 335 | Gromov's integral scalar-curvature inequality |
+| 336 | Spectral scalar curvature and codimension-two width |
+| 337 | Cartan--Hadamard isoperimetry and CAT(0) fillings |
+| 338 | Yau's uniformization conjecture |
+| 339 | Katok's entropy rigidity conjecture |
+| 340 | A counterexample to the nearby Lagrangian conjecture |
+| 341 | Donaldson's hypersymplectic deformation conjecture |
+| 342 | Donaldson's tamed-to-compatible conjecture |
+| 343 | Sharp symplectic ball-packing criteria in higher dimensions |
+| 344 | The metric Blaschke conjecture |
+| 345 | Infinitely many closed geodesics on spheres and three-manifolds |
+| 346 | Sharp singular-set bounds for stationary integral varifolds |
+| 347 | Counterexamples to strong forms of Arnold's fixed-point conjecture |
+| 348 | Nonnegatively curved Einstein four-manifolds and a topological gap |
+| 349 | The Solomon--Yau least-volume conjecture |
+| 350 | Yau's nodal conjecture: surfaces and counterexamples |
+| 351 | Scalar curvature detects four-dimensional Ricci-flow singularities |
+| 352 | Finite-time singularity of Calabi flow |
+| 353 | The sharp dimension threshold for affine Bernstein rigidity |
+| 354 | Isoperimetric regions in the cubic three-torus |
+| 355 | Unique tangent flows at the first surface singularity |
+| 356 | Gigli's characterization of Alexandrov curvature |
+| 357 | Bi-Lipschitz coordinates at every regular RCD point |
+| 358 | A three-manifold with no conjugate points and no nonpositively curved metric |
+| 359 | Negative Kähler curvature without bounded holomorphic coordinates |
+| 360 | Villani's convexity conjecture and regular optimal transport |
+| 361 | Counterexamples to Yau's harmonic dimension bound |
+
+### Partial differential equations
+
+| ID | Result family |
+|---:|---|
+| 362 | Global smoothness for relativistic Vlasov--Maxwell |
+| 363 | Boltzmann nonuniqueness with exact local conservation |
+| 364 | Kinetic limits and fluctuations over the Boltzmann lifespan |
+| 365 | Joint metric and connection recovery from one boundary patch |
+| 366 | The planar Mumford--Shah regularity conjecture |
+| 367 | The critical dimension for the one-phase Bernoulli problem |
+| 368 | The three-dimensional Ball--Evans approximation problem |
+| 369 | The hot spots conjecture for simply connected planar domains |
+| 370 | The subcritical Lane--Emden and Hénon--Lane--Emden conjectures |
+| 371 | Stable blowup for a defocusing Schrödinger equation |
+| 372 | Global uniqueness in smooth isotropic elasticity |
+| 373 | Nonattainment in three-marginal Coulomb transport |
+| 374 | Sharp one-third stability of optimal transport maps |
+| 375 | De Giorgi's conjecture in dimension eight |
+| 376 | Universal computation in forced Navier--Stokes flows |
+| 377 | Interior \(C^{1,\alpha}\) regularity for infinity-harmonic functions |
+
+The subject distribution in this snapshot is therefore:
+
+| Area | Families |
+|---|---:|
+| Number theory | 31 |
+| Algebraic and complex geometry | 36 |
+| Real and complex analysis | 16 |
+| Convex and metric geometry | 15 |
+| Theoretical computer science | 40 |
+| Dynamical systems and ergodic theory | 12 |
+| Combinatorics | 37 |
+| Algebra | 18 |
+| Probability and statistical mechanics | 29 |
+| Mathematical logic | 6 |
+| Group theory | 14 |
+| Mathematical physics | 25 |
+| Operator algebras | 19 |
+| Topology | 18 |
+| Functional analysis | 11 |
+| Differential geometry | 29 |
+| Partial differential equations | 16 |
+| **Total** | **372** |
+
+: Distribution of the 372 result families across the seventeen subject areas in the 7 October 2026 repository snapshot. {#tbl-when-mathematics-became-a-repository-subject-distribution}
+
+The catalogue should be read as a **snapshot of released claims**, not as an independent certification of all 372 families. That distinction is integral to the argument of this article: publication, formalization, independent verification, human understanding, and assimilation are separate epistemic states.
+
+## Appendix B: evidence matrix for the five headline cases
+
+The five result families examined in detail occupy materially different evidential states. That difference is analytically useful because it demonstrates why a binary label such as *AI proved this* or *formally verified* is inadequate.
+
+@tbl-when-mathematics-became-a-repository-headline-evidence summarizes the evidence visible in the repository snapshot used for this article.
+
+| Family | Headline claim | Lean evidence visible | Comparator target | Reasoning summary | Production note | Epistemic reading |
+|---:|---|---|---|---|---|---|
+| 003 | Zero-free half-plane \(\operatorname{Re}(s)>7/8\) for \(\zeta\), all Dirichlet \(L\)-functions, and specified Hecke \(L\)-functions | Yes; dedicated Lean documentation and main-result formalization | Yes | No | Exception to dominant fixed procedure | Strong formal evidence for the selected statements; does not establish RH or GRH |
+| 032 | Rational Hodge conjecture for all complex CM abelian varieties | No headline Lean package located in the inspected snapshot | None located | No | Exception to dominant fixed procedure | Major natural-language mathematical claim whose assurance depends primarily on the manuscript and subsequent expert scrutiny |
+| 102 | Unique Games Conjecture plus direct optimal hardness consequences | Yes; dedicated Lean documentation and main-result formalization | Yes, for UGC and several consequences | Yes | Dominant procedure | One of the richest combinations of proof, formalization, trusted target, and explanatory trace |
+| 107 | \(\omega(\mathbb C)\le 9/4\), plus related rectangular and all-field bounds | Yes; dedicated Lean documentation and relevant main-result formalizations | Yes | No | Dominant procedure | Strong formal result; method extraction and practical finite-size algorithms remain separate questions |
+| 287 | All nonabelian/interpolated free group factors are isomorphic | Yes; dedicated `lean/docs/287.md` documents the formalization | Yes | Yes | Dominant procedure | Formal artifact present even though the headline paper was not located in the inspected `formalization.yaml` source catalogue |
+
+: Evidence states of the five headline result families in the 7 October 2026 repository snapshot. {#tbl-when-mathematics-became-a-repository-headline-evidence}
+
+### Family 003: a relatively complete evidence package
+
+The quasi-Riemann family shows what a relatively well-delimited evidence package looks like. Its formal documentation identifies exactly which statements are included: the \(7/8\) zero-free result for the Riemann zeta function, corresponding results for Dirichlet and specified Hecke \(L\)-functions, and a logarithmic exclusion region for real exceptional zeros. The documentation also states that later applications in the associated manuscripts lie outside the formalization's scope.[^when-mathematics-became-a-repository-family-003]
+
+That is better than a generic `formalized: true` flag because it exposes the boundary between the theorem subset that has been formalized and the broader set of claims appearing in the research family.
+
+### Family 102: formal consequences as separate interfaces
+
+The Unique Games family goes further by formalizing several downstream consequences separately. The Lean documentation identifies distinct targets for the central Unique Games reduction and for hardness results concerning Max-Cut, Vertex Cover, Min-UnCut, and directed feedback vertex set.[^when-mathematics-became-a-repository-family-102]
+
+This is structurally important. Rather than treating the family as one indivisible paper, the repository begins to represent it as a graph of independently addressable mathematical claims. That is the granularity required if formal theorem identities are eventually to become reusable interfaces for downstream research.
+
+### Family 107: asymptotic theorem versus practical algorithm
+
+The matrix-multiplication family illustrates why strong formal assurance does not collapse every downstream question. The Lean development establishes the asymptotic arithmetic-complexity statement and related exponent bounds, while explicitly distinguishing them from bit complexity and practical crossover behaviour.[^when-mathematics-became-a-repository-family-107]
+
+The certified proposition is therefore precise, but the practical question remains open: what reusable construction, explicit finite algorithm, or engineering method should be extracted from the proof?
+
+The distinction between **theorem truth** and **method utility** is part of the epistemic state.
+
+### Family 032: unformalized does not mean unsupported
+
+The CM Hodge case occupies another part of the evidence space. The principal manuscript states the rational Hodge theorem for complex CM abelian varieties and gives the corresponding cycle-class formulation, while the OpenAI catalogue records the claimed downstream consequences.[^when-mathematics-became-a-repository-family-032]
+
+The headline theorem was not accompanied, in the snapshot used here, by a located dedicated Lean package comparable to families 003, 102, or 107. The correct description is therefore neither *verified* nor *unverified* in the abstract. It is a major public mathematical claim supported by a natural-language proof whose assurance depends more heavily on specialist mathematical scrutiny.
+
+### Family 287: when the metadata and the artifact diverge
+
+Family 287 is especially revealing because the formal artifact and the catalogue metadata temporarily diverged. A first inspection of the `formalization.yaml` catalogue could suggest that the headline result was not formalized. Direct inspection of `lean/docs/287.md` shows that a formalization exists and proves the relevant isomorphism statement for interpolated free group factors with arbitrary parameters \(r,s>1\), including the infinite parameter, with a linked Comparator target.[^when-mathematics-became-a-repository-family-287]
+
+The correct status is therefore:
+
+> formal artifact present; formalization-catalogue metadata not fully aligned in the inspected snapshot.
+
+At small scale this is a documentation issue. At large scale it becomes an epistemic infrastructure issue. If agents, journals, and researchers query structured metadata rather than manually inspect every directory, then incorrect metadata can expose the wrong verification state to the entire downstream system.
+
+The lesson from all five cases is that the scholarly object is not just the theorem. It is the theorem together with its evidence state, provenance, version history, and degree of mathematical assimilation.
+
+## Appendix C: a technical model for repository mathematics
+
+The argument of this article implies a concrete technical requirement. If mathematical output becomes abundant, versioned, partially formalized, and asynchronously understood, scholarly infrastructure needs a representation richer than a paper record containing only title, authors, date, and PDF, and richer than a Boolean such as `verified: true`.
+
+The minimum useful object is a **claim-centered research package** whose components can evolve independently while retaining stable identity.
+
+A conceptual representation might look like this:
+
+```yaml
+claim:
+  id: math:claim:...
+  version: ...
+  status: active
+  informal_statement: ...
+  subject:
+    - ...
+  introduced_at: ...
+
+provenance:
+  problem:
+    id: ...
+    origin: ...
+    selected_by: ...
+  generation:
+    organization: ...
+    model: ...
+    workflow_version: ...
+  human_intervention:
+    - role: ...
+      description: ...
+
+formalization:
+  statement:
+    system: Lean
+    declaration: ...
+    source: ...
+  proof:
+    status: kernel_checked
+    axioms: [...]
+  trusted_target:
+    system: Comparator
+    status: passed
+    challenge: ...
+  semantic_correspondence:
+    status: independently_reviewed
+
+evidence:
+  informal_proof:
+    version: ...
+  computational_certificates:
+    - ...
+  reasoning_summary:
+    status: ...
+  independent_reviews:
+    - ...
+
+relations:
+  depends_on:
+    - claim: ...
+  implies:
+    - claim: ...
+  generalizes:
+    - claim: ...
+  equivalent_to:
+    - claim: ...
+  uses_method:
+    - method: ...
+
+scholarly_state:
+  novelty_review: ...
+  attribution_review: ...
+  human_understanding: ...
+  method_extraction: ...
+  canonicalization: ...
+
+history:
+  - version: ...
+    change_type: statement_weakened
+    timestamp: ...
+    note: ...
+```
+
+This is not proposed as a finished standard. Its purpose is to make explicit the information that becomes necessary once the mathematical object has more dimensions than one document can naturally encode.
+
+### Stable claim identity
+
+The first requirement is persistent identity.
+
+A theorem should have an identifier independent of the filename of its first manuscript, the repository in which it first appeared, the proof initially used to establish it, and the current version of its exposition.
+
+Let
+
+\[
+\operatorname{id}(T)
+\]
+
+denote that persistent identity. A citation can then distinguish version \(v_1\) from \(v_3\) while still recognizing both as states of the same mathematical claim.
+
+This matters because the theorem statement, proof, formalization, exposition, attribution, and verification record can change independently. A new proof need not create a new theorem identity. A weakened theorem statement may.
+
+### Semantic versioning for mathematical claims
+
+Ordinary version control records textual differences. Mathematical infrastructure should additionally record the **semantic type** of a revision.
+
+Useful revision types include:
+
+| Revision type | Meaning |
+|---|---|
+| `statement_strengthened` | The new claim has a stronger conclusion |
+| `statement_weakened` | The new claim is strictly weaker |
+| `hypothesis_added` | An additional assumption is now required |
+| `hypothesis_removed` | A previous assumption is no longer required |
+| `proof_repaired` | The statement is unchanged but the proof has been corrected |
+| `proof_replaced` | A different proof replaces the previous one |
+| `formalization_added` | A formal representation or proof has been added |
+| `formalization_corrected` | The formal artifact has changed materially |
+| `citation_corrected` | Bibliographic support has changed without changing the theorem |
+| `attribution_corrected` | Priority or intellectual provenance has been revised |
+| `exposition_only` | Mathematical content is unchanged |
+
+: Example semantic revision types for a versioned mathematical claim. {#tbl-when-mathematics-became-a-repository-revision-types}
+
+The distinction is operationally important. If a proof is repaired without changing the theorem, downstream mathematical claims may remain untouched. If an additional hypothesis is required, every dependent result may need reassessment.
+
+### Formalization is not one state
+
+The word *formalized* hides several logically distinct assertions. For an informal theorem \(T_I\) and its formal representation \(T_F\), at least four questions should be tracked separately:
+
+1. Does a formal statement \(T_F\) exist?
+2. Does a proof assistant's kernel accept a proof of \(T_F\)?
+3. Does that proof satisfy an explicit axiom and environment policy?
+4. Has the correspondence between \(T_I\) and \(T_F\) been audited?
+
+The fourth question is the semantic one. Kernel acceptance can establish that
+
+\[
+\Gamma \vdash T_F
+\]
+
+in the formal environment \(\Gamma\). It does not independently establish that \(T_F\) is the proposition the natural-language manuscript intended to state.
+
+Comparator-style checking strengthens the evidence further by separating a trusted target from an untrusted generated solution, but the trusted target still needs to be matched to the intended mathematics.
+
+A mature repository should therefore avoid a field such as:
+
+```yaml
+formalized: true
+```
+
+and expose something closer to:
+
+```yaml
+formalization:
+  statement: available
+  kernel_proof: accepted
+  axiom_audit: passed
+  trusted_target: passed
+  semantic_correspondence: independently_reviewed
+```
+
+The purpose is not to create bureaucratic overhead. It is to prevent a single word from collapsing logically distinct kinds of evidence.
+
+### Provenance should describe the research process
+
+Machine-generated mathematics also requires more than an author field.
+
+At minimum, provenance should distinguish:
+
+| Role | Question |
+|---|---|
+| Question formulation | Who formulated or selected the problem? |
+| Generation | Who or what produced the candidate result or proof? |
+| Verification | Who or what checked it? |
+| Exposition | Who produced the human-readable explanation? |
+| Release responsibility | Which person or institution stands behind publication? |
+
+: Distinct provenance roles that conventional authorship often bundles together. {#tbl-when-mathematics-became-a-repository-provenance-roles}
+
+This decomposition preserves distinctions already developed in the main text. Causal contribution, mathematical understanding, and scholarly responsibility are related but not identical.
+
+### Dependencies need typed relations
+
+Bibliographic citation is similarly too ambiguous for machine reasoning over mathematics. A citation can mean logical dependence, historical attribution, terminology, methodological inspiration, comparison, or background.
+
+A machine-readable mathematical graph therefore needs typed relations such as:
+
+```yaml
+relations:
+  - type: logical_dependency
+    target: math:claim:T1
+
+  - type: strengthens
+    target: math:claim:T2
+
+  - type: equivalent_to
+    target: math:claim:T3
+
+  - type: removes_assumption_from
+    target: math:claim:T4
+
+  - type: uses_method
+    target: math:method:M7
+```
+
+These distinctions make queries possible that ordinary bibliographic graphs answer poorly:
+
+> Which downstream claims depend logically on this theorem?
+
+> Which results become unconditional if this conjecture is resolved?
+
+> Which formal developments use a particular axiom?
+
+> Which apparently unrelated papers use the same method?
+
+The result is an **epistemic dependency graph**, not merely a citation graph.
+
+### Open problems should be first-class objects
+
+The same identity and versioning system should represent unresolved mathematics.
+
+An open problem record could include its canonical statement, origin and attribution, equivalent formulations, known partial results, failed approaches, conditional consequences, formalization state, and candidate solutions.
+
+Its status could then move through states such as:
+
+- open;
+- claimed solved;
+- formally certified;
+- independently reviewed;
+- assimilated.
+
+These are states of evidence and community knowledge, not truth values.
+
+A newly uploaded manuscript should therefore not automatically transform an open problem into a machine-readable `solved` state.
+
+### Methods should have identities too
+
+A theorem-centered repository still misses one of the most important outputs of mathematical research: reusable methods.
+
+Suppose several proofs rely on technique \(M\). The durable contribution may be the method rather than any individual theorem.
+
+A method object could record:
+
+```yaml
+method:
+  id: math:method:...
+  name: ...
+  description: ...
+  minimal_hypotheses: ...
+  canonical_examples:
+    - ...
+  applications:
+    - math:claim:T1
+    - math:claim:T2
+  formal_components:
+    - ...
+  known_limitations:
+    - ...
+```
+
+This represents the transition from several successful arguments to one reusable mathematical idea. It is the machine-readable analogue of conceptual digestion.
+
+### An epistemic maturity model
+
+Even with structured evidence, institutions still need operational categories. A useful model should remain multidimensional rather than reducing everything to one confidence score.
+
+For a claim \(T\), define the epistemic state vector
+
+$$
+\mathcal E(T)=
+\bigl(
+L(T),S(T),N(T),U(T),A(T)
+\bigr),
+$$ {#eq-when-mathematics-became-a-repository-maturity-state}
+
+where:
+
+- \(L\) denotes logical assurance;
+- \(S\) semantic assurance between the intended and formal theorem;
+- \(N\) novelty and attribution assurance;
+- \(U\) human conceptual understanding;
+- \(A\) assimilation into mathematical practice.
+
+The coordinates should progress independently.
+
+#### Logical assurance
+
+| State | Interpretation |
+|---|---|
+| \(L_0\) | Generated assertion only |
+| \(L_1\) | Informal proof artifact available |
+| \(L_2\) | Internal mathematical checking completed |
+| \(L_3\) | Independent expert checking completed |
+| \(L_4\) | Formal statement and kernel-checked proof available |
+| \(L_5\) | Separately controlled target and explicit axiom policy also checked |
+
+#### Semantic assurance
+
+| State | Interpretation |
+|---|---|
+| \(S_0\) | No formal counterpart |
+| \(S_1\) | Formal counterpart proposed |
+| \(S_2\) | Internal or automated correspondence check |
+| \(S_3\) | Specialist audit of definitions and theorem statement |
+| \(S_4\) | Independent audit of informal/formal correspondence |
+| \(S_5\) | Correspondence stable across revisions and independently reproduced |
+
+#### Novelty and attribution
+
+| State | Interpretation |
+|---|---|
+| \(N_0\) | No literature assessment |
+| \(N_1\) | Automated prior-art search |
+| \(N_2\) | Internal literature review |
+| \(N_3\) | Specialist novelty review |
+| \(N_4\) | Priority or attribution disputes resolved |
+| \(N_5\) | Stable scholarly consensus on novelty and provenance |
+
+#### Human understanding
+
+| State | Interpretation |
+|---|---|
+| \(U_0\) | No responsible human claims complete understanding |
+| \(U_1\) | Parts of the argument understood |
+| \(U_2\) | One or more specialists can reconstruct the complete proof |
+| \(U_3\) | Conceptual proof sketch or explanatory exposition exists |
+| \(U_4\) | A reusable method has been identified |
+| \(U_5\) | Multiple independent expositions or substantially simpler proofs exist |
+
+#### Assimilation
+
+| State | Interpretation |
+|---|---|
+| \(A_0\) | Newly released |
+| \(A_1\) | Discussed by the immediate specialist community |
+| \(A_2\) | Used in downstream research |
+| \(A_3\) | Major dependencies and consequences mapped |
+| \(A_4\) | Standard formulation, terminology, and exposition emerge |
+| \(A_5\) | Result or method has entered the working canon |
+
+The state
+
+\[
+\mathcal E(T)=
+(L_5,S_4,N_3,U_1,A_0)
+\]
+
+is perfectly coherent: a theorem could have strong formal and semantic assurance while remaining poorly understood and almost entirely unassimilated.
+
+Likewise, an older theorem may occupy a state with high \(N\), \(U\), and \(A\) despite having no formal proof at all.
+
+The maturity structure is therefore a **partial order**, not a universal ranking.
+
+### Epistemic states can regress
+
+The model must also permit rollback.
+
+Suppose a formally checked theorem has high logical assurance, but later review discovers that its formal statement contains an additional hypothesis absent from the natural-language claim. Logical assurance of the encoded theorem may remain unchanged while semantic assurance decreases sharply.
+
+Similarly, a newly discovered prior result may reduce novelty assurance without affecting correctness.
+
+A repository should therefore record not only document versions but epistemic transitions:
+
+```yaml
+transition:
+  claim: math:claim:T
+
+  from:
+    L: L4
+    S: S3
+    N: N3
+    U: U2
+    A: A1
+
+  to:
+    L: L4
+    S: S1
+    N: N3
+    U: U2
+    A: A1
+
+  cause: formal_statement_mismatch
+  revision: v4
+```
+
+This is not evidence of a failed scholarly system. It is evidence that corrections are being represented rather than erased.
+
+### Different users need different thresholds
+
+There is no single maturity state every use case should require.
+
+A mathematician exploring a speculative connection may be willing to work provisionally with a result whose informal proof has received only limited checking. A textbook author should demand much stronger independent understanding and stable assimilation. A formal theorem-proving agent may care primarily about high logical and semantic assurance while caring little about textbook-level exposition.
+
+The state vector therefore supports **context-sensitive epistemic policy**.
+
+This is preferable to a universal confidence percentage because it preserves the reason for confidence.
+
+### An evidence vocabulary
+
+The maturity model also suggests a disciplined vocabulary for writing about machine-generated mathematics.
+
+**Claim** should be the neutral starting term: a mathematical proposition asserted by an artifact. Saying that a manuscript *claims* \(T\) does not imply skepticism; it identifies the evidential level accurately.
+
+**Proof** should describe an argument intended to establish a theorem, not its independent review status. If the argument is newly released and still under scrutiny, *purported proof* may be appropriate regardless of whether the author is human or machine.
+
+**Formalized** should mean that a formal mathematical representation exists. When relevant, the stronger state should be stated explicitly: formal statement available, formal proof available, kernel-checked, trusted-target checked, or independently semantically audited.
+
+**Kernel-checked** should retain its narrow technical meaning: the proof assistant's trusted kernel accepts a derivation of the encoded proposition from the encoded environment. It does not independently establish novelty, importance, or correspondence to the intended natural-language theorem.
+
+**Comparator-checked** or **trusted-target checked** should indicate that the generated solution has been matched against a separately controlled target before kernel acceptance. It still does not eliminate the need to check that the target represents the intended mathematics.
+
+**Machine-verified** should be avoided without an explicit object. A manuscript may contain a machine-verified numerical certificate, a machine-verified formal derivation, or a machine-verified manifest; these are different evidence types.
+
+**Independently checked** should normally mean scrutiny materially independent of the research process that generated the result. Internal checking can be strong evidence, but it is not identical to outside verification.
+
+**Established** should describe community-level mathematical acceptance rather than mere publication by the producing organization.
+
+**Solved** should refer to the problem once the evidence has matured sufficiently for the relevant mathematical community to treat its central question as resolved. Uploading a manuscript should not automatically trigger this label.
+
+**Correct** concerns mathematical validity. It should not be used as a synonym for novel, important, properly attributed, or semantically faithful.
+
+**Novel** requires comparison with the literature. A proof assistant cannot certify novelty, and model self-report is not sufficient evidence.
+
+**Understood** should mean more than the existence of a trustworthy certificate. It implies that specialists can reconstruct the mechanism, explain the role of the hypotheses, identify the main obstruction, and distinguish essential ideas from technical scaffolding.
+
+**Method extracted** means that a transferable mathematical mechanism has been isolated from the particular proof.
+
+**Assimilated** means that a result has entered ordinary downstream mathematical practice.
+
+**Canonical** should be reserved for the later stage at which the field has settled on the durable formulation, method, or explanation it intends to retain.
+
+The governing editorial rule is simple:
+
+> **Describe the evidence that exists rather than substituting a confidence adjective for it.**
+
+This vocabulary is not merely stylistic. Under traditional mathematical production, many of these states occurred close enough together that a sentence such as *Smith proved \(T\)* compressed contribution, understanding, responsibility, scrutiny, and publication into one phrase. Repository mathematics decomposes those events.
+
+Language has to become correspondingly more precise.
+
+### Continuous mathematical integration
+
+Once claim identities, formal artifacts, and dependencies are structured, repository updates can trigger automatic checks.
+
+A substantive revision to theorem \(T\) could initiate:
+
+- rebuilding of dependent formal developments;
+- rerunning of trusted-target checks;
+- axiom-policy audits;
+- dependency-impact analysis;
+- updates to downstream epistemic states.
+
+This is a mathematical analogue of continuous integration.
+
+For formal developments, the mechanism is literal: a changed dependency can cause downstream proofs to stop compiling. For mixed formal and informal mathematics, the process would be less automatic but still useful because the system can identify which research objects require human reconsideration.
+
+### Federation rather than one database
+
+No single organization needs to maintain the complete mathematical graph.
+
+A healthier architecture would allow repositories \(R_1,\ldots,R_n\) to maintain different parts of the literature while agreeing on enough shared semantics for persistent identities, versions, formal statements, evidence states, and typed relations to remain portable.
+
+A theorem stored in one repository could depend on a method stored in another. A formal proof could certify a statement whose canonical human exposition resides elsewhere. Independent archives could replicate the same scholarly object.
+
+The objective is not one database of mathematics but a **federated mathematical knowledge layer**.
+
+Such a layer would also reduce dependence on the model that generated a result. A theorem produced by one proprietary system could remain usable by future humans and machines if its public artifact contains enough information to reconstruct its epistemic state independently.
+
+This gives repository mathematics its central technical principle:
+
+> **Machine-scale mathematics requires epistemic typing.**
+
+A formal proof is not an explanation. A Comparator pass is not a novelty review. A reasoning summary is not independent verification. A citation is not necessarily a logical dependency. A commit is not a theorem.
+
+Once those types are represented explicitly, heterogeneity ceases to look like disorder. It becomes structured mathematical state.
+
+## Appendix D: a research agenda for repository mathematics
+
+The thesis of this article is stronger than a description of one unusual release. It proposes that the October 2026 corpus may be an early instance of a new regime in which mathematical production becomes sufficiently computational, abundant, heterogeneous, and asynchronous that traditional publication infrastructure is no longer sufficient on its own.
+
+That proposition should be falsifiable.
+
+If repository mathematics is genuinely emerging, several observable changes should follow. If they do not, the interpretation advanced here should be weakened.
+
+### Does frontier mathematical discovery remain repeatable?
+
+The most immediate question is whether releases of the October kind recur.
+
+One portfolio does not establish a stable production regime. The relevant evidence would be repeated research programmes in which a common machine-research architecture produces significant results across genuinely different mathematical domains.
+
+Future reporting should ideally record, for each attempted problem \(i\),
+
+\[
+(p_i,c_i,o_i,v_i,t_i),
+\]
+
+where \(p_i\) identifies the problem, \(c_i\) the resources used, \(o_i\) the outcome, \(v_i\) the eventual verification state, and \(t_i\) the time required to reach that state.
+
+Such data would permit questions the October release cannot answer:
+
+- How often do frontier systems produce genuinely new mathematics?
+- How does success vary by field?
+- How sensitive is it to inference compute?
+- How strongly does problem selection affect apparent performance?
+- How often are initially successful claims later weakened or rejected?
+- How many distinct results derive from the same machine-discovered method?
+
+A stable result-abundance regime would require a persistent flow of independently surviving results, not merely repeated publicity events.
+
+### Does verification keep pace with generation?
+
+Let \(t_G(T)\) be the time at which result \(T\) is generated or first released, and let \(t_V(T)\) denote the time at which it reaches a specified verification threshold. Define the verification lag
+
+$$
+L_V(T)=t_V(T)-t_G(T).
+$$ {#eq-when-mathematics-became-a-repository-verification-lag}
+
+If median \(L_V\) falls while output volume increases, formalization and checking infrastructure are scaling effectively. If the release rate grows much faster than verification throughput, the system accumulates **verification debt**.
+
+Useful longitudinal measures would include:
+
+- fraction of major results with formal statements;
+- fraction with kernel-checked proofs;
+- fraction with independently specified trusted targets;
+- median time from release to formalization;
+- median time from formalization to independent semantic audit;
+- correction rates before and after formalization;
+- error classes disproportionately associated with unformalized results.
+
+These metrics would measure the performance of the research system rather than only the benchmark accuracy of the model.
+
+### Does human understanding catch up?
+
+Verification is not assimilation.
+
+Let \(t_A(T)\) denote an operationally defined assimilation event for theorem \(T\): for example, publication of an independent exposition, extraction of a reusable method, or stable downstream use. Define
+
+$$
+L_A(T)=t_A(T)-t_G(T).
+$$ {#eq-when-mathematics-became-a-repository-assimilation-lag}
+
+No single event will capture every form of understanding, but observable proxies can be tracked: independent proof reconstructions, specialist seminars, surveys, alternative proofs, named methods, textbook inclusion, and sustained downstream use.
+
+If the distribution of \(L_A\) shifts upward while generation accelerates, an unmetabolized mathematical frontier is becoming a persistent feature rather than a temporary transition.
+
+### Do machine-generated results yield reusable methods?
+
+One of the strongest tests of mathematical depth is whether results generate methods that transfer.
+
+For a result \(T\), the key question is whether later work identifies a method \(M\) that applies not only to \(T\) but to a nontrivial family of further problems.
+
+This allows a distinction between:
+
+- **result productivity** — how many new theorems are produced;
+- **method productivity** — how often those theorems yield reusable mathematical machinery.
+
+A system that generates thousands of isolated theorem closures may change mathematics differently from one that repeatedly introduces methods from which new programmes emerge.
+
+### Can AI construct the frontier rather than merely solve it?
+
+This is the most important capability question left open by the October release.
+
+Open-problem performance measures systems on questions whose significance was already recognized by humans. A deeper test would track AI-originated:
+
+- conjectures;
+- definitions;
+- invariants;
+- equivalence principles;
+- proposed connections between fields;
+- research programmes.
+
+Such objects cannot be evaluated immediately. Their value may become apparent only years later.
+
+Frontier-construction capability therefore requires longitudinal evaluation. A timestamped registry of machine-generated questions could later record whether specialists judged them nontrivial, whether they generated independent research, whether their formulation survived, and whether they revealed previously unseen mathematical structure.
+
+This would begin to test mathematical taste rather than proof-search capability alone.
+
+### Does the stock of human-formulated open problems become consumable?
+
+If frontier systems repeatedly attack established open-problem catalogues, the stock of benchmark-like mathematical uncertainty becomes a depletable resource.
+
+A longitudinal study could track:
+
+- rate at which recognized open problems are resolved;
+- proportion of those resolutions involving machine assistance;
+- rate at which new important open problems are formulated;
+- share of new frontier questions originating from machine systems.
+
+The regime changes qualitatively if the rate at which existing problems are closed begins to approach or exceed the rate at which useful new questions enter the frontier.
+
+At that point, benchmark design and research-agenda formation become the same problem.
+
+### Does theorem identity detach from paper identity?
+
+The infrastructure thesis predicts a shift from document-level identity toward claim-level identity.
+
+Observable evidence would include adoption of:
+
+- persistent theorem or claim identifiers;
+- explicit version histories;
+- machine-readable links between informal and formal statements;
+- typed dependency relations;
+- portable verification state.
+
+If mathematical communication remains almost entirely organized around static papers and DOIs despite very high machine output, the repository-mathematics thesis will have been overstated.
+
+If theorem identity becomes normal, it will be strong evidence that the epistemic object has changed.
+
+### Do journals certify dimensions rather than documents?
+
+Another prediction is decomposition of peer review.
+
+Rather than certifying a paper through one binary outcome, future institutions may certify separate properties:
+
+- formal correctness;
+- semantic correspondence;
+- novelty;
+- attribution;
+- exposition;
+- significance.
+
+This is directly observable.
+
+If journals, societies, or independent review bodies begin attaching machine-readable certifications to evolving mathematical objects, the institutional architecture described in this article will be taking concrete form.
+
+If conventional peer review absorbs machine-generated mathematics without significant structural change, that would count against the stronger version of the thesis.
+
+### Do dependency graphs become operational?
+
+Repository mathematics predicts that mathematical dependency structure will become computationally useful rather than merely conceptual.
+
+A strong signal would be routine systems capable of answering:
+
+> Which currently conditional results become unconditional if theorem \(T\) is established?
+
+> Which formal developments depend on this exact hypothesis?
+
+> Which claims must be revisited after version \(v_4\) of theorem \(T\)?
+
+> Which unresolved conjectures have unusually large downstream consequence sets?
+
+When these become ordinary scholarly operations rather than bespoke literature studies, the dependency graph will have become part of research infrastructure.
+
+### Does continuous integration enter mathematical practice?
+
+The next prediction follows immediately.
+
+Substantive revisions to formalized mathematical objects should increasingly trigger automated regression checks, dependency rebuilds, trusted-target reruns, and downstream impact reports.
+
+The important indicators are mundane:
+
+- version-pinned formal environments;
+- automatic rebuilds;
+- proof regression testing;
+- dependency dashboards;
+- notification of affected downstream claims.
+
+If such practices spread beyond isolated formalization projects, repository semantics will have become operational.
+
+### Does AI increase or reduce research diversity?
+
+The governance analysis makes two competing predictions.
+
+Concentrated infrastructure could create mathematical monoculture by allocating large amounts of capability toward famous, legible, benchmark-like problems.
+
+Broad access could have the opposite effect by allowing many researchers to pursue idiosyncratic agendas.
+
+This can be studied by examining the distribution of machine-assisted research across fields, institutions, countries, famous versus obscure problems, and established versus speculative programmes.
+
+The relevant question is not merely whether AI increases output. It is whether it increases or reduces the **diversity of the research agenda**.
+
+### Does broad access increase individual mathematical agency?
+
+The strongest case for widely available frontier research systems is that they may allow individual mathematicians to explore more intellectual possibilities.
+
+Possible indicators include:
+
+- number of speculative directions tested per researcher;
+- time from conjecture to preliminary support or falsification;
+- number of disciplinary boundaries crossed;
+- distribution of major results across institutional prestige levels;
+- productivity gains for researchers at smaller institutions.
+
+If frontier access systematically broadens who can initiate ambitious projects, AI is acting as an agency multiplier.
+
+If major discoveries remain concentrated inside the organizations controlling the largest compute budgets, the opposite conclusion follows.
+
+### Do research artifacts become portable across institutions?
+
+A theorem generated by one system should remain usable after the originating model, company, or interface disappears.
+
+A practical portability test is therefore:
+
+> Can an independent institution reconstruct the current epistemic state of \(T\) without access to the original provider?
+
+That requires portable theorem statements, proof certificates where available, provenance, version identity, dependencies, and review state.
+
+If the answer is no, mathematics risks becoming vendor-dependent even when the final paper is nominally public.
+
+### Does conventional authorship survive?
+
+Machine-generated mathematics also creates a testable institutional prediction: the ordinary author list may cease to describe contribution adequately.
+
+Possible future practices include:
+
+- institutional authorship;
+- named human guarantors;
+- explicit model provenance;
+- contributor-role taxonomies;
+- dedicated roles for formalization, verification, and exposition.
+
+A strong structural change would be widespread adoption of explicit distinctions among question formulation, generation, verification, exposition, and release responsibility.
+
+That would confirm that the traditional approximation
+
+> author = generator = understander = guarantor
+
+has become untenable.
+
+### Do correction patterns become a benchmark?
+
+Large machine-generated corpora make errors statistically analyzable.
+
+Corrections could be classified into categories such as:
+
+- incorrect theorem statement;
+- invalid informal inference;
+- formal/informal mismatch;
+- novelty failure;
+- citation or attribution failure;
+- correct theorem with overstated consequences.
+
+Across thousands of outputs, the conditional distribution of these errors by field, model, workflow, and formalization state would be more informative than isolated anecdotes.
+
+The important evaluation question would no longer be only:
+
+> Did the model solve this problem?
+
+It would become:
+
+> Which kinds of scientific error survive the complete research pipeline?
+
+That is a more mature benchmark for autonomous research.
+
+### Does mathematical digestion itself become machine-scalable?
+
+One possible falsification of the scarcity argument would be rapid progress in automated understanding.
+
+Suppose AI systems become reliable not only at producing proofs but also at generating:
+
+- short conceptual explanations;
+- reusable methods;
+- equivalent formulations;
+- hidden-assumption analyses;
+- pedagogically strong expositions;
+- important follow-up conjectures.
+
+Then verification and digestion could scale alongside result generation, greatly reducing the epistemic backlog.
+
+That would not falsify the broader idea of scarcity migration. It would move the scarcity again. Judgment, research diversity, and agency might become the next bottlenecks.
+
+### When should repository mathematics be considered established?
+
+A reasonable operational criterion would be that repository mathematics has become an established regime when significant machine-generated results routinely possess most of the following properties:
+
+1. persistent claim identity independent of a single paper;
+2. explicit version history;
+3. structured provenance;
+4. machine-readable formal or verification state;
+5. typed dependencies;
+6. multiple explanatory layers;
+7. independently queryable review or certification state;
+8. portable artifacts that do not depend on the originating provider.
+
+The decisive sign is not that mathematicians use Git.
+
+It is that the state of mathematical knowledge can no longer be represented adequately by a collection of static papers.
+
+### How the thesis could fail
+
+The interpretation advanced in this article should be weakened if, over the next several years, most of the following occur:
+
+- releases of the October scale remain exceptional;
+- major AI mathematical results still require essentially conventional human production and checking;
+- formal verification does not scale materially with generated output;
+- machine-generated proofs rarely yield reusable research programmes;
+- journals and archives require no significant new state-management mechanisms;
+- theorem-level persistent identity remains unnecessary;
+- AI remains primarily a tool inside otherwise conventional human-authored research;
+- mathematical research allocation remains essentially unchanged.
+
+In that world, the October 2026 repository would remain historically interesting but would look more like an unusual publication event than the beginning of a new epistemic regime.
+
+### How the thesis could become stronger
+
+The opposite evidence would be equally clear.
+
+The stronger interpretation would gain support if:
+
+- significant machine discoveries become a persistent high-rate stream;
+- formal proof packages accompany a large fraction of major results;
+- AI-generated conjectures and definitions become independently important;
+- dependency-aware verification becomes routine;
+- mathematical institutions allocate frontier-model compute as scientific infrastructure;
+- claim-level, versioned mathematical objects become standard;
+- independent archives and formal verification services emerge around them.
+
+At that point, *repository mathematics* would no longer be a conceptual description of one OpenAI release.
+
+It would simply describe part of how mathematics works.
+
+### The distance between result and knowledge
+
+Most of the proposed research programme can be summarized by one final quantity: the time required for a machine-generated result to become usable mathematical knowledge.
+
+Let \(L_K(T)\) denote that **result-to-knowledge lag** for theorem \(T\). Conceptually, it contains several distinct intervals:
+
+- verification;
+- conceptual understanding;
+- method extraction;
+- assimilation.
+
+It should not be treated as a simple additive empirical law without careful operational definitions. Its purpose is to focus attention on the central systems question.
+
+If machine generation accelerates while \(L_K\) remains large, epistemic backlog grows.
+
+If formal verification, explanation, method extraction, and assimilation accelerate with generation, mathematics may absorb result abundance without losing coherence.
+
+The future of AI mathematics will therefore not be determined only by how fast machines can prove.
+
+It will be determined by how effectively a combined human, machine, and institutional research system can turn those proofs into knowledge.
+
+## Appendix E: a same-day downstream generalization
+
+The matrix-multiplication story acquired another layer almost immediately after the OpenAI release. A public repository created by Sela Navot takes the `MatrixMultiplication` subtree of OpenAI's mathematics repository as its source baseline and extends the \(9/4\) result from the complex numbers to an arbitrary field. The exported Lean statement is
+
+$$
+\operatorname{Arithmetic.omega}(F)\le\frac94
+\qquad
+\text{for every field }F.
+$$ {#eq-when-mathematics-became-a-repository-all-fields-nine-quarters}
+
+The distinction is material. OpenAI's headline \(9/4\) theorem was stated over \(\mathbb C\); its release separately included a weaker bound valid over arbitrary fields. The new repository claims that the stronger \(9/4\) exponent survives without assumptions of algebraic closedness, perfectness, separability, characteristic zero, or infinitude.[^when-mathematics-became-a-repository-matrix-all-fields-navot]
+
+According to the repository, the extension was found and formalized under Sela Navot's direction using consumer-accessible GPT-6 Astra and GPT-6.1 Sol. The attribution should be read as the repository author's account of the research process rather than as an independently established measurement of model capability. What can be inspected directly is the mathematical artifact: the project exports the all-fields theorem in Lean, retains OpenAI's original complex theorem as a specialization, and documents the proof changes required where the scalar field enters the original argument.[^when-mathematics-became-a-repository-matrix-all-fields-navot]
+
+Those changes are mathematically substantive. Fourier separation is modified so that the relevant period remains invertible in arbitrary characteristic; interpolation uses distinct nonzero elements in an infinite algebraic closure rather than fixed integer nodes that can collide after reduction modulo a prime; and the argument then descends from the algebraic closure to the original field through a finite-dimensional coefficient algebra. If an \(r\)-term decomposition over the scalar extension has coefficient algebra of dimension \(d\), the descent gives
+
+$$
+R_F\!\left(T^{\otimes m}\right)\le d^2r^m,
+$$ {#eq-when-mathematics-became-a-repository-field-descent}
+
+where the fixed factor \(d^2\) is independent of the tensor-power parameter \(m\) and therefore disappears at the exponent level. The repository also states the resulting arithmetic-program bound explicitly: for every field \(F\) and every \(\varepsilon>0\), there is a constant \(C>0\) such that every matrix size \(n\ge1\) admits a correct division-free arithmetic program of cost at most
+
+$$
+C\,n^{9/4+\varepsilon}.
+$$ {#eq-when-mathematics-became-a-repository-all-fields-program-cost}
+
+As in OpenAI's original result, this remains an asymptotic arithmetic-operation statement. It does not provide practical constants, a bit-complexity bound, or an effective procedure that automatically emits competitive finite-size matrix-multiplication programs.
+
+The verification package is also revealing. The project documents reconstruction of the relevant OpenAI source subtree, Lean builds, explicit guards on permitted axioms, rejection of `sorry`, fresh kernel replay with `leanchecker`, and Comparator checks against separately frozen specifications. It also reports adversarial reviews by fresh AI-agent sessions and a separate review with an Anthropic model; the repository explicitly notes that these are **not human peer review**.[^when-mathematics-became-a-repository-matrix-all-fields-verification] The appropriate epistemic description is therefore a publicly reproducible, kernel-checked downstream generalization whose broader mathematical acceptance still requires independent human scrutiny.
+
+Its importance for the argument of this article is larger than the numerical improvement. On the same calendar date as the OpenAI release, a result produced inside one frontier-AI research programme had already become the substrate for a second externally directed AI-assisted research process: the original formal development was forked, its theorem was generalized, the field-sensitive gaps were repaired, the new result was formally checked, and another repository was published.
+
+That is a concrete instance of **recursive research acceleration**. The cycle is no longer merely
+
+> human mathematics → AI-generated result.
+
+It begins to become
+
+> existing mathematics → AI-generated result → public formal artifact → downstream AI-assisted generalization → new checked artifact.
+
+The relevant acceleration is therefore not only that machines can produce individual results quickly. It is that the latency between **discovery, external reuse, generalization, and formal verification** can collapse as mathematical results become executable research inputs. This is precisely the regime in which the repository ceases to be merely a publication venue and becomes part of the research machinery itself.
+
+[^when-mathematics-became-a-repository-matrix-all-fields-navot]: Navot, S. (2026). **Matrix multiplication over arbitrary fields**. _GitHub repository_. The project is a focused fork of OpenAI's matrix-multiplication formalization and states the theorem `omega_le_nine_quarters (F : Type*) [Field F] : Arithmetic.omega F ≤ 9/4`. It attributes discovery and formalization of the field extension to consumer-accessible GPT-6 Astra and GPT-6.1 Sol working under Sela Navot's direction. The repository documents the Fourier-separation, interpolation, and finite-algebra descent modifications required to remove the complex-field restriction. [Repository](https://github.com/selanavot/matrix-multiplication-all-fields).
+
+[^when-mathematics-became-a-repository-matrix-all-fields-verification]: Navot, S. (2026). **Matrix multiplication over arbitrary fields: reproduction and verification record**. _GitHub repository_. The project documents Lean compilation, guarded axiom checks, rejection of `sorry`, fresh kernel replay, Comparator checks, and independent AI-agent reviews, while explicitly distinguishing those reviews from human peer review. [Reviewer guide](https://github.com/selanavot/matrix-multiplication-all-fields/blob/main/docs/field-port/REVIEW.md).
